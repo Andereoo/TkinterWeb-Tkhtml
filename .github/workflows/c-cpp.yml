@@ -12,7 +12,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - run: cd ../../
+    - run: pwd
+    - run: ls
+    - run: cd ..
+    - run: pwd
+    - run: ls
+    - run: cd ../
     - run: pwd
     - run: ls
     - run: tclsh ./src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
