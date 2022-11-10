@@ -16,7 +16,6 @@ jobs:
     - run: sudo apt-get install tcl8.6-dev tk8.6-dev
     - uses: actions/checkout@v3
     - run: ls -l /usr/include
-    - run: ls -l /usr/include/tcl
     - run: ls -l /usr/lib
     - run: export PATH=$TCL/bin:$PATH
     - run: tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
