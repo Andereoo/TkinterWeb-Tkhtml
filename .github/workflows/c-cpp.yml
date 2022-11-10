@@ -13,6 +13,7 @@ jobs:
 
     steps:
     - run: cd ../../
+    - run: pwd
     - run: tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
     - uses: actions/checkout@v3
     - name: configure
