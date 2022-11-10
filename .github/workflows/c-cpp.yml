@@ -16,7 +16,10 @@ jobs:
     - run: tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
     - run: chmod +rwx ./configure
     - run: mv *.c src && mv *.h src
-    - run: mkdir build && cd build
+    - run: mkdir build
+    - run: pwd
+    - run: cd build
+    - run: pwd
     - name: configure
       run: ../configure CC="gcc -static-libgcc"
     - name: make
