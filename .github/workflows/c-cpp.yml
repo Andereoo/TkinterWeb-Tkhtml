@@ -12,16 +12,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - run: sudo apt-get install tcl8.6-dev tk8.6-dev
+    - run: sudo apt-get install tcl-dev tk-dev
     - uses: actions/checkout@v3
-    - run: TCL=/usr/include
-    - run: ls -l /usr/include
+    - run: TCL=/usr
+    - run: ls -l /usr/include/tcl
     - run: export PATH=$TCL/bin:$PATH
     - run: tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
     - run: chmod +rwx ./configure
     - run: mv *.c src && mv *.h src
     - name: configure
-      run: ./configure CC="gcc -static-libgcc" --with-tcl=$TCL/lib --with-tk=$TCL/lib --with-tclinclude=$TCL/include --with-tkinclude=$TCL/include
+      run: ./configure CC="gcc -static-libgcc" --with-tcl=$TCL/lib --with-tk=$TCL/lib --with-tclinclude=$TCL/include/tcl --with-tkinclude=$TCL/include/tcl
     - name: make
       run: make
     - name: make check
