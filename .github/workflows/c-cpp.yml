@@ -12,18 +12,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - run: sudo apt-get install tcl-dev tk-dev
-    - run: sudo apt-file update
-    - run: apt-file search tcl.h
+    - run: sudo apt-get update
+    - run: sudo apt-get install tcl8.6-dev tk8.6-dev
     - uses: actions/checkout@v3
-    - run: TCL=/usr
+    - run: ls -l /usr/include
     - run: ls -l /usr/include/tcl
+    - run: ls -l /usr/lib
     - run: export PATH=$TCL/bin:$PATH
     - run: tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
     - run: chmod +rwx ./configure
     - run: mv *.c src && mv *.h src
     - name: configure
-      run: ./configure CC="gcc -static-libgcc" --with-tcl=$TCL/lib --with-tk=$TCL/lib --with-tclinclude=$TCL/include/tcl --with-tkinclude=$TCL/include/tcl
+      run: ./configure CC="gcc -static-libgcc" --with-tcl=/usr/lib --with-tk=/usr/lib --with-tclinclude=/usr/include/tcl --with-tkinclude=/usr/include/tcl
     - name: make
       run: make
     - name: make check
