@@ -14,10 +14,7 @@ jobs:
     steps:
     - run: cd ../../
     - run: pwd
-    - run: cd src
-    - run: pwd
-    - run: cd ..
-    - run: pwd
+    - run: ls
     - run: tclsh ./src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
     - uses: actions/checkout@v3
     - name: configure
