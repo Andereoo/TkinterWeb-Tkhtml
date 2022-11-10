@@ -12,9 +12,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - run: sudo apt-get install tcl8.6-dev tk-dev
+    - run: sudo apt-get install tcl8.6-dev tk8.6-dev
     - uses: actions/checkout@v3
-    - run: TCL=/usr/bin
+    - run: TCL=/usr/include
     - run: ls -l /usr/include
     - run: export PATH=$TCL/bin:$PATH
     - run: tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
