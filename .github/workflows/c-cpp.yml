@@ -17,7 +17,7 @@ jobs:
     - uses: actions/checkout@v3
     - name: setup
       run: TCL=/usr/
-      run: ls /usr/
+      run: ls -l /usr
       run: export PATH=$TCL/bin:$PATH
       run: tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
       run: chmod +rwx ./configure
