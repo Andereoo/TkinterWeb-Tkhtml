@@ -14,8 +14,8 @@ jobs:
     steps:
     - run: sudo apt-get install tcl-dev tk-dev
     - uses: actions/checkout@v3
-    - run: TCL=/usr/
-    - run: ls -l /usr
+    - run: TCL=/usr/bin
+    - run: ls -l /usr/bin
     - run: export PATH=$TCL/bin:$PATH
     - run: tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
     - run: chmod +rwx ./configure
