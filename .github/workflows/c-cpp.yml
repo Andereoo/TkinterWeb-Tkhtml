@@ -18,6 +18,7 @@ jobs:
     - run: chmod +rwx ./configure
     - run: mv *.c src && mv *.h src
     - run: find / -name 'tcl*'
+    - run: ls -l /usr/bin/tclsh8.5
     - run: ls -l /usr/bin
     - run: ls -l /usr
     - run: ls -l /usr/sbin
