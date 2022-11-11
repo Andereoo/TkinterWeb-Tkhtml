@@ -9,15 +9,11 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
-    - run: sudo apt-get install tcl8.6-dev tk8.6-dev
+    - run: brew install tcl-tk
     - uses: actions/checkout@v3
-    - run: ls -l /usr/include
-    - run: ls -l /usr/lib
-    - run: ls -l /usr/lib/tcl8.6
-    - run: ls -l /usr/lib/tcltk
     - run: export PATH=$TCL/bin:$PATH
     - run: tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
     - run: chmod +rwx ./configure
