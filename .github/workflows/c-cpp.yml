@@ -18,7 +18,7 @@ jobs:
     - run: chmod +rwx ./configure
     - run: mv *.c src && mv *.h src
     - run: ls -l -H /usr/bin
-    - run: ls -l -H /usr/bin/tclsh
+    - run: ls -l -H /usr/bin/tclsh/.
     - run: ls -l /usr
     - run: ls -l /usr/sbin
     - run: ls -l /usr/share
