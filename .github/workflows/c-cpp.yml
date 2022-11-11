@@ -17,7 +17,7 @@ jobs:
     - run: tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
     - run: chmod +rwx ./configure
     - run: mv *.c src && mv *.h src
-    - run: ls -l /usr/bin/tclsh8.5
+    - run: ls -l System/Library/Frameworks/Tcl.framework/Versions/8.5/tclsh8.5
     - run: ls -l /usr/bin
     - run: ls -l /usr
     - run: ls -l /usr/sbin
