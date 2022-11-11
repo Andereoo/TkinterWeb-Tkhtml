@@ -17,9 +17,9 @@ jobs:
     - run: tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
     - run: chmod +rwx ./configure
     - run: mv *.c src && mv *.h src
-    - run: ls /usr
-    - run: ls /usr/include
-    - run: ls /usr/lib
+    - run: ls -l /usr
+    - run: ls -l /usr/include
+    - run: ls -l /usr/lib
     - name: configure
       run: ./configure CC="gcc -static-libgcc" --with-tcl=/usr/lib --with-tk=/usr/lib --with-tclinclude=/usr/include --with-tkinclude=/usr/include
     - name: make
