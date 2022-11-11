@@ -18,7 +18,12 @@ jobs:
     - run: chmod +rwx ./configure
     - run: mv *.c src && mv *.h src
     - run: ls -l /usr
-    - run: ls -l /usr/include
+    - run: ls -l /usr/bin
+    - run: ls -l /usr/sbin
+    - run: ls -l /usr/share
+    - run: ls -l /usr/standalone
+    - run: ls -l /usr/local
+    - run: ls -l /usr/libexec
     - run: ls -l /usr/lib
     - name: configure
       run: ./configure CC="gcc -static-libgcc" --with-tcl=/usr/lib --with-tk=/usr/lib --with-tclinclude=/usr/include --with-tkinclude=/usr/include
