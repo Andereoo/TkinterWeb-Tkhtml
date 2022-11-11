@@ -12,14 +12,13 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - run: brew install tcl-tk
     - uses: actions/checkout@v3
     - run: export PATH=$TCL/bin:$PATH
     - run: tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
     - run: chmod +rwx ./configure
     - run: mv *.c src && mv *.h src
     - name: configure
-      run: ./configure CC="gcc -static-libgcc" --with-tcl=/usr/lib --with-tk=/usr/lib --with-tclinclude=/usr/include/tcl --with-tkinclude=/usr/include/tcl
+      run: ./configure CC="gcc -static-libgcc" --with-tcl=/usr/lib --with-tk=/usr/lib --with-tclinclude=/usr/include --with-tkinclude=/usr/include
     - name: make
       run: make
     - name: make check
