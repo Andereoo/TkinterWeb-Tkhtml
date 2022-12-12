@@ -29,7 +29,6 @@ jobs:
     - run: ls -l /usr/local
     - run: ls -l /usr/libexec
     - run: ls -l /usr/lib
-    - run: echo Configuring... 
     - name: configure
       run: ./configure CC="gcc -static-libgcc" --with-tcl=/usr/lib --with-tk=/usr/lib --with-tclinclude=/usr/include --with-tkinclude=/usr/include
     - name: make
