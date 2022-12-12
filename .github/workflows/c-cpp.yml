@@ -17,9 +17,8 @@ jobs:
     - run: tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
     - run: chmod +rwx ./configure
     - run: mv *.c src && mv *.h src
-    - run: ls -l /Library/Frameworks/
-    - run: find / -name "tcl.h"
-    - run: find / -name "tk.h"
+    - run: ls -l /usr/local/Cellar/tcl-tk/8.6.13/include/
+    - run: ls -l /System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/usr/include/
     - run: ls -l /usr/local/Cellar/tcl-tk/
     - run: ls -l /System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/
     - run: ls -l /System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/Headers/
