@@ -24,16 +24,8 @@ jobs:
     - run: ls -l /usr/local/Cellar/tcl-tk/
     - run: ls -l /System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/
     - run: ls -l /System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/Headers/
-    - run: ls -l /usr/bin
-    - run: ls -l /usr
-    - run: ls -l /usr/sbin
-    - run: ls -l /usr/share
-    - run: ls -l /usr/standalone
-    - run: ls -l /usr/local
-    - run: ls -l /usr/libexec
-    - run: ls -l /usr/lib
     - name: configure
-      run: ./configure CC="gcc -static-libgcc" --with-tcl=/usr/lib --with-tk=/usr/lib --with-tclinclude=/usr/include --with-tkinclude=/usr/include
+      run: ./configure CC="gcc -static-libgcc" --with-tcl=/usr/local/Cellar/tcl-tk/8.6.13/lib/ --with-tk=/usr/local/Cellar/tcl-tk/8.6.13/lib/ --with-tclinclude=/usr/local/Cellar/tcl-tk/8.6.13/include/ --with-tkinclude=/usr/local/Cellar/tcl-tk/8.6.13/include/
     - name: make
       run: make
     - name: make check
