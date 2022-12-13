@@ -26,7 +26,7 @@ jobs:
     - run: ls -l /System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/
     - run: ls -l /System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/Headers/
     - name: configure
-      run: ./configure CC="gcc" --with-tcl=/lib --with-tk=/lib --with-tclinclude=/include --with-tkinclude=/include
+      run: ./configure CC="gcc" --with-tcl=$TCL/lib --with-tk=$TCL/lib --with-tclinclude=$TCL/include --with-tkinclude=$TCL/include
     - name: make
       run: make
     - name: make check
