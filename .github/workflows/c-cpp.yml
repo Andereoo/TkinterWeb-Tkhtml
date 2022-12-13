@@ -13,7 +13,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - run: export PATH=/usr/usr/local/Cellar/tcl-tk/8.6.13/bin:$PATH;
+    - run: TCL=/usr/local/Cellar/tcl-tk/8.6.13
+    - run: export PATH=$TCL/bin:$PATH;
     - run: tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
     - run: chmod +rwx ./configure
     - run: mv *.c src && mv *.h src
@@ -24,8 +25,10 @@ jobs:
     - run: ls -l /usr/local/Cellar/tcl-tk/
     - run: ls -l /System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/
     - run: ls -l /System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/Headers/
+    - run: echo $TCL
+    - run: echo $TCL/lib
     - name: configure
-      run: ./configure CC="gcc" --with-tcl=/usr/usr/local/Cellar/tcl-tk/8.6.13/lib --with-tk=/usr/usr/local/Cellar/tcl-tk/8.6.13/lib --with-tclinclude=/usr/usr/local/Cellar/tcl-tk/8.6.13/include --with-tkinclude=/usr/usr/local/Cellar/tcl-tk/8.6.13/include
+      run: ./configure CC="gcc" --with-tcl=$TCL/lib --with-tk=$TCL/lib --with-tclinclude=$TCL/include --with-tkinclude=$TCL/include
     - name: make
       run: make
     - name: make check
