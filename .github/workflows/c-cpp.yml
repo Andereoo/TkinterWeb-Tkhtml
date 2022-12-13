@@ -17,7 +17,6 @@ jobs:
     - run: export PATH=$TCL/bin:$PATH;
     - run: tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
     - run: chmod +rwx ./configure
-    - run: mkdir build && cd build
     - run: mv *.c src && mv *.h src
     - run: ls -l /usr/local/Cellar/tcl-tk/8.6.13/lib/
     - run: ls -l /usr/local/Cellar/tcl-tk/8.6.13/bin/
@@ -26,10 +25,8 @@ jobs:
     - run: ls -l /usr/local/Cellar/tcl-tk/
     - run: ls -l /System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/
     - run: ls -l /System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/Headers/
-    - run: ls -l .
-    - run: ls -l ../
     - name: configure
-      run: ../configure CC="gcc" --with-tcl=/lib --with-tk=/lib --with-tclinclude=/include --with-tkinclude=/include
+      run: ./configure CC="gcc" --with-tcl=/lib --with-tk=/lib --with-tclinclude=/include --with-tkinclude=/include
     - name: make
       run: make
     - name: make check
