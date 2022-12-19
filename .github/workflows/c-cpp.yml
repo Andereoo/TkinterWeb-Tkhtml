@@ -19,7 +19,7 @@ jobs:
     - run: chmod +rwx ./configure
     - name: Build dir
       run: mkdir build && cd build
-      working-directory: ./build
+      working-directory: build
     - run: ls -l .
     - run: echo "$PWD"
     - run: mv *.c src && mv *.h src
