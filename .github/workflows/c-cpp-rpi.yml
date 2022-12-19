@@ -10,10 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: uraimo/run-on-arch-action@v2
-      name: Run commands
-      id: runcmd
-      with:
+    - with:
         arch: armv7
         distro: ubuntu18.04
     - uses: actions/checkout@v3
