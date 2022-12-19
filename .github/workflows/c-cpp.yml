@@ -15,7 +15,7 @@ jobs:
     - uses: actions/checkout@v3
     - run: TCL=/usr/local/Cellar/tcl-tk/8.6.13
     - run: echo "$PATH"
-    - run: export PATH=$TCL/bin:$PATH;
+    - run: export PATH=/usr/local/Cellar/tcl-tk/8.6.13/bin:$PATH;
     - run: echo "$PATH"
     - run: tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
     - run: chmod +rwx ./configure
@@ -34,6 +34,7 @@ jobs:
       run: echo "$PWD"
     - run: ls -l .
     - name: configure
+      working-directory: ./build
       run: ../configure CC="gcc" --with-tcl=/usr/local/Cellar/tcl-tk/8.6.13/lib --with-tk=/usr/local/Cellar/tcl-tk/8.6.13/lib --with-tclinclude=/usr/local/Cellar/tcl-tk/8.6.13/include --with-tkinclude=/usr/local/Cellar/tcl-tk/8.6.13/include
     - name: make
       run: make
