@@ -19,7 +19,9 @@ jobs:
     - run: chmod +rwx ./configure
     - run: mkdir build && cd build
     - run: ls -l .
-    - run: echo "$PWD"
+    - name: WD
+      working-directory: ./build
+      run: echo "$PWD"
     - run: mv *.c src && mv *.h src
     - run: ls -l /usr/local/Cellar/tcl-tk/8.6.13/lib/
     - run: ls -l /usr/local/Cellar/tcl-tk/8.6.13/bin/
