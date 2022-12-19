@@ -14,14 +14,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - run: TCL=/usr/local/Cellar/tcl-tk/8.6.13
+    - run: echo "$PATH"
     - run: export PATH=$TCL/bin:$PATH;
+    - run: echo "$PATH"
     - run: tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
     - run: chmod +rwx ./configure
-    - run: mkdir build && cd build
-    - run: ls -l .
-    - name: WD
-      working-directory: ./build
-      run: echo "$PWD"
     - run: mv *.c src && mv *.h src
     - run: ls -l /usr/local/Cellar/tcl-tk/8.6.13/lib/
     - run: ls -l /usr/local/Cellar/tcl-tk/8.6.13/bin/
@@ -30,8 +27,14 @@ jobs:
     - run: ls -l /usr/local/Cellar/tcl-tk/
     - run: ls -l /System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/
     - run: ls -l /System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/Headers/
+    - run: mkdir build && cd build
+    - run: ls -l .
+    - name: WD
+      working-directory: ./build
+      run: echo "$PWD"
+    - run: ls -l .
     - name: configure
-      run: ./configure CC="gcc" --with-tcl=/usr/local/Cellar/tcl-tk/8.6.13/lib --with-tk=/usr/local/Cellar/tcl-tk/8.6.13/lib --with-tclinclude=/usr/local/Cellar/tcl-tk/8.6.13/include --with-tkinclude=/usr/local/Cellar/tcl-tk/8.6.13/include
+      run: ../configure CC="gcc" --with-tcl=/usr/local/Cellar/tcl-tk/8.6.13/lib --with-tk=/usr/local/Cellar/tcl-tk/8.6.13/lib --with-tclinclude=/usr/local/Cellar/tcl-tk/8.6.13/include --with-tkinclude=/usr/local/Cellar/tcl-tk/8.6.13/include
     - name: make
       run: make
     - name: make check
