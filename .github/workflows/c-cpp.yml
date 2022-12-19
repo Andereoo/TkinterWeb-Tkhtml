@@ -18,9 +18,10 @@ jobs:
     - run: tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
     - run: chmod +rwx ./configure
     - run: mkdir build
+    - run: ls -l .
     - name: Build dir
       run: cd build
-      working-directory: build
+      working-directory: ./build
     - run: ls -l .
     - run: echo "$PWD"
     - run: mv *.c src && mv *.h src
