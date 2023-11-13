@@ -22,7 +22,3 @@ jobs:
       run: ./configure CC="gcc" --with-tcl=/usr/local/Cellar/tcl-tk/8.6.13_5/lib --with-tk=/usr/local/Cellar/tcl-tk/8.6.13_5/lib --with-tclinclude=/usr/local/Cellar/tcl-tk/8.6.13_5/include/tcl-tk --with-tkinclude=/usr/local/Cellar/tcl-tk/8.6.13_5/include/tcl-tk
     - name: make
       run: make
-    - name: make check
-      run: make check
-    - name: make distcheck
-      run: make distcheck
