@@ -19,7 +19,7 @@ jobs:
     - name: Configure
       run: find /usr/local/Cellar/tcl-tk/8.6.13_5
     - name: Configure
-      run: ./configure CC="gcc" --with-tcl=/usr/local/Cellar/tcl-tk/8.6.13_5/lib --with-tk=/usr/local/Cellar/tcl-tk/8.6.13_5/lib --with-tclinclude=/usr/local/Cellar/tcl-tk/8.6.13_5/include --with-tkinclude=/usr/local/Cellar/tcl-tk/8.6.13_5/include
+      run: ./configure CC="gcc" --with-tcl=/usr/local/Cellar/tcl-tk/8.6.13_5/lib --with-tk=/usr/local/Cellar/tcl-tk/8.6.13_5/lib --with-tclinclude=/usr/local/Cellar/tcl-tk/8.6.13_5/include/tcl-tk --with-tkinclude=/usr/local/Cellar/tcl-tk/8.6.13_5/include/tcl-tk
     - name: make
       run: make
     - name: make check
