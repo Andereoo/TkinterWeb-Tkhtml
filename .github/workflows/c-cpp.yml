@@ -18,6 +18,7 @@ jobs:
     - run: mv *.c src && mv *.h src
     - name: Configure
       run: ls /usr/local/Cellar/tcl-tk/8.6.13
+    - name: Configure
       run: ./configure CC="gcc" --with-tcl=/usr/local/Cellar/tcl-tk/8.6.13/lib --with-tk=/usr/local/Cellar/tcl-tk/8.6.13/lib --with-tclinclude=/usr/local/Cellar/tcl-tk/8.6.13/include --with-tkinclude=/usr/local/Cellar/tcl-tk/8.6.13/include
     - name: make
       run: make
