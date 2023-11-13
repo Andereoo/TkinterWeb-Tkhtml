@@ -22,3 +22,14 @@ jobs:
       run: ./configure CC="gcc" --with-tcl=/usr/local/Cellar/tcl-tk/8.6.13_5/lib --with-tk=/usr/local/Cellar/tcl-tk/8.6.13_5/lib --with-tclinclude=/usr/local/Cellar/tcl-tk/8.6.13_5/include/tcl-tk --with-tkinclude=/usr/local/Cellar/tcl-tk/8.6.13_5/include/tcl-tk
     - name: make
       run: make
+    - name: Upload release assets
+      run: find .
+    - name: Upload release assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create_release.outputs.upload_url }}
+        asset_name: program-name-${{ matrix.config.os }}
+        asset_path: libTkhtml3.0.dylib
+        asset_content_type: application/octet-stream
