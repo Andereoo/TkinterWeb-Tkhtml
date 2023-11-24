@@ -1,5 +1,4 @@
-This directory contains all source code files for the TkHtml
-widget.  Some of the files have been modified for use with TkinterWeb (github.com/Andereoo/TkinterWeb).  TkHtml renders HTML for Tcl/Tk 8.0 and later.
+This directory contains all source code files for the TkHtml widget.  Some of the files have been modified for use with TkinterWeb (github.com/Andereoo/TkinterWeb).  TkHtml renders HTML for Tcl/Tk 8.0 and later.
 
    COMPILE.txt     Instructions on how to compile TkHtml.
 
