@@ -17,7 +17,7 @@ jobs:
     - run: chmod +rwx ./configure
     - run: mv *.c src && mv *.h src
     - name: Configure
-      run: ./configure CC="gcc" --with-tcl=/usr/local/Cellar/tcl-tk/8.6.13_5/lib --with-tk=/usr/local/Cellar/tcl-tk/8.6.13_5/lib --with-tclinclude=/usr/local/Cellar/tcl-tk/8.6.13_5/include/tcl-tk --with-tkinclude=/usr/local/Cellar/tcl-tk/8.6.13_5/include/tcl-tk
+      run: ./configure CC="gcc" --with-tcl=/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/ --with-tk=/System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/System/Library/Frameworks/Tk.framework/Versions/8.5/ --with-tclinclude=/System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/Headers/ --with-tkinclude=/System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/System/Library/Frameworks/Tk.framework/Versions/8.5/Headers/
     - name: make
       run: make
     - name: Upload release assets
