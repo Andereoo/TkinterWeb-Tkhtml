@@ -14,12 +14,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: brew install tcl-tk
-    - run: ls -R /usr/local/opt/tcl-tk/
     - run: tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
     - run: chmod +rwx ./configure
     - run: mv *.c src && mv *.h src
     - name: Configure
-      run: ./configure CC="gcc" --with-tcl=/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/ --with-tk=/System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/System/Library/Frameworks/Tk.framework/Versions/8.5/ --with-tclinclude=/System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/Headers/ --with-tkinclude=/System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/System/Library/Frameworks/Tk.framework/Versions/8.5/Headers/
+      run: ./configure CC="gcc" --with-tcl=/opt/homebrew/Cellar/tcl-tk/8.6.14/lib --with-tk=/opt/homebrew/Cellar/tcl-tk/8.6.14/lib --with-tclinclude=/opt/homebrew/Cellar/tcl-tk/8.6.14/include/tcl-tk --with-tkinclude=/opt/homebrew/Cellar/tcl-tk/8.6.14/include/tcl-tk
     - name: make
       run: make
     - name: Upload release assets
