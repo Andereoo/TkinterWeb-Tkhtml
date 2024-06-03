@@ -16,7 +16,6 @@ jobs:
     - run: tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
     - run: chmod +rwx ./configure
     - run: mv *.c src && mv *.h src
-    - run: find / -name tkConfig.sh
     - run: ls -R /System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/System/Library/Frameworks/Tk.framework/Versions/8.5/
     - run: ls -R /System/Library/Frameworks/Tk.framework/
     - run: ls -R /System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/
