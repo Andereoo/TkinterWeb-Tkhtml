@@ -17,8 +17,11 @@ jobs:
     - run: chmod +rwx ./configure
     - run: mv *.c src && mv *.h src
     - run: find / -name tkConfig.sh
-    - run: ls -R /usr/lib/
-    - run: ls -R /usr/share/
+    - run: ls -R /System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/System/Library/Frameworks/Tk.framework/Versions/8.5/
+    - run: ls -R /System/Library/Frameworks/Tk.framework/
+    - run: ls -R /System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/
+    - run: ls -R /System/Library/Frameworks/Tcl.framework/
+
     - name: Configure
       run: ./configure CC="gcc" --with-tcl=/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/ --with-tk=/usr/local/Cellar/tcl-tk/8.6.13_5/lib --with-tclinclude=/usr/local/Cellar/tcl-tk/8.6.13_5/include/tcl-tk --with-tkinclude=/usr/local/Cellar/tcl-tk/8.6.13_5/include/tcl-tk
     - name: make
