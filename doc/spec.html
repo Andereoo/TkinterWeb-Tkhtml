@@ -1,0 +1,993 @@
+<html>
+<!-- 
+  Specifications for the Tk HTML Widget 
+  $Revision: 1.12 $
+  Copyright (C) 1997, 1998, 1999 D. Richard Hipp
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+  Author Contact Information:
+     drh@acm.org
+     http://www.hwaci.com/drh/
+
+  @(#) $Id: spec.html,v 1.12 2002/09/27 16:51:30 andreas_kupries Exp $
+-->
+<head>
+<title>Interface Specification For The HTML Widget</title>
+</head>
+<body bgcolor=white>
+<h1>Interface Specification For The HTML Widget</h1>
+
+<p>This is a draft interface specification for the Tk HTML 
+widget currently under development.
+Since it is still a draft, it is subject to change.
+Eventually, the interface will stabilize and this interface
+specification will morph into a manual page.</p>
+
+<h2>Configuration Options</h2>
+
+<table cellspacing=10>
+<tr><td valign=top><tt>-appletcommand</tt></td>
+<td>
+  <p>This option specifies the name of the Tcl procedure to invoke when the
+  <tt>&lt;applet&gt;...&lt;/applet&gt;</tt> tag sequence is seen.  The html
+  widget will append two arguments to the procedure before calling it.
+  The first argument is the name of a widget that the callback should
+  create to hold the applet.  
+  The second argument is
+  a list of name/value pairs which are the arguments to
+  the <tt>&lt;applet&gt;</tt> tag.</p>
+
+  <p>The text between <tt>&lt;applet&gt</tt> and <tt>&lt;/applet&gt;</tt>
+  is normally suppressed.
+  However, if the <tt>-appletcommand</tt> option is set to the empty string,
+  the <tt>&lt;applet&gt</tt> tag is ignored and all text between
+  <tt>&lt;applet&gt;</tt> and <tt>&lt;/applet&gt;</tt> is displayed
+  normally.</p>
+
+  <p>"&lt;embed&gt;" is treated as an alias for
+     "&lt;applet&gt;&lt;/applet&gt".</p>
+</td></tr>
+
+<tr><td valign=top><tt>-background</tt></td>
+<td>
+  <p>The background color for the widget.</p>
+
+  <p>Note that the <tt>&lt;body bgcolor=...&gt;</tt> HTML tag does not
+  automatically cause the widget to change its background color.  If
+  you want the background color to change in response to this HTML tag,
+  then your Tcl script should intercept
+  the <tt>&lt;body&gt;</tt> tag using the
+  ``<tt>token handler</tt>'' widget command (described below) and
+  change the background color manually.</p>
+</td></tr>
+
+<tr><td valign=top><tt>-base</tt></td>
+<td>
+  <p>The base URI for the current document.  This should be set to
+     the URI that was used to retrieve the document before parsing
+     begins.</p>
+</td></tr>
+
+<tr><td valign=top><tt>-bd</tt><td>An alias for <tt>-borderwidth</tt>
+
+<tr><td valign=top><tt>-bg</tt><td>An alias for <tt>-background</tt>
+
+<tr><td valign=top><tt>-borderwidth</tt></td>
+<td>
+  <p>The width of the 3-D border drawn around the parameter of the widget, in
+  pixels.</p>
+</td></tr>
+
+<tr><td valign=top><tt>-cursor</tt></td>
+<td>
+  <p>The cursor displayed when the pointer is positioned over the HTML widget.
+  If {}, the cursor reverts to its default shape.</p>
+</td></tr>
+
+<tr><td valign=top><tt>-exportselection</tt></td>
+</tr>
+
+<tr><td valign=top><tt>-fontcommand</tt></td>
+<td>
+  <p>The name of a TCL procedure that is used to convert HTML font names
+  into TCL font names.  A default built-in procedure is used if the value
+  of this option is {}.</p>
+
+  <p>When the HTML widget needs a new font, it calls this procedure with
+  two arguments.  This first argument is the font size expressed as an
+  integer between 1 and 7.  The standard size is 4.  The second argument
+  is a set of between 0 and 3 keywords drawn from the following set:
+  "bold", "italic", and "fixed".  If the "bold" keyword is present in
+  the second argument, the font returned should be bold.  If the "italic"
+  keyword is present, the font should be italic.  If the "fixed" keyword
+  is present, the font should be fixed-width.  The TCL procedure should
+  return the name of the TCL font that the HTML widget will use to render
+  the given HTML font.  If the TCL procedure returns an empty string,
+  then the built-in default procedure is used to determine the font.</p>
+
+  <p>Examples:  This is {4 {}}.  <tt>This is {4 fixed}</tt>.
+  <small>This is {3 {}}</small>.  <large><tt><bold>This is {5 {fixed bold}}
+  </bold></tt></large></p>
+</td></tr>
+
+
+<tr><td valign=top><tt>-fg</tt></td>
+<td>An alias for <tt>-foreground</tt>.</td>
+</tr>
+
+<tr><td valign=top><tt>-foreground</tt></td>
+<td>
+  The default foreground color in which HTML text is rendered.
+  The HTML can override this using the <tt>color=...</tt> attribute
+  on various HTML tags.
+</td></tr>
+
+<tr><td valign=top>
+<code>-formcommand <var>string</var></code>
+</td><td>
+Declares a handler for everything to do with forms within a document.
+Arguments will be appended to <var>string</var> and the result evaluated
+during parsing (for form creation) and when the widget is cleared (for
+form cleanup).  The first argument is a token for
+identifying a form.  The second argument selects the action to perform.
+The remaining arguments depend on the action, as follows.
+
+<dl><dt><code><var>string token</var> form <var>URL method attrs</var></code>
+<dd>The handler should begin taking notes for form <var>token</var>,
+especially the (resolved) <var>URL</var> of the action and the
+<var>method</var> to be applied.  The raw attributes of the FORM element
+are in the pairlist <var>attrs</var>.
+
+<dt><code><var>string token</var> flush</code>
+<dd>When the document is cleared, the widget will destroy all the windows
+it requested.  This handler should clean up anything else
+it created for that form.
+
+<dt><code><var>string token</var> input <var>path attrs</var></code>
+<dd>The handler should create a window named <var>path</var>
+appropriate for the element described by the <var>attrs</var>.
+The widget will map the window into its rendering appropriately.
+<p>It is not an error for the handler to return without creating such a window
+(it's natural in the case of type=hidden); the widget simply
+ignores the element in that case.
+The attributes are the raw values in the HTML, with one exception;
+a <code>src</code> will be resolved before the handler is called.
+
+<dt><code><var>string token</var> textarea <var>path attrs initial</var></code>
+<dd>The handler should create a window (a single Text, or a Frame with Text
+and Scrollbars, or whatever) appropriate for a &lt;textarea&gt; and
+initialise it to the <var>initial</var> string.
+
+<dt><code><var>string token</var> select <var>path attrs choices initial</var></code>
+<dd><em>&lt;select&gt is quite a complicated case...</em>
+The handler should create a window 
+appropriate for a &lt;select&gt; of the given attributes and
+present the list of <var>choices</var>.  Each choice is a pair, the
+value and its label.  <var>initial</var> is a list of values initially
+selected.  <em>This approach is somewhat questionable but should do
+most of the time.</em>
+</dl>
+
+Caution: Be very careful to avoid confusing HTML variables with TCL
+variables.  It may be tempting to use the <code>name</code> attribute
+fairly directly to link
+together related widgets, but it will likely cause incorrect
+behaviours.  Also be careful to observe the order in which the elements are
+created; this determines the order in which they must be submitted.
+A default form handler with the correct bahaviour written in TCL will be
+bundled with the widget.
+<p>The attribute names will be downcased within <var>attrs</var>.
+</td></tr>
+
+<tr><td valign=top><tt>-framecommand</tt><td>
+The script specified by this option is invoked when the HTML parser
+encounters a <tt>&lt;frameset&gt;...&lt;/frameset&gt;</tt> tag sequence.
+The arguments to the script are TBD.
+If the value of the option is the empty string, then the text within
+the <tt>&lt;noframe&gt...&lt;/noframe&gt;</tt> tag sequence is displayed.
+
+<tr><td valign=top><tt>-height</tt><td>
+Specifies the height of the area into which HTML is rendered.
+This value plus twice the <tt>-padx</tt>, <tt>-borderwidth</tt> and
+<tt>-highlightthickness</tt> values is the total height of the widget.
+
+<tr><td valign=top><tt>-highlightbackground</tt><td>
+
+<tr><td valign=top><tt>-highlightcolor</tt><td>
+
+<tr><td valign=top><tt>-highlightthickness</tt><td>
+
+<tr><td valign=top><tt>-hyperlinkcommand</tt></td>
+<td>
+  The script specified by this option is invoked whenever the user
+  clicks on a hyperlink on the HTML page.  Before invoking this
+  script, the URI for the hyperlink is appended.
+</td></tr>
+
+<tr><td valign=top><tt>-imagecommand</tt></td>
+<td>
+  When a ``<tt>&lt;img src=...&gt;</tt>'' tag is encountered, the
+  HTML widget invokes the script specified by this option in order to
+  get the name of a Tk image object to display the HTML image.
+  Before invoking the script, the following arguments are appended:
+  <ol>
+  <li>The value of the <tt>src=...</tt> parameter after have been
+      processed by the resolver.
+  <li>The value of the <tt>width=...</tt> parameter.
+  <li>The value of the <tt>height=...</tt> parameter.
+  <li>A list containing the names and values of all parameters.
+  </ol>
+  If the name returned by this script is the empty string, or if the
+  script is an empty string, then the HTML widget displays the 
+  <tt>alt=...</tt> text of the <tt>&lt;img&gt</tt> tag instead of
+  an image.
+</td></tr>
+
+<tr><td valign=top><tt>-bgimagecommand</tt></td>
+<td>
+  When a ``<tt>&lt;table background=...&gt;</tt>'' tag is encountered, the
+  HTML widget invokes the script specified by this option in order to
+  get the name of a Tk image object to display as the background for
+  the table.  Similarly for TD, TH, and TR.
+  Before invoking the script, the following arguments are appended:
+  <ol>
+  <li>The value of the <tt>background=...</tt> parameter after have been
+      processed by the resolver.
+  <li>The token id (TID) of the table, row or col markup tag.
+  </ol>
+  The image name to use for the background can may be returned.  Or
+  if the return value is empty.  the user can set
+  the background image when available via the <tt>bgimage</tt> command
+  with the tokenid.
+
+</td></tr>
+
+<tr><td valign=top><tt>-isvisitedcommand</tt><td>
+When the HTML widget encounters a hyperlink
+(``<tt>&lt;a href=...&gt;</tt>'') it invokes the script specified
+by this option in order to determine whether or not the hyperlink
+has been visited.
+This information is needed to determine what color to use to display
+the hyperlink.
+
+<tr><td valign=top><tt>-padx</tt><td>
+The amount of extra space to insert between the 3-D border and the
+left and right sides of the document text.
+
+<tr><td valign=top><tt>-pady</tt><td>
+The amount of extra space to insert between the 3-D border and the top
+and bottom of the document text.
+
+<tr><td valign=top><tt>-relief</tt><td>
+The relief used to draw the 3-D border.
+
+<tr><td valign=top><tt>-resolvercommand</tt></td>
+<td>
+  <p>The name of a TCL command used to resolve URIs.  If blank, a built-in
+  resolver is used. If a TCL command is specified but it returns
+  an empty string, the built-in resolver is used then too.  
+  The build-in resolver is based on the algorithm
+  in section 5.2 of RFC 2396. </p>
+
+  <p>Multiple URIs are appended to the TCL command before it is executed.
+  The first URI is the BASE URI of the document (the URL that specified
+  by the -base configuration option and updated according to any prior
+  &lt;BASE&gt; markup).  Zero or more additional URIs are
+  appended to this base.  The result of the script should be the resolution
+  of the whole series or URIs.</p>
+</td></tr>
+
+<tr><td valign=top><tt>-rulerelief</tt></td>
+<td>
+  <p>Determines the appearance of the Horizontal Rule (&lt;HR&gt) markup.
+  The default is "sunken".  This can also be "raised" or "flat".  If
+  "flat", then the &lt;HR&gt; is drawn using a solid line in the current
+  foreground color.  "groove" and "ridge" are the same as "flat".</p>
+</td></tr>
+
+<tr><td valign=top><tt>-scriptcommand</tt></td>
+<td>
+  <p>Whenever &lt;SCRIPT&gt;...&lt;/SCRIPT&gt; markup is encountered in
+  the input HTML, the line number, the attributes of the &lt;SCRIPT&gt; 
+  markup and
+  the body of the script are appended to this string and the result
+  is executed as a TCL command.  If this options is the empty string,
+  then the script is ignored.
+</td></tr>
+
+<tr><td valign=top><tt>-selectioncolor</tt><td>
+The background color used when drawing the selection.  The
+foreground color for the selection is the same as the regular
+foreground color.
+
+<tr><td valign=top><tt>-tablerelief</tt></td>
+<td>
+  <p>Determines the appearance of the borders around tables.
+  The default is "raised".  This can also be "sunken" or "flat".  If
+  "flat", then the borders is drawn using solid lines in the current
+  foreground color.  "groove" and "ridge" are the same as "flat".</p>
+</td></tr>
+
+<tr><td valign=top><tt>-takefocus</tt><td>
+
+<tr><td valign=top><tt>-unvisitedcolor</tt><td>
+The foreground color used to draw hyperlinks that have not been visited.
+
+<tr><td valign=top><tt>-underlinehyperlinks</tt><td>
+Set to TRUE to cause hyperlinks to be drawn using an underlined font.
+
+<tr><td valign=top><tt>-visitedcolor</tt><td>
+The foreground color used to draw hyperlinks that have been visited.
+
+<tr><td valign=top><tt>-width</tt><td>
+The width of the document text.
+This value does not include space allocated for
+<tt>-highlightthickness</tt>, <tt>-borderwiddth</tt> or
+<tt>-padx</tt>.
+
+<tr><td valign=top><tt>-xscrollcommand</tt><td>
+
+<tr><td valign=top><tt>-yscrollcommand</tt><td>
+
+</table>
+
+<h2>Indices</h2>
+
+<p>Internally, the HTML widget stores the HTML document as a list of
+tokens.
+Each token is either
+<ul>
+<li>a contiguous sequence of non-space characters (Text),
+<li>a contiguous sequence of spaces, tabs or newlines (Space),
+<li>or an HTML markup tag (such as ``<tt>&lt;em&gt;</tt>''.)
+</ul>
+<p>Tokens are identified by number.
+The first token is ``1'', the second is ``2'' and so forth.
+So in its simplest form, an index is just an integer greater than 0.
+<p>
+Within a single Text or Space token, individual characters are
+also identified by number, though the counting starts with 0 instead
+of 1.
+The character number is connected to the token number by a period.
+So, for example, the 4th character in the 9th token would be
+``9.3''.
+<p>
+Two integers separated by a dot is called the <em>connonical</em> form
+of an index.
+Other index forms are available, including:
+
+<table cellspacing=10>
+<tr><td valign=top>end<td>
+The keyword ``end'' means one character past
+the last character of the last token.
+<tr><td valign=top>last<td>
+The keyword ``last'' means the last character of the last token.
+<tr><td valign=top>@X,Y<td>
+The character located at screen coordinates X,Y.
+<tr><td valign=top>&DOM<td>
+The element matching the given DOM address.  eg. ``tables(1).rows(3)''.
+<tr><td valign=top>*.last<td>
+The second integer can be replaced by the keyword ``last'' to mean the
+last character in the token.
+<tr><td valign=top>sel.first<td>
+This is the first character that is part of the selection.
+<tr><td valign=top>sel.last<td>
+This is the last character that is part of the selection.
+<tr><td valign=top>insert<td>
+The character immediately following the insertion cursor.
+</table>
+
+<h2>Commands</h2>
+
+<dl>
+<dt><b>html</b> <i>window</i> ?<i>options ...</i>?</dt><p>
+<dd>
+  Create a new HTML widget instance named <i>windows</i>
+</dd>
+<p>
+<dt><b>html</b> <b>reformat</b> <i>from to text</i><p>
+<dd>
+Convert text from one encoding to another.  The text is given
+in the <i>text</i> argument.  The current encoding of the text
+is specified by the <i>from</i> argument.  This command returns
+the same text in the <i>to</i> encoding.
+<p>
+<i>From</i> and <i>to</i> may be any of the following values:
+<p>
+<table cellspacing=10>
+<tr><td valign=top>plain</td>
+<td>
+  Ordinary text with no characters escaped.
+</td></tr>
+<tr><td valign=top>http</td>
+<td>
+  The text is encoded in a form suitable for use with the HTTP
+  protocol.  Spaces are converted to "+".  Special characters
+  and escaped as "%aa" where "a" is a hexadecimal digit.  A special
+  character is anything other than an alphanumeric or one of these:
+  ".", "$", "-", or "_".
+</td></tr>
+<tr><td valign=top>url</td>
+<td>
+  The text is encoded in a form suitable for use as a URI.
+  Spaces are converted to "+".  Special characters
+  and escaped as "%aa" where "a" is a hexadecimal digit.  A special
+  character is anything other than an alphanumeric or one of these:
+  ".", "$", "-", "_", or "/".
+</td></tr>
+<tr><td valign=top>html</td>
+<td>
+  The text is encoded in a form suitable for use within HTML.
+  "&amp;" is encoded as "&amp;amp;", "&lt;" is encoded as "&amp;lt;" and so
+  forth.
+</td></tr>
+</table>
+<p>
+This command is intended to be useful to the TCL procedures that implement
+callbacks for the HTML widget.
+</dd>
+<p>
+<dt><b>html</b> <b>urljoin</b> <i>scheme authority path query fragment</i><p>
+<dd>
+This command takes the five main components of a URI and joins them together
+into a complete URI.  Special characters in any component are escaped.
+</dd>
+<p>
+<dt><b>html</b> <b>urlsplit</b> <i>uri</i><p>
+<dd>
+This command takes a single URI and splits it into its five major
+components: scheme, authorithy, path, query and fragement.  The command
+returns a list where each component is an element of the list. 
+Components missing from the URI are represented as empty elements in
+the list.
+</dd>
+
+<p>
+<dt><b>html</b> <b>gzip file</b> <i>FILE DATA</i><p>
+<dd>
+This command gzips data to a file.
+</dd>
+
+<p>
+<dt><b>html</b> <b>gunzip file</b> <i>FILE</i><p>
+<dd>
+This command gunzips data from a file.
+</dd>
+
+<p>
+<dt><b>html</b> <b>gunzip data</b> <i>DATA</i><p>
+<dd>
+This command gunzips data from a string.
+</dd>
+
+<p>
+<dt><b>html</b> <b>gunzip data</b> <i>DATA</i><p>
+<dd>
+This command gzips data from a string.
+</dd>
+
+<p>
+<dt><b>html</b> <b>gzip file</b> <i>FILE DATA</i><p>
+<dd>
+This command gzips data to a file.
+</dd>
+
+<p>
+<dt><b>html</b> <b>base64 encode</b> <i>DATA</i><p>
+<dd>
+This command base64 encodes data.
+</dd>
+
+<p>
+<dt><b>html</b> <b>base64 decode</b> <i>DATA</i><p>
+<dd>
+This command base64 decodes data.
+</dd>
+
+<p>
+<dt><b>html</b> <b>text format</b> <i>DATA LEN</i><p>
+<dd>
+This command formats text limiting line length to that
+specified.
+</dd>
+
+<p>
+<dt><b>html</b> <b>xor</b> <i>CMD DATA ...</i><p>
+<dd>
+This command returns an xor encryption of data.  <i>CMD</i> is one
+of <i>xor, encrypt or decrypt</i>.  The last two take a password argument.
+</dd>
+
+<p>
+<dt><b>html</b> <b>stdchan</b> <i>CMD CHANNEL</i><p>
+<dd>
+This command sets the channel to work around MS Windows exec problems. 
+<i>CMD</i> is one of <i>stdin, stdout, stderr</i>.
+</dd>
+
+<p>
+<dt><b>html</b> <b>crc32</b> <i>DATA</i><p>
+<dd>
+This command produces a 32 bit checksum (but not a real CRC).
+</dd>
+
+
+</dl>
+
+<h2>Widget Commands</h2>
+
+<dl>
+
+<dt><i>WIDGET</i>&nbsp <tt>bgimage</tt>&nbsp <i>IMAGE  ?TID?</i><p>
+<dd>Set IMAGE to be the background image.  TID, if supplied,
+is the token id of a TABLE, TD, TH or TR.  If TID is ommitted,
+it is the background image for the whole page.
+<p>
+
+<dt><i>WIDGET</i>&nbsp <tt>cget</tt> <i>config-option</i><p>
+<dd>
+Return the value of a configuration option.  Works just like any
+other Tk widget.
+<p>
+
+<dt><i>WIDGET</i>&nbsp <tt>clear</tt><p>
+<dd>
+Remove all tokens and text from the HTML widget.
+The parser is reset to its initial state.
+This routine should be called to changes pages.
+<p>
+
+<dt><i>WIDGET</i>&nbsp <tt>configure</tt> ?<i>args...</i>?<p>
+<dd>
+The standard Tk configuration command.
+<p>
+
+<dt><i>WIDGET</i>&nbsp <tt>coords</tt>&nbsp <i>?INDEX ?percent??</i><p>
+<dd>Return the screen coordinates of INDEX.
+<p>
+
+<dt><i>WIDGET</i>&nbsp <tt>forminfo</tt>&nbsp INDEX<p>
+<dd>Return forminfo for given INDEX.
+<p>
+
+<dt><i>WIDGET</i>&nbsp <tt>href</tt>&nbsp <i>X&nbsp Y</i><p>
+<dd>If the coordinates <i>X Y</i> define a point above a hyperlink,
+then this command will return the target URL for that hyperlink.
+The URL will be resolved using the -resolvercommand before it
+is returned.
+<p>
+
+<dt><i>WIDGET</i>&nbsp <tt>imageadd</tt>&nbsp <i>ID&nbsp IMAGE</i><p>
+<dd>
+Add a single image onto animated image list.
+<p>
+
+<dt><i>WIDGET</i>&nbsp <tt>imageat</tt>&nbsp <i>X&nbsp Y</i><p>
+<dd>If the coordinates <i>X Y</i> define a point above an image,
+then this command will return the Token Id for that image.
+<p>
+
+<dt><i>WIDGET</i>&nbsp <tt>images</tt><p>
+<dd>
+Return the list of animated images.
+<p>
+
+<dt><i>WIDGET</i>&nbsp <tt>imageset</tt>&nbsp <i>ID&nbsp NUM</i><p>
+<dd>For animated gifs, set image number NUM to be the current image.
+This is only used for buffered animations.
+<p>
+
+<dt><i>WIDGET</i>&nbsp <tt>imageupdate</tt>&nbsp <i>ID&nbsp IMAGES</i><p>
+<dd>When an Animated gif comes in, this allows changing the
+current image into multiple images.
+<p>
+
+
+
+<dt><i>WIDGET</i>&nbsp <tt>index</tt>&nbsp <i>INDEX&nbsp ?COUNT&nbsp UNITS?</i></p>
+<dd>
+Translates <i>INDEX</i> into its connonical form.
+The connonical form of an index is two integers separated by a period.
+<p>
+The optional 3rd and 4th arguments specify a displacement from <i>INDEX</i>
+to the value of the index returned.
+<i>COUNT</i> can be any integer value, including a negative number.
+<i>UNITS</i> must be either ``<tt>char</tt>'' or ``<tt>line</tt>''.
+<p>
+
+<dt><i>WIDGET</i>&nbsp <tt>insert</tt>&nbsp <i>INDEX</i><p>
+<dd>
+Causes the insertion cursor (a flashing vertical bar) to be positioned
+immediately before the character specified by <i>INDEX</i>.
+<p>
+
+<dt><i>WIDGET</i>&nbsp <tt>names</tt><p>
+<dd>
+This command causes the widget to scan the entire text of the document
+looking for tags of the form ``<tt>&lt;a name=...&gt;</tt>''.
+It returns a list of values of the <tt>name=...</tt> fields.
+<p>
+The vertical position of the document can be moved to any of these names
+using the ``<i>WIDGET</i> <tt>yview</tt> <i>NAME</i>'' command described
+below.
+<p>
+
+<dt><i>WIDGET</i>&nbsp <tt>onscreen</tt>&nbsp ID <i>X&nbsp Y</i><p>
+<dd>Return 1 if ID is onscreen (visible).
+<p>
+
+<dt><i>WIDGET</i>&nbsp <tt>over</tt>&nbsp <i>X&nbsp Y ?-muponly?</i><p>
+<dd>Return a list of TIDS where the coordinates <i>X Y</i> 
+define a point above objects.  If -muponly, give only markup elements.
+<p>
+
+<dt><i>WIDGET</i>&nbsp <tt>overattr</tt>&nbsp <i>X&nbsp Y ATTRS</i><p>
+<dd>Like <b>over</b> but returns markup containing one or more
+of the attributes in the list ATTRS.
+ATTRS.
+<p>
+
+<dt><i>WIDGET</i>&nbsp <tt>parse</tt>&nbsp <i>HTML-TEXT</i><p>
+<dd>Adds the given HTML text to the end of any text previously received
+through the <tt>parse</tt> command and parses as much of the text as
+possible into tokens.
+Afterwards, the display is updated to show the new tokens, if they are
+visible.<p>
+
+<dt><i>WIDGET</i>&nbsp; <tt>resolver</tt>&nbsp; ?<i>uri ...</i>?<p>
+<dd>The resolver specified by the -resolvercommand option 
+    is called with the
+    base URI of the document followed
+    by the remaining arguments to this commant.  The result of this
+    command is the result of the -resolvercommand script.<p>
+
+<dt><i>WIDGET</i>&nbsp <tt>selection</tt>&nbsp <i>subcommand args...</i><p>
+<dd>The selection widget command is used to control the selection.<p>
+    <dl>
+    <dt><i>WIDGET</i>&nbsp <tt>selection clear</tt><p>
+    <dd>Clear the current selection.  No text will be selected after this
+        command executes.<p>
+
+    <dt><i>WIDGET</i>&nbsp <tt>selection set</tt>&nbsp <i>START&nbsp END</i><p>
+    <dd>Change the selection to be all text contained within the given
+        indices.<p>
+    </dl>
+    <p>
+
+<dt><i>WIDGET</i>&nbsp <tt>refresh</tt> <i>options</i><p>
+<dd>Cause a relayout and redraw.  Useful after a token insert or update.
+Valid options are zero or more of: images, resize, focus, text, border, extend,
+clipwin,, styler, animate, vscroll, hscroll, gotfocus, layout.
+The default is layout.  You may abreviate options with the first letter.
+<p>
+
+<dt><i>WIDGET</i>&nbsp <tt>source</tt><p>
+<dd>Return the html source for the current page.
+<p>
+
+
+<dt><i>WIDGET</i>&nbsp <tt>text</tt>&nbsp <i>subcommand args...</i><p>
+<dd>There are several token commands.  They all have the common
+property that they directly manipulate the text that is displayed.
+These commands can be used
+to build an WYSIWYG editor for HTML.<p>
+    <dl>
+    <dt><i>WIDGET</i>&nbsp; <tt>text ascii</tt>&nbsp <i>INDEX-1&nbsp INDEX-2</i><p>
+    <dd><p>
+    Returns plain ASCII text that represents all characters between 
+    <i>INDEX-1</i> and <i>INDEX-2</i>.  Formatting tags are omitted.
+    The <i>INDEX-1</i> character is included by <i>INDEX-2</i> is omitted.
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>text delete</tt>&nbsp <i>INDEX-1&nbsp INDEX-2</i><p>
+    <dd><p>
+    All text from <i>INDEX-1</i> up to, but not including <i>INDEX-2</i> is
+    removed and the display is updated accordingly.
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>text html</tt>&nbsp <i>INDEX-1&nbsp INDEX-2</i><p>
+    <dd><p>
+    Returns HTML text that represents all characters and formatting tags
+    between <i>INDEX-1</i> and <i>INDEX-2</i>.
+    The <i>INDEX-1</i> character is included by <i>INDEX-2</i> is omitted.
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>text insert</tt>&nbsp <i>INDEX&nbsp TEXT</i><p>
+    <dd><p>
+    Inserts one or more characters immediately before the character whose
+    index is given.
+    The insertion cursor is updated.
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>text break</tt>&nbsp <i>INDEX&nbsp</i><p>
+    <dd><p>
+    Break the text token at index into two text tokens.
+    <p>
+
+
+    <dt><i>WIDGET</i>&nbsp; <tt>text find TEXT</tt>&nbsp <i>?nocase? ?before|after INDEX?&nbsp</i><p>
+    <dd><p>
+    Find text.  If index is given, start search from there.  If before,
+    search backwards.  nocase will ignore case.
+    <p>
+    </dl>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>text table INDEX</tt>&nbsp <i>?images? ?attrs?&nbsp</i><p>
+    <dd><p>
+     Return text (and optionally attributes and images) from a table as lists.
+     The first list is a list of rows (each a list of cells).
+     The next optional list is the list of attributes, like above, but
+     the element 0 contains the table attrs, and element 0 of each
+     row contains the row attrs.
+     Another optional list is the list of images, each as a set of 
+     values: row col charoffset tokenid.  charoffset is the
+     character offset within the text that the image appears at.
+     tokenid is the index to use to lookup the attributes
+     such as src.
+
+    <p>
+    </dl>
+
+
+<dt><i>WIDGET</i>&nbsp <tt>token</tt>&nbsp <i>subcommand args...</i><p>
+<dd>There are several token commands.  They all have the common
+    property that they involve the list of tokens into which the
+    HTML is parsed.<p>
+    Some of the following subcommands make use of indices.  The 
+    character number of these indices is ignored since these commands
+    deal only with whole tokens.
+    <p>
+    <dl>
+    <dt><i>WIDGET</i>&nbsp; <tt>token append</tt>&nbsp; 
+        <i>TAG&nbsp; ARGUMENTS</i><p>
+    <dd>
+    The command causes a token to be appended to the current list of
+    tokens in the HTML widget.  This command is typically used within
+    a token handler.
+    <p>
+
+
+    <dt><i>WIDGET</i>&nbsp; <tt>token delete</tt>&nbsp; 
+        <i>INDEX&nbsp ?INDEX-2?</i><p>
+    <dd>
+    Deletes the single token indentified by the index.  If a second index is
+    given, the range of tokens from the first to the second index inclusive
+    is deleted.
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>token find</tt>&nbsp; 
+        <i>TAG</i> ?before|after|near INDEX?<p>
+    <dd>
+    Locates all tokens with the given <i>TAG</i> and returns them all
+    as a list.
+    Each element of the returned list is a sublist containing the index
+    for the token and the arguments for the token.
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>token get</tt>&nbsp; 
+        <i>INDEX&nbsp ?INDEX-2?</i><p>
+    <dd>
+    Returns a list of tokens in the range of <i>INDEX</i> through
+    <i>INDEX-2</i>.
+    Each element of the list consists of the token tag followed by
+    the token arguments.
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>token list</tt>&nbsp; 
+        <i>INDEX&nbsp INDEX-2?</i><p>
+    <dd>
+    The same as <b>token get</b>, but has the token id as the first
+    item in each list element.
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>token markup</tt>&nbsp; 
+        <i>INDEX&nbsp INDEX-2?</i><p>
+    <dd>
+    The same as <b>token list</b>, but ignores space and text.
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>token domtokens</tt>&nbsp; 
+        <i>INDEX&nbsp INDEX-2?</i><p>
+    <dd>
+    The same as <b>token domtokens</b>, but ignores all non-DOM tokens.
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>token getend</tt>&nbsp; 
+        <i>INDEX</i><p>
+    <dd>
+    Given a start token, find the matching end token. 
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>token offset</tt>&nbsp; 
+        <i>START NUM1 NUM2</i><p>
+    <dd>
+	 Hard to describe, but used as follows: when you extract text, and do
+   a regex on it, with -indices, you need to convert these offsets back
+   into INDEXES. This returns those begin and end anchor.
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>token attr</tt>&nbsp; 
+        <i>INDEX ?NAME ?VALUE??</i><p>
+    <dd>
+	Allow get or set a tokens attribute(s).  Getting non-existent
+	attr returns an empty string.
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>token handler</tt>&nbsp; 
+        <i>TAG&nbsp; ?SCRIPT?</i><p>
+    <dd>
+    This command allows special processing to occur for selected tokens
+    in the HTML input stream.
+    The <i>TAG</i> argument is either ``Text'' or ``Space'' or the name
+    of an HTML tag (ex: ``H3'' or ``/A'').
+    If a non-empty script is specified for a particular tag, then when
+    instances of that tag are encountered by the parser, the parser calls the
+    corresponding script instead of appending the token to the end of the
+    token list.  Before calling the script, three arguments are appended:
+    <ol>
+    <li>The token number.
+    <li>The tag.  (ex: <tt>H3</tt>)
+    <li>A list of name/value pairs describing all arguments to the tag.
+    </ol>
+    An empty handler script causes the default processing to occur for
+    the tag.  If the script argument is omitted all together, then
+    the current value of the token handler for the given tag is returned.
+    <p>
+    Only one handler may be defined for each token type.  If a new
+    handler is specified for a token type that previously had a different
+    handler defined, then the old handler is overwritten by the new.
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>token insert</tt>&nbsp; 
+        <i>INDEX&nbsp TAG&nbsp ARGUMENTS</i><p>
+    <dd>
+    Inserts a single token given by <i>TAG</i> and <i>ARGUMENTS</i> into
+    the token list immediately before <i>INDEX</i>.
+    if index is after end of a text token, inserts after token.
+    The insertion cursor is updated.
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>token attrs</tt>&nbsp; 
+        <i>ATTRLIST</i> <i>?INDEX ?INDEX? ?</i><p>
+    <dd>
+	 Find all tags that contain an attr named in input list. Return TIDs.
+    <p>
+
+
+    <dt><i>WIDGET</i>&nbsp; <tt>token onEvents</tt>&nbsp; 
+        <i>?INDEX ?INDEX? ?</i><p>
+        <p>
+    <dd>
+	Look for all the onSubmit, onMouseover, etc attributes. returns list of: Event TID Event TID...
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>token unique</tt>&nbsp; 
+        <i>TAG</i>
+        <i>?INDEX ?INDEX? ?</i><p>
+    <dd>
+	For the given tag, return all known unique attribute names for the tag.
+    <p>
+
+
+    </dl>
+<p>
+
+<dt><i>WIDGET</i>&nbsp <tt>dom</tt>&nbsp <i>subcommand args...</i><p>
+<dd>There are several dom commands.  In all the following,
+    <i>DOMSPEC</i> is a DOM style address.  eg. TABLE(1).ROW(2).
+    The Token Id is returned for that element in the page.
+
+    <dl>
+    <dt><i>WIDGET</i>&nbsp; <tt>dom nameidx</tt>&nbsp; 
+        TAG <i>NAME</i><p>
+    <dd>
+	Convert a named markup to it's array position. ie. <B>TABLE foo</B>
+	might translate to <B>TABLE[2]</B> returning the integer index 2.
+    
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>dom radioidx</tt>&nbsp; 
+        TAG <i>NAME</i><p>
+    <dd>
+	Translate a radio input items array index to a form item index.
+    
+    <p>
+    <dt><i>WIDGET</i>&nbsp; <tt>dom id</tt>&nbsp; 
+        <i>DOMSPEC</i><p>
+    <dd>
+	Given a DOMSPEC, return the TID.  Obsolete, use ``index &DOMSPEC''.
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>dom ids</tt>&nbsp; 
+        <i>DOMSPEC</i><p>
+    <dd>
+	Like above, but returns both begin and end TID.
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>dom value</tt>&nbsp; 
+        <i>DOMSPEC</i><p>
+    <dd>
+	Like dom id, but returns the attributes rather than the TID.
+	Obsolete. Should now use: token attr &DOMSPEC.
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>dom addr</tt>&nbsp; 
+        <i>INDEX</i><p>
+    <dd>
+	Given an index, return the best guess of the DOM address.
+	eg. TABLES(2).ROWS(1)
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>dom formel</tt>&nbsp; 
+        <i>N</i>NAME<p>
+    <dd>
+	For the forms(N), return the form element with name NAME.
+    <p>
+
+    <dt><i>WIDGET</i>&nbsp; <tt>dom tree</tt>&nbsp; 
+        <i>INDEX</i> VALUE<p>
+    <dd>
+	 Return the HTML Doc as one big DOM tree list.  Not fully implemented.
+    <p>
+    </dl>
+
+<p>
+
+<dt><i>WIDGET</i>&nbsp; <tt>xview</tt>&nbsp;  <i>args...</i><p>
+<dd>Used to control horizontal scrolling.<p>
+   <dl>
+   <dt><i>WIDGET</i>&nbsp <tt>xview</tt><p>
+   <dd>Returns a list containing two elements.  The elements are a fractions
+       between 0.0 and 1.0 that define the position of the left and right
+       edges of
+       the visible part of the document as a fraction of the whole.<p>
+   <dt><i>WIDGET</i>&nbsp <tt>xview moveto</tt>&nbsp <i>FRACTION</i><p>
+   <dd>Adjusts the horizontal position of the document so that 
+       <i>FRACTION</i> of the horizontal span of the document is off-screen
+       to the left.<p>
+   <dt><i>WIDGET</i>&nbsp <tt>xview scroll</i>&nbsp <i>NUMBER&nbsp WHAT</i><p>
+   <dd>
+       Shifts the view in the window left or right according to 
+       <i>NUMBER</i> and <i>WHAT</i>.&nbsp&nbsp  <i>NUMBER</i> is an integer
+       and <i>WHAT</i> is either <tt>units</tt> or <tt>pages</tt>.<p>
+   </dl>
+
+<dt><i>WIDGET</i>&nbsp <tt>yview</tt>&nbsp;  <i>args...</i><p>
+<dd>Used to control the vertical position of the document.<p>
+   <dl>
+   <dt><i>WIDGET</i>&nbsp <tt>yview</tt><p>
+   <dd>Returns a list containing two elements.  The elements are a fractions
+       between 0.0 and 1.0 that define the position of the top and bottom
+       edges of
+       the visible part of the document as a fraction of the whole.<p>
+   <dt><i>WIDGET</i>&nbsp <tt>yview</tt>&nbsp <i>NAME</i><p>
+   <dd>Adjusts the vertical position of the document so that the tag
+       ``<tt>&lt;a name=</tt><i>NAME</i><tt>&gt;</tt>'' is on screen,
+       and preferably near the top of the screen.<p>
+   <dt><i>WIDGET</i>&nbsp <tt>yview moveto</tt>&nbsp <i>FRACTION</i><p>
+   <dd>Adjusts the horizontal position of the document so that 
+       <i>FRACTION</i> of the vertical span of the document is off-screen
+       above the visible region.<p>
+   <dt><i>WIDGET</i>&nbsp <tt>xview scroll</i>&nbsp; <i>NUMBER&nbsp; WHAT</i><p>
+   <dd>
+       Shifts the view in the window up or down according to 
+       <i>NUMBER</i> and <i>WHAT</i>.&nbsp&nbsp  <i>NUMBER</i> is an integer
+       and <i>WHAT</i> is either <tt>units</tt> or <tt>pages</tt>.<p>
+   </dl>
+
+</dl>
+</body>
+</html>

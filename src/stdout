@@ -1,0 +1,307 @@
+	.file	"cssdynamic.c"
+	.text
+	.section .rdata,"dr"
+	.align 32
+rcsid:
+	.ascii "$Id: cssdynamic.c,v 1.12 2007/06/10 07:53:03 danielk1977 Exp $\0"
+	.text
+	.globl	HtmlCssAddDynamic
+	.def	HtmlCssAddDynamic;	.scl	2;	.type	32;	.endef
+	.seh_proc	HtmlCssAddDynamic
+HtmlCssAddDynamic:
+	pushq	%rbp
+	.seh_pushreg	%rbp
+	movq	%rsp, %rbp
+	.seh_setframe	%rbp, 0
+	subq	$48, %rsp
+	.seh_stackalloc	48
+	.seh_endprologue
+	movq	%rcx, 16(%rbp)
+	movq	%rdx, 24(%rbp)
+	movl	%r8d, 32(%rbp)
+	movq	16(%rbp), %rax
+	movq	112(%rax), %rax
+	movq	%rax, -8(%rbp)
+	jmp	.L2
+.L5:
+	movq	-8(%rbp), %rax
+	movq	8(%rax), %rax
+	cmpq	%rax, 24(%rbp)
+	je	.L6
+	movq	-8(%rbp), %rax
+	movq	16(%rax), %rax
+	movq	%rax, -8(%rbp)
+.L2:
+	cmpq	$0, -8(%rbp)
+	jne	.L5
+	movq	$0, -8(%rbp)
+	movl	$24, %ecx
+	movq	__imp_Tcl_Alloc(%rip), %rax
+	call	*%rax
+	movl	$24, %r8d
+	movl	$0, %edx
+	movq	%rax, %rcx
+	call	memset
+	movq	%rax, -8(%rbp)
+	cmpl	$0, 32(%rbp)
+	setne	%al
+	movzbl	%al, %edx
+	movq	-8(%rbp), %rax
+	movl	%edx, (%rax)
+	movq	-8(%rbp), %rax
+	movq	24(%rbp), %rdx
+	movq	%rdx, 8(%rax)
+	movq	16(%rbp), %rax
+	movq	112(%rax), %rdx
+	movq	-8(%rbp), %rax
+	movq	%rdx, 16(%rax)
+	movq	16(%rbp), %rax
+	movq	-8(%rbp), %rdx
+	movq	%rdx, 112(%rax)
+	jmp	.L1
+.L6:
+	nop
+.L1:
+	addq	$48, %rsp
+	popq	%rbp
+	ret
+	.seh_endproc
+	.globl	HtmlCssFreeDynamics
+	.def	HtmlCssFreeDynamics;	.scl	2;	.type	32;	.endef
+	.seh_proc	HtmlCssFreeDynamics
+HtmlCssFreeDynamics:
+	pushq	%rbp
+	.seh_pushreg	%rbp
+	movq	%rsp, %rbp
+	.seh_setframe	%rbp, 0
+	subq	$48, %rsp
+	.seh_stackalloc	48
+	.seh_endprologue
+	movq	%rcx, 16(%rbp)
+	movq	16(%rbp), %rax
+	movq	112(%rax), %rax
+	movq	%rax, -8(%rbp)
+	jmp	.L8
+.L9:
+	movq	-8(%rbp), %rax
+	movq	%rax, -16(%rbp)
+	movq	-8(%rbp), %rax
+	movq	16(%rax), %rax
+	movq	%rax, -8(%rbp)
+	movq	-16(%rbp), %rax
+	movq	%rax, %rcx
+	movq	__imp_Tcl_Free(%rip), %rax
+	call	*%rax
+.L8:
+	cmpq	$0, -8(%rbp)
+	jne	.L9
+	movq	16(%rbp), %rax
+	movq	$0, 112(%rax)
+	nop
+	addq	$48, %rsp
+	popq	%rbp
+	ret
+	.seh_endproc
+	.def	checkDynamicCb;	.scl	3;	.type	32;	.endef
+	.seh_proc	checkDynamicCb
+checkDynamicCb:
+	pushq	%rbp
+	.seh_pushreg	%rbp
+	movq	%rsp, %rbp
+	.seh_setframe	%rbp, 0
+	subq	$64, %rsp
+	.seh_stackalloc	64
+	.seh_endprologue
+	movq	%rcx, 16(%rbp)
+	movq	%rdx, 24(%rbp)
+	movq	%r8, 32(%rbp)
+	movq	24(%rbp), %rax
+	movzbl	20(%rax), %eax
+	cmpb	$1, %al
+	je	.L11
+	movq	24(%rbp), %rax
+	movq	%rax, -16(%rbp)
+	movq	-16(%rbp), %rax
+	movq	112(%rax), %rax
+	movq	%rax, -8(%rbp)
+	jmp	.L12
+.L14:
+	movq	-8(%rbp), %rax
+	movq	8(%rax), %rax
+	movq	24(%rbp), %rdx
+	movl	$0, %r8d
+	movq	%rax, %rcx
+	call	HtmlCssSelectorTest
+	testl	%eax, %eax
+	setne	%al
+	movzbl	%al, %eax
+	movl	%eax, -20(%rbp)
+	movq	-8(%rbp), %rax
+	movl	(%rax), %eax
+	cmpl	%eax, -20(%rbp)
+	je	.L13
+	movq	24(%rbp), %rdx
+	movq	16(%rbp), %rax
+	movq	%rax, %rcx
+	call	HtmlCallbackRestyle
+.L13:
+	movq	-8(%rbp), %rax
+	movl	-20(%rbp), %edx
+	movl	%edx, (%rax)
+	movq	-8(%rbp), %rax
+	movq	16(%rax), %rax
+	movq	%rax, -8(%rbp)
+.L12:
+	cmpq	$0, -8(%rbp)
+	jne	.L14
+.L11:
+	movl	$5, %eax
+	addq	$64, %rsp
+	popq	%rbp
+	ret
+	.seh_endproc
+	.globl	HtmlCssCheckDynamic
+	.def	HtmlCssCheckDynamic;	.scl	2;	.type	32;	.endef
+	.seh_proc	HtmlCssCheckDynamic
+HtmlCssCheckDynamic:
+	pushq	%rbp
+	.seh_pushreg	%rbp
+	movq	%rsp, %rbp
+	.seh_setframe	%rbp, 0
+	subq	$64, %rsp
+	.seh_stackalloc	64
+	.seh_endprologue
+	movq	%rcx, 16(%rbp)
+	movq	16(%rbp), %rax
+	movq	1536(%rax), %rax
+	testq	%rax, %rax
+	je	.L24
+	movq	16(%rbp), %rax
+	movq	1536(%rax), %rax
+	movq	8(%rax), %rax
+	movq	%rax, -16(%rbp)
+	cmpq	$0, -16(%rbp)
+	je	.L18
+	movq	-16(%rbp), %rax
+	movq	%rax, %rcx
+	call	HtmlNodeNumChildren
+	movl	%eax, -20(%rbp)
+	movl	$0, -4(%rbp)
+	jmp	.L19
+.L20:
+	addl	$1, -4(%rbp)
+.L19:
+	movq	-16(%rbp), %rax
+	movq	80(%rax), %rax
+	movl	-4(%rbp), %edx
+	movslq	%edx, %rdx
+	salq	$3, %rdx
+	addq	%rdx, %rax
+	movq	(%rax), %rdx
+	movq	16(%rbp), %rax
+	movq	1536(%rax), %rax
+	cmpq	%rax, %rdx
+	jne	.L20
+	jmp	.L21
+.L22:
+	movq	-16(%rbp), %rax
+	movq	80(%rax), %rax
+	movl	-4(%rbp), %edx
+	movslq	%edx, %rdx
+	salq	$3, %rdx
+	addq	%rdx, %rax
+	movq	(%rax), %rdx
+	movq	16(%rbp), %rax
+	movl	$0, %r9d
+	leaq	checkDynamicCb(%rip), %r8
+	movq	%rax, %rcx
+	call	HtmlWalkTree
+	addl	$1, -4(%rbp)
+.L21:
+	movl	-4(%rbp), %eax
+	cmpl	-20(%rbp), %eax
+	jl	.L22
+	jmp	.L23
+.L18:
+	movq	16(%rbp), %rax
+	movq	1536(%rax), %rdx
+	movq	16(%rbp), %rax
+	movl	$0, %r9d
+	leaq	checkDynamicCb(%rip), %r8
+	movq	%rax, %rcx
+	call	HtmlWalkTree
+.L23:
+	movq	16(%rbp), %rax
+	movq	$0, 1536(%rax)
+.L24:
+	nop
+	addq	$64, %rsp
+	popq	%rbp
+	ret
+	.seh_endproc
+	.globl	HtmlCssTclNodeDynamics
+	.def	HtmlCssTclNodeDynamics;	.scl	2;	.type	32;	.endef
+	.seh_proc	HtmlCssTclNodeDynamics
+HtmlCssTclNodeDynamics:
+	pushq	%rbp
+	.seh_pushreg	%rbp
+	movq	%rsp, %rbp
+	.seh_setframe	%rbp, 0
+	subq	$64, %rsp
+	.seh_stackalloc	64
+	.seh_endprologue
+	movq	%rcx, 16(%rbp)
+	movq	%rdx, 24(%rbp)
+	movq	__imp_Tcl_NewObj(%rip), %rax
+	call	*%rax
+	movq	%rax, -16(%rbp)
+	movq	24(%rbp), %rax
+	movzbl	20(%rax), %eax
+	cmpb	$1, %al
+	je	.L26
+	movq	24(%rbp), %rax
+	movq	%rax, -24(%rbp)
+	movq	-24(%rbp), %rax
+	movq	112(%rax), %rax
+	movq	%rax, -8(%rbp)
+	jmp	.L27
+.L28:
+	movq	__imp_Tcl_NewObj(%rip), %rax
+	call	*%rax
+	movq	%rax, -32(%rbp)
+	movq	-8(%rbp), %rax
+	movq	8(%rax), %rax
+	movq	-32(%rbp), %rdx
+	movq	%rax, %rcx
+	call	HtmlCssSelectorToString
+	movq	-32(%rbp), %rdx
+	movq	-16(%rbp), %rax
+	movq	%rdx, %r8
+	movq	%rax, %rdx
+	movl	$0, %ecx
+	movq	__imp_Tcl_ListObjAppendElement(%rip), %rax
+	call	*%rax
+	movq	-8(%rbp), %rax
+	movq	16(%rax), %rax
+	movq	%rax, -8(%rbp)
+.L27:
+	cmpq	$0, -8(%rbp)
+	jne	.L28
+.L26:
+	movq	-16(%rbp), %rdx
+	movq	16(%rbp), %rax
+	movq	%rax, %rcx
+	movq	__imp_Tcl_SetObjResult(%rip), %rax
+	call	*%rax
+	movl	$0, %eax
+	addq	$64, %rsp
+	popq	%rbp
+	ret
+	.seh_endproc
+	.ident	"GCC: (Rev2, Built by MSYS2 project) 13.2.0"
+	.def	memset;	.scl	2;	.type	32;	.endef
+	.def	HtmlCssSelectorTest;	.scl	2;	.type	32;	.endef
+	.def	HtmlCallbackRestyle;	.scl	2;	.type	32;	.endef
+	.def	HtmlNodeNumChildren;	.scl	2;	.type	32;	.endef
+	.def	HtmlWalkTree;	.scl	2;	.type	32;	.endef
+	.def	HtmlCssSelectorToString;	.scl	2;	.type	32;	.endef
