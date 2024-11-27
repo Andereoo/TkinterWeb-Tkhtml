@@ -21,7 +21,9 @@ jobs:
         chmod +rwx ./configure
         mv *.c src && mv *.h src
     - name: hi
-      run: ls /bin/bash
+      run: ls -R /usr/local/Cellar/tcl-tk/
+    - name: hi
+      run: ls -R /bin
     - name: Configure
       run: ./configure CC="gcc" --with-tcl=/usr/local/Cellar/tcl-tk/9.0.0_1/lib --with-tk=/usr/local/Cellar/tcl-tk/9.0.0_1/lib --with-tclinclude=/bin/bash --with-tkinclude=/bin/bash
     - name: Make
