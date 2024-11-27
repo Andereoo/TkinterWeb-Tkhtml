@@ -2462,7 +2462,8 @@ int layoutPrimitives(
 	cd.interp = interp;
 	cd.pPrimitives = pPrimitives;
 	
-	searchSortedCanvas(pTree, -1, -1, 0, layoutPrimitivesCb, &cd);
+	//searchSortedCanvas(pTree, -1, -1, 0, layoutPrimitivesCb, &cd);
+	searchCanvas(pTree, -1, -1, layoutPrimitivesCb, &cd, 1);
 	
     Tcl_SetObjResult(interp, pPrimitives);
     Tcl_DecrRefCount(pPrimitives);
@@ -3056,16 +3057,12 @@ int HtmlLayoutImage(
 
     /* Force any pending style and/or layout operations to run. */
     HtmlCallbackForce(pTree);
-
     Tk_MakeWindowExist(pTree->tkwin);
     w = Tk_Width(pTree->tkwin);
     h = Tk_Height(pTree->tkwin);
-	if (objc == 4 && !strcmp(Tcl_GetString(objv[objc-2]), "-full")) {
-		if (TCL_OK != Tcl_GetIntFromObj(interp, objv[objc-1], &isFull)) return TCL_ERROR;
-		else if (isFull) {
-			w = pTree->canvas.right;
-			h = pTree->canvas.bottom;
-		}
+	if (objc > 2 && !strcmp(Tcl_GetString(objv[2]), "-full")) {
+		w = MAX(w, pTree->canvas.right);
+		h = MAX(h, pTree->canvas.bottom);
 	}
     assert(w >= 0 && h >= 0);
     if (w > 0 && h > 0) {

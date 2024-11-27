@@ -1028,11 +1028,86 @@ normalFlowLayoutFloat (
       DISPLAY(pV) == CSS_CONST_LIST_ITEM
     );
     assert(eFloat == CSS_CONST_LEFT || eFloat == CSS_CONST_RIGHT);
+	if (pLayout->pTree->options.pagination) { // Added for testing
+		if (nodeIsReplaced(pNode)) {
+			/* For a replaced element, the drawReplacement() function takes care of
+			 * calculating the actual width and height, and of drawing borders
+			 * etc. As usual horizontal margins are included, but vertical are not.
+			 */
+			CHECK_INTEGER_PLAUSIBILITY(sBox.vc.bottom);
+			drawReplacement(pLayout, &sBox, pNode);
+			CHECK_INTEGER_PLAUSIBILITY(sBox.vc.bottom);
+		} else {
+			/* A non-replaced element. */
+			BoxProperties box;   /* Box properties of pNode */
+			BoxContext sContent;
+			int c = pLayout->minmaxTest ? PIXELVAL_AUTO : iContainingW;
+			int iWidth = PIXELVAL(pV, WIDTH, c);
+			int iHeight = PIXELVAL(pV, HEIGHT, pBox->iContainingH);
+			int isAuto = 0;
+
+			nodeGetBoxProperties(pLayout, pNode, iContainingW, &box);
+
+			/* If the computed value if iWidth is "auto", calculate the
+			 * shrink-to-fit content width and use that instead.  */
+			if (iWidth == PIXELVAL_AUTO) {
+				int iMax;            /* Preferred maximum width */
+				int iMin;            /* Preferred minimum width */
+				int iAvailable;      /* Available width */
+		
+				iAvailable = sBox.iContainingW;
+				iAvailable -= (margin.margin_left + margin.margin_right);
+				iAvailable -= (box.iLeft + box.iRight);
+				blockMinMaxWidth(pLayout, pNode, &iMin, &iMax);
+				iWidth = MIN(MAX(iMin, iAvailable), iMax);
+				isAuto = 1;
+			}
+			considerMinMaxWidth(pNode, iContainingW, &iWidth);
+
+			/* Layout the node content into sContent. Then add the border and
+			 * transfer the result to sBox. 
+			 */
+			memset(&sContent, 0, sizeof(BoxContext));
+			sContent.iContainingW = iWidth;
+			sContent.iContainingH = iHeight;
+			HtmlLayoutNodeContent(pLayout, &sContent, pNode);
+
+			iHeight = getHeight(
+				pNode, sContent.height, pBox->iContainingH
+			);
+			if (pV->eDisplay == CSS_CONST_TABLE) {
+				sContent.height = MAX(iHeight, sContent.height);
+			} else {
+				sContent.height = iHeight;
+			}
+
+			if (!isAuto && DISPLAY(pV) != CSS_CONST_TABLE) {
+				sContent.width = iWidth;
+			} else {
+				sContent.width = MAX(iWidth, sContent.width);
+			}
+			considerMinMaxWidth(pNode, iContainingW, &sContent.width);
+
+			wrapContent(pLayout, &sBox, &sContent, pNode);
+		}
+
+		iTotalWidth = sBox.width;
+		iTotalHeight = sBox.height + margin.margin_top + margin.margin_bottom;
+		iTotalHeight = MAX(iTotalHeight, 0);
+
+		iLeft = 0;
+		iRight = iContainingW;
+
+		iTop = y;
+		iTop = HtmlFloatListPlace(pFloat, iContainingW, iTotalWidth, iTotalHeight, iTop);
+		HtmlFloatListMargins(pFloat, iTop, iTop+iTotalHeight, &iLeft, &iRight);
+	}
 
     /* Draw the floating element to sBox. The procedure for determining the
      * width to use for the element is described in sections 10.3.5
      * (non-replaced) and 10.3.6 (replaced) of the CSS 2.1 spec.
      */
+	if (pLayout->pTree->options.pagination) paginationPageYOrigin(iTop, pLayout);
     if (nodeIsReplaced(pNode)) {
         /* For a replaced element, the drawReplacement() function takes care of
          * calculating the actual width and height, and of drawing borders
@@ -1094,7 +1169,7 @@ normalFlowLayoutFloat (
 
         wrapContent(pLayout, &sBox, &sContent, pNode);
     }
-	printf("%d ", y);
+	if (pLayout->pTree->options.pagination) paginationPageYOrigin(-iTop, pLayout);
 
     iTotalWidth = sBox.width;
     iTotalHeight = sBox.height + margin.margin_top + margin.margin_bottom;
@@ -1107,7 +1182,7 @@ normalFlowLayoutFloat (
     iTop = HtmlFloatListPlace(pFloat, iContainingW, iTotalWidth, iTotalHeight, iTop);
     HtmlFloatListMargins(pFloat, iTop, iTop+iTotalHeight, &iLeft, &iRight);
 
-    y = iTop + margin.margin_top; printf("%d\n", iTop);
+    y = iTop + margin.margin_top;
     if (eFloat == CSS_CONST_LEFT) {
         x = iLeft;
     } else {
@@ -1380,7 +1455,7 @@ markerBoxLayout (
 
 int paginationPageYOrigin (int y, LayoutContext *pLayout)
 {
-	if (pLayout->pTree->options.pagination) {
+	if (pLayout->pTree->options.pagination > 0) {
 		static int origin = 0;
 		if (y) {
 			origin += y;
@@ -1466,7 +1541,7 @@ inlineLayoutDrawLines (
 			if (paginationY) {
 				y += paginationPageYOrigin(0, pLayout);
 				int pagebreakY = (y + paginationY - 1) / paginationY * paginationY;
-				printf("%d >= %d and %d <= %d", pagebreakY, y, pagebreakY, y + nV);
+				printf("%d >= %d and %d <= %d, %d", pagebreakY, y, pagebreakY, y + nV, nV);
 				if (!HtmlInlineContextIsEmpty(pContext)) {
 					HtmlNode *pNode = HtmlInlineContextCreator(pContext);
 					printf(" %s", (char*)Tcl_GetString(HtmlNodeCommand(pLayout->pTree, pNode)));
