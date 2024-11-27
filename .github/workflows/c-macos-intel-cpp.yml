@@ -21,7 +21,7 @@ jobs:
         chmod +rwx ./configure
         mv *.c src && mv *.h src
     - name: hi
-      run: find usr/local/Cellar/tcl-tk/ -name "tcl.h"
+      run: find usr/local/Cellar/tcl-tk/9.0.0_1 -name "tcl.h"
     - name: hi
       run: find . -name "tcl.h"
     - name: Configure
