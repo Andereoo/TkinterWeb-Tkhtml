@@ -20,6 +20,8 @@ jobs:
         tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
         chmod +rwx ./configure
         mv *.c src && mv *.h src
+    - name: hi
+      run: ls opt/homebrew/Cellar/tcl-tk/
     - name: Configure
       run: ./configure CC="gcc" --with-tcl=/opt/homebrew/Cellar/tcl-tk/8.6.14/lib --with-tk=/opt/homebrew/Cellar/tcl-tk/8.6.14/lib --with-tclinclude=/opt/homebrew/Cellar/tcl-tk/8.6.14/include/tcl-tk --with-tkinclude=/opt/homebrew/Cellar/tcl-tk/8.6.14/include/tcl-tk
     - name: Make
