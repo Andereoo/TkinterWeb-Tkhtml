@@ -21,7 +21,7 @@ jobs:
         chmod +rwx ./configure
         mv *.c src && mv *.h src
     - name: hi
-      run: ls -R /usr/local/Cellar/tcl-tk/
+      run: xcode-select --install
     - name: hi
       run: ls -R /bin
     - name: Configure
