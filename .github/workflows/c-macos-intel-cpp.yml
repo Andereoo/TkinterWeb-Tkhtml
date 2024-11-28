@@ -25,7 +25,7 @@ jobs:
     - name: hi
       run: ls -R /bin
     - name: Configure
-      run: ./configure CC="gcc" --with-tcl=/usr/local/Cellar/tcl-tk/9.0.0_1/lib --with-tk=/usr/local/Cellar/tcl-tk/9.0.0_1/lib --with-tclinclude=/usr/local/Cellar/tcl-tk//9.0.0_1/include/tcl-tk --with-tkinclude=/usr/local/Cellar/tcl-tk//9.0.0_1/include/tcl-tk
+      run: ./configure CC="gcc -static-libgcc" --with-tcl=/usr/local/Cellar/tcl-tk/9.0.0_1/lib --with-tk=/usr/local/Cellar/tcl-tk/9.0.0_1/lib --with-tclinclude=/usr/local/Cellar/tcl-tk//9.0.0_1/include/tcl-tk --with-tkinclude=/usr/local/Cellar/tcl-tk//9.0.0_1/include/tcl-tk
     - name: Make
       run: make
     - name: Archive code coverage results
