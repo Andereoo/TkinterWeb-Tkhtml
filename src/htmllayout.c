@@ -1531,25 +1531,28 @@ inlineLayoutDrawLines (
         have = HtmlInlineContextGetLineBox(pLayout, pContext, f, &w, &lc, &nV, &nA);
 
         if (have) {
-            DRAW_CANVAS(&pBox->vc, &lc, leftFloat, y, 0);
+			int paginationY = pLayout->pTree->options.pagination;
+			if (paginationY) {
+				y += paginationPageYOrigin(0, pLayout);
+				int pagebreakY = (y + paginationY - 1) / paginationY * paginationY;
+				printf("%d >= %d and %d <= %d, %d", pagebreakY, y, pagebreakY, y+nV, nV);
+				if (!HtmlInlineContextIsEmpty(pContext)) {
+					HtmlNode *pNode = HtmlInlineContextCreator(pContext);
+					printf(" %s", (char*)Tcl_GetString(HtmlNodeCommand(pLayout->pTree, pNode)));
+				}
+				if (pagebreakY >= y && pagebreakY <= y + nV) {
+					y = pagebreakY;
+					printf(" @@\n");
+				}
+				else printf("\n");
+				y -= paginationPageYOrigin(0, pLayout);
+			}
+            DRAW_CANVAS(&pBox->vc, &lc, leftFloat, y, 0); // This is where text is drawn onto the canvas
             if (pLayout->minmaxTest == 0) {
                 HtmlDrawLinebox(&pBox->vc, leftFloat, y + nA);
             }
             y += nV; // This is the variable used in normalFlowLayoutNode → layoutChildren → normalFlowLayout
 			// normalFlowLayoutBlock() sContent.height and sContent.width is assigned here, that controls the CanvasOrigin Y-axis
-			int paginationY = pLayout->pTree->options.pagination;
-			if (paginationY) {
-				y += paginationPageYOrigin(0, pLayout);
-				int pagebreakY = (y + paginationY - 1) / paginationY * paginationY;
-				printf("%d >= %d and %d <= %d, %d", pagebreakY, y, pagebreakY, y + nV, nV);
-				if (!HtmlInlineContextIsEmpty(pContext)) {
-					HtmlNode *pNode = HtmlInlineContextCreator(pContext);
-					printf(" %s", (char*)Tcl_GetString(HtmlNodeCommand(pLayout->pTree, pNode)));
-				}
-				if (pagebreakY >= y && pagebreakY <= y + nV) {y = pagebreakY; printf(" @@\n");}
-				else printf("\n");
-				y -= paginationPageYOrigin(0, pLayout);
-			}
             pBox->width = MAX(pBox->width, lc.right + leftFloat);
             pBox->height = MAX(pBox->height, y);
         } else if( w ) {

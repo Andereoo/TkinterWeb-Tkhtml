@@ -289,7 +289,7 @@ inlineBoxMetrics (
         oprintf(pLog, "<tr><td>iFontBottom<td>%d", pMetrics->iFontBottom);
         oprintf(pLog, "<tr><td>iLogical<td>%d", pMetrics->iLogical);
         oprintf(pLog, "</table>");
-    END_LOG("inlineBoxMetrics()");
+    END_LOG("inlineBoxMetrics");
 }
 
 
@@ -477,7 +477,7 @@ HtmlInlineContextPushBorder (InlineContext *pContext, InlineBorder *pBorder)
             pBorder->iVerticalAlign = iVert; 
             START_LOG(pBorder->pNode);
                 oprintf(pLog, "Vertical offset is %d pixels\n", iVert);
-            END_LOG("HtmlInlineContextPushBorder()");
+            END_LOG("HtmlInlineContextPushBorder");
         } else {
             assert(!pContext->pRootBorder);
             pContext->pRootBorder = pBorder;
@@ -1667,9 +1667,7 @@ HtmlInlineContextAddText (InlineContext *pContext, HtmlNode *pNode)
     assert(HtmlNodeIsText(pNode));
 
     for (
-        HtmlTextIterFirst((HtmlTextNode *)pNode, &sIter);
-        HtmlTextIterIsValid(&sIter);
-        HtmlTextIterNext(&sIter)
+        HtmlTextIterFirst((HtmlTextNode *)pNode, &sIter); HtmlTextIterIsValid(&sIter); HtmlTextIterNext(&sIter)
     ) {
         int nData = HtmlTextIterLength(&sIter);
         char const *zData = HtmlTextIterData(&sIter);
