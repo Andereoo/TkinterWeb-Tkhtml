@@ -1436,8 +1436,8 @@ HtmlInlineContextGetLineBox (
     /* Draw the borders and content canvas into the target canvas. Draw the
      * borders canvas first so that it is under the content.
      */
-    DRAW_CANVAS(pCanvas, &borders, 0, -1 * iTop, 0); // This is where Lines are added to the canvas
-    DRAW_CANVAS(pCanvas, &content, 0, -1 * iTop, 0); // This is where Text is added to the canvas
+    DRAW_CANVAS(pCanvas, &borders, 0, -1 * iTop, 0);
+    DRAW_CANVAS(pCanvas, &content, 0, -1 * iTop, 0);
 
     p->nInline -= nBox;
     memmove(p->aInline, &p->aInline[nBox], p->nInline * sizeof(InlineBox));
