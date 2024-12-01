@@ -25,6 +25,8 @@
 #if !defined(__cplusplus) && !defined(c_plusplus)
 # define c_class class
 #endif
+#define DRAWBOX_NOBORDER     0x00000001
+#define DRAWBOX_NOBACKGROUND 0x00000002
 
 /*
  * See tkCanvas.h for key data structures used to implement canvases.
@@ -1099,6 +1101,390 @@ TkPostscriptImage(
     }
     ckfree(cdata.colors);
     return TCL_OK;
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * TextToPostscript --
+ *
+ *	This function is called to generate Postscript for text items.
+ *
+ * Results:
+ *	The return value is a standard Tcl result. If an error occurs in
+ *	generating Postscript then an error message is left in the interp's
+ *	result, replacing whatever used to be there. If no error occurs, then
+ *	Postscript for the item is appended to the result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *--------------------------------------------------------------
+ */
+int TextToPostscript(Tk_PostscriptInfo psInfo, const char *z, int n, int x, int y, int w, int prepass, HtmlNode *pNode, Tcl_Interp *interp)
+{
+	float anchor;
+	const char *justify;
+    Tcl_Obj *psObj;
+    Tcl_InterpState interpState;
+	int w2, h;
+	Tk_TextLayout tl;
+
+	HtmlComputedValues *pV = HtmlNodeComputedValues(pNode);
+
+    // Make our working space.
+    psObj = Tcl_NewObj();
+    interpState = Tcl_SaveInterpState(interp, TCL_OK);
+
+    // Generate postscript.
+	Tcl_ResetResult(interp);
+    if (Tk_PostscriptFont(interp, psInfo, pV->fFont->tkfont) != TCL_OK) goto error;
+    Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
+
+    if (prepass) goto done;
+
+	Tcl_ResetResult(interp);
+	if (Tk_PostscriptColor(interp, psInfo, pV->cColor->xcolor) != TCL_OK) goto error;
+    Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
+	
+	switch (pV->eTextAlign) {
+        case CSS_CONST_CENTER: anchor = 0.15; justify = "0.5"; break;
+        case CSS_CONST_RIGHT:  anchor = 0.30; justify = "1";   break;
+		default:               anchor = 0;    justify = "0";   break;
+    }
+	Tk_FontMetrics fm = pV->fFont->metrics;
+
+	// Angle, horizontal and vertical positions to render at
+    Tcl_AppendPrintfToObj(psObj, "0 %d %.15g [\n", x, Tk_PostscriptY(y, psInfo));
+    Tcl_ResetResult(interp);
+	tl = Tk_ComputeTextLayout(pV->fFont->tkfont, z, n, w, 0, 0, &w2, &h);
+	Tk_TextLayoutToPostscript(interp, tl);
+	Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp)); // How far apart two lines of text in the same font
+    Tcl_AppendPrintfToObj(psObj, "] %d %g 1 %s false DrawText\n", fm.linespace, anchor, justify);
+
+    // Plug the accumulated postscript back into the result.
+	done:
+		(void) Tcl_RestoreInterpState(interp, interpState);
+		Tcl_AppendObjToObj(Tcl_GetObjResult(interp), psObj);
+		Tcl_DecrRefCount(psObj);
+		return TCL_OK;
+
+	error:
+		Tcl_DiscardInterpState(interpState);
+		Tcl_DecrRefCount(psObj);
+		return TCL_ERROR;
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * ImageToPostscript --
+ *
+ *	This function is called to generate Postscript for image items.
+ *
+ * Results:
+ *	The return value is a standard Tcl result. If an error occurs in
+ *	generating Postscript then an error message is left in interp->result,
+ *	replacing whatever used to be there. If no error occurs, then
+ *	Postscript for the item is appended to the result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *--------------------------------------------------------------
+ */
+int ImageToPostscript(HtmlTree *pTree, HtmlImage2 *pImage, int x, int y, int prepass, HtmlNode *pNode, Tcl_Interp *interp)
+{
+    Tk_Window win = HtmlTreeTkwin(pTree);
+	Tk_PostscriptInfo psInfo = pTree->psInfo;
+    int w, h;
+
+    if (pImage == NULL) { /* Image item without actual image specified. */
+        return TCL_OK;
+    }
+    HtmlImageSize(pImage, &w, &h);
+
+    if (!prepass) {
+		Tcl_Obj *psObj = Tcl_GetObjResult(interp);
+
+		if (Tcl_IsShared(psObj)) {
+			psObj = Tcl_DuplicateObj(psObj);
+			Tcl_SetObjResult(interp, psObj);
+		}
+
+		Tcl_AppendPrintfToObj(psObj, "%d %.15g translate\n", x, Tk_PostscriptY(y, psInfo)-h);
+    }
+
+    return Tk_PostscriptImage(HtmlImageImage(pImage), interp, win, psInfo, 0, 0, w, h, prepass);
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * BoxToPostscript --
+ *
+ *	This function is called to generate Postscript for rectangle and oval
+ *	items.
+ *
+ * Results:
+ *	The return value is a standard Tcl result. If an error occurs in
+ *	generating Postscript then an error message is left in the interp's
+ *	result, replacing whatever used to be there. If no error occurs, then
+ *	Postscript for the rectangle is appended to the result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *--------------------------------------------------------------
+ */
+int BoxToPostscript(HtmlTree *pTree, int x, int y, int w, int h, int prepass, HtmlNode *pNode, int f, Tcl_Interp *interp, HtmlComputedValues *pV)
+{
+    Tcl_Obj *psObj;
+    double y1, y2;
+	Tcl_InterpState interpState;
+	Tk_PostscriptInfo psInfo = pTree->psInfo;
+
+    y1 = Tk_PostscriptY(y, psInfo);
+    y2 = Tk_PostscriptY(y + h, psInfo);
+	
+	// Make our working space.
+    psObj = Tcl_NewObj();
+    interpState = Tcl_SaveInterpState(interp, TCL_OK);
+	
+    // Generate a string that creates a path for the solid background, if required.
+	if (0 == (f & DRAWBOX_NOBACKGROUND) && pV->cBackgroundColor->xcolor) {
+		// First draw the filled area of the rectangle.
+		if (fill_rectanglePs(interp, psInfo, psObj, pV->cBackgroundColor->xcolor,
+            x, y1, y2 - y1, w
+        ) != TCL_OK) goto error;
+	}
+	/* Figure out the widths of the top, bottom, right and left borders */
+    int tw = ((pV->eBorderTopStyle != CSS_CONST_NONE) ? pV->border.iTop :0);
+    int bw = ((pV->eBorderBottomStyle != CSS_CONST_NONE) ? pV->border.iBottom :0);
+    int rw = ((pV->eBorderRightStyle != CSS_CONST_NONE) ? pV->border.iRight :0);
+    int lw = ((pV->eBorderLeftStyle != CSS_CONST_NONE) ? pV->border.iLeft :0);
+    int ow = ((pV->eOutlineStyle != CSS_CONST_NONE) ? pV->iOutlineWidth :0);
+	
+	int bg_x = x + lw;	/* Drawable x coord for background */
+    int bg_y = y + tw;	/* Drawable y coord for background */
+    int bg_w = w - lw - rw;	/* Width of background rectangle */
+    int bg_h = h - tw - bw;	/* Height of background rectangle */
+
+    /* Figure out the colors of the top, bottom, right and left borders */
+    XColor *tc = pV->cBorderTopColor->xcolor;
+    XColor *rc = pV->cBorderRightColor->xcolor;
+    XColor *bc = pV->cBorderBottomColor->xcolor;
+    XColor *lc = pV->cBorderLeftColor->xcolor;
+    XColor *oc = pV->cOutlineColor->xcolor;
+	
+	if (0 == (f & DRAWBOX_NOBORDER)) {
+        if (tw > 0 && tc) {  /* Top border */
+			if (fill_quadPs(interp, psInfo, psObj, tc,
+                x, y1, rw, -tw, w-lw-rw, 0, lw, tw
+            ) != TCL_OK) goto error;
+        }
+        if (bw > 0 && bc) {  /* Bottom border, if required */
+            if (fill_quadPs(interp, psInfo, psObj, bc,
+                x, y2, lw, bw, w-lw-rw, 0, rw, -bw
+            ) != TCL_OK) goto error;
+        }
+        if (lw > 0 && lc) {  /* Left border, if required */
+            if (fill_quadPs(interp, psInfo, psObj, lc,
+                x, y2, lw, tw, 0, h-tw-bw, -lw, bw
+            ) != TCL_OK) goto error;
+        }
+        if (rw > 0 && rc) {  /* Right border, if required */
+            if (fill_quadPs(interp, psInfo, psObj, rc,
+                x+w, y2, -rw, tw, 0, h-tw-bw, rw, bw
+            ) != TCL_OK) goto error;
+        }
+    }
+    if (0 == (f & DRAWBOX_NOBACKGROUND) && pV->imZoomedBackgroundImage) { /* Image background, if required. */
+
+        int iWidth, iHeight, eR = pV->eBackgroundRepeat;
+        HtmlImageSize(pV->imZoomedBackgroundImage, &iWidth, &iHeight);
+
+        if (iWidth > 0 && iHeight > 0) {
+            int iPosX, iPosY;
+            iPosX = pV->iBackgroundPositionX;
+            iPosY = pV->iBackgroundPositionY;
+            if (eR != CSS_CONST_REPEAT && eR != CSS_CONST_REPEAT_X) {
+                int draw_x1 = MAX(bg_x, iPosX);
+                int draw_x2 = MIN(bg_x + bg_w, iPosX + iWidth);
+                bg_x = draw_x1;
+                bg_w = draw_x2 - draw_x1;
+            } 
+            if (eR != CSS_CONST_REPEAT && eR != CSS_CONST_REPEAT_Y) {
+                int draw_y1 = MAX(bg_y, iPosY);
+                int draw_y2 = MIN(bg_y + bg_h, iPosY + iHeight);
+                bg_y = draw_y1;
+                bg_h = draw_y2 - draw_y1;
+            }
+			Tcl_AppendPrintfToObj(psObj, "%d %.15g translate\n", bg_x, Tk_PostscriptY(bg_y, psInfo)-bg_h);
+            if (Tk_PostscriptImage(HtmlImageImage(pV->imZoomedBackgroundImage), interp, 
+				pTree->tkwin, psInfo, iPosX, iPosY, bg_w, bg_h, prepass
+			) != TCL_OK) goto error;
+			Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
+        }
+    }
+    // Plug the accumulated postscript back into the result.
+	done:
+		(void) Tcl_RestoreInterpState(interp, interpState);
+		Tcl_AppendObjToObj(Tcl_GetObjResult(interp), psObj);
+		Tcl_DecrRefCount(psObj);
+		return TCL_OK;
+
+	error:
+		Tcl_DiscardInterpState(interpState);
+		Tcl_DecrRefCount(psObj);
+		return TCL_ERROR;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * LineToPostscript --
+ *
+ *     This function is used to draw a CANVAS_LINE primitive to the 
+ *     drawable.
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ *---------------------------------------------------------------------------
+ */
+int LineToPostscript(Tk_PostscriptInfo psInfo, int x, int y, int w, int y_linethrough, int y_underline, int prepass, HtmlNode *pNode, Tcl_Interp *interp)
+{
+	Tcl_InterpState interpState;
+    XColor *xcolor;
+	Tcl_Obj *psObj;
+    int yrel;
+
+	switch (HtmlNodeComputedValues(pNode)->eTextDecoration) {
+        case CSS_CONST_LINE_THROUGH:
+            yrel = y + y_linethrough; 
+            break;
+        case CSS_CONST_UNDERLINE:
+            yrel = y + y_underline; 
+            break;
+        case CSS_CONST_OVERLINE:
+            yrel = y; 
+            break;
+        default: goto done;
+    }
+	// Make our working space.
+    psObj = Tcl_NewObj();
+	interpState = Tcl_SaveInterpState(interp, TCL_OK);
+    Tcl_AppendPrintfToObj(psObj, "%d %.15g moveto %d 0 rlineto closepath ",
+		x, Tk_PostscriptY(y+yrel, psInfo), w
+	);
+	Tcl_ResetResult(interp);
+	xcolor = HtmlNodeComputedValues(pNode)->cColor->xcolor;
+	if (Tk_PostscriptColor(interp, psInfo, xcolor) != TCL_OK) goto error;
+	Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
+	Tcl_AppendToObj(psObj, "stroke\n", -1);
+	
+    // Plug the accumulated postscript back into the result.
+
+	done:
+		(void) Tcl_RestoreInterpState(interp, interpState);
+		Tcl_AppendObjToObj(Tcl_GetObjResult(interp), psObj);
+		Tcl_DecrRefCount(psObj);
+		return TCL_OK;
+
+	error:
+		Tcl_DiscardInterpState(interpState);
+		Tcl_DecrRefCount(psObj);
+		return TCL_ERROR;
+}
+
+/*
+ *--------------------------------------------------------------
+ *
+ * WinItemToPostscript --
+ *
+ *	This function is called to generate Postscript for window items.
+ *
+ * Results:
+ *	The return value is a standard Tcl result. If an error occurs in
+ *	generating Postscript then an error message is left in interp->result,
+ *	replacing whatever used to be there. If no error occurs, then
+ *	Postscript for the item is appended to the result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *--------------------------------------------------------------
+ */
+int WinItemToPostscript(HtmlTree *pTree, int x, int y, Tk_Window win, int prepass, Tcl_Interp *interp)
+{
+    int w, h, result;
+	XImage *ximage;
+	#ifdef X_GetImage
+    Tk_ErrorHandler handle;
+	#endif
+    Tcl_Obj *cmdObj, *psObj;
+
+    if (prepass || win == NULL) { return TCL_OK; }
+
+    w = Tk_Width(win);
+    h = Tk_Height(win);
+    Tcl_InterpState interpState = Tcl_SaveInterpState(interp, TCL_OK);
+
+    /* Locate the subwindow within the wider window. */
+    psObj = Tcl_ObjPrintf(
+	    "\n%%%% %s item (%s, %d x %d)\n"	/* Comment */
+	    "%d %.15g translate\n",		/* Position */
+	    Tk_Class(win), Tk_PathName(win), w, h, x, Tk_PostscriptY(y, pTree->psInfo)-h);
+
+    /* First try if the widget has its own "postscript" command. If it exists, this will produce much better postscript than when a pixmap is used. */
+    Tcl_ResetResult(interp);
+    cmdObj = Tcl_ObjPrintf("%s postscript -prolog 0", Tk_PathName(win));
+    Tcl_IncrRefCount(cmdObj);
+    result = Tcl_EvalObjEx(interp, cmdObj, 0);
+    Tcl_DecrRefCount(cmdObj);
+
+    if (result == TCL_OK) {
+		Tcl_AppendPrintfToObj(psObj,
+			"50 dict begin\nsave\ngsave\n0 %d moveto %d 0 rlineto 0 -%d rlineto -%d 0 rlineto closepath\n"
+			"1.000 1.000 1.000 setrgbcolor AdjustColor\nfill\ngrestore\n", h, w, h, w);
+		Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
+		Tcl_AppendToObj(psObj, "\nrestore\nend\n\n\n", -1);
+		goto done;
+    }
+    /* If the window is off the screen it will generate a BadMatch/XError. We catch any BadMatch errors here */
+	#ifdef X_GetImage
+    handle = Tk_CreateErrorHandler(Tk_Display(win), BadMatch, X_GetImage, -1, xerrorhandler, win);
+	#endif
+
+    /* Generate an XImage from the window. We can then read pixel values out of the XImage. */
+    ximage = XGetImage(Tk_Display(win), Tk_WindowId(win), 0, 0, (unsigned)w, (unsigned)h, AllPlanes, ZPixmap);
+
+	#ifdef X_GetImage
+    Tk_DeleteErrorHandler(handle);
+	#endif
+
+    if (ximage == NULL) { result = TCL_OK;
+    } else {
+		Tcl_ResetResult(interp);
+		result = TkPostscriptImage(interp, win, pTree->psInfo, ximage, 0, 0, w, h);
+		Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
+		XDestroyImage(ximage);
+    }
+
+    /* Plug the accumulated postscript back into the result. */
+	done:
+		if (result == TCL_OK) {
+			(void) Tcl_RestoreInterpState(interp, interpState);
+			Tcl_AppendObjToObj(Tcl_GetObjResult(interp), psObj);
+		} else {
+			Tcl_DiscardInterpState(interpState);
+		}
+		Tcl_DecrRefCount(psObj);
+		return result;
 }
 
 static int scaledHeight(TkPostscriptInfo *psInfo) {
