@@ -309,6 +309,9 @@ struct HtmlComputedValues {
     unsigned char eBorderCollapse;    /* 'border-collapse' */
     unsigned char eCaptionSide;       /* 'caption-side' */
     unsigned char eEmptyCells;        /* 'empty-cells' */
+
+    unsigned char ePageBreakAfter;    /* 'page-break-after' */
+    unsigned char ePageBreakBefore;   /* 'page-break-before' */
 };
 
 /*

@@ -120,6 +120,9 @@ static PropertyDef propdefs[] = {
   PROPDEF(ENUM, TEXT_TRANSFORM,        eTextTransform),
   PROPDEF(ENUM, UNICODE_BIDI,          eUnicodeBidi),
   PROPDEF(ENUM, VISIBILITY,            eVisibility),
+  
+  PROPDEF(ENUM, PAGE_BREAK_AFTER,     ePageBreakAfter),
+  PROPDEF(ENUM, PAGE_BREAK_BEFORE,    ePageBreakBefore),
 
   /* Note: The CSS2 property 'border-spacing' can be set to
    * either a single or pair of length values. Only a single

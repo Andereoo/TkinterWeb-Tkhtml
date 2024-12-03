@@ -1391,10 +1391,7 @@ int paginationPageYOrigin (int y, LayoutContext *pLayout)
 {
 	if (pLayout->pTree->options.pagination > 0) {
 		static int origin = 0;
-		if (y) {
-			origin += y;
-			printf("paginationPageYOrigin: %d %d\n", origin, y);
-		}
+		origin += y;
 		return origin;
 	}
 	return 0;
@@ -1468,13 +1465,10 @@ inlineLayoutDrawLines (
 			int paginationY = pLayout->pTree->options.pagination;
 			if (paginationY) {
 				y += paginationPageYOrigin(0, pLayout);
-				int pagebreakY = (y + paginationY - 1) / paginationY * paginationY;
-				printf("%d >= %d and %d <= %d, %d", pagebreakY, y, pagebreakY, y+nV, nV);
-				if (pagebreakY >= y && pagebreakY <= y + nV) {
-					y = pagebreakY;
-					printf(" @@\n");
-				}
-				else printf("\n");
+				int pagebreakY = (y + paginationY - 1) / paginationY * paginationY; // Ceiling division to find the first multiple
+				//printf("%d >= %d and %d <= %d, %d", pagebreakY, y, pagebreakY, y+nV, nV);
+				if (pagebreakY >= y && pagebreakY <= y + nV) {y = pagebreakY; /*printf(" @@\n");*/}
+				//else printf("\n");
 				y -= paginationPageYOrigin(0, pLayout);
 			}
             DRAW_CANVAS(&pBox->vc, &lc, leftFloat, y, 0); // This is where content is drawn onto the canvas
@@ -2635,7 +2629,6 @@ normalFlowLayoutBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
      */
     sContent.iContainingH = PIXELVAL(pV, HEIGHT, iContHeight);
     normalFlowLayout(pLayout, &sContent, pNode, pNormal); // This is where CanvasOrigin is added to Canvas
-	paginationPageYOrigin(-y, pLayout);
 
     /* Remove any margin-collapse callback added to the normal flow context. */
     normalFlowCbDelete(pNormal, &sNormalFlowCallback);
@@ -2675,6 +2668,33 @@ normalFlowLayoutBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
     } 
     *pY += sContent.height; // sContent.height is assigned in inlineLayoutDrawLines(), this is where pY is mainly determined
     *pY += box.iBottom;
+	
+	int paginationY = pLayout->pTree->options.pagination;
+	if (paginationY) {
+		int difference;
+		switch (pV->ePageBreakAfter) {
+			case CSS_CONST_ALWAYS:
+				*pY = (*pY + paginationY - 1) / paginationY * paginationY;
+				break;
+			case CSS_CONST_AVOID:
+				// Not sure what to put here
+				break;
+			case CSS_CONST_LEFT:
+				
+				break;
+		}
+		switch (pV->ePageBreakBefore) {
+			case CSS_CONST_ALWAYS:
+				difference = ((y-box.iTop+yBorderOffset + paginationY - 1) / paginationY * paginationY) - y;
+				*pY += difference;
+				y += difference;
+				break;
+			case CSS_CONST_AVOID:
+				// Not sure what to put here
+				break;
+		}
+	}
+	paginationPageYOrigin(-y, pLayout);
 
     sBox.iContainingW = pBox->iContainingW;
 	DRAW_CANVAS(&sTmp.vc, &sContent.vc, 0, -1 * yBorderOffset, pNode); // This controls the CanvasOrigin Y-axis

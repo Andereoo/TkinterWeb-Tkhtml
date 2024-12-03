@@ -1160,7 +1160,7 @@ int TextToPostscript(Tk_PostscriptInfo psInfo, const char *z, int n, int x, int 
 	tl = Tk_ComputeTextLayout(pV->fFont->tkfont, z, n, w, 0, 0, &w2, &h);
 	Tk_TextLayoutToPostscript(interp, tl);
 	Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp)); // How far apart two lines of text in the same font
-    Tcl_AppendPrintfToObj(psObj, "] %d %g 1 %s false DrawText\n", fm.linespace, anchor, justify);
+    Tcl_AppendPrintfToObj(psObj, "] %d %g 0.85 %s false DrawText\n", fm.linespace, anchor, justify);
 
     // Plug the accumulated postscript back into the result.
 	done:
@@ -1379,7 +1379,7 @@ int LineToPostscript(Tk_PostscriptInfo psInfo, int x, int y, int w, int y_lineth
     psObj = Tcl_NewObj();
 	interpState = Tcl_SaveInterpState(interp, TCL_OK);
     Tcl_AppendPrintfToObj(psObj, "%d %.15g moveto %d 0 rlineto closepath ",
-		x, Tk_PostscriptY(y+yrel, psInfo), w
+		x, Tk_PostscriptY(yrel, psInfo), w
 	);
 	Tcl_ResetResult(interp);
 	xcolor = HtmlNodeComputedValues(pNode)->cColor->xcolor;
