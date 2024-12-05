@@ -312,6 +312,7 @@ struct HtmlComputedValues {
 
     unsigned char ePageBreakAfter;    /* 'page-break-after' */
     unsigned char ePageBreakBefore;   /* 'page-break-before' */
+    unsigned char ePageBreakInside;   /* 'page-break-inside' */
 };
 
 /*
