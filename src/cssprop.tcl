@@ -98,9 +98,9 @@ E unicode-bidi          normal embed bidi-override
 E visibility            visible hidden collapse
 E white-space           normal pre nowrap
 
-E page-break-after      auto always avoid left right
-E page-break-before     auto always avoid left right
-E page-break-inside     auto avoid
+E page-break-after      auto always avoid left right inherit
+E page-break-before     auto always avoid left right inherit
+E page-break-inside     auto avoid inherit
 
 C text-top text-bottom 
 C thin medium thick
