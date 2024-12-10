@@ -1160,7 +1160,7 @@ int TextToPostscript(Tk_PostscriptInfo psInfo, const char *z, int n, int x, int 
 	tl = Tk_ComputeTextLayout(pV->fFont->tkfont, z, n, w, 0, 0, &w2, &h);
 	Tk_TextLayoutToPostscript(interp, tl);
 	Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp)); // How far apart two lines of text in the same font
-    Tcl_AppendPrintfToObj(psObj, "] %d %g 0.85 %s false DrawText\n", fm.linespace, anchor, justify);
+    Tcl_AppendPrintfToObj(psObj, "] %d %g 1 %s false DrawText\n", fm.linespace, anchor, justify);
 
     // Plug the accumulated postscript back into the result.
 	done:

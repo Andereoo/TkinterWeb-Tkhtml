@@ -434,7 +434,7 @@ paginationOffsetInside(LayoutContext *pLayout, HtmlNode *pNode, HtmlComputedValu
 		case CSS_CONST_AUTO: break;
 		case CSS_CONST_AVOID:
 			pagebreak = (y + paginationY - 1) / paginationY * paginationY; // Ceiling division to find the first multiple
-			if (pagebreak >= y && pagebreak <= y+h) {
+			if (pagebreak >= y && pagebreak <= y + h) {
 				*pY += pagebreak - y;
 				y = pagebreak;
 			}
@@ -1501,13 +1501,14 @@ inlineLayoutDrawLines (
         int w;
         int forcebox;              /* Force at least one inline-box per line */
         int closeborders = 0;
-        int f, f2 = 0;
+        int f;
         int y = *pY;               /* Y coord for line-box baseline. */
         int leftFloat = 0;
         int rightFloat = pBox->iContainingW;
         int nV = 0;                /* Vertical height of line. */
         int nA = 0;                /* Ascent of line box. */
 		int paginationY = pLayout->pTree->options.pagination;
+		int brk = 0;
 
         /* If the inline-context is not completely empty, we collapse any
          * vertical margin here. Even though a line box may not be drawn by
@@ -1517,7 +1518,7 @@ inlineLayoutDrawLines (
         if (!HtmlInlineContextIsEmpty(pContext)) {
             HtmlNode *pNode = HtmlInlineContextCreator(pContext);
             normalFlowMarginCollapse(pLayout, pNode, pNormal, &y);
-			if (paginationY) f2 = HtmlNodeComputedValues(pNode)->ePageBreakInside;
+			if (paginationY) brk = HtmlNodeComputedValues(pNode)->ePageBreakInside == CSS_CONST_AVOID || HtmlNodeComputedValues(pNode->pParent)->ePageBreakInside == CSS_CONST_AVOID;
         }
 
         /* Todo: We need a real line-height here, not a hard-coded '10' */
@@ -1530,7 +1531,7 @@ inlineLayoutDrawLines (
         have = HtmlInlineContextGetLineBox(pLayout, pContext, f, &w, &lc, &nV, &nA);
 
         if (have) {
-			if (paginationY && !f2) {
+			if (paginationY && !brk) {
 				int pagebreak;
 				y += paginationPageYOrigin(0, pLayout);
 				pagebreak = (y + paginationY - 1) / paginationY * paginationY; // Ceiling division to find the first multiple
