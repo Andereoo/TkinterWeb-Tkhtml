@@ -1121,13 +1121,13 @@ TkPostscriptImage(
  *
  *--------------------------------------------------------------
  */
-int TextToPostscript(Tk_PostscriptInfo psInfo, const char *z, int n, int x, int y, int w, int prepass, HtmlNode *pNode, Tcl_Interp *interp)
+int TextToPostscript(Tk_PostscriptInfo psInfo, const char *z, int n, int x, int y, int prepass, HtmlNode *pNode, Tcl_Interp *interp)
 {
 	float anchor;
 	const char *justify;
     Tcl_Obj *psObj;
     Tcl_InterpState interpState;
-	int w2, h;
+	int w, h;
 	Tk_TextLayout tl;
 
 	HtmlComputedValues *pV = HtmlNodeComputedValues(pNode);
@@ -1157,7 +1157,7 @@ int TextToPostscript(Tk_PostscriptInfo psInfo, const char *z, int n, int x, int 
 	// Angle, horizontal and vertical positions to render at
     Tcl_AppendPrintfToObj(psObj, "0 %d %.15g [\n", x, Tk_PostscriptY(y, psInfo));
     Tcl_ResetResult(interp);
-	tl = Tk_ComputeTextLayout(pV->fFont->tkfont, z, n, w, 0, 0, &w2, &h);
+	tl = Tk_ComputeTextLayout(pV->fFont->tkfont, z, n, 0, 0, 0, &w, &h);
 	Tk_TextLayoutToPostscript(interp, tl);
 	Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp)); // How far apart two lines of text in the same font
     Tcl_AppendPrintfToObj(psObj, "] %d %g 1 %s false DrawText\n", fm.linespace, anchor, justify);

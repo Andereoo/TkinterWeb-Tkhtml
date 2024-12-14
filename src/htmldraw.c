@@ -4267,7 +4267,7 @@ HtmlDrawGetMarker (HtmlCanvas *pCanvas, HtmlCanvasItem *pMarker, int *pX, int *p
     return 1;
 }
 
-int TextToPostscript(Tk_PostscriptInfo, const char*, int n, int x, int y, int w, int, HtmlNode*, Tcl_Interp*);
+int TextToPostscript(Tk_PostscriptInfo, const char*, int n, int x, int y, int, HtmlNode*, Tcl_Interp*);
 int ImageToPostscript(HtmlTree*, HtmlImage2*, int x, int y, int, HtmlNode*, Tcl_Interp*);
 int BoxToPostscript(HtmlTree*, int x, int y, int w, int h, int, HtmlNode*, int, Tcl_Interp*, HtmlComputedValues*);
 int LineToPostscript(Tk_PostscriptInfo, int x, int y, int w, int, int, int, HtmlNode*, Tcl_Interp*);
@@ -4288,7 +4288,7 @@ static int PostScriptDrawText(
     int y)					/* Y-coord for drawing origin */
 {
 	CanvasText *pT = &pItem->kind.text;
-	return TextToPostscript(pPrint->pTree->psInfo, pT->zText, pT->nText, pT->x+x, pT->y+y, pT->w, pPrint->prepass, pT->pNode, pPrint->interp);
+	return TextToPostscript(pPrint->pTree->psInfo, pT->zText, pT->nText, pT->x+x, pT->y+y, pPrint->prepass, pT->pNode, pPrint->interp);
 }
 static int PostScriptDrawImage(
     printingInfo *pPrint,	/* Postscript info. */
