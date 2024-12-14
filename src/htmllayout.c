@@ -1519,6 +1519,7 @@ inlineLayoutDrawLines (
             HtmlNode *pNode = HtmlInlineContextCreator(pContext);
             normalFlowMarginCollapse(pLayout, pNode, pNormal, &y);
 			if (paginationY) brk = HtmlNodeComputedValues(pNode)->ePageBreakInside == CSS_CONST_AVOID || HtmlNodeComputedValues(pNode->pParent)->ePageBreakInside == CSS_CONST_AVOID;
+			printf("%s ", (char*)Tcl_GetString(HtmlNodeCommand(pLayout->pTree, pNode)));
         }
 
         /* Todo: We need a real line-height here, not a hard-coded '10' */
@@ -2991,9 +2992,9 @@ normalFlowLayoutInlineBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode 
     w = sBox2.width;
     h = sBox2.height + margin.margin_top + margin.margin_bottom;
     iLineBox = h;
-    HtmlDrawFindLinebox(&canvas, &dummy, &iLineBox);
+    //HtmlDrawFindLinebox(&canvas, &dummy, &iLineBox);
 
-    HtmlInlineContextAddBox(pContext, pNode, &canvas, w, h, h - iLineBox);
+    HtmlInlineContextAddBox(pContext, pNode, &canvas, w, h, iLineBox);
 	
     return 0;
 }
