@@ -2665,9 +2665,7 @@ HtmlComputedValuesFinish (HtmlComputedValuesCreator *p)
     }
 
     if (
-        p->values.eDisplay == CSS_CONST_TABLE_CAPTION
-        || p->values.eDisplay == CSS_CONST_RUN_IN
-        /* || p->values.eDisplay == CSS_CONST_INLINE_BLOCK */
+        p->values.eDisplay == CSS_CONST_TABLE_CAPTION || p->values.eDisplay == CSS_CONST_RUN_IN
     ) {
         p->values.eDisplay = CSS_CONST_BLOCK;
     }

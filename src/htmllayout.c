@@ -1087,9 +1087,7 @@ normalFlowLayoutFloat (
      * "table" or "list-item".
      */
     assert(
-      DISPLAY(pV) == CSS_CONST_BLOCK || 
-      DISPLAY(pV) == CSS_CONST_TABLE ||
-      DISPLAY(pV) == CSS_CONST_LIST_ITEM
+      DISPLAY(pV) == CSS_CONST_BLOCK || DISPLAY(pV) == CSS_CONST_TABLE || DISPLAY(pV) == CSS_CONST_LIST_ITEM
     );
     assert(eFloat == CSS_CONST_LEFT || eFloat == CSS_CONST_RIGHT);
 
@@ -1519,7 +1517,6 @@ inlineLayoutDrawLines (
             HtmlNode *pNode = HtmlInlineContextCreator(pContext);
             normalFlowMarginCollapse(pLayout, pNode, pNormal, &y);
 			if (paginationY) brk = HtmlNodeComputedValues(pNode)->ePageBreakInside == CSS_CONST_AVOID || HtmlNodeComputedValues(pNode->pParent)->ePageBreakInside == CSS_CONST_AVOID;
-			printf("%s ", (char*)Tcl_GetString(HtmlNodeCommand(pLayout->pTree, pNode)));
         }
 
         /* Todo: We need a real line-height here, not a hard-coded '10' */
@@ -1536,7 +1533,7 @@ inlineLayoutDrawLines (
 				int pagebreak;
 				y += paginationPageYOrigin(0, pLayout);
 				pagebreak = (y + paginationY - 1) / paginationY * paginationY; // Ceiling division to find the first multiple
-				if (pagebreak >= y && pagebreak <= y+nV) {y = pagebreak; printf("@@\n");}
+				if (pagebreak >= y && pagebreak <= y+nV) {y = pagebreak; /*printf("@@\n");*/}
 				y -= paginationPageYOrigin(0, pLayout);
 			}
             DRAW_CANVAS(&pBox->vc, &lc, leftFloat, y, 0); // This is where content is drawn onto the canvas
@@ -2947,9 +2944,8 @@ normalFlowLayoutInline (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
 static int 
 normalFlowLayoutInlineBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode, int *pY, InlineContext *pContext, NormalFlow *pNormal)
 {
-    BoxContext sBox;           /* Content */
-    BoxContext sBox2;          /* After wrapContent() */
-    BoxContext sBox3;          /* Adjusted for vertical margins */
+    BoxContext sContent;       /* Content */
+    BoxContext sBox;           /* After wrapContent() */
 
     int iWidth;                /* Calculated value of 'width' */
     int iContainingW;
@@ -2965,9 +2961,8 @@ normalFlowLayoutInlineBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode 
     MarginProperties margin;
     nodeGetMargins(pLayout, pNode, pBox->iContainingW, &margin);
 
+    memset(&sContent, 0, sizeof(BoxContext));
     memset(&sBox, 0, sizeof(BoxContext));
-    memset(&sBox2, 0, sizeof(BoxContext));
-    memset(&sBox3, 0, sizeof(BoxContext));
 
     if (pV->eDisplay == CSS_CONST__TKHTML_INLINE_BUTTON) {
         iWidth = PIXELVAL_AUTO;
@@ -2979,18 +2974,18 @@ normalFlowLayoutInlineBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode 
         blockMinMaxWidth(pLayout, pNode, &iContainingW, 0);
     }
 
-    sBox.iContainingW = iContainingW;
-    HtmlLayoutNodeContent(pLayout, &sBox, pNode);
+    sContent.iContainingW = iContainingW;
+    HtmlLayoutNodeContent(pLayout, &sContent, pNode);
     if (iWidth != PIXELVAL_AUTO) {
-        sBox.width = iWidth;
+        sContent.width = iWidth;
     }
-    wrapContent(pLayout, &sBox2, &sBox, pNode);
+    wrapContent(pLayout, &sBox, &sContent, pNode);
 
     /* Include the vertical margins in the box. */
     memset(&canvas, 0, sizeof(HtmlCanvas));
-    DRAW_CANVAS(&canvas, &sBox2.vc, 0, margin.margin_top, pNode);
-    w = sBox2.width;
-    h = sBox2.height + margin.margin_top + margin.margin_bottom;
+    DRAW_CANVAS(&canvas, &sBox.vc, 0, margin.margin_top, pNode);
+    w = sBox.width;
+    h = sBox.height + margin.margin_top + margin.margin_bottom;
     iLineBox = h;
     //HtmlDrawFindLinebox(&canvas, &dummy, &iLineBox);
 

@@ -51,7 +51,9 @@ TCLSH = tclsh
 
 ##### Strip the shared library
 #
-STRIP = strip
+STRIP_RELEASE = strip
+STRIP_DEBUG = true
+STRIP = $(STRIP_$(BUILD))
 
 MKSTARKIT = tclkit /home/dan/bin/sdx.kit wrap
 STARKITRT = /home/dan/work/tclkit-win32.upx.exe

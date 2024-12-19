@@ -4384,7 +4384,7 @@ HtmlTree *pTree, HtmlNode *pBgRoot, int ymin, int ymax, int prepass, int nogfx, 
 		sBox.h = ymax;
 		sBox.pComputed = pV;
 		PostScriptDrawBox(&sPrint, &sBox, 0, 0, DRAWBOX_NOBORDER);
-		Tcl_AppendToObj(psObj, "gsave % Background is drawn separately\n", -1);
+		Tcl_AppendToObj(psObj, "gsave % Background is drawn separately.\n", -1);
 		Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
 		Tcl_ResetResult(interp);
 		Tcl_AppendToObj(psObj, "grestore ", -1);

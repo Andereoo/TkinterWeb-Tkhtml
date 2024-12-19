@@ -917,9 +917,7 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
         if (media_ok) {
             HtmlCssImport(pParse, &tToken);
         }
-    }
-  
-    else if (nWord == 5 && strnicmp("media", zWord, nWord) == 0) {
+    } else if (nWord == 5 && strnicmp("media", zWord, nWord) == 0) {
         int media_ok;
         pParse->isBody = 1;
         inputNextTokenIgnoreSpace(pInput);
@@ -941,12 +939,10 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
             }
         }
       
-  /*
-    }
-    else if (nWord == 4 && strnicmp("page", zWord, nWord) == 0) {
-  */
-    }
-    else if (nWord == 7 && strnicmp("charset", zWord, nWord) == 0) {
+    } else if (nWord == 4 && strnicmp("page", zWord, nWord) == 0) {
+		inputNextTokenIgnoreSpace(pInput);
+		
+    } else if (nWord == 7 && strnicmp("charset", zWord, nWord) == 0) {
         CssTokenType eNext;
         do {
             inputNextTokenIgnoreSpace(pInput);
