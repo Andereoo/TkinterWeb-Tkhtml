@@ -311,7 +311,6 @@ int HtmlPostscript(
 		psInfo.pageSize.width = (int)round(tempWidth);
 		psInfo.pageSize.height = (int)round(tempHeight);
 		assert(psInfo.pageSize.width > 0 && psInfo.pageSize.height > 0);
-		
 		getPageCentre(pPsInfo);
 		
 		pTree->options.pagination = scaledHeight(pPsInfo);
@@ -326,10 +325,12 @@ int HtmlPostscript(
 		
 		pagestotal = Tk_PostscriptY(pPsInfo->y, (Tk_PostscriptInfo)pPsInfo)/psInfo.pageSize.height*pPsInfo->scale;
     } else {
-	finish:
-		HtmlCallbackForce(pTree); /* Force any pending style and/or layout operations to run. */
-		pagestotal = 1;
+		finish:
+			HtmlCallbackForce(pTree); /* Force any pending style and/or layout operations to run. */
+			pagestotal = 1;
 	}
+	pTree->isPrintedMedia = 1;
+	HtmlStyleApply(pTree, pTree->pRoot);
 	
     switch (psInfo.pageAnchor) {
 		case TK_ANCHOR_NW:
@@ -634,6 +635,8 @@ int HtmlPostscript(
 		// Output page-end information, such as commands to print the page
 		else if (psInfo.prolog) Tcl_AppendToObj(psObj, "restore showpage\n\n", -1);
 	}
+	pTree->isPrintedMedia = 0;
+	HtmlStyleApply(pTree, pTree->pRoot);
 
 	if (psInfo.chan != NULL) {
 		if (Tcl_WriteObj(psInfo.chan, psObj) == -1) goto channelWriteFailed;

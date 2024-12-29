@@ -1506,7 +1506,7 @@ inlineLayoutDrawLines (
         int nV = 0;                /* Vertical height of line. */
         int nA = 0;                /* Ascent of line box. */
 		int paginationY = pLayout->pTree->options.pagination;
-		int brk = 0;
+		int brk;
 
         /* If the inline-context is not completely empty, we collapse any
          * vertical margin here. Even though a line box may not be drawn by
@@ -1516,7 +1516,11 @@ inlineLayoutDrawLines (
         if (!HtmlInlineContextIsEmpty(pContext)) {
             HtmlNode *pNode = HtmlInlineContextCreator(pContext);
             normalFlowMarginCollapse(pLayout, pNode, pNormal, &y);
-			if (paginationY) brk = HtmlNodeComputedValues(pNode)->ePageBreakInside == CSS_CONST_AVOID || HtmlNodeComputedValues(pNode->pParent)->ePageBreakInside == CSS_CONST_AVOID;
+			if (paginationY) {
+				brk = HtmlNodeComputedValues(pNode)->ePageBreakInside == CSS_CONST_AVOID;
+				HtmlNode *pParent = HtmlNodeParent(pNode);
+				if (pParent) brk |= HtmlNodeComputedValues(pParent)->ePageBreakInside == CSS_CONST_AVOID;
+			}
         }
 
         /* Todo: We need a real line-height here, not a hard-coded '10' */

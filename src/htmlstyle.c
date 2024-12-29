@@ -803,12 +803,11 @@ int
 HtmlStyleApply (HtmlTree *pTree, HtmlNode *pNode)
 {
     StyleApply sApply;
-    int isRoot = ((pNode == pTree->pRoot) ? 1 : 0);
     HtmlLog(pTree, "STYLEENGINE", "START");
 
     memset(&sApply, 0, sizeof(StyleApply));
     sApply.pRestyle = pNode;
-    sApply.isRoot = isRoot;
+    sApply.isRoot = ((pNode == pTree->pRoot) ? 1 : 0);
 
     assert(pTree->pStyleApply == 0);
     pTree->pStyleApply = (void *)&sApply;

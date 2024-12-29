@@ -49,8 +49,6 @@ struct CssInput {
     int iInput;         /* Offset of next token in zInput */
 };
 
-
-#if 0
 static void 
 inputPrintToken (CssInput *pInput)
 {
@@ -89,11 +87,8 @@ inputPrintToken (CssInput *pInput)
         case CT_FUNCTION: printf("CT_FUNCTION"); break;
         case CT_EOF: printf("CT_EOF"); break;
     }
-    printf(" (%d) \"%.*s\"\n", 
-        pInput->nToken, pInput->nToken, pInput->zToken
-    );
+    printf(" (%d) \"%.*s\"\n", pInput->nToken, pInput->nToken, pInput->zToken);
 }
-#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -200,10 +195,10 @@ inputNextToken (CssInput *pInput)
     n = pInput->nInput - pInput->iInput;
 
     if (n <= 0) {
-      pInput->eToken = CT_EOF;
-      pInput->zToken = 0;
-      pInput->nToken = 0;
-      return 1;               /* 1 == EOF */
+        pInput->eToken = CT_EOF;
+        pInput->zToken = 0;
+        pInput->nToken = 0;
+        return 1;               /* 1 == EOF */
     }
 
     nToken = 1;
@@ -214,8 +209,7 @@ inputNextToken (CssInput *pInput)
         case '\t': {
             /* Collapse any contiguous whitespace to a single token */
             int i;
-            for (i = 1; ISSPACE((int)z[i]); i++) {
-            }
+            for (i = 1; ISSPACE((int)z[i]); i++) {}
             nToken = i;
             eToken = CT_SPACE;
             break;
@@ -271,7 +265,6 @@ inputNextToken (CssInput *pInput)
              */
             break;
         }
-
         case '<': {
             if (z[1] != '!' || z[2] != '-' || z[3] != '-') {
                 goto parse_as_token;
@@ -289,7 +282,7 @@ inputNextToken (CssInput *pInput)
             break;
         }
 
-parse_as_token:
+	parse_as_token:
         default: {
                 
             /* This must be either an identifier or a function. For the
@@ -355,10 +348,10 @@ parse_as_token:
     pInput->iInput += nToken;
     return 0;
 
-bad_token:
-    pInput->iInput++;
-    pInput->eToken = CT_SYNTAX_ERROR;
-    return 0;
+	bad_token:
+		pInput->iInput++;
+		pInput->eToken = CT_SYNTAX_ERROR;
+		return 0;
 }
 
 /*
@@ -777,14 +770,14 @@ static int parseDeclarationBlock(CssInput *pInput, CssParse *pParse){
         eToken = inputGetToken(pInput, &tVal.z, 0);
         tVal.n = 0;
         while (
-             eToken == CT_IDENT || 
-             eToken == CT_STRING || 
-             eToken == CT_COMMA || 
-             eToken == CT_PLUS ||
-             eToken == CT_FUNCTION ||
-             eToken == CT_HASH ||
-             eToken == CT_SLASH ||
-             eToken == CT_DOT
+            eToken == CT_IDENT || 
+            eToken == CT_STRING || 
+            eToken == CT_COMMA || 
+            eToken == CT_PLUS ||
+            eToken == CT_FUNCTION ||
+            eToken == CT_HASH ||
+            eToken == CT_SLASH ||
+            eToken == CT_DOT
         ) {
             char *z;
             int n;
@@ -812,7 +805,7 @@ static int parseDeclarationBlock(CssInput *pInput, CssParse *pParse){
         if (eToken != CT_RP && eToken != CT_SEMICOLON && eToken != CT_EOF) {
             goto syntax_error;
         }
-         
+
         HtmlCssDeclaration(pParse, &tProp, &tVal, isImportant);
 
         if (eToken == CT_RP || eToken == CT_EOF) return 0;
@@ -820,8 +813,8 @@ static int parseDeclarationBlock(CssInput *pInput, CssParse *pParse){
 
         continue;
 
-      syntax_error:
-        if (parseDeclarationError(pInput, pParse)) return 0;
+        syntax_error:
+            if (parseDeclarationError(pInput, pParse)) return 0;
     }
 
     return 1;
@@ -852,11 +845,9 @@ parseMediaList (CssInput *pInput, int *pIsMatch)
         eToken = inputGetToken(pInput, (const char **)&zToken, &nToken);
 
         if (eToken != CT_IDENT) return 1;
-        if ((nToken == 3 && strnicmp("all", zToken, nToken) == 0) ||
-            (nToken == 6 && strnicmp("screen", zToken, nToken) == 0)
-        ) {
-           media_ok = 1;
-        }
+		if (nToken == 3 && strnicmp("all", zToken, nToken) == 0) media_ok = CSS_MEDIA_ALL;
+		else if (nToken == 5 && strnicmp("print", zToken, nToken) == 0) media_ok = CSS_MEDIA_PRINT;
+		else if (nToken == 6 && strnicmp("screen", zToken, nToken) == 0) media_ok = CSS_MEDIA_SCREEN;
 
         inputNextTokenIgnoreSpace(pInput);
         if (CT_COMMA != inputGetToken(pInput, 0, 0)) break;
@@ -918,12 +909,20 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
             HtmlCssImport(pParse, &tToken);
         }
     } else if (nWord == 5 && strnicmp("media", zWord, nWord) == 0) {
-        int media_ok;
+        int media_ok, isSyntaxError;
         pParse->isBody = 1;
         inputNextTokenIgnoreSpace(pInput);
         if (parseMediaList(pInput, &media_ok)) return 1;
         if (CT_LP != inputGetToken(pInput, 0, 0)) return 1;
-        inputNextToken(pInput);
+        
+		while (media_ok && 0 == inputNextTokenIgnoreSpace(pInput)) {
+			CssTokenType eToken = inputGetToken(pInput, 0, 0);
+			isSyntaxError = parseSelector(pInput, pParse);
+			if (!isSyntaxError) isSyntaxError = parseDeclarationBlock(pInput, pParse);
+			else break;
+			HtmlCssSelector(pParse, media_ok, 0, 0);
+			HtmlCssRule(pParse, !isSyntaxError);
+		}
         if (!media_ok) {
             /* The media does not match. Skip tokens until the end of
              * the block.
@@ -938,9 +937,7 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
                 inputNextToken(pInput);
             }
         }
-      
     } else if (nWord == 4 && strnicmp("page", zWord, nWord) == 0) {
-		inputNextTokenIgnoreSpace(pInput);
 		
     } else if (nWord == 7 && strnicmp("charset", zWord, nWord) == 0) {
         CssTokenType eNext;
@@ -994,21 +991,23 @@ HtmlCssRunParser (const char *zInput, int nInput, CssParse *pParse)
         int isSyntaxError;
 
         eToken = inputGetToken(&sInput, 0, 0);
-
-        if (eToken == CT_SGML_OPEN || eToken == CT_SGML_CLOSE) {
-            isSyntaxError = 0;
-        } else if (eToken == CT_RP) {
-            isSyntaxError = 0;
-        } else if (eToken == CT_AT) {
-            isSyntaxError = parseAtRule(&sInput, pParse);
-        } else {
-            pParse->isBody = 1;
-            isSyntaxError = parseSelector(&sInput, pParse);
-            if (!isSyntaxError) {
-                isSyntaxError = parseDeclarationBlock(&sInput, pParse);
-            }
-            HtmlCssRule(pParse, !isSyntaxError);
-        }
+        switch (eToken) {
+			case CT_SGML_OPEN:
+			case CT_SGML_CLOSE:
+				isSyntaxError = 0; break;
+			case CT_RP:
+				isSyntaxError = 0; break;
+			case CT_AT:
+				isSyntaxError = parseAtRule(&sInput, pParse); break;
+			default:
+				pParse->isBody = 1;
+				isSyntaxError = parseSelector(&sInput, pParse);
+				if (!isSyntaxError) {
+					isSyntaxError = parseDeclarationBlock(&sInput, pParse);
+				}
+				HtmlCssRule(pParse, !isSyntaxError);
+				break;
+		}
 
         if (isSyntaxError) {
             parseSyntaxError(&sInput, pParse, (eToken==CT_AT));

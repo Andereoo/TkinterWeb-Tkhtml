@@ -672,6 +672,7 @@ struct HtmlTree {
     /* Pointer to information used for generating Postscript for the canvas.
 	 * NULL means no Postscript is currently being generated. */
 	Tk_PostscriptInfo psInfo;
+	unsigned char isPrintedMedia;
 
 #ifdef TKHTML_ENABLE_PROFILE
     /*
