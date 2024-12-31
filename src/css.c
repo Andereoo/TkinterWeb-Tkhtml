@@ -80,7 +80,7 @@ static const char rcsid[] = "$Id: css.c,v 1.139 2007/12/16 11:57:43 danielk1977 
  * Macros to trace code in this file. Set to non-zero to activate trace
  * output on stdout.
  */
-#define TRACE_PARSER_CALLS 0
+#define TRACE_PARSER_CALLS 1
 
 static int cssParse(HtmlTree*,int,CONST char*,int,int,Tcl_Obj*,Tcl_Obj*,Tcl_Obj*,Tcl_Obj*,CssStyleSheet**);
 
@@ -3045,7 +3045,7 @@ attrTest (int eType, const char *zString, const char *zAttr)
 #define N_NUMCHILDREN(x) HtmlNodeNumChildren(x)
 #define N_CHILD(x,y)     HtmlNodeChild(x,y)
 int 
-HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int dynamic_true)
+HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int flags)
 {
     CssSelector *p = pSelector;
     HtmlNode *nodeX = pNode;
@@ -3094,7 +3094,7 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int dynamic_true)
                 HtmlNode *pParent = N_PARENT(nodeX);
                 CssSelector *pNext = p->pNext;
                 while (pParent) {
-                    if (HtmlCssSelectorTest(pNext, pParent, dynamic_true)) {
+                    if (HtmlCssSelectorTest(pNext, pParent, flags&1)) {
                         return 1;
                     }
                     pParent = N_PARENT(pParent);
@@ -3112,9 +3112,7 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int dynamic_true)
                     !pParent || 
                     ((HtmlElementNode *)pParent)->pBefore == nodeX ||
                     ((HtmlElementNode *)pParent)->pAfter == nodeX 
-                ) {
-                    return 0;
-                }
+                ) return 0;
 
                 /* Search for the nearest left-hand sibling that is not
                  * white-space. If no such sibling exists, set nodeX==0 (this
@@ -3174,13 +3172,13 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int dynamic_true)
                 break;
 
             case CSS_PSEUDOCLASS_ACTIVE:
-                if (dynamic_true || (pElem->flags & HTML_DYNAMIC_ACTIVE)) break;
+                if (flags&1 || (pElem->flags & HTML_DYNAMIC_ACTIVE)) break;
                 return 0;
             case CSS_PSEUDOCLASS_HOVER:
-                if (dynamic_true || (pElem->flags & HTML_DYNAMIC_HOVER)) break;
+                if (flags&1 || (pElem->flags & HTML_DYNAMIC_HOVER)) break;
                 return 0;
             case CSS_PSEUDOCLASS_FOCUS:
-                if (dynamic_true || (pElem->flags & HTML_DYNAMIC_FOCUS)) break;
+                if (flags&1 || (pElem->flags & HTML_DYNAMIC_FOCUS)) break;
                 return 0;
             case CSS_PSEUDOCLASS_LINK:
                 if (pElem->flags & HTML_DYNAMIC_LINK) break;
@@ -3191,6 +3189,10 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int dynamic_true)
 
             case CSS_SELECTOR_NEVERMATCH:
                 return 0;
+				
+			case CSS_MEDIA_ALL: break;
+			case CSS_MEDIA_PRINT: if ((flags>>1)&1) break; return 0;
+			case CSS_MEDIA_SCREEN: if (!(flags>>1)&1) break; return 0;
 
             default:
                 assert(!"Impossible");
@@ -3335,19 +3337,7 @@ applyRule (HtmlTree *pTree, HtmlNode *pNode, CssRule *pRule, int *aPropDone, cha
     /* Test if the selector matches the node. Variable isMatch is set to
      * true if the selector matches, or false otherwise. 
      */
-    int isMatch = HtmlCssSelectorTest(pRule->pSelector, pNode, 0);
-	
-	CssSelector *p = pRule->pSelector;
-	while (p) {
-		if (p->eSelector > CSS_PSEUDOELEMENT_AFTER) {
-			switch (p->eSelector) {
-				case CSS_MEDIA_ALL: break;
-				case CSS_MEDIA_PRINT: isMatch = pTree->isPrintedMedia && isMatch; break;
-				case CSS_MEDIA_SCREEN: isMatch = !pTree->isPrintedMedia && isMatch; break;
-			}
-		}
-		p = p->pNext;
-	}
+    int isMatch = HtmlCssSelectorTest(pRule->pSelector, pNode, (pTree->isPrintedMedia<<1)|0);
 
     /* There is a match. Log some output for debugging. */
     LOG {

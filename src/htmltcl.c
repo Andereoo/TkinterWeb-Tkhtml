@@ -2170,7 +2170,7 @@ styleCmd(
 
     Tcl_GetStringFromObj(apObj[4], &n);
     if (n > 0) {
-        rc = HtmlStyleParse(pTree,apObj[4],apObj[0],apObj[1],apObj[2],apObj[3]);
+        rc = HtmlStyleParse(pTree, apObj[4], apObj[0], apObj[1], apObj[2], apObj[3]);
     } else {
         /* For a zero length stylesheet, we don't need to run the parser.
          * But we do need to set the error-log variable to an empty string

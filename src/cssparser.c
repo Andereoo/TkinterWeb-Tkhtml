@@ -834,9 +834,9 @@ static int parseDeclarationBlock(CssInput *pInput, CssParse *pParse){
  *---------------------------------------------------------------------------
  */
 static int 
-parseMediaList (CssInput *pInput, int *pIsMatch)
+parseMediaList (CssInput *pInput, CssParse *pParse, int *pIsMatch)
 {
-    int media_ok = 0;
+    unsigned char media_ok = 0, count = 0, media[9], isError;
 
     while (1) {
         CssTokenType eToken;
@@ -845,15 +845,29 @@ parseMediaList (CssInput *pInput, int *pIsMatch)
         eToken = inputGetToken(pInput, (const char **)&zToken, &nToken);
 
         if (eToken != CT_IDENT) return 1;
-		if (nToken == 3 && strnicmp("all", zToken, nToken) == 0) media_ok = CSS_MEDIA_ALL;
-		else if (nToken == 5 && strnicmp("print", zToken, nToken) == 0) media_ok = CSS_MEDIA_PRINT;
-		else if (nToken == 6 && strnicmp("screen", zToken, nToken) == 0) media_ok = CSS_MEDIA_SCREEN;
-
+		if (nToken == 3 && strnicmp("all", zToken, nToken) == 0) {
+			media[count++] = CSS_MEDIA_ALL;
+			media_ok = 1;
+		} else if (nToken == 5 && strnicmp("print", zToken, nToken) == 0) {
+			media[count++] = CSS_MEDIA_PRINT;
+			media_ok = 1;
+		} else if (nToken == 6 && strnicmp("screen", zToken, nToken) == 0) {
+			media[count++] = CSS_MEDIA_SCREEN;
+			media_ok = 1;
+		}
         inputNextTokenIgnoreSpace(pInput);
         if (CT_COMMA != inputGetToken(pInput, 0, 0)) break;
-
         inputNextTokenIgnoreSpace(pInput);
     }
+	while (media_ok && 0 == inputNextTokenIgnoreSpace(pInput)) {
+		isError = parseSelector(pInput, pParse);
+		if (!isError) {
+			unsigned char i = 0;
+			for (i; i < count; i++) HtmlCssSelector(pParse, media[i], 0, 0);
+			isError = parseDeclarationBlock(pInput, pParse);
+		} else break;
+		HtmlCssRule(pParse, !isError);
+	}
 
     *pIsMatch = media_ok;
     return 0;
@@ -899,7 +913,7 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
         inputNextTokenIgnoreSpace(pInput);
         eToken = inputGetToken(pInput, 0, 0);
         if (eToken != CT_SEMICOLON && eToken != CT_EOF) {
-            if (parseMediaList(pInput, &media_ok)) return 1;
+            if (parseMediaList(pInput, pParse, &media_ok)) return 1;
         }
   
         eToken = inputGetToken(pInput, 0, 0);
@@ -912,17 +926,9 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
         int media_ok, isSyntaxError;
         pParse->isBody = 1;
         inputNextTokenIgnoreSpace(pInput);
-        if (parseMediaList(pInput, &media_ok)) return 1;
+        if (parseMediaList(pInput, pParse, &media_ok)) return 1;
         if (CT_LP != inputGetToken(pInput, 0, 0)) return 1;
-        
-		while (media_ok && 0 == inputNextTokenIgnoreSpace(pInput)) {
-			CssTokenType eToken = inputGetToken(pInput, 0, 0);
-			isSyntaxError = parseSelector(pInput, pParse);
-			if (!isSyntaxError) isSyntaxError = parseDeclarationBlock(pInput, pParse);
-			else break;
-			HtmlCssSelector(pParse, media_ok, 0, 0);
-			HtmlCssRule(pParse, !isSyntaxError);
-		}
+
         if (!media_ok) {
             /* The media does not match. Skip tokens until the end of
              * the block.
