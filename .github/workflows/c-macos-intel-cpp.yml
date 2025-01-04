@@ -17,7 +17,7 @@ jobs:
       run: brew install tcl-tk
     - name: check
       run: ls /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/Headers/ && find / -name 'tclConfig.sh'
-    - name: check
+    - name: check2
       run: ls /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/    
     - name: Prepare files
       run: |
