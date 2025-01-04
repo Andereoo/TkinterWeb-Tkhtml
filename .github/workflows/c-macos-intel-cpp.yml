@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: check
-      run: brew install tcl-tk@8
+      run: find / -name 'tcl.h'
     - name: Prepare files
       run: |
         tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
