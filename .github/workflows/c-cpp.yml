@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: check
-      run: brew install tcl-tk@8
+      run: find / -name "tcl.h"
     - name: check
       run: ls /System/Volumes/Data/usr/local/Cellar/tcl-tk@8/8.6.16/include/tcl-tk/ && ls /System/Volumes/Data/usr/local/Cellar/tcl-tk@8/8.6.16/include/tcl-tk/ && ls /usr/local/Cellar/tcl-tk@8/8.6.16/lib/ && ls /usr/local/Cellar/tcl-tk@8/8.6.16/lib/
     - name: Prepare files
