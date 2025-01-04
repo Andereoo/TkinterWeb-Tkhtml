@@ -13,19 +13,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Install Tcl/Tk
-      run: brew install tcl-tk
     - name: check
-      run: ls /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/Headers/ && find / -name 'tclConfig.sh'
-    - name: check2
-      run: ls /Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/    
+      run: ls /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/ && ls /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tk.framework/Versions/8.5/ && ls /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/Headers && ls /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tk.framework/Versions/8.5/Headers
     - name: Prepare files
       run: |
         tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
         chmod +rwx ./configure
         mv *.c src && mv *.h src
     - name: Configure
-      run: ./configure CC="gcc" --with-tcl=/usr/local/Cellar/tcl-tk/9.0.0_1/lib --with-tk=/usr/local/Cellar/tcl-tk/9.0.0_1/lib --with-tclinclude=/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/ --with-tkinclude=/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/include/
+      run: ./configure CC="gcc" --with-tcl=/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/ --with-tk=/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tk.framework/Versions/8.5/ --with-tclinclude=/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/Headers --with-tkinclude=/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tk.framework/Versions/8.5/Headers
     - name: Make
       run: make
     - name: Archive code coverage results
