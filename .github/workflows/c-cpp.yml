@@ -21,7 +21,7 @@ jobs:
         chmod +rwx ./configure
         mv *.c src && mv *.h src
     - name: Configure
-      run: ./configure CC="gcc" --with-tclinclude=/Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tcl.framework/Versions/8.6/ --with-tkinclude/Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tk.framework/Versions/8.6/ --with-tcl=/Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tcl.framework/Versions/8.6/Headers/ --with-tk=/Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tk.framework/Versions/8.6/Headers/
+      run: ./configure CC="gcc" --with-tclinclude=/Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tcl.framework/Versions/8.6/ --with-tkinclude=/Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tk.framework/Versions/8.6/ --with-tcl=/Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tcl.framework/Versions/8.6/Headers/ --with-tk=/Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tk.framework/Versions/8.6/Headers/
     - name: Make
       run: make
     - name: Archive code coverage results
