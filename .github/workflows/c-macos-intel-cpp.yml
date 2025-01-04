@@ -21,7 +21,7 @@ jobs:
         chmod +rwx ./configure
         mv *.c src && mv *.h src
     - name: Configure
-      run: ./configure CC="gcc" --with-tcl=/System/Volumes/Data/usr/local/Cellar/tcl-tk@8/8.6.16/include/tcl-tk/ --with-tk=/System/Volumes/Data/usr/local/Cellar/tcl-tk@8/8.6.16/include/tcl-tk/ --with-tclinclude=/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tcl.framework/Versions/8.5/Headers --with-tkinclude=/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/System/Library/Frameworks/Tk.framework/Versions/8.5/Headers
+      run: ./configure CC="gcc" --with-tcl=/System/Volumes/Data/usr/local/Cellar/tcl-tk@8/8.6.16/include/tcl-tk/ --with-tk=/System/Volumes/Data/usr/local/Cellar/tcl-tk@8/8.6.16/include/tcl-tk/ --with-tclinclude=/usr/local/Cellar/tcl-tk@8/8.6.16/lib/ --with-tkinclude=/usr/local/Cellar/tcl-tk@8/8.6.16/lib/
     - name: Make
       run: make
     - name: Archive code coverage results
