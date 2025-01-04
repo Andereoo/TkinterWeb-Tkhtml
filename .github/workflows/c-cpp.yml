@@ -14,14 +14,14 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: check
-      run: ls /Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tcl.framework/Versions/8.6/Headers/ && ls /Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tk.framework/Versions/8.6/Headers/ && ls /Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tcl.framework/Versions/8.6/ && ls /Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tk.framework/Versions/8.6/
+      run: ls /opt/homebrew/Cellar/tcl-tk@8/8.6.16/lib/ && ls /opt/homebrew/Cellar/tcl-tk@8/8.6.16/include/tcl-tk/
     - name: Prepare files
       run: |
         tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
         chmod +rwx ./configure
         mv *.c src && mv *.h src
     - name: Configure
-      run: ./configure CC="gcc" --with-tcl=/Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tcl.framework/Versions/8.6/ --with-tk=/Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tk.framework/Versions/8.6/ --with-tclinclude=/Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tcl.framework/Versions/8.6/Headers/ --with-tkinclude=/Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tk.framework/Versions/8.6/Headers/
+      run: ./configure CC="gcc" --with-tcl=/opt/homebrew/Cellar/tcl-tk@8/8.6.16/lib/ --with-tk=/opt/homebrew/Cellar/tcl-tk@8/8.6.16/lib/ --with-tclinclude=/opt/homebrew/Cellar/tcl-tk@8/8.6.16/include/tcl-tk/ --with-tkinclude=/opt/homebrew/Cellar/tcl-tk@8/8.6.16/include/tcl-tk/
     - name: Make
       run: make
     - name: Archive code coverage results
