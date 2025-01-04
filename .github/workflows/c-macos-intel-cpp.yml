@@ -16,7 +16,7 @@ jobs:
     - name: Install Tcl/Tk
       run: brew install tcl-tk
     - name: check
-      run: find . -name 'tcl.h'*
+      run: ls / && find / -name 'tcl.h'
     - name: Prepare files
       run: |
         tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
