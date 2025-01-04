@@ -16,14 +16,9 @@ jobs:
     - name: Install Tcl/Tk
       run: brew install tcl-tk
     - name: Prepare files
-      run: |
-        tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
-        chmod +rwx ./configure
-        mv *.c src && mv *.h src
+      run: pip3 install tkinterweb
     - name: Configure
-      run: ./configure CC="gcc" --with-tcl=/usr/local/Cellar/tcl-tk/9.0.0_1/lib --with-tk=/usr/local/Cellar/tcl-tk/9.0.0_1/lib --with-tclinclude=/usr/local/Cellar/tcl-tk//9.0.0_1/include/tcl-tk --with-tkinclude=/usr/local/Cellar/tcl-tk//9.0.0_1/include/tcl-tk
-    - name: Make
-      run: make
+      run: python3 -m tkinterweb.__init__ Demo
     - name: Archive code coverage results
       uses: actions/upload-artifact@v4
       with:
