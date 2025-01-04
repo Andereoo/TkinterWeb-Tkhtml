@@ -14,8 +14,6 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: check
-      run: find / -name "tclConfig.sh"
-    - name: check
       run: ls /Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tcl.framework/Versions/8.6/Headers/ && ls /Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tk.framework/Versions/8.6/Headers/ && ls /Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tcl.framework/Versions/8.6/ && ls /Library/Frameworks/Python.framework/Versions/3.13/Frameworks/Tk.framework/Versions/8.6/
     - name: Prepare files
       run: |
