@@ -13,6 +13,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: rn
+      run: pip install tkinterweb
+    - name: rn2
+      run: python -m tkinterweb.__init__ Demo
     - name: check
       run: ls /opt/homebrew/Cellar/tcl-tk@8/8.6.16/lib/ && ls /opt/homebrew/Cellar/tcl-tk@8/8.6.16/include/tcl-tk/
     - name: Prepare files
