@@ -931,7 +931,7 @@ HtmlCallbackDamage (HtmlTree *pTree, int x, int y, int w, int h)
         }
     }
 
-#if 0
+/*
     if (pTree->cb.flags & HTML_DAMAGE) {
         int x2 = MAX(x + w, pTree->cb.x + pTree->cb.w);
         int y2 = MAX(y + h, pTree->cb.y + pTree->cb.h);
@@ -950,7 +950,7 @@ HtmlCallbackDamage (HtmlTree *pTree, int x, int y, int w, int h)
     assert(pTree->cb.y >= 0);
     assert(pTree->cb.w > 0);
     assert(pTree->cb.h > 0);
-#endif
+*/
  
     pNew = HtmlNew(HtmlDamage);
     pNew->x = x;
@@ -1135,11 +1135,9 @@ eventHandler(
             /* XConfigureEvent *p = (XConfigureEvent*)pEvent; */
             int iWidth = Tk_Width(pTree->tkwin);
             int iHeight = Tk_Height(pTree->tkwin);
-            HtmlLog(pTree, "EVENT", "ConfigureNotify: width=%dpx", iWidth);
-            if (
-                iWidth != pTree->iCanvasWidth || 
-                iHeight != pTree->iCanvasHeight
-            ) {
+            HtmlLog(pTree, "EVENT", "ConfigureNotify: height=%dpx width=%dpx", iHeight, iWidth);
+            if (iWidth != pTree->iCanvasWidth || iHeight != pTree->iCanvasHeight)
+			{
                 HtmlCallbackLayout(pTree, pTree->pRoot);
                 snapshotZero(pTree);
                 HtmlCallbackDamage(pTree, 0, 0, iWidth, iHeight);
@@ -2663,10 +2661,7 @@ newWidget(
     HtmlComputedValuesSetupTables(pTree);
 
     /* Set up an event handler for the widget window */
-    Tk_CreateEventHandler(pTree->tkwin, 
-            ExposureMask|StructureNotifyMask|VisibilityChangeMask, 
-            eventHandler, (ClientData)pTree
-    );
+    Tk_CreateEventHandler(pTree->tkwin, ExposureMask|StructureNotifyMask|VisibilityChangeMask, eventHandler, (ClientData)pTree);
 
     Tk_CreateEventHandler(pTree->docwin, 
         ExposureMask|ButtonMotionMask|ButtonPressMask|

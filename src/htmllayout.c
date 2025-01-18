@@ -2384,11 +2384,10 @@ normalFlowLayoutTable (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
         pFloat, pBox->iContainingW, sBox.width, sBox.height, *pY
     );
 	sContent.height = y;
+	sContent.iContainingH = PIXELVAL(HtmlNodeComputedValues(pNode), HEIGHT, pBox->iContainingH);
     HtmlLayoutNodeContent(pLayout, &sContent, pNode);
 
-    sContent.height = MAX(sContent.height, 
-        getHeight(pNode, sContent.height, PIXELVAL_AUTO)
-    );
+	sContent.height = getHeight(pNode, sContent.height, pBox->iContainingH);
     if (iWidth != PIXELVAL_AUTO) {
         sContent.width = MAX(sContent.width, iWidth - iMPB);
     }
@@ -2991,9 +2990,9 @@ normalFlowLayoutInlineBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode 
     w = sBox.width;
     h = sBox.height + margin.margin_top + margin.margin_bottom;
     iLineBox = h;
-    //HtmlDrawFindLinebox(&canvas, &dummy, &iLineBox);
+    HtmlDrawFindLinebox(&canvas, &dummy, &iLineBox);
 
-    HtmlInlineContextAddBox(pContext, pNode, &canvas, w, h, iLineBox);
+    HtmlInlineContextAddBox(pContext, pNode, &canvas, w, h, h-iLineBox);
 	
     return 0;
 }

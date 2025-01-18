@@ -80,7 +80,7 @@ static const char rcsid[] = "$Id: css.c,v 1.139 2007/12/16 11:57:43 danielk1977 
  * Macros to trace code in this file. Set to non-zero to activate trace
  * output on stdout.
  */
-#define TRACE_PARSER_CALLS 1
+#define TRACE_PARSER_CALLS 0
 
 static int cssParse(HtmlTree*,int,CONST char*,int,int,Tcl_Obj*,Tcl_Obj*,Tcl_Obj*,Tcl_Obj*,CssStyleSheet**);
 
@@ -3243,9 +3243,7 @@ propertySetToPropertyValues (HtmlComputedValuesCreator *p, int *aPropDone, CssPr
 		 * property that Tkhtml doesn't handle. In this case just ignore it.
          */
 		if (eProp <= CSS_PROPERTY_MAX_PROPERTY && 0 == aPropDone[eProp]) {
-            if (0 == HtmlComputedValuesSet(p, eProp, pSet->a[i].pProp)) {
-                aPropDone[eProp] = 1;
-            }
+            if (0 == HtmlComputedValuesSet(p, eProp, pSet->a[i].pProp)) aPropDone[eProp] = 1;
         }
     }
 }

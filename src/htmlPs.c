@@ -1,6 +1,6 @@
  /* 
  * So blatently ripped off from canvas, most comments are unchanged.
- * Peter MacDonald.  http://browsex.com
+ * Peter MacDonald.  http://browsex.com		NOTE: This link was pasted 23 years ago.
  *
  * tkCanvPs.c --
  *

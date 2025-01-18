@@ -1669,21 +1669,17 @@ propertyValuesSetSize (HtmlComputedValuesCreator *p, int *pIVal, unsigned int p_
     p->ex_mask &= ~p_mask;
 
     switch (pProp->eType) {
-
         /* TODO Percentages are still stored as integers - this is wrong */
         case CSS_TYPE_PERCENT: {
             int iVal = INTEGER(pProp->v.rVal * 100.0);
-            if (
-                (allow_mask & SZ_PERCENT) && 
-                (iVal >= 0 || allow_mask & SZ_NEGATIVE) 
-            ) {
+            if ((allow_mask & SZ_PERCENT) && (iVal >= 0 || allow_mask & SZ_NEGATIVE))
+			{
                 p->values.mask |= p_mask;
                 *pIVal = iVal;
                 return 0;
             }
             return 1;
         }
-
         case CSS_CONST_INHERIT:
             if (allow_mask & SZ_INHERIT) {
                 HtmlNode *pParent = p->pParent;
@@ -1692,8 +1688,7 @@ propertyValuesSetSize (HtmlComputedValuesCreator *p, int *pIVal, unsigned int p_
                 assert(pParent);
 
                 *pIVal = *pInherit;
-                p->values.mask |= 
-                    (HtmlNodeComputedValues(pParent)->mask & p_mask);
+                p->values.mask |= (HtmlNodeComputedValues(pParent)->mask & p_mask);
                 return 0;
             }
             return 1;
@@ -1719,16 +1714,13 @@ propertyValuesSetSize (HtmlComputedValuesCreator *p, int *pIVal, unsigned int p_
             }
             return 1;
 
-        case CSS_TYPE_FLOAT: {
-#if 0
+        case CSS_TYPE_FLOAT: {/*
             if (iVal >= 0 || allow_mask & SZ_NEGATIVE) {
                 *pIVal = iVal;
                 return 0;
             }
-            return 1;
-#endif
+            return 1;*/
         }
-
         default:
             return propertyValuesSetLength(
                 p, pIVal, p_mask, pProp, allow_mask & SZ_NEGATIVE);
@@ -2213,10 +2205,7 @@ HtmlComputedValuesSet (HtmlComputedValuesCreator *p, int eProp, CssProperty *pPr
             }
             case LENGTH: {
                 int *pIVar = (int*)((unsigned char*)&p->values + pDef->iOffset);
-                int setsizemask = pDef->setsizemask;
-                return propertyValuesSetSize(
-                    p, pIVar, pDef->mask, pProp, setsizemask
-                );
+                return propertyValuesSetSize(p, pIVar, pDef->mask, pProp, pDef->setsizemask);
             }
             case BORDERWIDTH: {
                 int *pBVar = (int*)((unsigned char*)&p->values + pDef->iOffset);

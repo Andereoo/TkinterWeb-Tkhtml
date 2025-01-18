@@ -834,42 +834,32 @@ static int parseDeclarationBlock(CssInput *pInput, CssParse *pParse){
  *---------------------------------------------------------------------------
  */
 static int 
-parseMediaList (CssInput *pInput, CssParse *pParse, int *pIsMatch)
+parseMediaList(CssInput *pInput, unsigned char **media, unsigned char *count)
 {
-    unsigned char media_ok = 0, count = 0, media[9], isError;
+    unsigned char media_ok = 0; *count = 0; // Initialize the count to 0
 
     while (1) {
         CssTokenType eToken;
-        char * zToken;
-        int nToken;
+        char *zToken;
+        int nToken; // Get current query after at-rule
         eToken = inputGetToken(pInput, (const char **)&zToken, &nToken);
 
-        if (eToken != CT_IDENT) return 1;
-		if (nToken == 3 && strnicmp("all", zToken, nToken) == 0) {
-			media[count++] = CSS_MEDIA_ALL;
-			media_ok = 1;
-		} else if (nToken == 5 && strnicmp("print", zToken, nToken) == 0) {
-			media[count++] = CSS_MEDIA_PRINT;
-			media_ok = 1;
-		} else if (nToken == 6 && strnicmp("screen", zToken, nToken) == 0) {
-			media[count++] = CSS_MEDIA_SCREEN;
-			media_ok = 1;
-		}
-        inputNextTokenIgnoreSpace(pInput);
+        if (eToken != CT_IDENT) return 1; // Parse all queries after at-rule, if matches: macros are added to array.
+        if (nToken == 3 && strnicmp("all", zToken, nToken) == 0) {
+            (*media)[(*count)++] = CSS_MEDIA_ALL;
+            media_ok = 1;
+        } else if (nToken == 5 && strnicmp("print", zToken, nToken) == 0) {
+            (*media)[(*count)++] = CSS_MEDIA_PRINT;
+            media_ok = 1;
+        } else if (nToken == 6 && strnicmp("screen", zToken, nToken) == 0) {
+            (*media)[(*count)++] = CSS_MEDIA_SCREEN;
+            media_ok = 1;
+        }
+        inputNextTokenIgnoreSpace(pInput); // Get next query, if is not a comma then stop.
         if (CT_COMMA != inputGetToken(pInput, 0, 0)) break;
         inputNextTokenIgnoreSpace(pInput);
     }
-	while (media_ok && 0 == inputNextTokenIgnoreSpace(pInput)) {
-		isError = parseSelector(pInput, pParse);
-		if (!isError) {
-			unsigned char i = 0;
-			for (i; i < count; i++) HtmlCssSelector(pParse, media[i], 0, 0);
-			isError = parseDeclarationBlock(pInput, pParse);
-		} else break;
-		HtmlCssRule(pParse, !isError);
-	}
 
-    *pIsMatch = media_ok;
     return 0;
 }
 
@@ -895,9 +885,9 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
     if (nWord == 6 && strnicmp("import", zWord, nWord) == 0) {
         CssTokenType eToken;
         CssToken tToken;
-        int media_ok = 1;
+        unsigned char media_ok, *media = malloc(9*sizeof(unsigned char));
 
-	/* If we are already into the stylesheet "body", this is a 
+		/* If we are already into the stylesheet "body", this is a 
          * syntax error 
          */
         if (pParse->isBody) {
@@ -912,24 +902,23 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
   
         inputNextTokenIgnoreSpace(pInput);
         eToken = inputGetToken(pInput, 0, 0);
-        if (eToken != CT_SEMICOLON && eToken != CT_EOF) {
-            if (parseMediaList(pInput, pParse, &media_ok)) return 1;
-        }
+        if (eToken != CT_SEMICOLON && eToken != CT_EOF) return 1;
+		parseMediaList(pInput, &media, &media_ok);
   
         eToken = inputGetToken(pInput, 0, 0);
         if (eToken != CT_SEMICOLON && eToken != CT_EOF) return 1;
   
-        if (media_ok) {
+        if (media_ok > 0) {
             HtmlCssImport(pParse, &tToken);
         }
     } else if (nWord == 5 && strnicmp("media", zWord, nWord) == 0) {
-        int media_ok, isSyntaxError;
+        unsigned char isError, count, *media = malloc(9*sizeof(unsigned char));
         pParse->isBody = 1;
         inputNextTokenIgnoreSpace(pInput);
-        if (parseMediaList(pInput, pParse, &media_ok)) return 1;
+        parseMediaList(pInput, &media, &count);
         if (CT_LP != inputGetToken(pInput, 0, 0)) return 1;
 
-        if (!media_ok) {
+        if (!count) {
             /* The media does not match. Skip tokens until the end of
              * the block.
              */
@@ -942,7 +931,18 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
                 if (inputGetToken(pInput, 0, 0) == CT_RP) iNest--;
                 inputNextToken(pInput);
             }
-        }
+        } else {
+			while (0 == inputNextTokenIgnoreSpace(pInput)) {
+				isError = parseSelector(pInput, pParse);
+				if (!isError) { // Parse CSS in body of '@media'
+					for (unsigned char i = 0; i < count; i++) {
+						HtmlCssSelector(pParse, media[i], 0, 0);
+					}
+					isError = parseDeclarationBlock(pInput, pParse);
+				} else break;
+				HtmlCssRule(pParse, !isError);
+			}
+		}
     } else if (nWord == 4 && strnicmp("page", zWord, nWord) == 0) {
 		
     } else if (nWord == 7 && strnicmp("charset", zWord, nWord) == 0) {
