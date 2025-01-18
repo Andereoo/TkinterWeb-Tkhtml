@@ -3104,7 +3104,7 @@ fragmentAddElement (
     }
     pFragment->pCurrent = pElem;
 
-    if (HtmlMarkup(eType)->flags & HTMLTAG_EMPTY) {
+    if (HtmlMarkup(eType) && HtmlMarkup(eType)->flags & HTMLTAG_EMPTY) {
         nodeHandlerCallbacks(pTree, (HtmlNode*)pFragment->pCurrent);
         pFragment->pCurrent = (HtmlElementNode *)HtmlNodeParent(pElem);
     }
