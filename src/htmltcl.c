@@ -1532,9 +1532,8 @@ resetCmd(
     doLoadDefaultStyle(pTree);
     pTree->isParseFinished = 0;
     pTree->isSequenceOk = 1;
-    if (pTree->eWriteState == HTML_WRITE_WAIT || 
-        pTree->eWriteState == HTML_WRITE_NONE
-    ) {
+    if (pTree->eWriteState == HTML_WRITE_WAIT || pTree->eWriteState == HTML_WRITE_NONE)
+	{
         pTree->eWriteState = HTML_WRITE_NONE;
     } else {
         pTree->eWriteState = HTML_WRITE_INHANDLERRESET;
