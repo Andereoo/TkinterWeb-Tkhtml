@@ -2209,9 +2209,7 @@ HtmlComputedValuesSet (HtmlComputedValuesCreator *p, int eProp, CssProperty *pPr
             }
             case BORDERWIDTH: {
                 int *pBVar = (int*)((unsigned char*)&p->values + pDef->iOffset);
-                return propertyValuesSetBorderWidth(
-                    p, pBVar, pDef->mask, pProp
-                );
+                return propertyValuesSetBorderWidth(p, pBVar, pDef->mask, pProp);
             }
             case AUTOINTEGER: {
                 int *pAVar = (int*)((unsigned char*)&p->values + pDef->iOffset);
