@@ -10,7 +10,7 @@ This file has two sections:
 
   There are two ways to build the Tkhtml widget:
   
-    * Using the compile script. This is *very* quick and easy if it works,
+    * Using the compile.py script. This is *very* quick and easy if it works,
       virtually impossible to debug if it doesn't.
     * Using the configure script. This is quick and easy if it works,
       virtually impossible to debug if it doesn't.
