@@ -31,7 +31,6 @@ for path in paths:
 
 print(f"Found {len(tclConfig_paths)} Tcl configuration file{'' if len(tclConfig_paths) == 1 else 's'} and {len(tkConfig_paths)} Tk configuration file{'' if len(tkConfig_paths) == 1 else 's'}")
 
-
 def check_config_files(config_paths, config_type, header_file):
     valid_paths = {}
     for file in config_paths:
@@ -71,12 +70,23 @@ valid_tkConfig_paths = check_config_files(tkConfig_paths, "TK", "tk.h")
 
 print(f"Found {len(valid_tclConfig_paths)} valid Tcl configuration file{'' if len(valid_tclConfig_paths) == 1 else 's'} and {len(valid_tkConfig_paths)} valid Tk configuration file{'' if len(valid_tkConfig_paths) == 1 else 's'}")
 
-print("Choosing a file...")
-tclConfig_path = choose_path(valid_tclConfig_paths)
-tkConfig_path = choose_path(valid_tkConfig_paths)
-print(f"Using {tclConfig_path} and {tkConfig_path}")
+abort = False
+if len(valid_tclConfig_paths) == 0 and len(valid_tkConfig_paths) == 0:
+    override = input("Error: no valid Tcl/Tk configuration files found. Press N to override or any other key to abort: ")
+    abort = True
+elif len(valid_tclConfig_paths) == 0:
+    override = input("Error: no valid Tcl configuration files found. Press N to override or any other key to abort: ")
+    abort = True
+elif len(valid_tkConfig_paths) == 0:
+    override = input("Error: no valid Tk configuration files found. Press N to override or any other key to abort: ")
+    abort = True
+else:
+    print("Choosing a file...")
+    tclConfig_path = choose_path(valid_tclConfig_paths)
+    tkConfig_path = choose_path(valid_tkConfig_paths)
+    print(f"Using {tclConfig_path} and {tkConfig_path}")
 
-override = input("Press N to override or any other key to continue: ")
+    override = input("Press N to override or any other key to continue: ")
 
 def manual_choose_path(options):
     text = ""
@@ -102,6 +112,8 @@ if override.upper() == "N":
     tclConfig_path = manual_choose_path(valid_tclConfig_paths)
     print("Select a Tk configuration file to use. ", end="")
     tkConfig_path = manual_choose_path(valid_tkConfig_paths)
+elif abort:
+    sys.exit()
 
 tclConfig_folder = os.path.dirname(tclConfig_path)
 tcl_path = valid_tclConfig_paths[tclConfig_path][1]
