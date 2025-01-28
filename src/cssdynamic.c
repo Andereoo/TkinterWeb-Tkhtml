@@ -58,7 +58,7 @@ checkDynamicCb(HtmlTree *pTree, HtmlNode *pNode, ClientData clientData)
         HtmlElementNode *pElem = (HtmlElementNode *)pNode;
         CssDynamic *p;
         for (p = pElem->pDynamic; p; p = p->pNext) {
-            int res = HtmlCssSelectorTest(p->pSelector, pNode,  0) ? 1 : 0; 
+            int res = HtmlCssSelectorTest(p->pSelector, pNode, 0) ? 1 : 0; 
             if (res != p->isSet) {
                 HtmlCallbackRestyle(pTree, pNode);
             }
