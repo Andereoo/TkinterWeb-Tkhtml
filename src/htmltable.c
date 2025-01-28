@@ -132,8 +132,7 @@ static CellCallback tableColWidthSingleSpan;
 static CellCallback tableColWidthMultiSpan;
 
 /* Figure out the actual column widths (TableData.aWidth[]). */
-static void tableCalculateCellWidths(TableData *, int, int);
-static void tableCalculateCellHeights(TableData *, int, int);
+static void tableCalculateCellWidths(TableData *, int, int, int);
 
 /* A row and cell callback (used together in a single iteration) to draw
  * the table content. All the actual drawing is done here. Everything
@@ -1310,9 +1309,9 @@ static void
 tableCalculateCellWidths (
     TableData *pData,
     int availablewidth,    /* Total width available for cells */
-    int isAuto            /* True if the 'width' of the <table> was "auto" */
-)
-{
+    int isAuto,           /* True if the 'width' of the <table> was "auto" */
+	int isHeight
+) {
     /* The values of the following variables are set in the "analysis loop"
      * (the first loop below) and thereafter left unchanged.
      */ 
@@ -1325,12 +1324,15 @@ tableCalculateCellWidths (
     int iMinAuto = 0;      /* Total of min-content-width for all 'auto' cols */
     int i, j;
     int iRemaining = availablewidth;
-	const int LRGT = MAX(MAX(CELL_WIDTH_AUTO, CELL_WIDTH_PIXELS), CELL_WIDTH_PERCENT);
+	const int n = isHeight ? pData->nRow : pData->nCol;
+	const int LRGT = 1 + MAX(MAX(CELL_WIDTH_AUTO, CELL_WIDTH_PIXELS), CELL_WIDTH_PERCENT);
 
     /* Local handles for the input arrays */
-    int *aMinWidth = pData->aMinWidth;
-    int *aMaxWidth = pData->aMaxWidth;
-    CellReqWidth *aReqWidth = pData->aReqWidth;
+    int *aMinWidth = isHeight ? pData->aMinHeight : pData->aMinWidth;
+    int *aMaxWidth = isHeight ? pData->aMaxHeight : pData->aMaxWidth;
+    CellReqWidth *aReqWidth = isHeight ? pData->aReqHeight : pData->aReqWidth;
+	
+    int *aWidth = isHeight ? pData->aHeight : pData->aWidth; /* Local handle for the output array */
 
     /* Log the inputs to this function. */
     LayoutContext *pLayout = pData->pLayout;
@@ -1360,15 +1362,14 @@ tableCalculateCellWidths (
             Tcl_IncrRefCount(pStageLog);
         }
     }
-
     /* This loop serves two purposes:
      *
      *     1. Allocate each column it's minimum content width.
      *     2. It is the "analysis loop" refered to above that populates
      *        local variables used by later stages of the algorithm.
      */
-    for (i = 0; i < pData->nCol; i++) {
-        pData->aWidth[i] = aMinWidth[i];
+    for (i = 0; i < n; i++) {
+        aWidth[i] = aMinWidth[i];
         iRemaining -= aMinWidth[i];
 
         switch (aReqWidth[i].eType) {
@@ -1387,99 +1388,86 @@ tableCalculateCellWidths (
                 break;
         }
     }
-    logWidthStage(1, pStageLog, pData->nCol, pData->aWidth);
-
-    /* Allocate pixels to percentage width columns */
-    if (iRemaining > 0) {
-        for (i = 0; i < pData->nCol; i++) {
+    logWidthStage(1, pStageLog, n, aWidth);
+    if (iRemaining > 0) { /* Allocate pixels to percentage width columns */
+        for (i = 0; i < n; i++) {
             if (aReqWidth[i].eType == CELL_WIDTH_PERCENT) {
                 int iReq = (50 + (aReqWidth[i].x.fVal * availablewidth)) / 100;
-                iReq = MAX(0, iReq - pData->aWidth[i]);
-                pData->aWidth[i] += iReq;
+                iReq = MAX(0, iReq - aWidth[i]);
+                aWidth[i] += iReq;
                 iRemaining -= iReq;
             }
         }
         if (fTotalPercent > 100.0) {
             int iRemove = (50 + ((fTotalPercent-100.0) * availablewidth)) / 100;
-            for (i = pData->nCol - 1; i >= 0; i--) {
+            for (i = n - 1; i >= 0; i--) {
                 if (aReqWidth[i].eType == CELL_WIDTH_PERCENT) {
                     /* Apparently this is for Gecko compatibility. */
-                    int rem = MIN(pData->aWidth[i], iRemove);
+                    int rem = MIN(aWidth[i], iRemove);
                     iRemove -= rem;
-                    rem = MIN(pData->aWidth[i] - aMinWidth[i], rem);
+                    rem = MIN(aWidth[i] - aMinWidth[i], rem);
                     iRemaining += rem;
-                    pData->aWidth[i] -= rem;
+                    aWidth[i] -= rem;
                 }
             }
         }
     }
-    logWidthStage(2, pStageLog, pData->nCol, pData->aWidth);
-
-    /* Allocate pixels to explicit width columns */
-    if (iRemaining > 0) {
-        for (i = 0; i < pData->nCol; i++) {
+    logWidthStage(2, pStageLog, n, aWidth);
+    if (iRemaining > 0) { /* Allocate pixels to explicit width columns */
+        for (i = 0; i < n; i++) {
             if (aReqWidth[i].eType == CELL_WIDTH_PIXELS) {
-                int iReq = MAX(0, aReqWidth[i].x.iVal - pData->aWidth[i]);
-                pData->aWidth[i] += iReq;
+                int iReq = MAX(0, aReqWidth[i].x.iVal - aWidth[i]);
+                aWidth[i] += iReq;
                 iRemaining -= iReq;
             }
         }
     }
-    logWidthStage(3, pStageLog, pData->nCol, pData->aWidth);
-
-    /* Allocate pixels to auto width columns */
-    if (iRemaining > 0) {
+    logWidthStage(3, pStageLog, n, aWidth);
+    if (iRemaining > 0) { /* Allocate pixels to auto width columns */
         int iMA = iMaxAuto;
         iRemaining += iMinAuto;
-        for (i = 0; iMA > 0 && i < pData->nCol; i++) {
+        for (i = 0; iMA > 0 && i < n; i++) {
             if (aReqWidth[i].eType == CELL_WIDTH_AUTO) {
                 int w = MAX(aMinWidth[i], iRemaining*aMaxWidth[i]/iMA);
-                pData->aWidth[i] = w;
+                aWidth[i] = w;
                 iRemaining -= w;
                 iMA -= aMaxWidth[i];
             }
         }
     }
-    logWidthStage(4, pStageLog, pData->nCol, pData->aWidth);
-
-    /* Force pixels into fixed columns (subject to max-width) */
-    if (iRemaining > 0) {
+    logWidthStage(4, pStageLog, n, aWidth);
+    if (iRemaining > 0) { /* Force pixels into fixed columns (subject to max-width) */
         int iME = iMaxExplicit;
-        for (i = 0; i < pData->nCol; i++) {
+        for (i = 0; i < n; i++) {
             if (aReqWidth[i].eType == CELL_WIDTH_PIXELS) {
                 int w = iRemaining * aMaxWidth[i] / iME;
                 iME -= aMaxWidth[i];
                 iRemaining -= w;
-                pData->aWidth[i] += w;
+                aWidth[i] += w;
             }
         }
     }
-    logWidthStage(5, pStageLog, pData->nCol, pData->aWidth);
-
-    /* Force pixels into percent columns (not subject to max-width!) */
-    if (iRemaining > 0 && fTotalPercent < 100.0) {
+    logWidthStage(5, pStageLog, n, aWidth);
+    if (iRemaining > 0 && fTotalPercent < 100.0) { /* Force pixels into percent columns (not subject to max-width!) */
         float fTP = fTotalPercent;
-        for (i = 0; i < pData->nCol; i++) {
+        for (i = 0; i < n; i++) {
             if (aReqWidth[i].eType == CELL_WIDTH_PERCENT) {
                 int w = iRemaining * aReqWidth[i].x.fVal / fTP;
                 fTP -= aReqWidth[i].x.fVal;
                 iRemaining -= w;
-                pData->aWidth[i] += w;
+                aWidth[i] += w;
             }
         }
     }
-    logWidthStage(6, pStageLog, pData->nCol, pData->aWidth);
-
-    /* Force pixels into any columns (not subject to max-width!) */
-    if (iRemaining > 0) {
-        for (i = 0; i < pData->nCol; i++) {
-            int w = iRemaining / (pData->nCol - i);
+    logWidthStage(6, pStageLog, n, aWidth);
+    if (iRemaining > 0) { /* Force pixels into any columns (not subject to max-width!) */
+        for (i = 0; i < n; i++) {
+            int w = iRemaining / (n - i);
             iRemaining -= w;
-            pData->aWidth[i] += w;
+            aWidth[i] += w;
         }
     }
-    logWidthStage(7, pStageLog, pData->nCol, pData->aWidth);
-
+    logWidthStage(7, pStageLog, n, aWidth);
     /* If too many pixels have been allocated, take some back from
      * the columns. By preference we take pixels from "auto" columns,
      * followed by "pixel width" columns and finally "percent width"
@@ -1492,27 +1480,23 @@ tableCalculateCellWidths (
      *     }
      */
     for (j = 0; iRemaining < 0 && j < LRGT; j++) {
-        
         /* Total allocated, less the total min-content-width, for the cols */
         int iAllocLessMin = 0;
-
-        for (i = 0; i < pData->nCol; i++) {
+        for (i = 0; i < n; i++) {
             if (aReqWidth[i].eType == j) {
-                iAllocLessMin += (pData->aWidth[i] - aMinWidth[i]);
+                iAllocLessMin += (aWidth[i] - aMinWidth[i]);
             }
-        }
-        for (i = 0; iAllocLessMin > 0 && i < pData->nCol; i++){
+        } for (i = 0; iAllocLessMin > 0 && i < n; i++){
             if (aReqWidth[i].eType == j) {
-                int iDiff = pData->aWidth[i] - aMinWidth[i];
+                int iDiff = aWidth[i] - aMinWidth[i];
                 int iReduce = -1 * (iRemaining * iDiff) / iAllocLessMin;
                 iRemaining += iReduce;
                 iAllocLessMin -= iDiff;
-                pData->aWidth[i] -= iReduce;
+                aWidth[i] -= iReduce;
             }
         }
-        logWidthStage(j+8, pStageLog, pData->nCol, pData->aWidth);
+        logWidthStage(j+8, pStageLog, n, aWidth);
     }
-    
     LOG {
         HtmlTree *pTree = pLayout->pTree;
         Tcl_Obj *pCmd = HtmlNodeCommand(pTree, pData->pNode);
@@ -1538,7 +1522,7 @@ tableCalculateCellWidths (
     
             Tcl_AppendToObj(pLog, "<p>Results of column width algorithm:</p>", -1);
             Tcl_AppendToObj(pLog, "<table><tr><th></th>", -1);
-            for (i = 0; i < pData->nCol; i++) {
+            for (i = 0; i < n; i++) {
                 Tcl_AppendToObj(pLog, "<th>Col ", -1);
                 Tcl_AppendObjToObj(pLog, Tcl_NewIntObj(i));
             }
@@ -1554,92 +1538,7 @@ tableCalculateCellWidths (
         }
     }
 }
-static void tableCalculateCellHeights (
-    TableData *pData,
-    int availablewidth,    /* Total width available for cells */
-    int isAuto            /* True if the 'width' of the <table> was "auto" */
-) {
-    /* The values of the following variables are set in the "analysis loop"
-     * (the first loop below) and thereafter left unchanged.
-     */ 
-    int nPercentCol = 0;         /* Number of percentage width columns */
-    double fTotalPercent = 0.0;  /* Total of percentage widths */
-    int nExplicitCol = 0;  /* Number of explicit pixel width columns */
-    int iMaxExplicit = 0;  /* Total of max-content-width for explicit cols */
-    int nAutoCol = 0;      /* Number of 'auto' width columns */
-    int iMaxAuto = 0;      /* Total of max-content-width for all 'auto' cols */
-    int iMinAuto = 0;      /* Total of min-content-width for all 'auto' cols */
-    int i, j;
-    int iRemaining = availablewidth;
-    /* Local handles for the input arrays */
-    int *aMinWidth = pData->aMinHeight;
-    int *aMaxWidth = pData->aMaxHeight;
-    CellReqWidth *aReqWidth = pData->aReqHeight;
-    /* Log the inputs to this function. */
-    LayoutContext *pLayout = pData->pLayout;
-    Tcl_Obj *pStageLog = 0;
-    /* This loop serves two purposes:
-     *
-     *     1. Allocate each column it's minimum content width.
-     *     2. It is the "analysis loop" refered to above that populates
-     *        local variables used by later stages of the algorithm.
-     */
-    for (i = 0; i < pData->nRow; i++) {
-        pData->aHeight[i] = aMinWidth[i];
-        iRemaining -= aMinWidth[i];
-        switch (aReqWidth[i].eType) {
-            case CELL_WIDTH_AUTO:
-                iMaxAuto += aMaxWidth[i];
-                iMinAuto += aMinWidth[i];
-                nAutoCol++;
-                break;
-            case CELL_WIDTH_PIXELS:
-                iMaxExplicit += aMaxWidth[i];
-                nExplicitCol++;
-                break;
-            case CELL_WIDTH_PERCENT:
-                nPercentCol++;
-                fTotalPercent += aReqWidth[i].x.fVal;
-                break;
-        }
-    } /* Force pixels into any columns (not subject to max-width!) */
-    if (iRemaining > 0) {
-        for (i = 0; i < pData->nRow; i++) {
-            int w = iRemaining / (pData->nRow - i);
-            iRemaining -= w;
-            pData->aHeight[i] += w;
-        }
-    }
-    /* If too many pixels have been allocated, take some back from
-     * the columns. By preference we take pixels from "auto" columns,
-     * followed by "pixel width" columns and finally "percent width"
-     * columns.
-     *
-     * In pseudo-tcl the outer loop would read:
-     *
-     *     foreach j {auto pixels percent} { 
-     *         reduce_pixels_in_cols_of_type $j
-     *     }
-     */
-    for (j = 0; iRemaining < 0 && j < 3; j++) {
-        /* Total allocated, less the total min-content-width, for the cols */
-        int iAllocLessMin = 0;
-        for (i = 0; i < pData->nRow; i++) {
-            if (aReqWidth[i].eType == j) {
-                iAllocLessMin += (pData->aHeight[i] - aMinWidth[i]);
-            }
-        }
-        for (i = 0; iAllocLessMin > 0 && i < pData->nRow; i++){
-            if (aReqWidth[i].eType == j) {
-                int iDiff = pData->aHeight[i] - aMinWidth[i];
-                int iReduce = -1 * (iRemaining * iDiff) / iAllocLessMin;
-                iRemaining += iReduce;
-                iAllocLessMin -= iDiff;
-                pData->aHeight[i] -= iReduce;
-            }
-        }
-    }
-}
+
 
 static int 
 tableCalculateMaxWidth (TableData *pData)
@@ -1875,8 +1774,8 @@ int HtmlTableLayout (
     availheight = (pBox->iContainingH - (data.nRow+1) * data.border_spacing);
     switch (pLayout->minmaxTest) {
         case 0:
-			tableCalculateCellHeights(&data, availheight, 0);
-            tableCalculateCellWidths(&data, availwidth, 0);
+            tableCalculateCellWidths(&data, availwidth, 0, 0);
+			tableCalculateCellWidths(&data, availheight, 0, 1);
             for (i = 0; i < nCol; i++) pBox->width += aWidth[i];
             data.aY = aY;
             data.aCell = aCell;
@@ -1905,7 +1804,6 @@ int HtmlTableLayout (
     }
 	paginationPageYOrigin(-offset, pLayout);
     pBox->width += (data.border_spacing * (nCol+1));
-    pBox->height += (data.border_spacing * (data.nRow+1));
 
     HtmlFree(aMinWidth);
     HtmlFree(aMaxWidth);
