@@ -4281,87 +4281,49 @@ typedef struct printingInfo {
 	Tcl_Obj *psObj;
 } printingInfo;
 
-static int PostScriptDrawText(
-    printingInfo *pPrint,	/* Postscript info. */
-    HtmlCanvasItem *pItem,	/* Item for which Postscript is wanted. */
-	int x,					/* X-coord for drawing origin */
-    int y)					/* Y-coord for drawing origin */
-{
-	CanvasText *pT = &pItem->kind.text;
-	return TextToPostscript(pPrint->pTree->psInfo, pT->zText, pT->nText, pT->x+x, pT->y+y, pPrint->prepass, pT->pNode, pPrint->interp);
-}
-static int PostScriptDrawImage(
-    printingInfo *pPrint,	/* Postscript info. */
-    HtmlCanvasItem *pItem,	/* Item for which Postscript is wanted. */
-	int x,					/* X-coord for drawing origin */
-    int y)					/* Y-coord for drawing origin */
-{
-    CanvasImage *pI = &pItem->kind.image;
-	return ImageToPostscript(pPrint->pTree, pI->pImage, pI->x+x, pI->y+y, pPrint->prepass, pI->pNode, pPrint->interp);
-}
-static int PostScriptDrawBox(
-    printingInfo *pPrint,	/* Postscript info. */
-    CanvasBox *pBox,		/* Item for which Postscript is wanted. */
-	int x,					/* X-coord for drawing origin */
-    int y,					/* Y-coord for drawing origin */
-	int f)
-{
-	return BoxToPostscript(pPrint->pTree, pBox->x+x, pBox->y+y, pBox->w, pBox->h, pPrint->prepass, pBox->pNode, f, pPrint->interp, pBox->pComputed);
-}
-static int PostScriptDrawLine(
-    printingInfo *pPrint,	/* Postscript info. */
-    HtmlCanvasItem *pItem,	/* Item for which Postscript is wanted. */
-	int x,					/* X-coord for drawing origin */
-    int y)					/* Y-coord for drawing origin */
-{
-    CanvasLine *pLine = &pItem->kind.line;
-	return LineToPostscript(pPrint->pTree->psInfo, pLine->x+x, pLine->y+y, pLine->w, pLine->y_linethrough, pLine->y_underline, pPrint->prepass, pLine->pNode, pPrint->interp);
-}
-static int PostScriptDrawWindow(
-    printingInfo *pPrint,	/* Postscript info. */
-    HtmlCanvasItem *pItem,	/* Item for which Postscript is wanted. */
-	int x,					/* X-coord for drawing origin */
-    int y)					/* Y-coord for drawing origin */
-{
-    CanvasWindow *pWin = &pItem->kind.window;
-	return WinItemToPostscript(pPrint->pTree, pWin->x+x, pWin->y+y, pWin->pElem->pReplacement->win, pPrint->prepass, pPrint->interp);
-}
 static int HtmlPostscriptCb(
     HtmlCanvasItem *pItem, int x, int y, Overflow *pOverflow, ClientData clientData
 ) {
-	printingInfo *pPrint = (printingInfo *)clientData;
-	int rc = TCL_OK;
+    printingInfo *pPrint = (printingInfo *)clientData;
+    int rc = TCL_OK;
+
     switch (pItem->type) {
         case CANVAS_TEXT: {
-			rc = PostScriptDrawText(pPrint, pItem, x, y);
-			break;
+            CanvasText *pT = &pItem->kind.text;
+            rc = TextToPostscript(pPrint->pTree->psInfo, pT->zText, pT->nText, pT->x + x, pT->y + y, pPrint->prepass, pT->pNode, pPrint->interp);
+            break;
         }
         case CANVAS_IMAGE: {
-			if ((pPrint->nographics >> 1) & 1) goto done;
-            rc = PostScriptDrawImage(pPrint, pItem, x, y);
-			break;
+            if ((pPrint->nographics >> 1) & 1) goto done;
+            CanvasImage *pI = &pItem->kind.image;
+            rc = ImageToPostscript(pPrint->pTree, pI->pImage, pI->x + x, pI->y + y, pPrint->prepass, pI->pNode, pPrint->interp);
+            break;
         }
         case CANVAS_BOX: {
             int f = 0;
-            if (pPrint->nographics & 1 || pPrint->pBgRoot == pItem->kind.box.pNode) f = DRAWBOX_NOBACKGROUND;
-            rc = PostScriptDrawBox(pPrint, &pItem->kind.box, x, y, f);
-			break;
+            CanvasBox *pBox = &pItem->kind.box;
+            if (pPrint->nographics & 1 || pPrint->pBgRoot == pBox->pNode) f = DRAWBOX_NOBACKGROUND;
+            rc = BoxToPostscript(pPrint->pTree, pBox->x + x, pBox->y + y, pBox->w, pBox->h, pPrint->prepass, pBox->pNode, f, pPrint->interp, pBox->pComputed);
+            break;
         }
         case CANVAS_LINE: {
-            rc = PostScriptDrawLine(pPrint, pItem, x, y);
-			break;
+            CanvasLine *pLine = &pItem->kind.line;
+            rc = LineToPostscript(pPrint->pTree->psInfo, pLine->x + x, pLine->y + y, pLine->w, pLine->y_linethrough, pLine->y_underline, pPrint->prepass, pLine->pNode, pPrint->interp);
+            break;
         }
         case CANVAS_WINDOW: {
-			rc = PostScriptDrawWindow(pPrint, pItem, x, y);
-			break;
+            CanvasWindow *pWin = &pItem->kind.window;
+            rc = WinItemToPostscript(pPrint->pTree, pWin->x + x, pWin->y + y, pWin->pElem->pReplacement->win, pPrint->prepass, pPrint->interp);
+            break;
         }
-		default: goto done;
+        default: goto done;
     }
-	if (pPrint->prepass || !strlen(Tcl_GetStringResult(pPrint->interp))) goto done;
-	Tcl_AppendToObj(pPrint->psObj, "gsave\n", -1);
-	Tcl_AppendObjToObj(pPrint->psObj, Tcl_GetObjResult(pPrint->interp));
-	Tcl_AppendToObj(pPrint->psObj, "grestore\n", -1);
-	
+
+    if (pPrint->prepass || !strlen(Tcl_GetStringResult(pPrint->interp))) goto done;
+    Tcl_AppendToObj(pPrint->psObj, "gsave\n", -1);
+    Tcl_AppendObjToObj(pPrint->psObj, Tcl_GetObjResult(pPrint->interp));
+    Tcl_AppendToObj(pPrint->psObj, "grestore\n", -1);
+
 	done: 
 		Tcl_ResetResult(pPrint->interp);
 		return rc;
@@ -4377,13 +4339,7 @@ HtmlTree *pTree, HtmlNode *pBgRoot, int ymin, int ymax, int prepass, int nogfx, 
 	sPrint.nographics = nogfx;
 	ClientData clientData = (ClientData)&sPrint;
 	if (pBgRoot && !nogfx & 1) {
-		CanvasBox sBox;
-		memset(&sBox, 0, sizeof(CanvasBox));
-		sBox.pNode = sPrint.pBgRoot = pBgRoot;
-		sBox.w = pTree->canvas.right;
-		sBox.h = ymax;
-		sBox.pComputed = pV;
-		PostScriptDrawBox(&sPrint, &sBox, 0, 0, DRAWBOX_NOBORDER);
+		BoxToPostscript(pTree, 0, 0, pTree->canvas.right, ymax, prepass, pBgRoot, DRAWBOX_NOBORDER, interp, pV);
 		Tcl_AppendToObj(psObj, "gsave % Background is drawn separately.\n", -1);
 		Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
 		Tcl_ResetResult(interp);
