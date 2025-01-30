@@ -4290,30 +4290,30 @@ static int HtmlPostscriptCb(
     switch (pItem->type) {
         case CANVAS_TEXT: {
             CanvasText *pT = &pItem->kind.text;
-            rc = TextToPostscript(pPrint->pTree->psInfo, pT->zText, pT->nText, pT->x + x, pT->y + y, pPrint->prepass, pT->pNode, pPrint->interp);
+            rc = TextToPostscript(pPrint->pTree->psInfo, pT->zText, pT->nText, pT->x+x, pT->y+y, pPrint->prepass, pT->pNode, pPrint->interp);
             break;
         }
         case CANVAS_IMAGE: {
             if ((pPrint->nographics >> 1) & 1) goto done;
             CanvasImage *pI = &pItem->kind.image;
-            rc = ImageToPostscript(pPrint->pTree, pI->pImage, pI->x + x, pI->y + y, pPrint->prepass, pI->pNode, pPrint->interp);
+            rc = ImageToPostscript(pPrint->pTree, pI->pImage, pI->x+x, pI->y+y, pPrint->prepass, pI->pNode, pPrint->interp);
             break;
         }
         case CANVAS_BOX: {
             int f = 0;
             CanvasBox *pBox = &pItem->kind.box;
             if (pPrint->nographics & 1 || pPrint->pBgRoot == pBox->pNode) f = DRAWBOX_NOBACKGROUND;
-            rc = BoxToPostscript(pPrint->pTree, pBox->x + x, pBox->y + y, pBox->w, pBox->h, pPrint->prepass, pBox->pNode, f, pPrint->interp, pBox->pComputed);
+            rc = BoxToPostscript(pPrint->pTree, pBox->x+x, pBox->y+y, pBox->w, pBox->h, pPrint->prepass, pBox->pNode, f, pPrint->interp, pBox->pComputed);
             break;
         }
         case CANVAS_LINE: {
             CanvasLine *pLine = &pItem->kind.line;
-            rc = LineToPostscript(pPrint->pTree->psInfo, pLine->x + x, pLine->y + y, pLine->w, pLine->y_linethrough, pLine->y_underline, pPrint->prepass, pLine->pNode, pPrint->interp);
+            rc = LineToPostscript(pPrint->pTree->psInfo, pLine->x+x, pLine->y+y, pLine->w, pLine->y_linethrough, pLine->y_underline, pPrint->prepass, pLine->pNode, pPrint->interp);
             break;
         }
         case CANVAS_WINDOW: {
             CanvasWindow *pWin = &pItem->kind.window;
-            rc = WinItemToPostscript(pPrint->pTree, pWin->x + x, pWin->y + y, pWin->pElem->pReplacement->win, pPrint->prepass, pPrint->interp);
+            rc = WinItemToPostscript(pPrint->pTree, pWin->x+x, pWin->y+y, pWin->pElem->pReplacement->win, pPrint->prepass, pPrint->interp);
             break;
         }
         default: goto done;
@@ -4331,12 +4331,7 @@ static int HtmlPostscriptCb(
 int HtmlGetPostscript(
 HtmlTree *pTree, HtmlNode *pBgRoot, int ymin, int ymax, int prepass, int nogfx, Tcl_Interp *interp, Tcl_Obj *psObj, HtmlComputedValues *pV
 ) {
-	printingInfo sPrint;
-	sPrint.pTree = pTree;
-	sPrint.psObj = psObj;
-	sPrint.interp = interp;
-	sPrint.prepass = prepass;
-	sPrint.nographics = nogfx;
+	struct printingInfo sPrint = {pTree, pBgRoot, prepass, nogfx, interp, psObj};
 	ClientData clientData = (ClientData)&sPrint;
 	if (pBgRoot && !nogfx & 1) {
 		BoxToPostscript(pTree, 0, 0, pTree->canvas.right, ymax, prepass, pBgRoot, DRAWBOX_NOBORDER, interp, pV);
