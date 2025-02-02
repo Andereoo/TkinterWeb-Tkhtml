@@ -172,7 +172,6 @@ int HtmlPostscript(
     int result;
     const char *p;
     time_t now;
-    size_t length;
 	HtmlTree *pTree = (HtmlTree *)clientData;
 	HtmlCanvas *pCanvas = &pTree->canvas;
     Tk_Window tkwin = pTree->tkwin;
@@ -284,8 +283,8 @@ int HtmlPostscript(
 			psInfo.x = pTree->iScrollX; psInfo.y = pTree->iScrollY;
 			psInfo.width = MIN(pTree->iCanvasWidth, psInfo.width);
 			psInfo.height = MIN(pTree->iCanvasHeight, psInfo.height);
-			psInfo.pageSize.width = psInfo.width*psInfo.scale;
-			psInfo.pageSize.height = psInfo.height*psInfo.scale;
+			psInfo.pageSize.width = psInfo.width * psInfo.scale;
+			psInfo.pageSize.height = psInfo.height * psInfo.scale;
 			getLowerCorners(pPsInfo);
 			getPageCentre(pPsInfo);
 			goto finish;
@@ -373,12 +372,11 @@ int HtmlPostscript(
     if (psInfo.colorMode == NULL) {
 		psInfo.colorLevel = 2;
     } else {
-		length = strlen(psInfo.colorMode);
-		if (strncmp(psInfo.colorMode, "monochrome", length) == 0)
+		if (strncmp(psInfo.colorMode, "monochrome", 10) == 0)
 			psInfo.colorLevel = 0;
-		else if (strncmp(psInfo.colorMode, "gray", length) == 0)
+		else if (strncmp(psInfo.colorMode, "gray", 4) == 0 || strncmp(psInfo.colorMode, "grey", 4) == 0)
 			psInfo.colorLevel = 1;
-		else if (strncmp(psInfo.colorMode, "color", length) == 0)
+		else if (strncmp(psInfo.colorMode, "color", 5) == 0 || strncmp(psInfo.colorMode, "colour", 6) == 0)
 			psInfo.colorLevel = 2;
 		else {
 			Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -701,13 +699,13 @@ int HtmlPostscript(
 		}
 		if (psInfo.pageMode != NULL) {
 			ckfree(psInfo.pageMode);
-			/*pTree->options.forcewidth = pTree->options.pagination = 0;
-			HtmlCallbackLayout(pTree, pTree->pRoot);*/
+			pTree->options.forcewidth = pTree->options.pagination = 0;
+			HtmlCallbackLayout(pTree, pTree->pRoot);
 		}
 		Tcl_DeleteHashTable(&psInfo.fontTable);
 		pTree->psInfo = (Tk_PostscriptInfo) oldInfoPtr;
-		/*pTree->isPrintedMedia = 0;
-		HtmlCallbackRestyle(pTree, pTree->pRoot);*/
+		pTree->isPrintedMedia = 0;
+		HtmlCallbackRestyle(pTree, pTree->pRoot);
 		Tcl_DecrRefCount(preambleObj);
 		Tcl_DecrRefCount(psObj);
 		return result;
