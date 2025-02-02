@@ -20,8 +20,8 @@ TCLLIB = -L$(TCL)/lib -ltcl$(TCLVERSION) -ltk$(TCLVERSION) -ltclstub$(TCLVERSION
 #
 # TCLLIB_DEBUG += -L/usr/X11R6/lib/ -lX11 -ldl -lm
 
-BCC = gcc
-CC = x86_64-w64-mingw32-gcc
+BCC = x86_64-w64-mingw32-gcc
+CC = gcc
 
 CFLAGS_RELEASE = -O2 -DNDEBUG 
 CFLAGS_DEBUG   = -g
