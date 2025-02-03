@@ -1,4 +1,4 @@
-#!C:/msys64/mingw64/bin/tclsh
+#!!/usr/bin/tclsh
 #
 # Run this TCL script to generate the "main.mk" makefile.
 #
@@ -15,6 +15,7 @@ set src {
   htmllayout
   htmlparse
   htmlPs
+  htmlPsImg
   htmlsizer
   htmltable
   htmltcl
