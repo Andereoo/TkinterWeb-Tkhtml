@@ -17,6 +17,8 @@ with open(os.path.join(IPTH, F)) as file:
             used = i[2:]
             break
 
+used.extend(["htmltokens.c", "htmldefaultstyle.c"])
+
 got = [i for i in os.listdir(SRCDIR) if fnmatch(i, "*.c")]
 print("Files used by TkHTML-3:")
 print(" ".join(got))
