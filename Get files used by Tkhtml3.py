@@ -30,3 +30,5 @@ if not os.path.exists(os.path.join(SRCDIR, O)): os.makedirs(os.path.join(SRCDIR,
 for i in unused:
     move(os.path.join(SRCDIR, i), os.path.join(SRCDIR, O, i))
     print(i)
+
+input("\nPress ENTER to end")
