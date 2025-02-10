@@ -1989,8 +1989,7 @@ nodeInsertCmd(
     HtmlNode *pBefore = 0;
     HtmlNode *pAfter = 0;
 
-    /* Process the "-before" or "-after" option, if one is specified. 
-     */
+    /* Process the "-before" or "-after" option, if one is specified. */
     if (objc > 3 && (
             0 == strcmp(Tcl_GetString(objv[2]), "-before") ||
             0 == strcmp(Tcl_GetString(objv[2]), "-after")
@@ -1998,7 +1997,10 @@ nodeInsertCmd(
         int iBefore;
         pBefore = HtmlNodeGetPointer(pTree, Tcl_GetString(objv[3]));
         iBefore = HtmlNodeIndexOfChild(pNode, pBefore);
-        if (iBefore < 0) {
+		if (HtmlNodeIsOrphan(pBefore)) {  // Complain if "-before" is an orphan
+			Tcl_SetResult(interp, "The node specified by -before is an orphan", TCL_STATIC);
+			return TCL_ERROR;
+		} if (iBefore < 0) {
             Tcl_ResetResult(pTree->interp);
             Tcl_AppendResult(pTree->interp, Tcl_GetString(objv[3]), 
                 " is not a child node of ", Tcl_GetString(objv[0]), 0
