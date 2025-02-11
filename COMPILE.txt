@@ -10,13 +10,19 @@ This file has two sections:
 
   There are two ways to build the Tkhtml widget:
   
+    * Using the compile.py script. This is *very* quick and easy if it works,
+      virtually impossible to debug if it doesn't.
     * Using the configure script. This is quick and easy if it works,
       virtually impossible to debug if it doesn't.
     * Modifying the Makefile template. This takes a few minutes to set up, 
       but it's easier to understand what's going on.
   
-  Both systems have been tested on Suse linux 9.2 and Mingw/Msys on 
-  Windows XP.
+  Both systems have been tested on Suse linux 9.2 and Mingw/Msys on Windows XP.
+
+  Using the compile script
+  --------------------------
+  
+  1. Run the "compile.py" script located in the htmlwidget directory. Hope for the best.
   
   Using the configure script
   --------------------------
