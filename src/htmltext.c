@@ -1245,7 +1245,7 @@ typedef struct HtmlTextMapping HtmlTextMapping;
 struct HtmlTextMapping {
     HtmlTextNode *pTextNode;
     int iStrIndex;             /* Character offset in HtmlText.pObj */
-    int nodeIndexIndex;            /* Byte offset in HtmlTextNode.zText */
+    int iNodeIndex;            /* Byte offset in HtmlTextNode.zText */
     HtmlTextMapping *pNext;
 };
 struct HtmlText {
@@ -1265,12 +1265,12 @@ struct HtmlTextInit {
 #define SEEN_BLOCK 2
 
 static void 
-addTextMapping (HtmlText *pText, HtmlTextNode *pTextNode, int nodeIndexIndex, int iStrIndex)
+addTextMapping (HtmlText *pText, HtmlTextNode *pTextNode, int iNodeIndex, int iStrIndex)
 {
     HtmlTextMapping *p;
     p = (HtmlTextMapping *)HtmlAlloc("HtmlTextMapping",sizeof(HtmlTextMapping));
     p->iStrIndex = iStrIndex;
-    p->nodeIndexIndex = nodeIndexIndex;
+    p->iNodeIndex = iNodeIndex;
     p->pTextNode = pTextNode;
     p->pNext = pText->pMapping;
     pText->pMapping = p;
@@ -1492,15 +1492,15 @@ HtmlTextIndexCmd(
         for ( ; pMap; pMap = pMap->pNext) {
             assert(!pMap->pNext || pMap->iStrIndex >= pMap->pNext->iStrIndex);
             if (pMap->iStrIndex <= iIndex || !pMap->pNext) {
-                int nodeIndexIdx = pMap->nodeIndexIndex; 
+                int iNodeIdx = pMap->iNodeIndex; 
                 Tcl_Obj *apObj[2];
 
                 int nExtra = iIndex - pMap->iStrIndex;
-                char *zExtra = &(pMap->pTextNode->zText[nodeIndexIdx]);
-                nodeIndexIdx += (Tcl_UtfAtIndex(zExtra, nExtra) - zExtra);
+                char *zExtra = &(pMap->pTextNode->zText[iNodeIdx]);
+                iNodeIdx += (Tcl_UtfAtIndex(zExtra, nExtra) - zExtra);
 
                 apObj[0] = HtmlNodeCommand(pTree, &pMap->pTextNode->node);
-                apObj[1] = Tcl_NewIntObj(nodeIndexIdx);
+                apObj[1] = Tcl_NewIntObj(iNodeIdx);
                 Tcl_ListObjReplace(0, p, 0, 0, 2, apObj);
                 break;
             }
@@ -1571,9 +1571,9 @@ HtmlTextOffsetCmd(
 
     initHtmlText(pTree);
     for (pMap = pTree->pText->pMapping; pMap; pMap = pMap->pNext) {
-        if (pMap->pTextNode == pTextNode && pMap->nodeIndexIndex <= iIndex) {
-            char *zExtra = &pTextNode->zText[pMap->nodeIndexIndex];
-            int nExtra = iIndex - pMap->nodeIndexIndex;
+        if (pMap->pTextNode == pTextNode && pMap->iNodeIndex <= iIndex) {
+            char *zExtra = &pTextNode->zText[pMap->iNodeIndex];
+            int nExtra = iIndex - pMap->iNodeIndex;
             iRet = pMap->iStrIndex + Tcl_NumUtfChars(zExtra, nExtra);
             break;
         }

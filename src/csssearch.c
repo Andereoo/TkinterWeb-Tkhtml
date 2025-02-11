@@ -60,7 +60,7 @@ cssSearchCb(HtmlTree *pTree, HtmlNode *pNode, ClientData clientData)
         CssRule *p;
         for (
             p = pSearch->pRuleList; 
-            p && 0 == HtmlCssSelectorTest(p->pSelector, pNode,  0);
+            p && 0 == HtmlCssSelectorTest(p->pSelector, pNode, 0);
             p = p->pNext
         );
         if (p) {
