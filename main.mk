@@ -16,7 +16,7 @@
 # JS_SHARED_LIB       Name of javascript shared-library to build.
 # 
 
-CFLAGS += -I$(TOP)src/ -O
+CFLAGS += -I$(TCL)/include -I. -I$(TOP)/src/
 STUBSFLAGS = -DUSE_TCL_STUBS -DUSE_TK_STUBS
 
 SRC = htmlparse.c htmldraw.c htmltcl.c htmlimage.c htmltree.c htmltagdb.c \

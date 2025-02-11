@@ -1,4 +1,4 @@
-#!!/usr/bin/tclsh
+#!/usr/bin/tclsh
 #
 # Run this TCL script to generate the "main.mk" makefile.
 #
