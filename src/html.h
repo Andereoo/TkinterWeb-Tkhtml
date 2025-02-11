@@ -295,7 +295,7 @@ struct HtmlTaggedRegion {
 struct HtmlNode {
     ClientData clientData;
     HtmlNode *pParent;             /* Parent of this node */
-    int nodeIndex;                     /* Node index */
+    int index;                     /* Node index */
 
     Html_u8 eTag;                  /* Tag type (or 0) */
     const char *zTag;              /* Atom string for tag type */
@@ -307,7 +307,7 @@ struct HtmlNode {
     int iBboxX, iBboxY, iBboxX2, iBboxY2;
 };
 
-/* Value of HtmlNode.nodeIndex for orphan and generated nodes. */
+/* Value of HtmlNode.index for orphan and generated nodes. */
 #define HTML_NODE_ORPHAN -23
 #define HTML_NODE_GENERATED -1
 
@@ -648,7 +648,7 @@ struct HtmlTree {
     Tcl_HashTable aTag;
     Tk_OptionTable tagOptionTable;     /* Option table for tags*/
 
-    /* The isSequenceOk variable is true if the HtmlNode.nodeIndex values for all
+    /* The isSequenceOk variable is true if the HtmlNode.index values for all
      * nodes in the tree are currently in tree order.
      */
     int isSequenceOk;    

@@ -699,7 +699,7 @@ upgradeRestylePoint (HtmlNode **ppRestyle, HtmlNode *pNode)
 
     /* Do nothing if pNode is part of an orphan tree */
     for (pA = pNode; pA; pA = HtmlNodeParent(pA)) {
-        if (pA->nodeIndex == HTML_NODE_ORPHAN) return 0;
+        if (pA->index == HTML_NODE_ORPHAN) return 0;
     }
 
     for (pA = *ppRestyle; pA; pA = HtmlNodeParent(pA)) {

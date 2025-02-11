@@ -600,7 +600,7 @@ styleApply (HtmlTree *pTree, HtmlNode *pNode, StyleApply *p)
         if (pElem->pBefore) {
             ((HtmlElementNode *)(pElem->pBefore))->pStack = pElem->pStack;
             pElem->pBefore->pParent = pNode;
-            pElem->pBefore->nodeIndex = -1;
+            pElem->pBefore->index = -1;
         }
     } else if (pElem->pBefore) {
         HtmlStyleHandleCounters(pTree, HtmlNodeComputedValues(pElem->pBefore));
@@ -618,7 +618,7 @@ styleApply (HtmlTree *pTree, HtmlNode *pNode, StyleApply *p)
         if (pElem->pAfter) {
             ((HtmlElementNode *)(pElem->pAfter))->pStack = pElem->pStack;
             pElem->pAfter->pParent = pNode;
-            pElem->pAfter->nodeIndex = -1;
+            pElem->pAfter->index = -1;
         }
 
         if (pElem->pBefore || pElem->pAfter) {

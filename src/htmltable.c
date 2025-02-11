@@ -696,7 +696,7 @@ tableDrawRow (HtmlNode *pNode, int row, void *pContext)
      */
 
     CHECK_INTEGER_PLAUSIBILITY(pData->pBox->vc.bottom);
-    if (pElem && pElem->node.nodeIndex >= 0 && pElem->pPropertyValues) {
+    if (pElem && pElem->node.index >= 0 && pElem->pPropertyValues) {
         int iHeight;
 
         int x1, y1, w1, h1;           /* Border coordinates */
@@ -743,7 +743,7 @@ tableDrawRow (HtmlNode *pNode, int row, void *pContext)
             for (k = i; k < (i+pCell->colspan); k++) w1 += pData->aWidth[k];
             w1 += ((pCell->colspan-1) * pData->border_spacing);
             h1 = pData->aY[pCell->finrow] - pData->border_spacing - y1;
-            if (pCell->pNode->nodeIndex >= 0) {
+            if (pCell->pNode->index >= 0) {
                 HtmlLayoutDrawBox(pData->pLayout->pTree, pCanvas, x1, y1, w1, h1, pCell->pNode, 0, mmt);
             }
             nodeGetBoxProperties(pLayout, pCell->pNode, 0, &box);
@@ -1048,7 +1048,7 @@ rowIterate (HtmlTree *pTree, HtmlNode *pNode, RowIterateContext *p)
                 HtmlComputedValues *pV2 = HtmlNodeComputedValues(pNextRow);
                 if (DISPLAY(pV2) == CSS_CONST_TABLE_CELL) break;
             }
-            sCell.node.nodeIndex = -1;
+            sCell.node.index = -1;
             sCell.nChild = j - i;
             sCell.apChildren = &((HtmlElementNode *)pNode)->apChildren[i];
             cellIterate(pTree, (HtmlNode *)&sCell, p);
@@ -1106,7 +1106,7 @@ rowGroupIterate (HtmlTree *pTree, HtmlNode *pNode, RowIterateContext *p)
                 HtmlComputedValues *pV2 = HtmlNodeComputedValues(pNextRow);
                 if (DISPLAY(pV2) == CSS_CONST_TABLE_ROW) break;
             }
-            sRow.node.nodeIndex = -1;
+            sRow.node.index = -1;
             sRow.nChild = j - i;
             sRow.apChildren = &((HtmlElementNode *)pNode)->apChildren[i];
             rowIterate(pTree, (HtmlNode*)&sRow, p);
@@ -1232,7 +1232,7 @@ tableIterate (
             }
 
             memset(&sRowGroup, 0, sizeof(HtmlElementNode));
-            sRowGroup.node.nodeIndex = -1;
+            sRowGroup.node.index = -1;
             sRowGroup.nChild = j - i;
             sRowGroup.apChildren = &((HtmlElementNode *)pNode)->apChildren[i];
             rowGroupIterate(pTree, (HtmlNode*)&sRowGroup, &sRowContext);

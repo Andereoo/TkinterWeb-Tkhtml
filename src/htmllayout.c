@@ -55,7 +55,7 @@ static const char rcsid[] = "$Id: htmllayout.c,v 1.270 2008/01/07 04:48:02 danie
 #include <stdlib.h>
 
 #define LOG(X) if ( \
-(X)->nodeIndex >= 0 && pLayout->pTree->options.logcmd && 0 == pLayout->minmaxTest)
+(X)->index >= 0 && pLayout->pTree->options.logcmd && 0 == pLayout->minmaxTest)
 
 /* Used for debugging the layout cache. Some output appears on stdout. */
 /* #define LAYOUT_CACHE_DEBUG */
@@ -1765,7 +1765,7 @@ drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
         HtmlImageFree(pImg);
     }
 
-    if ( pNode->nodeIndex >= 0 && pLayout->pTree->options.logcmd ){
+    if ( pNode->index >= 0 && pLayout->pTree->options.logcmd ){
         HtmlTree *pTree = pLayout->pTree;
         HtmlLog(pTree, "LAYOUTENGINE", 
             "%s drawReplacementContent() (%s) %dx%d descent=%d",
@@ -2487,7 +2487,7 @@ normalFlowLayoutTableComponent (LayoutContext *pLayout, BoxContext *pBox, HtmlNo
     memset(&sTable, 0, sizeof(HtmlElementNode));
     sTable.apChildren = &((HtmlElementNode *)pParent)->apChildren[idx];
     sTable.nChild = nChild;
-    sTable.node.nodeIndex = -1;
+    sTable.node.index = -1;
 
     if (!pLayout->pImplicitTableProperties) {
         HtmlComputedValuesCreator sCreator;
@@ -3580,7 +3580,7 @@ normalFlowLayout (
         COND(6, pLayout->pFixed == pFixed) &&
         COND(7, !HtmlNodeBefore(pNode) && !HtmlNodeAfter(pNode)) && 
         COND(8, pNode->pParent) &&
-        COND(9, pNode->nodeIndex >= 0)
+        COND(9, pNode->index >= 0)
     ) {
         HtmlDrawOrigin(&pBox->vc); // The X and Y axes are controled in normalFlowLayoutBlock() 
         HtmlDrawCopyCanvas(&pCache->canvas, &pBox->vc);

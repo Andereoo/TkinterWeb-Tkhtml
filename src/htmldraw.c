@@ -3161,7 +3161,7 @@ layoutNodeIndexCb(
     )
 {
     CanvasText *pT = &pItem->kind.text;
-    if (pItem->type == CANVAS_TEXT && pT->iIndex >= 0 && pT->pNode->nodeIndex >= 0){
+    if (pItem->type == CANVAS_TEXT && pT->iIndex >= 0 && pT->pNode->index >= 0){
         NodeIndexQuery *pQuery = (NodeIndexQuery *)clientData;
 
         /* Calculate the bounding-box of the item. Store the coordinates 
@@ -3356,7 +3356,7 @@ layoutNodeCb(
     }
 
     if (
-        pNode && pNode->nodeIndex >= 0 && 
+        pNode && pNode->index >= 0 && 
         x <= pQuery->x && (x + w) >= pQuery->x &&
         y <= pQuery->y && (y + h) >= pQuery->y &&
         !HtmlNodeIsOrphan(pNode)
@@ -3657,7 +3657,7 @@ paintNodesSearchCb(
         CanvasText *pT = &(pItem->kind.text);
         HtmlFont *pFont = fontFromNode(pT->pNode);
         if (pT->iIndex >= 0) {
-            int nodeIndex = pT->pNode->nodeIndex;
+            int nodeIndex = pT->pNode->index;
             if (nodeIndex >= p->nodeIndexStart && nodeIndex <= p->nodeIndexFin) {
                 int n;
                 const char *z;
@@ -3748,8 +3748,8 @@ HtmlWidgetDamageText (
     int nodeIndexFin;
 
     HtmlSequenceNodes(pTree);
-    nodeIndexStart = pNodeStart->nodeIndex;
-    nodeIndexFin = pNodeFin->nodeIndex;
+    nodeIndexStart = pNodeStart->index;
+    nodeIndexFin = pNodeFin->index;
 
     if (nodeIndexStart > nodeIndexFin || 
         (nodeIndexStart == nodeIndexFin && iIndexStart > iIndexFin)
@@ -3797,8 +3797,8 @@ HtmlWidgetBboxText (
     int nodeIndexFin;
 
     HtmlSequenceNodes(pTree);
-    nodeIndexStart = pNodeStart->nodeIndex;
-    nodeIndexFin = pNodeFin->nodeIndex;
+    nodeIndexStart = pNodeStart->index;
+    nodeIndexFin = pNodeFin->index;
   
     assert(nodeIndexStart <= nodeIndexFin);
     assert(nodeIndexFin > nodeIndexStart || iIndexFin >= iIndexStart);
@@ -3864,18 +3864,18 @@ scrollToNodeCb(
      * unconditionally return the pixel offset of the top-border edge
      * of the box. This is defined in CSS2.1.
      */
-    if (pNode && pItem->type == CANVAS_BOX && pNode->nodeIndex == iMaxNode){
+    if (pNode && pItem->type == CANVAS_BOX && pNode->index == iMaxNode){
         pQuery->iReturn = y;
         return 1;
     }
  
     if (
         pNode && 
-        pNode->nodeIndex <= pQuery->iMaxNode && 
-        pNode->nodeIndex >= pQuery->iMinNode
+        pNode->index <= pQuery->iMaxNode && 
+        pNode->index >= pQuery->iMinNode
     ) {
         pQuery->iReturn = y;
-        pQuery->iMinNode = pNode->nodeIndex;
+        pQuery->iMinNode = pNode->index;
     }
 
     return 0;
@@ -3913,7 +3913,7 @@ HtmlWidgetNodeTop (HtmlTree *pTree, HtmlNode *pNode)
     HtmlSequenceNodes(pTree);
     HtmlCallbackForce(pTree);
 
-    pQuery.iMaxNode = pNode->nodeIndex;
+    pQuery.iMaxNode = pNode->index;
     pQuery.iMinNode = 0;
     pQuery.iReturn = 0;
     pQuery.pTree = pTree;

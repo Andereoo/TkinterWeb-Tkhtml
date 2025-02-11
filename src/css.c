@@ -3640,7 +3640,7 @@ generatedContent (
          */
         HtmlTextNode *pTextNode = generateContentText(pTree, zContent);
         int idx = HtmlNodeAddTextChild(*ppNode, pTextNode);
-        HtmlNodeChild(*ppNode, idx)->nodeIndex = HTML_NODE_GENERATED;
+        HtmlNodeChild(*ppNode, idx)->index = HTML_NODE_GENERATED;
         HtmlFree(zContent);
     }
 }

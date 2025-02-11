@@ -203,7 +203,7 @@ struct InlineContext {
  */
 #define START_LOG(pLogNode) \
 if (pContext->pTree->options.logcmd && !pContext->isSizeOnly &&                \
-    pLogNode->nodeIndex >= 0) {                                                    \
+    pLogNode->index >= 0) {                                                    \
     Tcl_Obj *pLog = Tcl_NewObj();                                              \
     Tcl_Obj *pLogCmd = HtmlNodeCommand(pContext->pTree, pLogNode);             \
     Tcl_IncrRefCount(pLog);                                                    \
