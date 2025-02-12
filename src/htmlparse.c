@@ -1148,11 +1148,7 @@ HtmlTokenizerAppend (HtmlTree *pTree, const char *zText, int nText, int isFinal)
     Tcl_AppendToObj(pTree->pDocument, z, n);
 
     if (pTree->eWriteState == HTML_WRITE_NONE) {
-        tokenizeWrapper(pTree, isFinal, 
-            HtmlTreeAddText,
-            HtmlTreeAddElement,
-            HtmlTreeAddClosingTag
-        );
+        tokenizeWrapper(pTree, isFinal, HtmlTreeAddText, HtmlTreeAddElement, HtmlTreeAddClosingTag);
     }
 }
 

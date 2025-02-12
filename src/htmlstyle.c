@@ -600,7 +600,7 @@ styleApply (HtmlTree *pTree, HtmlNode *pNode, StyleApply *p)
         if (pElem->pBefore) {
             ((HtmlElementNode *)(pElem->pBefore))->pStack = pElem->pStack;
             pElem->pBefore->pParent = pNode;
-            pElem->pBefore->iNode = -1;
+            pElem->pBefore->index = -1;
         }
     } else if (pElem->pBefore) {
         HtmlStyleHandleCounters(pTree, HtmlNodeComputedValues(pElem->pBefore));
@@ -618,7 +618,7 @@ styleApply (HtmlTree *pTree, HtmlNode *pNode, StyleApply *p)
         if (pElem->pAfter) {
             ((HtmlElementNode *)(pElem->pAfter))->pStack = pElem->pStack;
             pElem->pAfter->pParent = pNode;
-            pElem->pAfter->iNode = -1;
+            pElem->pAfter->index = -1;
         }
 
         if (pElem->pBefore || pElem->pAfter) {
@@ -803,12 +803,11 @@ int
 HtmlStyleApply (HtmlTree *pTree, HtmlNode *pNode)
 {
     StyleApply sApply;
-    int isRoot = ((pNode == pTree->pRoot) ? 1 : 0);
     HtmlLog(pTree, "STYLEENGINE", "START");
 
     memset(&sApply, 0, sizeof(StyleApply));
     sApply.pRestyle = pNode;
-    sApply.isRoot = isRoot;
+    sApply.isRoot = ((pNode == pTree->pRoot) ? 1 : 0);
 
     assert(pTree->pStyleApply == 0);
     pTree->pStyleApply = (void *)&sApply;

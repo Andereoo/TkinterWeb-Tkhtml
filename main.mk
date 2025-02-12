@@ -20,10 +20,10 @@ CFLAGS += -I$(TCL)/include -I. -I$(TOP)/src/
 STUBSFLAGS = -DUSE_TCL_STUBS -DUSE_TK_STUBS
 
 SRC = htmlparse.c htmldraw.c htmltcl.c htmlimage.c htmltree.c htmltagdb.c \
-      css.c cssprop.c csssearch.c htmlstyle.c htmllayout.c     \
+      css.c cssprop.c csssearch.c htmlstyle.c htmllayout.c                \
       htmlprop.c htmlfloat.c htmlhash.c swproc.c htmlinline.c             \
       htmltable.c restrack.c cssdynamic.c htmldecode.c htmltext.c         \
-      htmlutil.c cssparser.c
+      htmlutil.c cssparser.c htmlPs.c
 
 SRCHDR = $(TOP)/src/html.h $(TOP)/src/cssInt.h $(TOP)/src/css.h
 GENHDR = cssprop.h htmltokens.h

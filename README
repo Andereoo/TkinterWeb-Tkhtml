@@ -1,4 +1,5 @@
-This directory contains all source code files for the TkHtml widget.  Some of the files have been modified for use with TkinterWeb (https://github.com/Andereoo/TkinterWeb).  Thanks to BRL-CAD (https://github.com/BRL-CAD/brlcad) for 64-bit Windows modifications and the TkHtml3 project (http://tkhtml.tcl.tk/) for source code.  TkHtml renders HTML for Tcl/Tk 8.0 and later.
+This directory contains all source code files for the TkHtml
+widget.  TkHtml renders HTML for Tcl/Tk 8.0 and later.
 
    COMPILE.txt     Instructions on how to compile TkHtml.
 
