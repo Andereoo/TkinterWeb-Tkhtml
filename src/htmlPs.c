@@ -134,6 +134,8 @@ static const Tk_ConfigSpec configSpecs[] = {
 /* Forward declarations for functions defined later in this file: */
 
 int HtmlGetPostscript(HtmlTree *, HtmlNode *, int , int , int , int , Tcl_Interp *, Tcl_Obj *, HtmlComputedValues *);
+static int fill_quadPs(Tcl_Interp*, Tk_PostscriptInfo, Tcl_Obj*, XColor*, int, double, int, int, int, int, int, int);
+static int fill_rectanglePs(Tcl_Interp*, Tk_PostscriptInfo, Tcl_Obj*, XColor*, int, double, int, int);
 static int scaledHeight(TkPostscriptInfo *);
 static void getLowerCorners(TkPostscriptInfo *);
 static void getPageCentre(TkPostscriptInfo *);
@@ -370,17 +372,17 @@ int HtmlPostscript(
     }
 
     if (psInfo.colorMode == NULL) {
-		psInfo.colorLevel = 2;
+		psInfo.colorLevel = 2;  // Default to color
     } else {
-		if (strncmp(psInfo.colorMode, "monochrome", 10) == 0)
-			psInfo.colorLevel = 0;
-		else if (strncmp(psInfo.colorMode, "gray", 4) == 0 || strncmp(psInfo.colorMode, "grey", 4) == 0)
-			psInfo.colorLevel = 1;
-		else if (strncmp(psInfo.colorMode, "color", 5) == 0 || strncmp(psInfo.colorMode, "colour", 6) == 0)
-			psInfo.colorLevel = 2;
+		if (strncmp(psInfo.colorMode, "m", 10) == 0)
+			psInfo.colorLevel = 0;  // Monochrome
+		else if (strncmp(psInfo.colorMode, "g", 4) == 0)
+			psInfo.colorLevel = 1;  // Gray / grey
+		else if (strncmp(psInfo.colorMode, "c", 5) == 0)
+			psInfo.colorLevel = 2;  // Color / colour
 		else {
 			Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-				"bad color mode \"%s\": must be monochrome, gray, or color",
+				"bad color mode \"%s\": must be m (monochrome), g (gray), or c (color)",
 				psInfo.colorMode));
 			Tcl_SetErrorCode(interp, "TK", "HTML", "PS", "COLORMODE", NULL);
 			result = TCL_ERROR;
@@ -722,7 +724,7 @@ static inline Tcl_Obj *GetPostscriptBuffer(Tcl_Interp *interp)
     return psObj;
 }
 
-int fill_quadPs(
+static int fill_quadPs(
     Tcl_Interp *interp,
 	Tk_PostscriptInfo psInfo,
 	Tcl_Obj *psObj,
@@ -745,7 +747,7 @@ int fill_quadPs(
     return TCL_OK;
 }
 
-int fill_rectanglePs(
+static int fill_rectanglePs(
     Tcl_Interp *interp,
 	Tk_PostscriptInfo psInfo,
 	Tcl_Obj *psObj,

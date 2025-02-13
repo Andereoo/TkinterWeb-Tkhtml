@@ -734,11 +734,6 @@ void HtmlTokenizerAppend(HtmlTree *, const char *, int, int);
 int HtmlNameToType(void *, char *);
 Html_u8 HtmlMarkupFlags(int);
 
-/* Used for turning HTML into PostScript */
-int TkPostscriptImage(Tcl_Interp*, Tk_Window, Tk_PostscriptInfo, XImage*, int, int, int, int);
-Tk_Window HtmlTreeTkwin(HtmlTree*);
-int fill_quadPs(Tcl_Interp*, Tk_PostscriptInfo, Tcl_Obj*, XColor*, int, double, int, int, int, int, int, int);
-int fill_rectanglePs(Tcl_Interp*, Tk_PostscriptInfo, Tcl_Obj*, XColor*, int, double, int, int);
 HtmlComputedValues * getCanvasBackground(HtmlNode*);
 
 
