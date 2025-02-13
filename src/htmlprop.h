@@ -35,10 +35,7 @@ typedef struct HtmlFontCache HtmlFontCache;
  * position properties too ('top', 'right', 'bottom' and 'left').
  */
 struct HtmlFourSides {
-    int iTop;
-    int iLeft;
-    int iBottom;
-    int iRight;
+    int iTop, iLeft, iBottom, iRight;
 };
 
 /*
