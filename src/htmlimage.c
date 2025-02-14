@@ -305,13 +305,13 @@ getImageCompressed(HtmlImage2 *pImage)
         Tcl_IncrRefCount(apObj[1]);
         Tcl_IncrRefCount(apObj[2]);
         if (TCL_OK == Tcl_EvalObjv(interp, 3, apObj, TCL_EVAL_GLOBAL)) {
-	    int nData;
-	    Tcl_Obj *pData = Tcl_GetObjResult(interp);
-	    Tcl_GetByteArrayFromObj(pData, &nData);
-	    if (nData>0){
+        int nData;
+        Tcl_Obj *pData = Tcl_GetObjResult(interp);
+        Tcl_GetByteArrayFromObj(pData, &nData);
+        if (nData>0){
                 pImage->pCompressed = pData;
                 Tcl_IncrRefCount(pData);
-	    }
+        }
         }
         Tcl_DecrRefCount(apObj[2]);
         Tcl_DecrRefCount(apObj[1]);
@@ -437,7 +437,7 @@ HtmlImageServerGet (HtmlImageServer *p, const char *zUrl)
             Tcl_Obj **apObj = 0;
             Tk_Image img;
            
-	    /* The image could not be found in the hash table and an 
+        /* The image could not be found in the hash table and an 
              * -imagecmd callback is configured. The callback script 
              * must be executed to obtain an image. Build up a script 
              * in pEval and execute it. Put the result in variable pResult.
@@ -1100,7 +1100,7 @@ HtmlImageAlphaChannel (HtmlImage2 *pImage)
                     p->eAlpha = ALPHA_CHANNEL_TRUE;
                     return 1;
                 }
-		z += block.pixelSize;
+        z += block.pixelSize;
             }
         }
     }
@@ -1335,7 +1335,7 @@ Tcl_Obj *HtmlPixmapToImage(
     Tcl_Interp *interp = pTree->interp;
 
     Tcl_Obj *pImage;
-	XImage *pXImage;
+    XImage *pXImage;
     Tk_PhotoHandle photo;
     Tk_PhotoImageBlock block;
     int x = 0, y = 0;
@@ -1366,9 +1366,9 @@ Tcl_Obj *HtmlPixmapToImage(
     for (redshift=0; !((redmask>>redshift)&0x000000001); redshift++);
     for (greenshift=0; !((greenmask>>greenshift)&0x00000001); greenshift++);
     for (blueshift=0; !((bluemask>>blueshift)&0x00000001); blueshift++);
-	
-	Display *pDisplay = Tk_Display(pTree->tkwin);
-	pXImage = XGetImage(pDisplay, pixmap, x, y, w, h, AllPlanes, ZPixmap);
+    
+    Display *pDisplay = Tk_Display(pTree->tkwin);
+    pXImage = XGetImage(pDisplay, pixmap, x, y, w, h, AllPlanes, ZPixmap);
 
     for (x=0; x<w; x++) {
         for (y=0; y<h; y++) {
@@ -1383,7 +1383,7 @@ Tcl_Obj *HtmlPixmapToImage(
         }
     }
 
-	XDestroyImage(pXImage);
+    XDestroyImage(pXImage);
     photo = Tk_FindPhoto(interp, Tcl_GetString(pImage));
     Htmlphotoputblock(interp, photo, &block, 0, 0, w, h, 0);
     HtmlFree(block.pixelPtr);
@@ -1439,7 +1439,7 @@ HtmlImageServerReport(
           zUrl = pImage->zUrl;
         }
         Tcl_ListObjAppendElement(interp, p, Tcl_NewStringObj(zUrl, -1));
-	if (pImage->pImageName) {
+    if (pImage->pImageName) {
             Tcl_ListObjAppendElement(interp, p, pImage->pImageName);
         } else {
             Tcl_ListObjAppendElement(interp, p, Tcl_NewStringObj("", -1));

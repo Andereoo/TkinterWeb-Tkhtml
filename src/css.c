@@ -226,7 +226,7 @@ dequote (char *z)
             n--;
         }
   
-	/* Figure out if there is a quote character (" or ').  If there is one,
+    /* Figure out if there is a quote character (" or ').  If there is one,
          * strip it from the start of the string before proceeding. 
          */
         q = z[0];
@@ -253,7 +253,7 @@ dequote (char *z)
                     int inc = Tcl_UniCharToUtf(ch, zOut);
                     zOut += inc;
      
-		    /* Ignore a single white-space character after a
+            /* Ignore a single white-space character after a
                      * hexadecimal escape.
                      */
                     if (isspace((unsigned char)(z[i + 1]))) i++;
@@ -622,8 +622,8 @@ tokenToProperty (CssParse *pParse, const CssToken *pToken)
                     if (functions[i].type==-1) {
                         /* -1 means this is an RGB value. Transform to a
                          * color string that Tcl can understand before
-			 * storing it in the properties database. The color
-			 * string will be 7 characters long exactly.
+             * storing it in the properties database. The color
+             * string will be 7 characters long exactly.
                          */
                         int nAlloc = sizeof(CssProperty) + 7 + 1;
                         pProp = (CssProperty *)HtmlAlloc("CssProperty", nAlloc);
@@ -667,7 +667,7 @@ tokenToProperty (CssParse *pParse, const CssToken *pToken)
      */
     if (!pProp) {
         int eType;
-		char *token;
+        char *token;
         int nAlloc = sizeof(CssProperty) + n + 1;
         pProp = (CssProperty *)HtmlAlloc("CssProperty", nAlloc);
         pProp->v.zVal = (char *)&pProp[1];
@@ -679,16 +679,16 @@ tokenToProperty (CssParse *pParse, const CssToken *pToken)
             pProp->eType = CSS_TYPE_STRING;
         } else {
             dequote(pProp->v.zVal);
-			token = strtok(pProp->v.zVal, " "); // Tokenize the properties using space as a delimiter
-			while (token != NULL) { // Iterate through each token (property)
-				eType = HtmlCssConstantLookup(-1, token); // Lookup for each property
-				if (eType <= 0) {
-					pProp->eType = CSS_TYPE_RAW; // Set the type to RAW if lookup fails
-				} else {
-					pProp->eType = eType; // Set the type to the found eType
-				}
-				token = strtok(NULL, " "); // Get the next token
-			}
+            token = strtok(pProp->v.zVal, " "); // Tokenize the properties using space as a delimiter
+            while (token != NULL) { // Iterate through each token (property)
+                eType = HtmlCssConstantLookup(-1, token); // Lookup for each property
+                if (eType <= 0) {
+                    pProp->eType = CSS_TYPE_RAW; // Set the type to RAW if lookup fails
+                } else {
+                    pProp->eType = eType; // Set the type to the found eType
+                }
+                token = strtok(NULL, " "); // Get the next token
+            }
         }
     }
     return pProp;
@@ -1317,8 +1317,8 @@ error_out:
  *
  * shortcutListStyle --
  *
- * 	[ <'list-style-type'> || <'list-style-position'> ||
- * 	    <'list-style-image'> ] | inherit
+ *     [ <'list-style-type'> || <'list-style-position'> ||
+ *         <'list-style-image'> ] | inherit
  * Results:
  *     None.
  *
@@ -2678,7 +2678,7 @@ ruleCompare(CssRule *pLeft, CssRule *pRight) {
                  * priority rule is the one that appeared later in the 
                  * source stylesheet.
                  */
-		res = pLeft->iRule - pRight->iRule;
+        res = pLeft->iRule - pRight->iRule;
             }
         }
     }
@@ -2917,7 +2917,7 @@ HtmlCssRule (CssParse *pParse, int success)
     }
 
     if (success && !pParse->isIgnore && pSelector && (pPropertySet || pImportant))
-	{
+    {
         if (pPropertySet) {
             unsigned int flags = FREE_BOTH;
             cssSelectorPropertySetPair(pParse, pSelector, pPropertySet, flags);
@@ -2993,7 +2993,7 @@ attrTest (int eType, const char *zString, const char *zAttr)
         case CSS_SELECTOR_ATTRVALUE:
             return ((zAttr && 0==stricmp(zAttr, zString))?1:0);
 
-	/* Treat the attribute value (if it exists) as a space seperated list.
+    /* Treat the attribute value (if it exists) as a space seperated list.
          * Return true if zString exists in the list.
          */
         case CSS_SELECTOR_ATTRLISTVALUE: {
@@ -3189,10 +3189,10 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int flags)
 
             case CSS_SELECTOR_NEVERMATCH:
                 return 0;
-				
-			case CSS_MEDIA_ALL: break;
-			case CSS_MEDIA_PRINT: if ((flags>>1)&1) break; return 0;
-			case CSS_MEDIA_SCREEN: if (!(flags>>1)&1) break; return 0;
+                
+            case CSS_MEDIA_ALL: break;
+            case CSS_MEDIA_PRINT: if ((flags>>1)&1) break; return 0;
+            case CSS_MEDIA_SCREEN: if (!(flags>>1)&1) break; return 0;
 
             default:
                 assert(!"Impossible");
@@ -3239,10 +3239,10 @@ propertySetToPropertyValues (HtmlComputedValuesCreator *p, int *aPropDone, CssPr
 
     for (i = pSet->n - 1; i >= 0; i--) {
         eProp = pSet->a[i].eProp;
-		/* eProp may be greater than MAX_PROPERTY if it stores a composite
-		 * property that Tkhtml doesn't handle. In this case just ignore it.
+        /* eProp may be greater than MAX_PROPERTY if it stores a composite
+         * property that Tkhtml doesn't handle. In this case just ignore it.
          */
-		if (eProp <= CSS_PROPERTY_MAX_PROPERTY && 0 == aPropDone[eProp]) {
+        if (eProp <= CSS_PROPERTY_MAX_PROPERTY && 0 == aPropDone[eProp]) {
             if (0 == HtmlComputedValuesSet(p, eProp, pSet->a[i].pProp)) aPropDone[eProp] = 1;
         }
     }
@@ -3302,7 +3302,7 @@ overrideToPropertyValues(
         zProp = Tcl_GetStringFromObj(apObj[ii], &nProp);
         eProp = HtmlCssPropertyLookup(nProp, zProp);
 
-	if (eProp <= CSS_PROPERTY_MAX_PROPERTY && 0 == aPropDone[eProp]) {
+    if (eProp <= CSS_PROPERTY_MAX_PROPERTY && 0 == aPropDone[eProp]) {
             const char *zVal = Tcl_GetString(apObj[ii + 1]);
             CssProperty *pProp = HtmlCssStringToProperty(zVal, -1);
             if (0 == HtmlComputedValuesSet(p, eProp, pProp)) {
@@ -3524,11 +3524,11 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
         /* The contents of the "style" attribute, if one exists, are handled
          * after the important rules but before anything else. This is because:
          * 
-	 *     (a) CSS 2.1, in section 6.4.3 says that a style attribute has
-	 *         the maximum possible specificity, and
-	 *     (b) Tkhtml assumes the style attribute resides on the author
-	 *         stylesheet, with no !important flag - hence, according to
-	 *         section 6.4.1 it is handled just after the !important stuff.
+     *     (a) CSS 2.1, in section 6.4.3 says that a style attribute has
+     *         the maximum possible specificity, and
+     *     (b) Tkhtml assumes the style attribute resides on the author
+     *         stylesheet, with no !important flag - hence, according to
+     *         section 6.4.1 it is handled just after the !important stuff.
          */
         if (!isStyleDone && !pPriority->important) {
             isStyleDone = 1;
@@ -3541,7 +3541,7 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
         nSelectorMatch += applyRule(pTree, pNode, pRule, aPropDone, (char **)0, &sCreator);
 
         if (pSelector->isDynamic && HtmlCssSelectorTest(pSelector, pNode, 1))
-		{
+        {
             HtmlCssAddDynamic(pElem, pSelector, 0);
         }
     }

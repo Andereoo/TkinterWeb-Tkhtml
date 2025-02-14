@@ -621,7 +621,7 @@ windowsRepair (HtmlTree *pTree, HtmlCanvas *pCanvas)
          * widget is being destroyed (pTree==0) unmap the window and remove it
          * from the HtmlTree.pMapped linked-list. 
          */
-	if (!pTree || p->clipped || iWidth <= 0 || iHeight <= 0) {
+    if (!pTree || p->clipped || iWidth <= 0 || iHeight <= 0) {
             if (Tk_IsMapped(control)) {
                 Tk_UnmapWindow(control);
             }
@@ -669,7 +669,7 @@ HtmlDrawCleanup (HtmlTree *pTree, HtmlCanvas *pCanvas)
 {
     HtmlCanvasItem *pItem;
     HtmlCanvasItem *pPrev = 0;
-	CHECK_CANVAS(pCanvas);
+    CHECK_CANVAS(pCanvas);
 
     assert(pTree || !pCanvas->pFirst);
 
@@ -693,12 +693,12 @@ HtmlDrawCleanup (HtmlTree *pTree, HtmlCanvas *pCanvas)
             case CANVAS_MARKER:
                 assert(pItem->kind.marker.flags);
                 if (!pItem->kind.marker.flags) {
-		            Tcl_Obj *pCrashCmd = pTree->options.drawcleanupcrashcmd;
-					if (pCrashCmd) {
-						Tcl_Interp *interp = pTree->interp;
-						Tcl_EvalObjEx(interp, pCrashCmd, TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL);
-					}
-				}
+                    Tcl_Obj *pCrashCmd = pTree->options.drawcleanupcrashcmd;
+                    if (pCrashCmd) {
+                        Tcl_Interp *interp = pTree->interp;
+                        Tcl_EvalObjEx(interp, pCrashCmd, TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL);
+                    }
+                }
                 break;
             case CANVAS_BOX:
             case CANVAS_TEXT:
@@ -812,15 +812,15 @@ movePrimitives (HtmlCanvas *pCanvas, int x, int y)
 {
     HtmlCanvasItem *p;
 
-	//printf("movePrimitives\n");
+    //printf("movePrimitives\n");
     /* Optimization. Do nothing for a +0+0 translation. */
     if (x == 0 && y == 0) return;
 
     for (p = pCanvas->pFirst; p; p = p->pNext) {
-		//printf("A: %d; X = %d + %d; Y = %d + %d, ", p->type, p->kind.generic.x, x, p->kind.generic.y, y);
+        //printf("A: %d; X = %d + %d; Y = %d + %d, ", p->type, p->kind.generic.x, x, p->kind.generic.y, y);
         p->kind.generic.x += x;
         p->kind.generic.y += y;
-		//printf("B: %d; X = %d; Y = %d\n", p->type, p->kind.generic.x, p->kind.generic.y);
+        //printf("B: %d; X = %d; Y = %d\n", p->type, p->kind.generic.x, p->kind.generic.y);
         if (p->type == CANVAS_ORIGIN) {
             p = p->kind.origin.pSkip;
             p->kind.generic.x -= x;
@@ -840,7 +840,7 @@ HtmlDrawOrigin (HtmlCanvas *pCanvas)
     /* Allocate the first CANVAS_ORIGIN item */
     pItem = allocateCanvasItem();
     memset(pItem, 0, sizeof(HtmlCanvasItem));
-	/* Set the horizontal and vertical origin coordinates for pItem based on the left and top of HtmlCanvas */
+    /* Set the horizontal and vertical origin coordinates for pItem based on the left and top of HtmlCanvas */
     pItem->kind.origin.horizontal = pCanvas->left;
     pItem->kind.origin.vertical = pCanvas->top;
     pItem->kind.origin.nRef = 1;
@@ -856,7 +856,7 @@ HtmlDrawOrigin (HtmlCanvas *pCanvas)
     memset(pItem2, 0, sizeof(HtmlCanvasItem));
     pItem->kind.origin.pSkip = pItem2;
     pItem2->type = CANVAS_ORIGIN;
-	/* Set the horizontal and vertical origin coordinates for pItem2 based on the right and bottom of HtmlCanvas */
+    /* Set the horizontal and vertical origin coordinates for pItem2 based on the right and bottom of HtmlCanvas */
     pItem2->kind.origin.horizontal = pCanvas->right;
     pItem2->kind.origin.vertical = pCanvas->bottom;
     pItem2->nRef = 1;
@@ -911,8 +911,8 @@ HtmlDrawCopyCanvas (HtmlCanvas *pTo, HtmlCanvas *pFrom)
     assert(!pFrom->pFirst || pFrom->pFirst->kind.origin.nRef == 1);
     assert(!pFrom->pLast || (pFrom->pLast->type == CANVAS_ORIGIN && pFrom->pLast->pNext == 0));
 
-	CHECK_CANVAS(pTo);
-	CHECK_CANVAS(pFrom);
+    CHECK_CANVAS(pTo);
+    CHECK_CANVAS(pFrom);
 
     /* The pTo canvas must be empty for this to work */
     assert(pTo->pFirst == 0);
@@ -930,8 +930,8 @@ HtmlDrawCopyCanvas (HtmlCanvas *pTo, HtmlCanvas *pFrom)
     }
 
     assert(pTo->pLast == 0 || pTo->pLast->pNext == 0);
-	CHECK_CANVAS(pTo);
-	CHECK_CANVAS(pFrom);
+    CHECK_CANVAS(pTo);
+    CHECK_CANVAS(pFrom);
 }
 
 /*
@@ -954,8 +954,8 @@ HtmlDrawCopyCanvas (HtmlCanvas *pTo, HtmlCanvas *pFrom)
 void 
 HtmlDrawCanvas (HtmlCanvas *pCanvas, HtmlCanvas *pCanvas2, int x, int y, HtmlNode *pNode)
 {
-	CHECK_CANVAS(pCanvas);
-	CHECK_CANVAS(pCanvas2);
+    CHECK_CANVAS(pCanvas);
+    CHECK_CANVAS(pCanvas2);
     if (pCanvas2->pFirst) {
         movePrimitives(pCanvas2, x, y);
 
@@ -975,7 +975,7 @@ HtmlDrawCanvas (HtmlCanvas *pCanvas, HtmlCanvas *pCanvas2, int x, int y, HtmlNod
     pCanvas->top = MIN(pCanvas->top, y+pCanvas2->top);
     pCanvas->bottom = MAX(pCanvas->bottom, y+pCanvas2->bottom);
     pCanvas->right = MAX(pCanvas->right, x+pCanvas2->right);
-	CHECK_CANVAS(pCanvas);
+    CHECK_CANVAS(pCanvas);
 }
 
 static HtmlNode *
@@ -1276,9 +1276,9 @@ HtmlDrawWindow (
 }
 static void outputPrimitive(HtmlCanvasItem *pItem, int x, int y, Tcl_Obj *pPrimitives, HtmlTree *pTree, Tcl_Interp *interp)
 {
-	Tcl_Obj *pList = 0;
-	int nObj = 0;
-	Tcl_Obj *aObj[13];
+    Tcl_Obj *pList = 0;
+    int nObj = 0;
+    Tcl_Obj *aObj[13];
     switch (pItem->type) {
         case CANVAS_OVERFLOW:
             nObj = 3;
@@ -1287,13 +1287,13 @@ static void outputPrimitive(HtmlCanvasItem *pItem, int x, int y, Tcl_Obj *pPrimi
             aObj[2] = Tcl_NewIntObj(pItem->kind.overflow.h);
             break;
         case CANVAS_ORIGIN:
-			nObj = 5;
+            nObj = 5;
             if (pItem->kind.origin.pSkip) {
                 aObj[0] = Tcl_NewStringObj("draw_origin_start X:Y H:V", -1);
             } else {
                 aObj[0] = Tcl_NewStringObj("draw_origin_end X:Y H:V", -1);
             }
-			aObj[1] = Tcl_NewIntObj(pItem->kind.origin.x);
+            aObj[1] = Tcl_NewIntObj(pItem->kind.origin.x);
             aObj[2] = Tcl_NewIntObj(pItem->kind.origin.y);
             aObj[3] = Tcl_NewIntObj(pItem->kind.origin.horizontal);
             aObj[4] = Tcl_NewIntObj(pItem->kind.origin.vertical);
@@ -1331,7 +1331,7 @@ static void outputPrimitive(HtmlCanvasItem *pItem, int x, int y, Tcl_Obj *pPrimi
             aObj[0] = Tcl_NewStringObj("draw_window X:Y", -1);
             aObj[1] = Tcl_NewIntObj(pItem->kind.window.x+x);
             aObj[2] = Tcl_NewIntObj(pItem->kind.window.y+y);
-			aObj[3] = HtmlNodeCommand(pTree, (HtmlNode*)pItem->kind.window.pElem);
+            aObj[3] = HtmlNodeCommand(pTree, (HtmlNode*)pItem->kind.window.pElem);
             aObj[4] = pItem->kind.window.pElem->pReplacement->pReplace;
             break;
         case CANVAS_BOX:
@@ -1354,7 +1354,7 @@ static void outputPrimitive(HtmlCanvasItem *pItem, int x, int y, Tcl_Obj *pPrimi
             aObj[6] = HtmlNodeCommand(pTree, pItem->kind.line.pNode);
             break;
     }
-	if (nObj > 0) {
+    if (nObj > 0) {
         pList = Tcl_NewObj();
         for (int i = 0; i < nObj; i++) {
             if (!aObj[i]) aObj[i] = Tcl_NewStringObj("", -1);
@@ -1465,7 +1465,7 @@ setClippingDrawable (GetPixmapQuery *pQuery, HtmlCanvasItem *pItem, Drawable *pD
 
             if (!p->pixmap) {
                 p->pixmap = Tk_GetPixmap(
-    		    Tk_Display(win), Tk_WindowId(win), 
+                Tk_Display(win), Tk_WindowId(win), 
                     p->pmw, p->pmh,
                     Tk_Depth(win)
                 );
@@ -1640,7 +1640,7 @@ tileimage (
         pix = HtmlImageTilePixmap(pImage, &i_w, &i_h);
         if (!pix) {
             img = HtmlImageTile(pImage, &i_w, &i_h);
-		}
+        }
     } else {
         pix = HtmlImagePixmap(pImage);
         if (!pix) {
@@ -1891,14 +1891,14 @@ drawBox (
 
 #ifdef WIN32
             /*
-	     * Todo: On windows, using XFillRectangle() to draw the image
-	     * doesn't seem to work. This is probably a shortcoming of the Tk
-	     * porting layer, but this hasn't been checked properly yet. For
+         * Todo: On windows, using XFillRectangle() to draw the image
+         * doesn't seem to work. This is probably a shortcoming of the Tk
+         * porting layer, but this hasn't been checked properly yet. For
              * now, disable the XFillRectangle() optimization. 
              */
             int isAlpha = 1;
 #else
-	    /* Update: Maybe the XFillRectangle() optimization is less helpful
+        /* Update: Maybe the XFillRectangle() optimization is less helpful
              * than it seems.
              */
             int isAlpha = 1;
@@ -1995,7 +1995,7 @@ drawImage (
 )
 {
     if (pI2->pImage) {
-        int imW, imH;	/* Image width and Image height */
+        int imW, imH;    /* Image width and Image height */
         HtmlImageSize(pI2->pImage, &imW, &imH);
 
         tileimage(
@@ -2098,8 +2098,8 @@ drawText (
     HtmlTaggedRegion *pTagged;
     HtmlTextNode *pText;
 
-    CONST char *z = pT->zText;	/* String to render */
-    int n = pT->nText;			/* Length of string z in (Todo: bytes? chars?) */
+    CONST char *z = pT->zText;    /* String to render */
+    int n = pT->nText;            /* Length of string z in (Todo: bytes? chars?) */
 
     /* Draw the text in the regular way (according to the stylesheet config). 
      *
@@ -2319,7 +2319,7 @@ searchCanvas(
                         ymax2 += apOverflow[iOverflow]->yscroll;
                     }
                     if ((ymax >= 0 && y >= ymax2) || (ymin >= 0 && (y+h) <= ymin2))
-					{
+                    {
                        break;
                     }
                 }
@@ -2341,9 +2341,9 @@ searchCanvas(
         }
     }
 
-	search_out:
-		HtmlFree(apOverflow);
-		return rc;
+    search_out:
+        HtmlFree(apOverflow);
+        return rc;
 }
 
 static int sorterCb(
@@ -2408,10 +2408,10 @@ sorterIterate(
         for (jj = 0; jj < pLevel->iSlot; jj++) {
             CanvasItemSorterSlot *p = &pLevel->aSlot[jj];
             rc = xFunc(p->pItem, p->x, p->y, p->pOverflow, clientData);
-			if (TCL_OK != rc) {return rc;}
+            if (TCL_OK != rc) {return rc;}
         }
     }
-	return rc;
+    return rc;
 }
 static int searchSortedCanvas(
     HtmlTree *pTree,
@@ -2428,13 +2428,13 @@ static int searchSortedCanvas(
     searchCanvas(pTree, ymin, ymax, sorterCb, (ClientData)&sSorter, 1);
     int rc = sorterIterate(&sSorter, xFunc, clientData);
     sorterReset(&sSorter);
-	return rc;
+    return rc;
 }
 
 typedef struct{
-	HtmlTree *pTree;
-	Tcl_Interp *interp;
-	Tcl_Obj *pPrimitives;
+    HtmlTree *pTree;
+    Tcl_Interp *interp;
+    Tcl_Obj *pPrimitives;
 } primitivesvar;
 static int layoutPrimitivesCb(
     HtmlCanvasItem *pItem,
@@ -2443,8 +2443,8 @@ static int layoutPrimitivesCb(
     Overflow *pOverflow,
     ClientData clientData)
 {
-	primitivesvar *p = (primitivesvar *)clientData;
-	outputPrimitive(pItem, origin_x, origin_y, p->pPrimitives, p->pTree, p->interp);
+    primitivesvar *p = (primitivesvar *)clientData;
+    outputPrimitive(pItem, origin_x, origin_y, p->pPrimitives, p->pTree, p->interp);
 }
 int layoutPrimitives(
     ClientData clientData,         /* The HTML widget data structure */
@@ -2456,15 +2456,15 @@ int layoutPrimitives(
     HtmlTree *pTree = (HtmlTree *)clientData;
     Tcl_Obj *pPrimitives = Tcl_NewObj();
     Tcl_IncrRefCount(pPrimitives);
-	
-	primitivesvar cd;
-	cd.pTree = pTree;
-	cd.interp = interp;
-	cd.pPrimitives = pPrimitives;
-	
-	//searchSortedCanvas(pTree, -1, -1, 0, layoutPrimitivesCb, &cd);
-	searchCanvas(pTree, -1, -1, layoutPrimitivesCb, &cd, 1);
-	
+    
+    primitivesvar cd;
+    cd.pTree = pTree;
+    cd.interp = interp;
+    cd.pPrimitives = pPrimitives;
+    
+    //searchSortedCanvas(pTree, -1, -1, 0, layoutPrimitivesCb, &cd);
+    searchCanvas(pTree, -1, -1, layoutPrimitivesCb, &cd, 1);
+    
     Tcl_SetObjResult(interp, pPrimitives);
     Tcl_DecrRefCount(pPrimitives);
     return TCL_OK;
@@ -3060,25 +3060,25 @@ int HtmlLayoutImage(
     Tk_MakeWindowExist(pTree->tkwin);
     w = Tk_Width(pTree->tkwin);
     h = Tk_Height(pTree->tkwin);
-	if (objc > 2 && !strcmp(Tcl_GetString(objv[2]), "-full")) {
-		w = MAX(w, pTree->canvas.right);
-		h = MAX(h, pTree->canvas.bottom);
-	}
+    if (objc > 2 && !strcmp(Tcl_GetString(objv[2]), "-full")) {
+        w = MAX(w, pTree->canvas.right);
+        h = MAX(h, pTree->canvas.bottom);
+    }
     assert(w >= 0 && h >= 0);
     if (w > 0 && h > 0) {
         Pixmap pixmap;
         Tcl_Obj *pImage;
         pixmap = getPixmap(pTree, pTree->iScrollX, pTree->iScrollY, w, h, 0);
         pImage = HtmlPixmapToImage(pTree, pixmap, w, h);
-		if (pImage) {
-			Tcl_SetObjResult(interp, pImage);
-			Tcl_DecrRefCount(pImage);
-		}
+        if (pImage) {
+            Tcl_SetObjResult(interp, pImage);
+            Tcl_DecrRefCount(pImage);
+        }
         Tk_FreePixmap(Tk_Display(pTree->tkwin), pixmap);
     } else {
         /* If the width or height is zero, then the image is empty. So just
-	 * run the following simple script to set the interpreter result to
-	 * an empty image.
+     * run the following simple script to set the interpreter result to
+     * an empty image.
          */
         Tcl_Eval(interp, "image create photo");
     }
@@ -4169,7 +4169,7 @@ HtmlWidgetSetViewport (
         if ( iShiftY > 20000 || iShiftY < -20000 || iShiftX > 20000 || iShiftX < -20000
         ) {
             /* If moving the window more than 20000 pixels in either the
-	     * horizontal or vertical direction, make sure the entire viewport
+         * horizontal or vertical direction, make sure the entire viewport
              * is redrawn.
              */
             HtmlCallbackDamage(pTree, 0, 0, 100000, 100000);
@@ -4182,14 +4182,14 @@ HtmlCanvasItem *
 HtmlDrawMarker (HtmlCanvas *pCanvas, int x, int y, int fixed)
 {
     HtmlCanvasItem *pItem; 
-	CHECK_CANVAS(pCanvas);
+    CHECK_CANVAS(pCanvas);
     pItem = allocateCanvasItem();
     pItem->type = CANVAS_MARKER;
     pItem->kind.marker.x = x;
     pItem->kind.marker.y = y;
     pItem->kind.marker.flags = (fixed ? MARKER_FIXED : 0);
     linkItem(pCanvas, pItem);
-	CHECK_CANVAS(pCanvas);
+    CHECK_CANVAS(pCanvas);
     return pItem;
 }
 
@@ -4197,14 +4197,14 @@ void
 HtmlDrawLinebox (HtmlCanvas *pCanvas, int x, int y)
 {
     HtmlCanvasItem *pItem; 
-	CHECK_CANVAS(pCanvas);
+    CHECK_CANVAS(pCanvas);
     pItem = allocateCanvasItem();
     pItem->type = CANVAS_MARKER;
     pItem->kind.marker.x = x;
     pItem->kind.marker.y = y;
     pItem->kind.marker.flags = MARKER_LINEBOX;
     linkItem(pCanvas, pItem);
-	CHECK_CANVAS(pCanvas);
+    CHECK_CANVAS(pCanvas);
     return;
 }
 
@@ -4273,12 +4273,12 @@ int BoxToPostscript(HtmlTree*, int x, int y, int w, int h, int, HtmlNode*, int, 
 int LineToPostscript(Tk_PostscriptInfo, int x, int y, int w, int, int, int, HtmlNode*, Tcl_Interp*);
 int WinItemToPostscript(HtmlTree *pTree, int x, int y, Tk_Window , int, Tcl_Interp*);
 typedef struct printingInfo {
-    HtmlTree *pTree;	/* Information about overall canvas. */
-	HtmlNode *pBgRoot;
-	int prepass;	/* 1 means this is a prepass to collect font information; 0 means final Postscript is being created. */
-	int nographics;
-	Tcl_Interp *interp;	/* Leave Postscript or error message here. */
-	Tcl_Obj *psObj;
+    HtmlTree *pTree;    /* Information about overall canvas. */
+    HtmlNode *pBgRoot;
+    int prepass;    /* 1 means this is a prepass to collect font information; 0 means final Postscript is being created. */
+    int nographics;
+    Tcl_Interp *interp;    /* Leave Postscript or error message here. */
+    Tcl_Obj *psObj;
 } printingInfo;
 
 static int HtmlPostscriptCb(
@@ -4324,22 +4324,22 @@ static int HtmlPostscriptCb(
     Tcl_AppendObjToObj(pPrint->psObj, Tcl_GetObjResult(pPrint->interp));
     Tcl_AppendToObj(pPrint->psObj, "grestore\n", -1);
 
-	done: 
-		Tcl_ResetResult(pPrint->interp);
-		return rc;
+    done: 
+        Tcl_ResetResult(pPrint->interp);
+        return rc;
 }
 int HtmlGetPostscript(
 HtmlTree *pTree, HtmlNode *pBgRoot, int ymin, int ymax, int prepass, int nogfx, Tcl_Interp *interp, Tcl_Obj *psObj, HtmlComputedValues *pV
 ) {
-	struct printingInfo sPrint = {pTree, pBgRoot, prepass, nogfx, interp, psObj};
-	ClientData clientData = (ClientData)&sPrint;
-	if (pBgRoot && !nogfx & 1) {
-		BoxToPostscript(pTree, 0, 0, pTree->canvas.right, ymax, prepass, pBgRoot, DRAWBOX_NOBORDER, interp, pV);
-		Tcl_AppendToObj(psObj, "gsave % Background is drawn separately.\n", -1);
-		Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
-		Tcl_ResetResult(interp);
-		Tcl_AppendToObj(psObj, "grestore ", -1);
-	}
-	return searchSortedCanvas(pTree, ymin, ymax, 0, HtmlPostscriptCb, clientData);
+    struct printingInfo sPrint = {pTree, pBgRoot, prepass, nogfx, interp, psObj};
+    ClientData clientData = (ClientData)&sPrint;
+    if (pBgRoot && !nogfx & 1) {
+        BoxToPostscript(pTree, 0, 0, pTree->canvas.right, ymax, prepass, pBgRoot, DRAWBOX_NOBORDER, interp, pV);
+        Tcl_AppendToObj(psObj, "gsave % Background is drawn separately.\n", -1);
+        Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
+        Tcl_ResetResult(interp);
+        Tcl_AppendToObj(psObj, "grestore ", -1);
+    }
+    return searchSortedCanvas(pTree, ymin, ymax, 0, HtmlPostscriptCb, clientData);
 }
 

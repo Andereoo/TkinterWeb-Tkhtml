@@ -282,14 +282,14 @@ inputNextToken (CssInput *pInput)
             break;
         }
 
-	parse_as_token:
+    parse_as_token:
         default: {
                 
             /* This must be either an identifier or a function. For the
             ** ASCII character range 0-127, the 'charmap' array is 1 for
             ** characters allowed in an identifier or function name, 0
             ** for characters not allowed. Allowed characters are a-z, 
-	    ** 0-9, '-', '_', '%' and '\'. All unicode characters
+        ** 0-9, '-', '_', '%' and '\'. All unicode characters
             ** outside the ASCII range are allowed.
             */
             static u8 charmap[128] = {
@@ -348,10 +348,10 @@ inputNextToken (CssInput *pInput)
     pInput->iInput += nToken;
     return 0;
 
-	bad_token:
-		pInput->iInput++;
-		pInput->eToken = CT_SYNTAX_ERROR;
-		return 0;
+    bad_token:
+        pInput->iInput++;
+        pInput->eToken = CT_SYNTAX_ERROR;
+        return 0;
 }
 
 /*
@@ -719,7 +719,7 @@ parseSelector (CssInput *pInput, CssParse *pParse)
             }
 
             case CT_COMMA: {
-	        if( !pParse->pSelector ){
+            if( !pParse->pSelector ){
                   goto syntax_error;
                 }
                 HtmlCssSelectorComma(pParse);
@@ -887,7 +887,7 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
         CssToken tToken;
         unsigned char media_ok, *media = malloc(9*sizeof(unsigned char));
 
-		/* If we are already into the stylesheet "body", this is a 
+        /* If we are already into the stylesheet "body", this is a 
          * syntax error 
          */
         if (pParse->isBody) {
@@ -903,7 +903,7 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
         inputNextTokenIgnoreSpace(pInput);
         eToken = inputGetToken(pInput, 0, 0);
         if (eToken != CT_SEMICOLON && eToken != CT_EOF) return 1;
-		parseMediaList(pInput, &media, &media_ok);
+        parseMediaList(pInput, &media, &media_ok);
   
         eToken = inputGetToken(pInput, 0, 0);
         if (eToken != CT_SEMICOLON && eToken != CT_EOF) return 1;
@@ -932,19 +932,19 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
                 inputNextToken(pInput);
             }
         } else {
-			while (0 == inputNextTokenIgnoreSpace(pInput)) {
-				isError = parseSelector(pInput, pParse);
-				if (!isError) { // Parse CSS in body of '@media'
-					for (unsigned char i = 0; i < count; i++) {
-						HtmlCssSelector(pParse, media[i], 0, 0);
-					}
-					isError = parseDeclarationBlock(pInput, pParse);
-				} else break;
-				HtmlCssRule(pParse, !isError);
-			}
-		}
+            while (0 == inputNextTokenIgnoreSpace(pInput)) {
+                isError = parseSelector(pInput, pParse);
+                if (!isError) { // Parse CSS in body of '@media'
+                    for (unsigned char i = 0; i < count; i++) {
+                        HtmlCssSelector(pParse, media[i], 0, 0);
+                    }
+                    isError = parseDeclarationBlock(pInput, pParse);
+                } else break;
+                HtmlCssRule(pParse, !isError);
+            }
+        }
     } else if (nWord == 4 && strnicmp("page", zWord, nWord) == 0) {
-		
+        
     } else if (nWord == 7 && strnicmp("charset", zWord, nWord) == 0) {
         CssTokenType eNext;
         do {
@@ -998,22 +998,22 @@ HtmlCssRunParser (const char *zInput, int nInput, CssParse *pParse)
 
         eToken = inputGetToken(&sInput, 0, 0);
         switch (eToken) {
-			case CT_SGML_OPEN:
-			case CT_SGML_CLOSE:
-				isSyntaxError = 0; break;
-			case CT_RP:
-				isSyntaxError = 0; break;
-			case CT_AT:
-				isSyntaxError = parseAtRule(&sInput, pParse); break;
-			default:
-				pParse->isBody = 1;
-				isSyntaxError = parseSelector(&sInput, pParse);
-				if (!isSyntaxError) {
-					isSyntaxError = parseDeclarationBlock(&sInput, pParse);
-				}
-				HtmlCssRule(pParse, !isSyntaxError);
-				break;
-		}
+            case CT_SGML_OPEN:
+            case CT_SGML_CLOSE:
+                isSyntaxError = 0; break;
+            case CT_RP:
+                isSyntaxError = 0; break;
+            case CT_AT:
+                isSyntaxError = parseAtRule(&sInput, pParse); break;
+            default:
+                pParse->isBody = 1;
+                isSyntaxError = parseSelector(&sInput, pParse);
+                if (!isSyntaxError) {
+                    isSyntaxError = parseDeclarationBlock(&sInput, pParse);
+                }
+                HtmlCssRule(pParse, !isSyntaxError);
+                break;
+        }
 
         if (isSyntaxError) {
             parseSyntaxError(&sInput, pParse, (eToken==CT_AT));

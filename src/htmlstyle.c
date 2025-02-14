@@ -50,7 +50,7 @@ HtmlDelScrollbars (HtmlTree *pTree, HtmlNode *pNode)
     if (!HtmlNodeIsText(pNode) && pElem->pScrollbar) {
         HtmlNodeScrollbars *p = pElem->pScrollbar;
         if (p->vertical.win) {
-	    /* Remove any entry from the HtmlTree.pMapped list. */
+        /* Remove any entry from the HtmlTree.pMapped list. */
             if (&p->vertical == pTree->pMapped) {
                 pTree->pMapped = p->vertical.pNext;
             } else {
@@ -65,7 +65,7 @@ HtmlDelScrollbars (HtmlTree *pTree, HtmlNode *pNode)
             Tcl_DecrRefCount(p->vertical.pReplace);
         }
         if (p->horizontal.win) {
-	    /* Remove any entry from the HtmlTree.pMapped list. */
+        /* Remove any entry from the HtmlTree.pMapped list. */
             if (&p->horizontal == pTree->pMapped) {
                 pTree->pMapped = p->horizontal.pNext;
             } else {

@@ -404,7 +404,7 @@ struct HtmlOptions {
     int      yscrollincrement;
     Tcl_Obj *yscrollcommand;
     Tcl_Obj *xscrollcommand;
-	/* Nonstandard options */
+    /* Nonstandard options */
     Tcl_Obj *defaultstyle;
     double   fontscale;
     Tcl_Obj *fonttable;
@@ -418,7 +418,7 @@ struct HtmlOptions {
     int      shrink;                    /* Boolean */
     double   zoom;                      /* Universal scaling factor. */
     int      parsemode;                 /* One of the HTML_PARSEMODE values */
-	unsigned int pagination;
+    unsigned int pagination;
 
     /* Debugging options. Not part of the official interface. */
     int      enablelayout;
@@ -668,11 +668,11 @@ struct HtmlTree {
      * HtmlTextXXX() API below. 
      */
     HtmlText *pText;
-	
+    
     /* Pointer to information used for generating Postscript for the canvas.
-	 * NULL means no Postscript is currently being generated. */
-	Tk_PostscriptInfo psInfo;
-	unsigned char isPrintedMedia;
+     * NULL means no Postscript is currently being generated. */
+    Tk_PostscriptInfo psInfo;
+    unsigned char isPrintedMedia;
 
 #ifdef TKHTML_ENABLE_PROFILE
     /*
