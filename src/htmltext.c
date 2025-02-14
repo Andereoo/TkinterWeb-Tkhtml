@@ -1632,9 +1632,7 @@ HtmlTextBboxCmd(
     }
     orderIndexPair(&pFrom, &iFrom, &pTo, &iTo);
 
-    HtmlWidgetBboxText(pTree, pFrom, iFrom, pTo, iTo, 
-        &iTop, &iLeft, &iBottom, &iRight
-    );
+    HtmlWidgetBboxText(pTree, pFrom, iFrom, pTo, iTo, &iTop, &iLeft, &iBottom, &iRight);
     if (iTop < iBottom && iLeft < iRight) {
         Tcl_Obj *pRes = Tcl_NewObj();
         Tcl_ListObjAppendElement(0, pRes, Tcl_NewIntObj(iLeft));

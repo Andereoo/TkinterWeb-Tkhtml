@@ -612,7 +612,7 @@ HtmlWidgetTag	html.h	/^typedef struct HtmlWidgetTag HtmlWidgetTag;$/;"	t
 HtmlWriteContinue	htmlparse.c	/^HtmlWriteContinue(pTree)$/;"	f
 HtmlWriteText	htmlparse.c	/^HtmlWriteText(pTree, pText)$/;"	f
 HtmlWriteWait	htmlparse.c	/^HtmlWriteWait(pTree)$/;"	f
-HtmlXImageToImage	htmlimage.c	/^Tcl_Obj *HtmlXImageToImage(pTree, pXImage, w, h)$/;"	f
+HtmlPixmapToImage	htmlimage.c	/^Tcl_Obj *HtmlPixmapToImage(pTree, pXImage, w, h)$/;"	f
 Html_16	html.h	/^typedef short          Html_16;      \/* 16-bit signed integer *\/$/;"	t
 Html_32	html.h	/^typedef int            Html_32;      \/* 32-bit signed integer *\/$/;"	t
 Html_u16	html.h	/^typedef unsigned short Html_u16;     \/* 16-bit unsigned integer *\/$/;"	t

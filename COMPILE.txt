@@ -17,32 +17,27 @@ This file has two sections:
     * Modifying the Makefile template. This takes a few minutes to set up, 
       but it's easier to understand what's going on.
   
-  Both systems have been tested on Suse linux 9.2 and Mingw/Msys on 
-  Windows XP.
+  Both systems have been tested on Suse linux 9.2 and Mingw/Msys on Windows XP.
 
   Using the compile script
   --------------------------
   
-  1. Run the "compile.py" script located in the htmlwidget directory. Hope for the best. 
+  1. Run the "compile.py" script located in the htmlwidget directory. Hope for the best.
   
   Using the configure script
   --------------------------
   
-  1. If you're reading this you have already obtained the sources and they
-     are likely in a directory called "htmlwidget".
+  1. If you're reading this you have already obtained the sources and they are likely in a directory called "htmlwidget".
   2. Create a new empty directory to build in.
   3. Cd into the new directory.
-  4. Run the "configure" script located in the htmlwidget directory. The
-     configure script will probably need the --with-tcl and --with-tk options
-     passed to it. 
+  4. Run the "configure" script located in the htmlwidget directory. The configure script will probably need the --with-tcl and --with-tk options passed to it. 
   5. Run "make".
   6. If everything worked, run "make install".
   
   The sequence of commands might look like this:
   
     $ tar -xzf tkhtml-3.alpha1.tar.gz
-    $ ls -o htmlwidget/configure
-    -rwxr-xr-x  1 user 233035 2005-07-06 17:37 htmlwidget/configure
+    $ ls -o htmlwidget/configure -rwxr-xr-x  1 user 233035 2005-07-06 17:37 htmlwidget/configure
     $ mkdir bld
     $ cd bld
     $ ../htmlwidget/configure --with-tcl=/usr/local/ActiveTcl/lib --with-tk=/usr/local/ActiveTcl/lib 
@@ -58,8 +53,7 @@ This file has two sections:
   require a handful of variables to be modified before they can be used.
   Instructions are in comments in either file.
   
-  1. If you're reading this you have already obtained the sources and they
-     are likely in a directory called "htmlwidget".
+  1. If you're reading this you have already obtained the sources and they are likely in a directory called "htmlwidget".
   2. Edit the appropriate makefile ("linux-gcc.mk" or "mingw.mk").
   2. Create a new empty directory to build in.
   3. Cd into the new directory.
@@ -69,8 +63,7 @@ This file has two sections:
   The sequence of commands might look like this:
   
     $ tar -xzf tkhtml-3.alpha1.tar.gz
-    $ ls -o htmlwidget/main.mk
-    -rw-r--r--  1 dan 4143 2005-07-10 19:45 htmlwidget/main.mk
+    $ ls -o htmlwidget/main.mk -rw-r--r--  1 dan 4143 2005-07-10 19:45 htmlwidget/main.mk
     $ vi htmlwidget/main.mk
     $ mkdir bld
     $ cd bld

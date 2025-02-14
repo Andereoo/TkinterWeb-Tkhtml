@@ -84,15 +84,15 @@ struct PropertyDef {
     int isNolayout;            /* Can be changed without relayout */
 };
 
-#define PROPDEF(w, x, y) {                                   \
-  w, CSS_PROPERTY_ ## x, Tk_Offset(HtmlComputedValues, y), 0 \
+#define PROPDEF(a, b, c) {                                   \
+  a, CSS_PROPERTY_ ## b, Tk_Offset(HtmlComputedValues, c), 0 \
 }
-#define PROPDEFM(w, x, y, z) {                              \
-  w, CSS_PROPERTY_ ## x, Tk_Offset(HtmlComputedValues, y),  \
-  PROP_MASK_ ## x, z                                        \
+#define PROPDEFM(a, b, c, d) {                              \
+  a, CSS_PROPERTY_ ## b, Tk_Offset(HtmlComputedValues, c),  \
+  PROP_MASK_ ## b, d                                        \
 }
 
-static PropertyDef propdef[] = {
+static PropertyDef propdefs[] = {
   PROPDEF(ENUM, BACKGROUND_ATTACHMENT, eBackgroundAttachment),
   PROPDEF(ENUM, BACKGROUND_REPEAT,     eBackgroundRepeat),
   PROPDEF(ENUM, BORDER_BOTTOM_STYLE,   eBorderBottomStyle),
@@ -120,6 +120,10 @@ static PropertyDef propdef[] = {
   PROPDEF(ENUM, TEXT_TRANSFORM,        eTextTransform),
   PROPDEF(ENUM, UNICODE_BIDI,          eUnicodeBidi),
   PROPDEF(ENUM, VISIBILITY,            eVisibility),
+  
+  PROPDEF(ENUM, PAGE_BREAK_AFTER,     ePageBreakAfter),
+  PROPDEF(ENUM, PAGE_BREAK_BEFORE,    ePageBreakBefore),
+  PROPDEF(ENUM, PAGE_BREAK_INSIDE,    ePageBreakInside),
 
   /* Note: The CSS2 property 'border-spacing' can be set to
    * either a single or pair of length values. Only a single
@@ -309,10 +313,10 @@ static PropertyDef *getPropertyDef(int eProp){
     if (0 == isInit) {
         int i;
         memset(a, 0, (CSS_PROPERTY_MAX_PROPERTY+1) * sizeof(PropertyDef *));
-        for (i = 0; i < sizeof(propdef)/sizeof(PropertyDef); i++){
-            int eCss = propdef[i].eProp;
+        for (i = 0; i < sizeof(propdefs)/sizeof(PropertyDef); i++){
+            int eCss = propdefs[i].eProp;
             assert(eCss >= 0 && eCss <= CSS_PROPERTY_MAX_PROPERTY);
-            a[eCss] = &propdef[i];
+            a[eCss] = &propdefs[i];
         } 
         for (i = 0; i < sizeof(sizemskdef)/sizeof(struct SizemaskDef); i++){
           a[sizemskdef[i].eProp]->setsizemask = sizemskdef[i].mask;
@@ -370,9 +374,7 @@ HtmlPropertyToString (CssProperty *pProp, char **pzFree)
 
     if (!zRet) {
         if (
-            pProp->eType == CSS_TYPE_TCL || 
-            pProp->eType == CSS_TYPE_URL ||
-            pProp->eType == CSS_TYPE_ATTR
+            pProp->eType == CSS_TYPE_TCL || pProp->eType == CSS_TYPE_URL || pProp->eType == CSS_TYPE_ATTR
         ) {
             int nBytes = strlen(pProp->v.zVal) + 7;
             zRet = HtmlAlloc("HtmlPropertyToString()", nBytes);
@@ -508,13 +510,12 @@ physicalToPixels (HtmlComputedValuesCreator *p, double rVal, int type)
 static int 
 propertyValuesSetFontStyle (HtmlComputedValuesCreator *p, CssProperty *pProp)
 {
-    int eType = pProp->eType;
-    if (eType == CSS_CONST_INHERIT) {
+    if (pProp->eType == CSS_CONST_INHERIT) {
         int i = HtmlNodeComputedValues(p->pParent)->fFont->pKey->isItalic;;
         p->fontKey.isItalic = i;
-    }else if (eType == CSS_CONST_ITALIC || eType == CSS_CONST_OBLIQUE) {
+    }else if (pProp->eType == CSS_CONST_ITALIC || pProp->eType == CSS_CONST_OBLIQUE) {
         p->fontKey.isItalic = 1;
-    } else if (eType == CSS_CONST_NORMAL) {
+    } else if (pProp->eType == CSS_CONST_NORMAL) {
         p->fontKey.isItalic = 0;
     } else {
         return 1;
@@ -1183,7 +1184,7 @@ propertyValuesSetColor (HtmlComputedValuesCreator *p, HtmlColor **pCVar, CssProp
     HtmlTree *pTree = p->pTree;
 
     if (pProp->eType == CSS_CONST_INHERIT) {
-        HtmlColor **pInherit = (HtmlColor **)getInheritPointer(p, pCVar);
+        HtmlColor **pInherit = (HtmlColor **)getInheritPointer(p, (char *)pCVar);
         assert(pInherit);
         cVal = *pInherit;
         goto setcolor_out;
@@ -1209,11 +1210,11 @@ propertyValuesSetColor (HtmlComputedValuesCreator *p, HtmlColor **pCVar, CssProp
         XColor *color;
 
         if (zColor[0] == '#' && strlen(zColor) == 4) {
-	    /* Tk interprets a color value of "#ABC" as the same as "#A0B0C0".
+        /* Tk interprets a color value of "#ABC" as the same as "#A0B0C0".
              * But CSS implementations generally assume that it is equivalent
              * to "#AABBCC".
              */
-	    char zBuf[8];
+        char zBuf[8];
             zBuf[0] = '#';
             zBuf[1] = zColor[1]; zBuf[2] = zColor[1];
             zBuf[3] = zColor[2]; zBuf[4] = zColor[2];
@@ -1227,10 +1228,10 @@ propertyValuesSetColor (HtmlComputedValuesCreator *p, HtmlColor **pCVar, CssProp
         if (!color && strlen(zColor) <= 12) {
             /* Old versions of netscape used to support hex colors
              * without the '#' character (i.e. "FFF" is the same as
-	     * "#FFF"). So naturally this has become a defacto standard, even
-	     * though it is obviously wrong. At any rate, if Tk_GetColor()
-	     * cannot parse the color-name as it stands, put a '#' character in
-	     * front of it and give it another go.
+         * "#FFF"). So naturally this has become a defacto standard, even
+         * though it is obviously wrong. At any rate, if Tk_GetColor()
+         * cannot parse the color-name as it stands, put a '#' character in
+         * front of it and give it another go.
              */
             char zBuf[14];
             sprintf(zBuf, "#%s", zColor);
@@ -1417,7 +1418,7 @@ propertyValuesSetLength (HtmlComputedValuesCreator *p, int *pIVal, unsigned int 
             break;
 
         case CSS_TYPE_FLOAT: {
-	    /* There are two cases where a unitless number is a legal
+        /* There are two cases where a unitless number is a legal
              * value for a CSS %length%. Other than the following, it 
              * is a type mismatch:
              *
@@ -1668,31 +1669,26 @@ propertyValuesSetSize (HtmlComputedValuesCreator *p, int *pIVal, unsigned int p_
     p->ex_mask &= ~p_mask;
 
     switch (pProp->eType) {
-
         /* TODO Percentages are still stored as integers - this is wrong */
         case CSS_TYPE_PERCENT: {
             int iVal = INTEGER(pProp->v.rVal * 100.0);
-            if (
-                (allow_mask & SZ_PERCENT) && 
-                (iVal >= 0 || allow_mask & SZ_NEGATIVE) 
-            ) {
+            if ((allow_mask & SZ_PERCENT) && (iVal >= 0 || allow_mask & SZ_NEGATIVE))
+            {
                 p->values.mask |= p_mask;
                 *pIVal = iVal;
                 return 0;
             }
             return 1;
         }
-
         case CSS_CONST_INHERIT:
             if (allow_mask & SZ_INHERIT) {
                 HtmlNode *pParent = p->pParent;
-                int *pInherit = (int *)getInheritPointer(p, pIVal);
+                int *pInherit = (int *)getInheritPointer(p, (char*)pIVal);
                 assert(pInherit);
                 assert(pParent);
 
                 *pIVal = *pInherit;
-                p->values.mask |= 
-                    (HtmlNodeComputedValues(pParent)->mask & p_mask);
+                p->values.mask |= (HtmlNodeComputedValues(pParent)->mask & p_mask);
                 return 0;
             }
             return 1;
@@ -1718,16 +1714,13 @@ propertyValuesSetSize (HtmlComputedValuesCreator *p, int *pIVal, unsigned int p_
             }
             return 1;
 
-        case CSS_TYPE_FLOAT: {
-#if 0
+        case CSS_TYPE_FLOAT: {/*
             if (iVal >= 0 || allow_mask & SZ_NEGATIVE) {
                 *pIVal = iVal;
                 return 0;
             }
-            return 1;
-#endif
+            return 1;*/
         }
-
         default:
             return propertyValuesSetLength(
                 p, pIVal, p_mask, pProp, allow_mask & SZ_NEGATIVE);
@@ -1849,8 +1842,8 @@ getPrototypeCreator (HtmlTree *pTree, unsigned int *pMask, int *piCopyBytes)
         pValues = &p->values;
         values = (char *)pValues;
 
-	/* Initialise the CUSTOM properties. */
-	pValues->eVerticalAlign = CSS_CONST_BASELINE;
+        /* Initialise the CUSTOM properties. */
+        pValues->eVerticalAlign = CSS_CONST_BASELINE;
         pValues->iLineHeight = PIXELVAL_NORMAL;
         propertyValuesSetFontSize(p, &Medium);
         p->fontKey.zFontFamily = "Helvetica";
@@ -1859,8 +1852,8 @@ getPrototypeCreator (HtmlTree *pTree, unsigned int *pMask, int *piCopyBytes)
         propertyValuesSetColor(p, &p->values.cColor, &Black);
         propertyValuesSetColor(p, &p->values.cBackgroundColor, &Trans);
 
-        for (i = 0; i < sizeof(propdef) / sizeof(PropertyDef); i++) {
-            PropertyDef *pDef = &propdef[i];
+        for (i = 0; i < sizeof(propdefs) / sizeof(PropertyDef); i++) {
+            PropertyDef *pDef = &propdefs[i];
 
             if (pDef->isInherit) {
                 sCopyBytes = MIN(sCopyBytes, pDef->iOffset);
@@ -1877,7 +1870,6 @@ getPrototypeCreator (HtmlTree *pTree, unsigned int *pMask, int *piCopyBytes)
                     *pVal = pDef->iDefault;
                     break;
                 }
-    
                 case ENUM: {
                     /* Default for enum values is the first value in
                      * the list returned by HtmlCssEnumeratedValues().
@@ -1899,15 +1891,14 @@ getPrototypeCreator (HtmlTree *pTree, unsigned int *pMask, int *piCopyBytes)
 
         assert(p->em_mask == 0);
         assert(p->ex_mask == 0);
-        for (i = 0; i < sizeof(propdef) / sizeof(PropertyDef); i++) {
+        for (i = 0; i < sizeof(propdefs) / sizeof(PropertyDef); i++) {
             assert(
-                (!propdef[i].isInherit && propdef[i].iOffset < sCopyBytes) ||
-                (propdef[i].isInherit && propdef[i].iOffset >= sCopyBytes) ||
-                propdef[i].eType == CUSTOM
+                (!propdefs[i].isInherit && propdefs[i].iOffset < sCopyBytes) ||
+                (propdefs[i].isInherit && propdefs[i].iOffset >= sCopyBytes) ||
+                propdefs[i].eType == CUSTOM
             );
         }
     }
-
 
     *piCopyBytes = sCopyBytes;
     *pMask = sMask;
@@ -1966,8 +1957,7 @@ HtmlComputedValuesInit (
         HtmlComputedValues *pParentValues = (HtmlComputedValues *)pValues;
         memcpy(&values[iCopyBytes], &pvalues[iCopyBytes], nBytes);
         memcpy(&p->fontKey, pValues->fFont->pKey, sizeof(HtmlFontKey));
-        pValues->mask = 
-            (pValues->mask & iCopyMask) | (pParentValues->mask & !iCopyMask);
+        pValues->mask = (pValues->mask & iCopyMask) | (pParentValues->mask & !iCopyMask);
     }
 
     p->values.cColor->nRef++;
@@ -2006,7 +1996,7 @@ propertyValuesTclScript (HtmlComputedValuesCreator *p, int eProp, const char *zS
     zRes = Tcl_GetStringResult(interp);
     if (rc == TCL_ERROR) {
         if (*zRes) {
-    	    /* A tcl() script has returned a value that caused a type-mismatch
+            /* A tcl() script has returned a value that caused a type-mismatch
              * error. Run the -logcmd script if one exists.
              */
             LOG {
@@ -2023,7 +2013,7 @@ propertyValuesTclScript (HtmlComputedValuesCreator *p, int eProp, const char *zS
     pVal = HtmlCssStringToProperty(zRes, -1);
 
     if (HtmlComputedValuesSet(p, eProp, pVal)) {
-	/* A tcl() script has returned a value that caused a type-mismatch
+    /* A tcl() script has returned a value that caused a type-mismatch
          * error. Run the -logcmd script if one exists.
          */
         LOG {
@@ -2215,16 +2205,11 @@ HtmlComputedValuesSet (HtmlComputedValuesCreator *p, int eProp, CssProperty *pPr
             }
             case LENGTH: {
                 int *pIVar = (int*)((unsigned char*)&p->values + pDef->iOffset);
-                int setsizemask = pDef->setsizemask;
-                return propertyValuesSetSize(
-                    p, pIVar, pDef->mask, pProp, setsizemask
-                );
+                return propertyValuesSetSize(p, pIVar, pDef->mask, pProp, pDef->setsizemask);
             }
             case BORDERWIDTH: {
                 int *pBVar = (int*)((unsigned char*)&p->values + pDef->iOffset);
-                return propertyValuesSetBorderWidth(
-                    p, pBVar, pDef->mask, pProp
-                );
+                return propertyValuesSetBorderWidth(p, pBVar, pDef->mask, pProp);
             }
             case AUTOINTEGER: {
                 int *pAVar = (int*)((unsigned char*)&p->values + pDef->iOffset);
@@ -2245,8 +2230,7 @@ HtmlComputedValuesSet (HtmlComputedValuesCreator *p, int eProp, CssProperty *pPr
             }
             case IMAGE: {
                 HtmlImage2 **pI2Var; 
-                pI2Var = (HtmlImage2 **)
-                    ((unsigned char *)&p->values + pDef->iOffset);
+                pI2Var = (HtmlImage2 **)((unsigned char *)&p->values + pDef->iOffset);
                 return propertyValuesSetImage(p, pI2Var, pProp);
             }
         }
@@ -2668,9 +2652,7 @@ HtmlComputedValuesFinish (HtmlComputedValuesCreator *p)
     }
 
     if (
-        p->values.eDisplay == CSS_CONST_TABLE_CAPTION
-        || p->values.eDisplay == CSS_CONST_RUN_IN
-        /* || p->values.eDisplay == CSS_CONST_INLINE_BLOCK */
+        p->values.eDisplay == CSS_CONST_TABLE_CAPTION || p->values.eDisplay == CSS_CONST_RUN_IN
     ) {
         p->values.eDisplay = CSS_CONST_BLOCK;
     }
@@ -2683,7 +2665,7 @@ HtmlComputedValuesFinish (HtmlComputedValuesCreator *p)
     pValues = (HtmlComputedValues *)Tcl_GetHashKey(&p->pTree->aValues, pEntry);
     assert(!ne || !pValues->imZoomedBackgroundImage);
     if (!ne) {
-	/* If this is not a new entry, we need to decrement the reference count
+    /* If this is not a new entry, we need to decrement the reference count
          * on the font, image and color values.
          */
         pValues->fFont->nRef--;
@@ -3290,8 +3272,8 @@ HtmlNodeProperties(Tcl_Interp *interp, HtmlComputedValues *pValues)
     Tcl_Obj *pRet = Tcl_NewObj();
     Tcl_IncrRefCount(pRet);
 
-    for (ii = 0; ii < sizeof(propdef) / sizeof(propdef[0]); ii++) {
-        PropertyDef *pDef = &propdef[ii];
+    for (ii = 0; ii < sizeof(propdefs) / sizeof(propdefs[0]); ii++) {
+        PropertyDef *pDef = &propdefs[ii];
         Tcl_ListObjAppendElement(interp, pRet, 
             Tcl_NewStringObj(HtmlCssPropertyToString(pDef->eProp), -1)
         );
@@ -3359,8 +3341,8 @@ HtmlComputedValuesCompare (HtmlComputedValues *pV1, HtmlComputedValues *pV2)
         return HTML_REQUIRE_LAYOUT;
     }
 
-    for (ii = 0; ii < sizeof(propdef) / sizeof(propdef[0]); ii++){
-        PropertyDef *pDef = &propdef[ii];
+    for (ii = 0; ii < sizeof(propdefs) / sizeof(propdefs[0]); ii++){
+        PropertyDef *pDef = &propdefs[ii];
         if (pDef->isNolayout) continue;
         switch (pDef->eType) {
 

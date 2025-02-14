@@ -823,9 +823,9 @@ HtmlTokenize (
             /* Now prepare to parse the markup attributes. Advance i until
              * &z[n+i] points to the first character of the first attribute,
              * the closing '>' character, the closing "/>" string
-	     * of a self-closing tag, or the end of the document. If the end of
-	     * the document is reached, bail out via the 'incomplete' 
-	     * exception handler.
+         * of a self-closing tag, or the end of the document. If the end of
+         * the document is reached, bail out via the 'incomplete' 
+         * exception handler.
              */
             while (ISSPACE(z[n + i])) {
                 i++;
@@ -1148,11 +1148,7 @@ HtmlTokenizerAppend (HtmlTree *pTree, const char *zText, int nText, int isFinal)
     Tcl_AppendToObj(pTree->pDocument, z, n);
 
     if (pTree->eWriteState == HTML_WRITE_NONE) {
-        tokenizeWrapper(pTree, isFinal, 
-            HtmlTreeAddText,
-            HtmlTreeAddElement,
-            HtmlTreeAddClosingTag
-        );
+        tokenizeWrapper(pTree, isFinal, HtmlTreeAddText, HtmlTreeAddElement, HtmlTreeAddClosingTag);
     }
 }
 

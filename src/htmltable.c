@@ -54,9 +54,9 @@ typedef struct CellReqWidth CellReqWidth;
 struct CellReqWidth {
     int eType;
     union {
-        int iVal;          /* For CELL_WIDTH_PIXELS */
-        float fVal;        /* For CELL_WIDTH_PERCENT */
-    } x;
+        int i;          /* For CELL_WIDTH_PIXELS */
+        float f;        /* For CELL_WIDTH_PERCENT */
+    } val;
 };
 #define CELL_WIDTH_AUTO    0
 #define CELL_WIDTH_PIXELS  1
@@ -90,6 +90,11 @@ struct TableData {
     int *aMinWidth;          /* Minimum content width of each column */
     CellReqWidth *aReqWidth;       /* Widths requested via CSS */
     CellReqWidth *aSingleReqWidth; /* Widths requested by single span cells */
+    
+    int *aMaxHeight;
+    int *aMinHeight;
+    CellReqWidth *aReqHeight;
+    CellReqWidth *aSingleReqHeight;
 
     /* 
      * Determined by:
@@ -97,6 +102,7 @@ struct TableData {
      *     tableCalculateCellWidths()
      */
     int *aWidth;             /* Actual widths of each column (calculated) */
+    int *aHeight;
 
     int *aY;                 /* Top y-coord for each row+1, wrt table box */
     TableCell *aCell;
@@ -126,7 +132,7 @@ static CellCallback tableColWidthSingleSpan;
 static CellCallback tableColWidthMultiSpan;
 
 /* Figure out the actual column widths (TableData.aWidth[]). */
-static void tableCalculateCellWidths(TableData *, int, int);
+static void tableCalculateCellWidths(TableData *, int, int, int);
 
 /* A row and cell callback (used together in a single iteration) to draw
  * the table content. All the actual drawing is done here. Everything
@@ -134,41 +140,6 @@ static void tableCalculateCellWidths(TableData *, int, int);
  */
 static CellCallback tableDrawCells;
 static RowCallback tableDrawRow;
-
-
-/*
- *---------------------------------------------------------------------------
- *
- * walkChildren() --
- *
- *     This function is a wrapper around HtmlWalkTree(). It is identical
- *     in all respects but one - the callback function is not invoked for
- *     pNode (the root of the tree).
- *
- * Results:
- *     None.
- *
- * Side effects:
- *     Whatever xCallback() does.
- *
- *---------------------------------------------------------------------------
- */
-#if 0
-static void
-walkChildren(pTree, pNode, xCallback, pContext)
-    HtmlTree *pTree;
-    HtmlNode *pNode;
-    int (*xCallback)(HtmlTree *, HtmlNode *, ClientData clientData);
-    ClientData pContext;
-{
-    int i;
-    int nChild = HtmlNodeNumChildren(pNode);
-    for (i = 0; i < nChild; i++) {
-        HtmlNode *pChild = HtmlNodeChild(pNode, i);
-        xCallback(pTree, pChild, pContext);
-    }
-}
-#endif
 
 static void 
 fixNodeProperties (TableData *pData, HtmlNode *pNode)
@@ -260,13 +231,12 @@ tableColWidthSingleSpan (HtmlNode *pNode, int col, int colspan, int row, int row
                 case CELL_WIDTH_AUTO:
                 case CELL_WIDTH_PIXELS:
                     aReq[col].eType = CELL_WIDTH_PERCENT;
-                    aReq[col].x.fVal = val;
+                    aReq[col].val.f = val;
                     break;
                 case CELL_WIDTH_PERCENT:
-                    aReq[col].x.fVal = MAX(aReq[col].x.fVal, val);
+                    aReq[col].val.f = MAX(aReq[col].val.f, val);
                     break;
             }
-
         } else if (pV->iWidth >= 0) {
 
             /* There is a pixel value for the 'width' property */
@@ -275,7 +245,7 @@ tableColWidthSingleSpan (HtmlNode *pNode, int col, int colspan, int row, int row
                 case CELL_WIDTH_AUTO:
                 case CELL_WIDTH_PIXELS:
                     aReq[col].eType = CELL_WIDTH_PIXELS;
-                    aReq[col].x.iVal = MAX(aReq[col].x.iVal, val);
+                    aReq[col].val.i = MAX(aReq[col].val.i, val);
                     aMaxWidth[col] = MAX(val, aMaxWidth[col]);
                     break;
                 case CELL_WIDTH_PERCENT:
@@ -314,7 +284,7 @@ logWidthsToTable(TableData *pData, Tcl_Obj *pObj)
     int *aMinWidth = pData->aMinWidth;
     int *aMaxWidth = pData->aMaxWidth;
     CellReqWidth *aReqWidth = pData->aReqWidth;
-    int ii;
+    int i;
 
     Tcl_AppendToObj(pObj, 
         "<table><tr>"
@@ -324,21 +294,21 @@ logWidthsToTable(TableData *pData, Tcl_Obj *pObj)
         "  <th>Explicit Width"
         "  <th>Percentage Width", -1);
 
-    for (ii = 0; ii < pData->nCol; ii++) {
-        int jj;
+    for (i = 0; i < pData->nCol; i++) {
+        int j;
         char zPercent[32];
 
         Tcl_AppendToObj(pObj, "<tr><td>", -1);
-        Tcl_AppendObjToObj(pObj, Tcl_NewIntObj(ii));
+        Tcl_AppendObjToObj(pObj, Tcl_NewIntObj(i));
 
-        for (jj = 0; jj < 3; jj++) {
+        for (j = 0; j < 3; j++) {
             int val = PIXELVAL_AUTO;
-            switch (jj) {
-                case 0: val = aMinWidth[ii]; break;
-                case 1: val = aMaxWidth[ii]; break;
+            switch (j) {
+                case 0: val = aMinWidth[i]; break;
+                case 1: val = aMaxWidth[i]; break;
                 case 2:
-                    if (aReqWidth[ii].eType == CELL_WIDTH_PIXELS) {
-                        val = aReqWidth[ii].x.iVal;
+                    if (aReqWidth[i].eType == CELL_WIDTH_PIXELS) {
+                        val = aReqWidth[i].val.i;
                     } else {
                         val = PIXELVAL_AUTO;
                     }
@@ -356,8 +326,8 @@ logWidthsToTable(TableData *pData, Tcl_Obj *pObj)
         }
 
         Tcl_AppendToObj(pObj, "<td>", -1);
-        if (aReqWidth[ii].eType == CELL_WIDTH_PERCENT) {
-            sprintf(zPercent, "%.2f%%", aReqWidth[ii].x.fVal);
+        if (aReqWidth[i].eType == CELL_WIDTH_PERCENT) {
+            sprintf(zPercent, "%.2f%%", aReqWidth[i].val.f);
         } else {
             sprintf(zPercent, "N/A");
         }
@@ -373,10 +343,10 @@ getReqWidth (HtmlNode *pNode, CellReqWidth *pReq)
     if (pV->mask & PROP_MASK_WIDTH) {
         /* The computed value of the 'width' property is a percentage */
         pReq->eType = CELL_WIDTH_PERCENT;
-        pReq->x.fVal = ((float)pV->iWidth) / 100.0; 
+        pReq->val.f = ((float)pV->iWidth) / 100.0; 
     } else if (pV->iWidth > 0) {
         pReq->eType = CELL_WIDTH_PIXELS;
-        pReq->x.iVal = pV->iWidth;
+        pReq->val.i = pV->iWidth;
     } else {
         pReq->eType = CELL_WIDTH_AUTO;
     }
@@ -386,26 +356,26 @@ static void
 logMinMaxWidths (LayoutContext *pLayout, HtmlNode *pNode, int col, int colspan, int *aMinWidth, int *aMaxWidth)
 {
     LOG {
-        int ii;
+        int i;
         HtmlTree *pTree = pLayout->pTree;
         Tcl_Obj *pMinWidths = Tcl_NewObj();
         Tcl_IncrRefCount(pMinWidths);
         Tcl_AppendToObj(pMinWidths, "<tr><th> aMinWidth", -1);
-        for (ii = col; ii < (col + colspan); ii++) {
+        for (i = col; i < (col + colspan); i++) {
             Tcl_AppendToObj(pMinWidths, "<td>", 4);
-            Tcl_AppendObjToObj(pMinWidths, Tcl_NewIntObj(ii));
+            Tcl_AppendObjToObj(pMinWidths, Tcl_NewIntObj(i));
             Tcl_AppendToObj(pMinWidths, ":", 1);
             Tcl_AppendObjToObj(
-                pMinWidths, Tcl_NewIntObj(aMinWidth[ii])
+                pMinWidths, Tcl_NewIntObj(aMinWidth[i])
             );
         }
         Tcl_AppendToObj(pMinWidths, "<tr><th> aMaxWidths", -1);
-        for (ii = col; ii < (col + colspan); ii++) {
+        for (i = col; i < (col + colspan); i++) {
             Tcl_AppendToObj(pMinWidths, "<td>", 4);
-            Tcl_AppendObjToObj(pMinWidths, Tcl_NewIntObj(ii));
+            Tcl_AppendObjToObj(pMinWidths, Tcl_NewIntObj(i));
             Tcl_AppendToObj(pMinWidths, ":", 1);
             Tcl_AppendObjToObj(
-                pMinWidths, Tcl_NewIntObj(aMaxWidth[ii])
+                pMinWidths, Tcl_NewIntObj(aMaxWidth[i])
             );
         }
         HtmlLog(pTree, "LAYOUTENGINE", 
@@ -473,7 +443,7 @@ tableColWidthMultiSpan (HtmlNode *pNode, int col, int colspan, int row, int rows
         int nPercentWidth = 0;  /* Number of spanned percent width cols */
         int nAutoWidth = 0;     /* Number of spanned auto width cols */
 
-        int ii;
+        int i;
 
         /* Minimum, maximum and requested width of the multi-span cell */
         int min;
@@ -494,27 +464,27 @@ tableColWidthMultiSpan (HtmlNode *pNode, int col, int colspan, int row, int rows
         min = min + box.iLeft + box.iRight;
         max = max + box.iLeft + box.iRight;
 
-        for (ii = col; ii < (col + colspan); ii++) {
-            switch (aReq[ii].eType) {
+        for (i = col; i < (col + colspan); i++) {
+            switch (aReq[i].eType) {
                 case CELL_WIDTH_AUTO:
                     nAutoWidth++;
                     break;
                 case CELL_WIDTH_PIXELS:
-                    iTotalPixel += aReq[ii].x.iVal;
+                    iTotalPixel += aReq[i].val.i;
                     nPixelWidth++;
                     break;
                 case CELL_WIDTH_PERCENT:
                     nPercentWidth++;
-                    fTotalPercent += aReq[ii].x.fVal;
+                    fTotalPercent += aReq[i].val.f;
                     break;
             }
-            iTotalMin += aMinWidth[ii];
-            iTotalMax += aMaxWidth[ii];
+            iTotalMin += aMinWidth[i];
+            iTotalMax += aMaxWidth[i];
         }
 
         if (
             req.eType == CELL_WIDTH_PERCENT && 
-            (colspan == nPercentWidth || fTotalPercent > req.x.fVal)
+            (colspan == nPercentWidth || fTotalPercent > req.val.f)
         ) {
             /* We have no means to satisfy this condition, so simply discard
              * the percentage width request.
@@ -532,17 +502,17 @@ tableColWidthMultiSpan (HtmlNode *pNode, int col, int colspan, int row, int rows
              * maximum content widths of the columns.
              */
              int iMaxNonPercent = 0;
-             float fRem = req.x.fVal - fTotalPercent;
-             for (ii = col; ii < (col + colspan); ii++) {
-                 if (aReq[ii].eType != CELL_WIDTH_PERCENT) {
-                     iMaxNonPercent += aMaxWidth[ii];
+             float fRem = req.val.f - fTotalPercent;
+             for (i = col; i < (col + colspan); i++) {
+                 if (aReq[i].eType != CELL_WIDTH_PERCENT) {
+                     iMaxNonPercent += aMaxWidth[i];
                  }
              }
-             for (ii = col; ii < (col + colspan) && iMaxNonPercent > 0; ii++) {
-                 if (aReq[ii].eType != CELL_WIDTH_PERCENT) {
-                     aReqOut[ii].eType = CELL_WIDTH_PERCENT;
-                     aReqOut[ii].x.fVal = fRem * aMaxWidth[ii] / iMaxNonPercent;
-                     iMaxNonPercent -= aMaxWidth[ii];
+             for (i = col; i < (col + colspan) && iMaxNonPercent > 0; i++) {
+                 if (aReq[i].eType != CELL_WIDTH_PERCENT) {
+                     aReqOut[i].eType = CELL_WIDTH_PERCENT;
+                     aReqOut[i].val.f = fRem * aMaxWidth[i] / iMaxNonPercent;
+                     iMaxNonPercent -= aMaxWidth[i];
                  }
              }
              assert(iMaxNonPercent == 0);
@@ -561,11 +531,11 @@ tableColWidthMultiSpan (HtmlNode *pNode, int col, int colspan, int row, int rows
                  * cell according to the ratio between the pixel widths.
                  * Respect each cells min-width while doing this. 
                  */
-                for (ii = col; ii < (col + colspan) && iTPW > 0; ii++) {
-                    int w = MAX(aMinWidth[ii], iRem * aReq[ii].x.iVal / iTPW);
+                for (i = col; i < (col + colspan) && iTPW > 0; i++) {
+                    int w = MAX(aMinWidth[i], iRem * aReq[i].val.i / iTPW);
                     iRem -= w;
-                    aMinWidth[ii] = w;
-                    iTPW -= aReq[ii].x.iVal;
+                    aMinWidth[i] = w;
+                    iTPW -= aReq[i].val.i;
                 }
                 assert(iTPW == 0);
             } else {
@@ -588,35 +558,35 @@ tableColWidthMultiSpan (HtmlNode *pNode, int col, int colspan, int row, int rows
                     pLayout, pNode, col, colspan, aMinWidth, aMaxWidth
                 );
 
-                for (ii = col; iMax >= 0 && ii < (col + colspan); ii++) {
-                    int isFixed = (aReq[ii].eType == CELL_WIDTH_PIXELS);
+                for (i = col; iMax >= 0 && i < (col + colspan); i++) {
+                    int isFixed = (aReq[i].eType == CELL_WIDTH_PIXELS);
                     if (isFixed && nAutoWidth > 0 && iTPW <= iRem) {
-                        int w = MAX(aMinWidth[ii], aReq[ii].x.iVal);
+                        int w = MAX(aMinWidth[i], aReq[i].val.i);
                         iRem -= w;
-                        iTPW -= aReq[ii].x.iVal;
-                        iMax -= aMaxWidth[ii];
-                        iMin -= aMinWidth[ii];
-                        aMinWidth[ii] = w;
+                        iTPW -= aReq[i].val.i;
+                        iMax -= aMaxWidth[i];
+                        iMin -= aMinWidth[i];
+                        aMinWidth[i] = w;
                     }
                 }
 
-                ii = col;
-                for (; iMax >= 0 && iMin < iRem && ii < (col + colspan); ii++){
-                    int isFixed = (aReq[ii].eType == CELL_WIDTH_PIXELS);
+                i = col;
+                for (; iMax >= 0 && iMin < iRem && i < (col + colspan); i++){
+                    int isFixed = (aReq[i].eType == CELL_WIDTH_PIXELS);
                     if (!isFixed || nAutoWidth == 0) {
-                        int w = aMinWidth[ii];
+                        int w = aMinWidth[i];
                         if (iMax) {
-                            assert(aMaxWidth[ii] <= iMax);
-                            w = MAX(w, iRem * aMaxWidth[ii] / iMax);
+                            assert(aMaxWidth[i] <= iMax);
+                            w = MAX(w, iRem * aMaxWidth[i] / iMax);
                         } else {
                             w = MAX(w, iRem);
                         }
                         assert(w <= iRem);
 
-                        iMax -= aMaxWidth[ii];
-                        iMin -= aMinWidth[ii];
+                        iMax -= aMaxWidth[i];
+                        iMin -= aMinWidth[i];
                         iRem -= w;
-                        aMinWidth[ii] = w;
+                        aMinWidth[i] = w;
                     }
                 }
 
@@ -629,16 +599,16 @@ tableColWidthMultiSpan (HtmlNode *pNode, int col, int colspan, int row, int rows
         if (iTotalMax < max) {
             int iM = iTotalMax;        /* Current sum of aMaxWidth[] */
             int iRem = max;            /* Required sum of aMaxWidth[] */
-            for (ii = col; iM > 0 && iRem > 0 && ii < (col + colspan); ii++){
-                int w = MAX(aMaxWidth[ii], iRem * aMaxWidth[ii] / iM);
-                iM -= aMaxWidth[ii];
+            for (i = col; iM > 0 && iRem > 0 && i < (col + colspan); i++){
+                int w = MAX(aMaxWidth[i], iRem * aMaxWidth[i] / iM);
+                iM -= aMaxWidth[i];
                 iRem -= w;
-                aMaxWidth[ii] = w;
+                aMaxWidth[i] = w;
             }
         }
 
-        for (ii = col; ii < (col + colspan); ii++){
-            aMaxWidth[ii] = MAX(aMaxWidth[ii], aMinWidth[ii]);
+        for (i = col; i < (col + colspan); i++){
+            aMaxWidth[i] = MAX(aMaxWidth[i], aMinWidth[i]);
         }
     }
 
@@ -726,7 +696,7 @@ tableDrawRow (HtmlNode *pNode, int row, void *pContext)
      */
 
     CHECK_INTEGER_PLAUSIBILITY(pData->pBox->vc.bottom);
-    if (pElem && pElem->node.iNode >= 0 && pElem->pPropertyValues) {
+    if (pElem && pElem->node.index >= 0 && pElem->pPropertyValues) {
         int iHeight;
 
         int x1, y1, w1, h1;           /* Border coordinates */
@@ -734,7 +704,7 @@ tableDrawRow (HtmlNode *pNode, int row, void *pContext)
         y1 = pData->aY[row];
         h1 = pData->aY[nextrow] - pData->aY[row] - pData->border_spacing;
 
-	/* If we have a non-auto 'height' property on the table-row, then 
+    /* If we have a non-auto 'height' property on the table-row, then 
          * use it as a minimum height. Such a 'height' does not include
          * the border-spacing.
          */
@@ -745,21 +715,17 @@ tableDrawRow (HtmlNode *pNode, int row, void *pContext)
         }
 
         w1 = 0;
-        for (i=0; i<pData->nCol; i++) {
-            w1 += pData->aWidth[i];
-        }
+        for (i = 0; i < pData->nCol; i++) w1 += pData->aWidth[i];
         w1 += ((pData->nCol - 1) * pData->border_spacing);
-        HtmlLayoutDrawBox(pData->pLayout->pTree, 
-            &pData->pBox->vc, x1, y1, w1, h1, pNode, 0, mmt
-        );
+        HtmlLayoutDrawBox(pData->pLayout->pTree, &pData->pBox->vc, x1, y1, w1, h1, pNode, 0, mmt);
     }
     CHECK_INTEGER_PLAUSIBILITY(pData->pBox->vc.bottom);
     CHECK_INTEGER_PLAUSIBILITY(pData->pBox->vc.right);
 
-    for (i=0; i<pData->nCol; i++) {
+    for (i = 0; i < pData->nCol; i++) {
         TableCell *pCell = &pData->aCell[i];
 
-	/* At this point variable x holds the horizontal canvas offset of
+        /* At this point variable x holds the horizontal canvas offset of
          * the outside edge of the cell pCell's left border.
          */
         x += pData->border_spacing;
@@ -774,15 +740,11 @@ tableDrawRow (HtmlNode *pNode, int row, void *pContext)
             x1 = x;
             y1 = pData->aY[pCell->startrow];
             w1 = 0;
-            for (k=i; k<(i+pCell->colspan); k++) {
-                w1 += pData->aWidth[k];
-            }
+            for (k = i; k < (i+pCell->colspan); k++) w1 += pData->aWidth[k];
             w1 += ((pCell->colspan-1) * pData->border_spacing);
             h1 = pData->aY[pCell->finrow] - pData->border_spacing - y1;
-            if (pCell->pNode->iNode >= 0) {
-                HtmlLayoutDrawBox(pData->pLayout->pTree, 
-                    pCanvas, x1, y1, w1, h1, pCell->pNode, 0, mmt
-                );
+            if (pCell->pNode->index >= 0) {
+                HtmlLayoutDrawBox(pData->pLayout->pTree, pCanvas, x1, y1, w1, h1, pCell->pNode, 0, mmt);
             }
             nodeGetBoxProperties(pLayout, pCell->pNode, 0, &box);
 
@@ -796,10 +758,7 @@ tableDrawRow (HtmlNode *pNode, int row, void *pContext)
                     y = pData->aY[pCell->startrow] + box.iTop;
                     break;
                 case CSS_CONST_BOTTOM:
-                    y = pData->aY[pCell->finrow] - 
-                        pCell->box.height -
-                        box.iBottom -
-                        pData->border_spacing;
+                    y = pData->aY[pCell->finrow] - pCell->box.height - box.iBottom - pData->border_spacing;
                     break;
                 default:
                     y = pData->aY[pCell->startrow];
@@ -858,8 +817,7 @@ tableDrawCells (HtmlNode *pNode, int col, int colspan, int row, int rowspan, voi
     BoxContext *pBox;
     BoxProperties box;
     int i;
-    int x = 0;
-    int y = 0;
+    int x = 0, y = 0;
     int belowY;
     LayoutContext *pLayout = pData->pLayout;
     int iHeight;
@@ -872,40 +830,35 @@ tableDrawCells (HtmlNode *pNode, int col, int colspan, int row, int rowspan, voi
      * vertically.  Similarly, a colspan of 0 means the cell spans the
      * remainder of the table horizontally. 
      */
-    if (rowspan<=0) {
-        rowspan = (pData->nRow-row);
-    }
-    if (colspan<=0) {
-        colspan = (pData->nCol-col);
-    }
+    if (rowspan <= 0) rowspan = pData->nRow-row;
+    if (colspan <= 0) colspan = pData->nCol-col;
 
     y = pData->aY[row];
-    if (y==0) {
+    if (y == 0) {
         y = pData->border_spacing * (row+1);
         pData->aY[row] = y;
     }
 
-    for (i=0; i<col; i++) {
-        x += pData->aWidth[i];
-    }
+    for (i = 0; i < col; i++) x += pData->aWidth[i];
     x += ((col+1) * pData->border_spacing);
 
     pBox = &pData->aCell[col].box;
-    assert (pData->aCell[col].finrow==0);
+    assert(pData->aCell[col].finrow == 0);
     pData->aCell[col].finrow = row+rowspan;
     pData->aCell[col].startrow = row;
     pData->aCell[col].pNode = pNode;
     pData->aCell[col].colspan = colspan;
 
     nodeGetBoxProperties(pData->pLayout, pNode, 0, &box);
-    pBox->iContaining = pData->aWidth[col] - box.iLeft - box.iRight;
+    pBox->iContainingW = pData->aWidth[col] - box.iLeft - box.iRight;
 
-    for (i=col+1; i<col+colspan; i++) {
-        pBox->iContaining += (pData->aWidth[i] + pData->border_spacing);
+    for (i = col+1; i < col+colspan; i++) {
+        pBox->iContainingW += (pData->aWidth[i] + pData->border_spacing);
     }
 
-
+    paginationPageYOrigin(y, pLayout);
     HtmlLayoutNodeContent(pData->pLayout, pBox, pNode);
+    paginationPageYOrigin(-y, pLayout);
 
     /* Handle the 'height' property on the table-cell node. The 'height'
      * really specifies a minimum height for the row, not the height of the
@@ -918,6 +871,7 @@ tableDrawCells (HtmlNode *pNode, int col, int colspan, int row, int rowspan, voi
      */
     iHeight = pBox->height + box.iTop + box.iBottom;
     iHeight = MAX(PIXELVAL(pV, HEIGHT, 0), iHeight);
+    iHeight = MAX(pData->aHeight[row], iHeight);
     belowY = y + iHeight + pData->border_spacing;
     
     LOG {
@@ -927,14 +881,14 @@ tableDrawCells (HtmlNode *pNode, int col, int colspan, int row, int rowspan, voi
             HtmlLog(pTree, "LAYOUTENGINE", "%s tableDrawCells() "
                 "containing=%d actual=%d",
                 Tcl_GetString(pCmd),
-                pBox->iContaining, pBox->width
+                pBox->iContainingW, pBox->width
             );
         }
     }
 
     assert(row+rowspan < pData->nRow+1);
     pData->aY[row+rowspan] = MAX(pData->aY[row+rowspan], belowY);
-    for (i=row+rowspan+1; i<=pData->nRow; i++) {
+    for (i = row+rowspan+1; i <= pData->nRow; i++) {
         pData->aY[i] = MAX(pData->aY[row+rowspan], pData->aY[i]);
     }
 
@@ -1061,7 +1015,7 @@ static int
 rowIterate (HtmlTree *pTree, HtmlNode *pNode, RowIterateContext *p)
 {
     int k;
-    int ii;
+    int i;
 
     /* Either this is a synthetic node, or it's 'display' property
      * is set to "table-row".
@@ -1074,8 +1028,8 @@ rowIterate (HtmlTree *pTree, HtmlNode *pNode, RowIterateContext *p)
     if (HtmlNodeIsText(pNode)) return 0;
     p->iCol = 0;
 
-    for (ii = 0; ii < HtmlNodeNumChildren(pNode); ii++) {
-        HtmlNode *pCell = HtmlNodeChild(pNode, ii);
+    for (i = 0; i < HtmlNodeNumChildren(pNode); i++) {
+        HtmlNode *pCell = HtmlNodeChild(pNode, i);
         HtmlComputedValues *pV = HtmlNodeComputedValues(pCell);
 
         /* Throw away white-space children of the row node. */
@@ -1086,20 +1040,20 @@ rowIterate (HtmlTree *pTree, HtmlNode *pNode, RowIterateContext *p)
             cellIterate(pTree, pCell, p);
         } else {
             /* Have to create a fake <td> node. Bad. */
-            int jj;
+            int j;
             HtmlElementNode sCell;
             memset(&sCell, 0, sizeof(HtmlElementNode));
-            for (jj = ii + 1; jj < HtmlNodeNumChildren(pNode); jj++) {
-                HtmlNode *pNextRow = HtmlNodeChild(pNode, jj);
+            for (j = i + 1; j < HtmlNodeNumChildren(pNode); j++) {
+                HtmlNode *pNextRow = HtmlNodeChild(pNode, j);
                 HtmlComputedValues *pV2 = HtmlNodeComputedValues(pNextRow);
                 if (DISPLAY(pV2) == CSS_CONST_TABLE_CELL) break;
             }
-            sCell.node.iNode = -1;
-            sCell.nChild = jj - ii;
-            sCell.apChildren = &((HtmlElementNode *)pNode)->apChildren[ii];
+            sCell.node.index = -1;
+            sCell.nChild = j - i;
+            sCell.apChildren = &((HtmlElementNode *)pNode)->apChildren[i];
             cellIterate(pTree, (HtmlNode *)&sCell, p);
             HtmlLayoutInvalidateCache(pTree, (HtmlNode *)&sCell);
-            ii = jj - 1;
+            i = j - 1;
         }
     }
 
@@ -1117,7 +1071,7 @@ rowIterate (HtmlTree *pTree, HtmlNode *pNode, RowIterateContext *p)
 static void 
 rowGroupIterate (HtmlTree *pTree, HtmlNode *pNode, RowIterateContext *p)
 {
-    int ii;
+    int i;
 
     if (!pNode) return;
 
@@ -1132,8 +1086,8 @@ rowGroupIterate (HtmlTree *pTree, HtmlNode *pNode, RowIterateContext *p)
         CSS_CONST_TABLE_HEADER_GROUP==DISPLAY(HtmlNodeComputedValues(pNode))
     );
 
-    for (ii = 0; ii < HtmlNodeNumChildren(pNode); ii++) {
-        HtmlNode *pRow = HtmlNodeChild(pNode, ii);
+    for (i = 0; i < HtmlNodeNumChildren(pNode); i++) {
+        HtmlNode *pRow = HtmlNodeChild(pNode, i);
         HtmlComputedValues *pV = HtmlNodeComputedValues(pRow);
 
         /* Throw away white-space node children of the <TBODY> node. */
@@ -1144,20 +1098,20 @@ rowGroupIterate (HtmlTree *pTree, HtmlNode *pNode, RowIterateContext *p)
             rowIterate(pTree, pRow, p);
         } else {
             /* Have to create a fake <tr> node. Bad. */
-            int jj;
+            int j;
             HtmlElementNode sRow;
             memset(&sRow, 0, sizeof(HtmlElementNode));
-            for (jj = ii + 1; jj < HtmlNodeNumChildren(pNode); jj++) {
-                HtmlNode *pNextRow = HtmlNodeChild(pNode, jj);
+            for (j = i + 1; j < HtmlNodeNumChildren(pNode); j++) {
+                HtmlNode *pNextRow = HtmlNodeChild(pNode, j);
                 HtmlComputedValues *pV2 = HtmlNodeComputedValues(pNextRow);
                 if (DISPLAY(pV2) == CSS_CONST_TABLE_ROW) break;
             }
-            sRow.node.iNode = -1;
-            sRow.nChild = jj - ii;
-            sRow.apChildren = &((HtmlElementNode *)pNode)->apChildren[ii];
-            rowIterate(pTree, &sRow, p);
+            sRow.node.index = -1;
+            sRow.nChild = j - i;
+            sRow.apChildren = &((HtmlElementNode *)pNode)->apChildren[i];
+            rowIterate(pTree, (HtmlNode*)&sRow, p);
             assert(!sRow.pLayoutCache);
-            ii = jj - 1;
+            i = j - 1;
         }
     }
 }
@@ -1219,7 +1173,7 @@ tableIterate (
     void *pContext                                /* pContext of callbacks */
 )
 {
-    int ii;
+    int i;
   
     HtmlNode *pHeader = 0;     /* Table header (i.e. <THEAD>) */
     HtmlNode *pFooter = 0;     /* Table footer (i.e. <TFOOT>) */
@@ -1231,27 +1185,27 @@ tableIterate (
     sRowContext.clientData = (ClientData)pContext;
 
     /* Search for the table header and footer blocks. */
-    for (ii = 0; ii < HtmlNodeNumChildren(pNode); ii++) {
-        HtmlNode *pChild = HtmlNodeChild(pNode, ii);
+    for (i = 0; i < HtmlNodeNumChildren(pNode); i++) {
+        HtmlNode *pChild = HtmlNodeChild(pNode, i);
         switch (DISPLAY(HtmlNodeComputedValues(pChild))) {
-             case CSS_CONST_TABLE_FOOTER_GROUP:
-                 pFooter = (pFooter ? pFooter : pChild);
-                 break;
-             case CSS_CONST_TABLE_HEADER_GROUP:
-                 pHeader = (pHeader ? pHeader : pChild);
-                 break;
+            case CSS_CONST_TABLE_FOOTER_GROUP:
+                pFooter = (pFooter ? pFooter : pChild);
+                break;
+            case CSS_CONST_TABLE_HEADER_GROUP:
+                pHeader = (pHeader ? pHeader : pChild);
+                break;
         }
     }
 
     rowGroupIterate(pTree, pHeader, &sRowContext);
 
-    for (ii = 0; ii < HtmlNodeNumChildren(pNode); ii++) {
-        HtmlNode *pChild = HtmlNodeChild(pNode, ii);
+    for (i = 0; i < HtmlNodeNumChildren(pNode); i++) {
+        HtmlNode *pChild = HtmlNodeChild(pNode, i);
         int eDisplay;
 
         if (pChild == pFooter || pChild == pHeader) continue;
 
-	/* Throw away white-space node children of the table node. 
+    /* Throw away white-space node children of the table node. 
          * Todo: Is this correct?  */
         if (HtmlNodeIsWhitespace(pChild)) continue;
 
@@ -1264,11 +1218,11 @@ tableIterate (
             rowGroupIterate(pTree, pChild, &sRowContext);
         } else {
             /* Create a transient <TBODY> node */
-            int jj;
+            int j;
             HtmlElementNode sRowGroup;
 
-            for (jj = ii + 1; jj < HtmlNodeNumChildren(pNode); jj++) {
-                HtmlNode *pSibling = HtmlNodeChild(pNode, jj);
+            for (j = i + 1; j < HtmlNodeNumChildren(pNode); j++) {
+                HtmlNode *pSibling = HtmlNodeChild(pNode, j);
                 eDisplay = DISPLAY(HtmlNodeComputedValues(pSibling));
                 if (
                     eDisplay == CSS_CONST_TABLE_ROW_GROUP ||
@@ -1278,12 +1232,12 @@ tableIterate (
             }
 
             memset(&sRowGroup, 0, sizeof(HtmlElementNode));
-            sRowGroup.node.iNode = -1;
-            sRowGroup.nChild = jj - ii;
-            sRowGroup.apChildren = &((HtmlElementNode *)pNode)->apChildren[ii];
-            rowGroupIterate(pTree, &sRowGroup, &sRowContext);
+            sRowGroup.node.index = -1;
+            sRowGroup.nChild = j - i;
+            sRowGroup.apChildren = &((HtmlElementNode *)pNode)->apChildren[i];
+            rowGroupIterate(pTree, (HtmlNode*)&sRowGroup, &sRowContext);
             assert(!sRowGroup.pLayoutCache);
-            ii = jj - 1;
+            i = j - 1;
         }
     }
 
@@ -1305,13 +1259,13 @@ logWidthStage(
     int *aWidth
     )
 {
-    int ii;
+    int i;
     if (!pStageLog) return;
     Tcl_AppendToObj(pStageLog, "<tr><td>Stage ", -1);
     Tcl_AppendObjToObj(pStageLog, Tcl_NewIntObj(nStage));
-    for (ii = 0; ii < nWidth; ii++) {
+    for (i = 0; i < nWidth; i++) {
         Tcl_AppendToObj(pStageLog, "<td>", -1);
-        Tcl_AppendObjToObj(pStageLog, Tcl_NewIntObj(aWidth[ii]));
+        Tcl_AppendObjToObj(pStageLog, Tcl_NewIntObj(aWidth[i]));
     }
 }
 
@@ -1320,9 +1274,9 @@ static void
 tableCalculateCellWidths (
     TableData *pData,
     int availablewidth,    /* Total width available for cells */
-    int isAuto            /* True if the 'width' of the <table> was "auto" */
-)
-{
+    int isAuto,           /* True if the 'width' of the <table> was "auto" */
+    int isHeight
+) {
     /* The values of the following variables are set in the "analysis loop"
      * (the first loop below) and thereafter left unchanged.
      */ 
@@ -1333,19 +1287,17 @@ tableCalculateCellWidths (
     int nAutoCol = 0;      /* Number of 'auto' width columns */
     int iMaxAuto = 0;      /* Total of max-content-width for all 'auto' cols */
     int iMinAuto = 0;      /* Total of min-content-width for all 'auto' cols */
-
-    int ii;
-    int jj;
-
+    int i, j;
     int iRemaining = availablewidth;
+    const int n = isHeight ? pData->nRow : pData->nCol;
+    const int LRGT = 1 + MAX(MAX(CELL_WIDTH_AUTO, CELL_WIDTH_PIXELS), CELL_WIDTH_PERCENT);
 
     /* Local handles for the input arrays */
-    int *aMinWidth = pData->aMinWidth;
-    int *aMaxWidth = pData->aMaxWidth;
-    CellReqWidth *aReqWidth = pData->aReqWidth;
-
-    /* Local handle for the output array */
-    int *aWidth = pData->aWidth;
+    int *aMinWidth = isHeight ? pData->aMinHeight : pData->aMinWidth;
+    int *aMaxWidth = isHeight ? pData->aMaxHeight : pData->aMaxWidth;
+    CellReqWidth *aReqWidth = isHeight ? pData->aReqHeight : pData->aReqWidth;
+    
+    int *aWidth = isHeight ? pData->aHeight : pData->aWidth; /* Local handle for the output array */
 
     /* Log the inputs to this function. */
     LayoutContext *pLayout = pData->pLayout;
@@ -1375,127 +1327,112 @@ tableCalculateCellWidths (
             Tcl_IncrRefCount(pStageLog);
         }
     }
-
     /* This loop serves two purposes:
      *
      *     1. Allocate each column it's minimum content width.
      *     2. It is the "analysis loop" refered to above that populates
      *        local variables used by later stages of the algorithm.
      */
-    for (ii = 0; ii < pData->nCol; ii++) {
-        aWidth[ii] = aMinWidth[ii];
-        iRemaining -= aMinWidth[ii];
+    for (i = 0; i < n; i++) {
+        aWidth[i] = aMinWidth[i];
+        iRemaining -= aMinWidth[i];
 
-        switch (aReqWidth[ii].eType) {
+        switch (aReqWidth[i].eType) {
             case CELL_WIDTH_AUTO:
-                iMaxAuto += aMaxWidth[ii];
-                iMinAuto += aMinWidth[ii];
+                iMaxAuto += aMaxWidth[i];
+                iMinAuto += aMinWidth[i];
                 nAutoCol++;
                 break;
             case CELL_WIDTH_PIXELS:
-                iMaxExplicit += aMaxWidth[ii];
+                iMaxExplicit += aMaxWidth[i];
                 nExplicitCol++;
                 break;
             case CELL_WIDTH_PERCENT:
                 nPercentCol++;
-                fTotalPercent += aReqWidth[ii].x.fVal;
+                fTotalPercent += aReqWidth[i].val.f;
                 break;
         }
     }
-    logWidthStage(1, pStageLog, pData->nCol, aWidth);
-
-    /* Allocate pixels to percentage width columns */
-    if (iRemaining > 0) {
-        for (ii = 0; ii < pData->nCol; ii++) {
-            if (aReqWidth[ii].eType == CELL_WIDTH_PERCENT) {
-                int iReq = (50 + (aReqWidth[ii].x.fVal * availablewidth)) / 100;
-                iReq = MAX(0, iReq - aWidth[ii]);
-                aWidth[ii] += iReq;
+    logWidthStage(1, pStageLog, n, aWidth);
+    if (iRemaining > 0) { /* Allocate pixels to percentage width columns */
+        for (i = 0; i < n; i++) {
+            if (aReqWidth[i].eType == CELL_WIDTH_PERCENT) {
+                int iReq = (50 + (aReqWidth[i].val.f * availablewidth)) / 100;
+                iReq = MAX(0, iReq - aWidth[i]);
+                aWidth[i] += iReq;
                 iRemaining -= iReq;
             }
         }
-
         if (fTotalPercent > 100.0) {
             int iRemove = (50 + ((fTotalPercent-100.0) * availablewidth)) / 100;
-            for (ii = pData->nCol - 1; ii >= 0; ii--) {
-                if (aReqWidth[ii].eType == CELL_WIDTH_PERCENT) {
+            for (i = n - 1; i >= 0; i--) {
+                if (aReqWidth[i].eType == CELL_WIDTH_PERCENT) {
                     /* Apparently this is for Gecko compatibility. */
-                    int rem = MIN(aWidth[ii], iRemove);
+                    int rem = MIN(aWidth[i], iRemove);
                     iRemove -= rem;
-                    rem = MIN(aWidth[ii] - aMinWidth[ii], rem);
+                    rem = MIN(aWidth[i] - aMinWidth[i], rem);
                     iRemaining += rem;
-                    aWidth[ii] -= rem;
+                    aWidth[i] -= rem;
                 }
             }
         }
     }
-    logWidthStage(2, pStageLog, pData->nCol, aWidth);
-
-    /* Allocate pixels to explicit width columns */
-    if (iRemaining > 0) {
-        for (ii = 0; ii < pData->nCol; ii++) {
-            if (aReqWidth[ii].eType == CELL_WIDTH_PIXELS) {
-                int iReq = MAX(0, aReqWidth[ii].x.iVal - aWidth[ii]);
-                aWidth[ii] += iReq;
+    logWidthStage(2, pStageLog, n, aWidth);
+    if (iRemaining > 0) { /* Allocate pixels to explicit width columns */
+        for (i = 0; i < n; i++) {
+            if (aReqWidth[i].eType == CELL_WIDTH_PIXELS) {
+                int iReq = MAX(0, aReqWidth[i].val.i - aWidth[i]);
+                aWidth[i] += iReq;
                 iRemaining -= iReq;
             }
         }
     }
-    logWidthStage(3, pStageLog, pData->nCol, aWidth);
-
-    /* Allocate pixels to auto width columns */
-    if (iRemaining > 0) {
+    logWidthStage(3, pStageLog, n, aWidth);
+    if (iRemaining > 0) { /* Allocate pixels to auto width columns */
         int iMA = iMaxAuto;
         iRemaining += iMinAuto;
-        for (ii = 0; iMA > 0 && ii < pData->nCol; ii++) {
-            if (aReqWidth[ii].eType == CELL_WIDTH_AUTO) {
-                int w = MAX(aMinWidth[ii], iRemaining*aMaxWidth[ii]/iMA);
-                aWidth[ii] = w;
+        for (i = 0; iMA > 0 && i < n; i++) {
+            if (aReqWidth[i].eType == CELL_WIDTH_AUTO) {
+                int w = MAX(aMinWidth[i], iRemaining*aMaxWidth[i]/iMA);
+                aWidth[i] = w;
                 iRemaining -= w;
-                iMA -= aMaxWidth[ii];
+                iMA -= aMaxWidth[i];
             }
         }
     }
-    logWidthStage(4, pStageLog, pData->nCol, aWidth);
-
-    /* Force pixels into fixed columns (subject to max-width) */
-    if (iRemaining > 0) {
+    logWidthStage(4, pStageLog, n, aWidth);
+    if (iRemaining > 0) { /* Force pixels into fixed columns (subject to max-width) */
         int iME = iMaxExplicit;
-        for (ii = 0; ii < pData->nCol; ii++) {
-            if (aReqWidth[ii].eType == CELL_WIDTH_PIXELS) {
-                int w = iRemaining * aMaxWidth[ii] / iME;
-                iME -= aMaxWidth[ii];
+        for (i = 0; i < n; i++) {
+            if (aReqWidth[i].eType == CELL_WIDTH_PIXELS) {
+                int w = iRemaining * aMaxWidth[i] / iME;
+                iME -= aMaxWidth[i];
                 iRemaining -= w;
-                aWidth[ii] += w;
+                aWidth[i] += w;
             }
         }
     }
-    logWidthStage(5, pStageLog, pData->nCol, aWidth);
-
-    /* Force pixels into percent columns (not subject to max-width!) */
-    if (iRemaining > 0 && fTotalPercent < 100.0) {
+    logWidthStage(5, pStageLog, n, aWidth);
+    if (iRemaining > 0 && fTotalPercent < 100.0) { /* Force pixels into percent columns (not subject to max-width!) */
         float fTP = fTotalPercent;
-        for (ii = 0; ii < pData->nCol; ii++) {
-            if (aReqWidth[ii].eType == CELL_WIDTH_PERCENT) {
-                int w = iRemaining * aReqWidth[ii].x.fVal / fTP;
-                fTP -= aReqWidth[ii].x.fVal;
+        for (i = 0; i < n; i++) {
+            if (aReqWidth[i].eType == CELL_WIDTH_PERCENT) {
+                int w = iRemaining * aReqWidth[i].val.f / fTP;
+                fTP -= aReqWidth[i].val.f;
                 iRemaining -= w;
-                aWidth[ii] += w;
+                aWidth[i] += w;
             }
         }
     }
-    logWidthStage(6, pStageLog, pData->nCol, aWidth);
-
-    /* Force pixels into any columns (not subject to max-width!) */
-    if (iRemaining > 0) {
-        for (ii = 0; ii < pData->nCol; ii++) {
-            int w = iRemaining / (pData->nCol - ii);
+    logWidthStage(6, pStageLog, n, aWidth);
+    if (iRemaining > 0) { /* Force pixels into any columns (not subject to max-width!) */
+        for (i = 0; i < n; i++) {
+            int w = iRemaining / (n - i);
             iRemaining -= w;
-            aWidth[ii] += w;
+            aWidth[i] += w;
         }
     }
-    logWidthStage(7, pStageLog, pData->nCol, aWidth);
-
+    logWidthStage(7, pStageLog, n, aWidth);
     /* If too many pixels have been allocated, take some back from
      * the columns. By preference we take pixels from "auto" columns,
      * followed by "pixel width" columns and finally "percent width"
@@ -1503,35 +1440,28 @@ tableCalculateCellWidths (
      *
      * In pseudo-tcl the outer loop would read:
      *
-     *     foreach jj {auto pixels percent} { 
-     *         reduce_pixels_in_cols_of_type $jj
+     *     foreach j {auto pixels percent} { 
+     *         reduce_pixels_in_cols_of_type $j
      *     }
      */
-    assert(CELL_WIDTH_AUTO == 0);
-    assert(CELL_WIDTH_PIXELS == 1);
-    assert(CELL_WIDTH_PERCENT == 2);
-    for (jj = 0; iRemaining < 0 && jj < 3; jj++) {
-        
+    for (j = 0; iRemaining < 0 && j < LRGT; j++) {
         /* Total allocated, less the total min-content-width, for the cols */
         int iAllocLessMin = 0;
-
-        for (ii = 0; ii < pData->nCol; ii++) {
-            if (aReqWidth[ii].eType == jj) {
-                iAllocLessMin += (aWidth[ii] - aMinWidth[ii]);
+        for (i = 0; i < n; i++) {
+            if (aReqWidth[i].eType == j) {
+                iAllocLessMin += (aWidth[i] - aMinWidth[i]);
             }
-        }
-        for (ii = 0; iAllocLessMin > 0 && ii < pData->nCol; ii++){
-            if (aReqWidth[ii].eType == jj) {
-                int iDiff = aWidth[ii] - aMinWidth[ii];
+        } for (i = 0; iAllocLessMin > 0 && i < n; i++){
+            if (aReqWidth[i].eType == j) {
+                int iDiff = aWidth[i] - aMinWidth[i];
                 int iReduce = -1 * (iRemaining * iDiff) / iAllocLessMin;
                 iRemaining += iReduce;
                 iAllocLessMin -= iDiff;
-                aWidth[ii] -= iReduce;
+                aWidth[i] -= iReduce;
             }
         }
-        logWidthStage(jj+8, pStageLog, pData->nCol, aWidth);
+        logWidthStage(j+8, pStageLog, n, aWidth);
     }
-    
     LOG {
         HtmlTree *pTree = pLayout->pTree;
         Tcl_Obj *pCmd = HtmlNodeCommand(pTree, pData->pNode);
@@ -1557,9 +1487,9 @@ tableCalculateCellWidths (
     
             Tcl_AppendToObj(pLog, "<p>Results of column width algorithm:</p>", -1);
             Tcl_AppendToObj(pLog, "<table><tr><th></th>", -1);
-            for (ii = 0; ii < pData->nCol; ii++) {
+            for (i = 0; i < n; i++) {
                 Tcl_AppendToObj(pLog, "<th>Col ", -1);
-                Tcl_AppendObjToObj(pLog, Tcl_NewIntObj(ii));
+                Tcl_AppendObjToObj(pLog, Tcl_NewIntObj(i));
             }
             Tcl_AppendToObj(pLog, "</tr>", -1);
             Tcl_AppendObjToObj(pLog, pStageLog);
@@ -1574,13 +1504,14 @@ tableCalculateCellWidths (
     }
 }
 
+
 static int 
 tableCalculateMaxWidth (TableData *pData)
 {
-    int   *aMaxWidth         = pData->aMaxWidth;
-    int   *aMinWidth         = pData->aMinWidth;
-    CellReqWidth *aReqWidth  = pData->aReqWidth;
-    int ii;
+    int   *aMaxWidth        = pData->aMaxWidth;
+    int   *aMinWidth        = pData->aMinWidth;
+    CellReqWidth *aReqWidth = pData->aReqWidth;
+    int i;
     int ret = 0;
 
     float fTotalPercent = 0.0;
@@ -1591,22 +1522,22 @@ tableCalculateMaxWidth (TableData *pData)
 
     HtmlComputedValues *pV = HtmlNodeComputedValues(pData->pNode);
 
-    for (ii = 0; ii < pData->nCol; ii++) {
-        if (aReqWidth[ii].eType == CELL_WIDTH_PIXELS) {
-            ret += MAX(aMinWidth[ii], aReqWidth[ii].x.iVal);
+    for (i = 0; i < pData->nCol; i++) {
+        if (aReqWidth[i].eType == CELL_WIDTH_PIXELS) {
+            ret += MAX(aMinWidth[i], aReqWidth[i].val.i);
         } else {
-            assert(aMaxWidth[ii] >= aMinWidth[ii]);
-            ret += aMaxWidth[ii];
+            assert(aMaxWidth[i] >= aMinWidth[i]);
+            ret += aMaxWidth[i];
         }
 
-        if (aReqWidth[ii].eType == CELL_WIDTH_PERCENT) {
-            float percent = MIN(aReqWidth[ii].x.fVal, 100.0 - fTotalPercent);
-            int w = (aMaxWidth[ii] * 100.0) / MAX(percent, 1.0);
+        if (aReqWidth[i].eType == CELL_WIDTH_PERCENT) {
+            float percent = MIN(aReqWidth[i].val.f, 100.0 - fTotalPercent);
+            int w = (aMaxWidth[i] * 100.0) / MAX(percent, 1.0);
             iPercent = MAX(iPercent, w);
             fTotalPercent += percent;
             bConsiderPercent = 1;
         } else {
-            iMaxNonPercent += aMaxWidth[ii];
+            iMaxNonPercent += aMaxWidth[i];
         }
     }
 
@@ -1677,12 +1608,12 @@ tableCalculateMaxWidth (TableData *pData)
  *     The table layout algorithm used is described in section 17.5.2.2 of 
  *     the CSS 2.1 spec.
  *
- *     When this function is called, pBox->iContaining contains the width
+ *     When this function is called, pBox->iContainingW contains the width
  *     available to the table content - not including any margin, border or
  *     padding on the table itself. Any pixels allocated between the edge of
  *     the table and the leftmost or rightmost cell due to 'border-spacing' is
- *     included in pBox->iContaining. If the table element has a computed value
- *     for width other than 'auto', then pBox->iContaining is the calculated
+ *     included in pBox->iContainingW. If the table element has a computed value
+ *     for width other than 'auto', then pBox->iContainingW is the calculated
  *     'width' value. Otherwise it is the width available according to the
  *     width of the containing block.
  * 
@@ -1694,8 +1625,7 @@ tableCalculateMaxWidth (TableData *pData)
  *
  *---------------------------------------------------------------------------
  */
-int 
-HtmlTableLayout (
+int HtmlTableLayout (
     LayoutContext *pLayout,
     BoxContext *pBox,
     HtmlNode *pNode          /* The node to layout */
@@ -1705,24 +1635,28 @@ HtmlTableLayout (
     HtmlComputedValues *pV = HtmlNodeComputedValues(pNode);
     int nCol = 0;             /* Number of columns in this table */
     int i;
-    int availwidth;           /* Total width available for cells */
+    int availwidth, availheight;    /* Total width available for cells */
 
-    int *aMinWidth = 0;       /* Minimum width for each column */
-    int *aMaxWidth = 0;       /* Minimum width for each column */
-    int *aWidth = 0;          /* Actual width for each column */
+    int *aMinWidth = 0, *aMinHeight = 0; /* Minimum width for each column */
+    int *aMaxWidth = 0, *aMaxHeight = 0; /* Minimum width for each column */
+    int *aWidth = 0, *aHeight = 0;       /* Actual width for each column */
     int *aY = 0;              /* Top y-coord for each row */
     TableCell *aCell = 0;     /* Array of nCol cells used during drawing */
     TableData data;
+    int offset = pBox->height;
 
-    CellReqWidth *aReqWidth = 0;
-    CellReqWidth *aSingleReqWidth = 0;
+    CellReqWidth *aReqWidth = 0, *aReqHeight = 0;
+    CellReqWidth *aSingleReqWidth = 0, *aSingleReqHeight = 0;
 
     memset(&data, 0, sizeof(struct TableData));
     data.pLayout = pLayout;
     data.pNode = pNode;
 
-    pBox->iContaining = MAX(pBox->iContaining, 0);  /* ??? */
-    assert(pBox->iContaining>=0);
+    pBox->iContainingW = MAX(pBox->iContainingW, 0);  /* ??? */
+    assert(pBox->iContainingW>=0);
+    
+    pBox->iContainingH = MAX(pBox->iContainingH, 0);  /* ??? */
+    assert(pBox->iContainingH>=0);
 
     assert(pV->eDisplay==CSS_CONST_TABLE);
 
@@ -1753,22 +1687,34 @@ HtmlTableLayout (
     }
 
     /* Allocate arrays for the minimum and maximum widths of each column */
-    aMinWidth      = (int *)HtmlClearAlloc(0, nCol*sizeof(int));
-    aMaxWidth      = (int *)HtmlClearAlloc(0, nCol*sizeof(int));
-    aWidth         = (int *)HtmlClearAlloc(0, nCol*sizeof(int));
+    aMinWidth = (int *)HtmlClearAlloc(0, nCol*sizeof(int));
+    aMaxWidth = (int *)HtmlClearAlloc(0, nCol*sizeof(int));
+    aWidth    = (int *)HtmlClearAlloc(0, nCol*sizeof(int));
 
     aReqWidth = (CellReqWidth *)HtmlClearAlloc(0, nCol*sizeof(CellReqWidth));
-    aSingleReqWidth = 
-        (CellReqWidth *)HtmlClearAlloc(0, nCol*sizeof(CellReqWidth));
+    aSingleReqWidth = (CellReqWidth *)HtmlClearAlloc(0, nCol*sizeof(CellReqWidth));
 
     aY = (int *)HtmlClearAlloc(0, (data.nRow+1)*sizeof(int));
-    aCell = (TableCell *)HtmlClearAlloc(0, data.nCol*sizeof(TableCell));
+    aCell = (TableCell *)HtmlClearAlloc(0, nCol*sizeof(TableCell));
 
     data.aMaxWidth = aMaxWidth;
     data.aMinWidth = aMinWidth;
     data.aWidth = aWidth;
     data.aReqWidth = aReqWidth;
     data.aSingleReqWidth = aSingleReqWidth;
+    
+    aMinHeight = (int *)HtmlClearAlloc(0, data.nRow*sizeof(int));
+    aMaxHeight = (int *)HtmlClearAlloc(0, data.nRow*sizeof(int));
+    aHeight    = (int *)HtmlClearAlloc(0, data.nRow*sizeof(int));
+    
+    aReqHeight = (CellReqWidth *)HtmlClearAlloc(0, data.nRow*sizeof(CellReqWidth));
+    aSingleReqHeight = (CellReqWidth *)HtmlClearAlloc(0, data.nRow*sizeof(CellReqWidth));
+    
+    data.aMaxHeight = aMaxHeight;
+    data.aMinHeight = aMinHeight;
+    data.aHeight = aHeight;
+    data.aReqHeight = aReqHeight;
+    data.aSingleReqHeight = aSingleReqHeight;
 
     /* Calculate the minimum, maximum, and requested percentage widths of
      * each column.  The first pass only considers cells that span a single
@@ -1785,15 +1731,17 @@ HtmlTableLayout (
     tableIterate(pTree, pNode, tableColWidthSingleSpan, 0, &data);
     memcpy(aReqWidth, aSingleReqWidth, nCol*sizeof(CellReqWidth));
     tableIterate(pTree, pNode, tableColWidthMultiSpan, 0, &data);
+    
+    paginationPageYOrigin(offset, pLayout);
 
-    pBox->width = 0;
-    availwidth = (pBox->iContaining - (nCol+1) * data.border_spacing);
+    pBox->height = pBox->width = 0;
+    availwidth = (pBox->iContainingW - (nCol+1) * data.border_spacing);
+    availheight = (pBox->iContainingH - (data.nRow+1) * data.border_spacing);
     switch (pLayout->minmaxTest) {
         case 0:
-            tableCalculateCellWidths(&data, availwidth, 0);
-            for (i = 0; i < nCol; i++) {
-                pBox->width += aWidth[i];
-            }
+            tableCalculateCellWidths(&data, availwidth, 0, 0);
+            tableCalculateCellWidths(&data, availheight, 0, 1);
+            for (i = 0; i < nCol; i++) pBox->width += aWidth[i];
             data.aY = aY;
             data.aCell = aCell;
             data.pBox = pBox;
@@ -1802,9 +1750,8 @@ HtmlTableLayout (
             break;
 
         case MINMAX_TEST_MIN:
-            for (i = 0; i < nCol; i++) {
-                pBox->width += aMinWidth[i];
-            }
+            for (i = 0; i < nCol; i++) pBox->width += aMinWidth[i];
+            for (i = 0; i < data.nRow; i++) pBox->height += aMinHeight[i];
             break;
 
         case MINMAX_TEST_MAX: {
@@ -1820,15 +1767,21 @@ HtmlTableLayout (
         default:
             assert(!"Bad value for LayoutContext.minmaxTest");
     }
+    paginationPageYOrigin(-offset, pLayout);
     pBox->width += (data.border_spacing * (nCol+1));
 
     HtmlFree(aMinWidth);
     HtmlFree(aMaxWidth);
     HtmlFree(aWidth);
+    HtmlFree(aMinHeight);
+    HtmlFree(aMaxHeight);
+    HtmlFree(aHeight);
     HtmlFree(aY);
     HtmlFree(aCell);
     HtmlFree(aReqWidth);
     HtmlFree(aSingleReqWidth);
+    HtmlFree(aReqHeight);
+    HtmlFree(aSingleReqHeight);
 
     HtmlComputedValuesRelease(pTree, data.pDefaultProperties);
 
@@ -1836,15 +1789,13 @@ HtmlTableLayout (
     CHECK_INTEGER_PLAUSIBILITY(pBox->height);
     CHECK_INTEGER_PLAUSIBILITY(pBox->vc.bottom);
     CHECK_INTEGER_PLAUSIBILITY(pBox->vc.right);
-LOG {
-    Tcl_Obj *pCmd = HtmlNodeCommand(pTree, pNode);
-    if (pCmd) {
-        HtmlTree *pTree = pLayout->pTree;
-        HtmlLog(pTree, "LAYOUTENGINE", "%s HtmlTableLayout() "
-            "Content size is %dx%d", Tcl_GetString(pCmd), 
-                pBox->width, pBox->height
-            );
+    LOG {
+        Tcl_Obj *pCmd = HtmlNodeCommand(pTree, pNode);
+        if (pCmd) {
+            HtmlTree *pTree = pLayout->pTree;
+            HtmlLog(pTree, "LAYOUTENGINE", "%s HtmlTableLayout() "
+                "Content size is %dx%d", Tcl_GetString(pCmd), pBox->width, pBox->height);
+        }
     }
-}
     return TCL_OK;
 }

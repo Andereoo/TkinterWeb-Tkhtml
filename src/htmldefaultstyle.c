@@ -568,31 +568,20 @@
     "cssdynamic.c,v 1.12 2007/06/10 07:53:03 danielk1977 Exp\n" \
     "cssparser.c,v 1.8 2008/01/19 06:08:13 danielk1977 Exp\n" \
     "csssearch.c,v 1.7 2007/10/27 08:37:50 hkoba Exp\n" \
-    "htmlcmd.c,v 1.32 2005/03/26 11:54:30 danielk1977 Exp\n" \
     "htmldecode.c,v 1.9 2008/01/09 06:49:37 danielk1977 Exp\n" \
     "htmldraw.c,v 1.208 2008/02/14 08:43:49 danielk1977 Exp\n" \
-    "htmlexts.c,v 1.11 2005/03/24 12:05:06 danielk1977 Exp\n" \
     "htmlfloat.c,v 1.21 2006/10/27 15:19:18 danielk1977 Exp\n" \
-    "htmlform.c,v 1.33 2005/03/23 01:36:54 danielk1977 Exp\n" \
     "htmlimage.c,v 1.70 2008/01/20 06:17:49 danielk1977 Exp\n" \
-    "htmlindex.c,v 1.15 2005/03/24 12:05:06 danielk1977 Exp\n" \
     "htmlinline.c,v 1.60 2008/01/12 14:23:05 danielk1977 Exp\n" \
     "htmllayout.c,v 1.270 2008/01/07 04:48:02 danielk1977 Exp\n" \
     "htmlparse.c,v 1.121 2007/12/08 15:33:00 danielk1977 Exp\n" \
     "htmlprop.c,v 1.135 2007/12/05 10:11:12 danielk1977 Exp\n" \
     "htmlPs.c,v 1.8 2005/03/23 01:36:54 danielk1977 Exp\n" \
-    "htmlPsImg.c,v 1.7 2005/03/23 01:36:54 danielk1977 Exp\n" \
-    "htmlsizer.c,v 1.44 2005/03/23 01:36:54 danielk1977 Exp\n" \
     "htmlstyle.c,v 1.61 2007/12/12 04:50:29 danielk1977 Exp\n" \
     "htmltable.c,v 1.124 2007/11/03 11:23:16 danielk1977 Exp\n" \
     "htmltagdb.c,v 1.11 2007/11/11 11:00:48 danielk1977 Exp\n" \
     "htmltcl.c,v 1.207 2008/01/16 06:29:27 danielk1977 Exp\n" \
-    "htmltest.c,v 1.15 2005/03/23 01:36:54 danielk1977 Exp\n" \
     "htmltree.c,v 1.161 2008/02/14 08:39:14 danielk1977 Exp\n" \
-    "htmlurl.c,v 1.27 2005/03/23 01:36:54 danielk1977 Exp\n" \
-    "htmlwidget.c,v 1.59 2005/03/23 23:56:27 danielk1977 Exp\n" \
-    "htmlwish.c,v 1.10 2005/03/23 23:56:27 danielk1977 Exp\n" \
-    "main.c,v 1.9 2007/09/28 14:14:56 danielk1977 Exp\n" \
     "restrack.c,v 1.13 2007/12/12 04:50:29 danielk1977 Exp\n" \
     "swproc.c,v 1.6 2006/06/10 12:38:38 danielk1977 Exp\n" \
 

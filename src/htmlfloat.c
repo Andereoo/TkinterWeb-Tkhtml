@@ -667,8 +667,7 @@ HtmlFloatListPlace (HtmlFloatList *pList, int parentwidth, int width, int height
     int ret = y - pList->yorigin;
 
 #ifdef DEBUG_FLOAT_LIST
-    printf("HtmlFloatListPlace(%p, parentwidth=%d, width=%d, height=%d, y=%d)",
-            pList, parentwidth, width, height, y);
+    printf("HtmlFloatListPlace(%p, parentwidth=%d, width=%d, height=%d, y=%d)", pList, parentwidth, width, height, y);
 #endif
 
     parentwidth -= pList->xorigin;

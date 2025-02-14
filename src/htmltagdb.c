@@ -141,7 +141,8 @@ HtmlMarkup (int markup)
         assert(i<HTML_MARKUP_COUNT);
         return &HtmlMarkupMap[i];
     }
-    return 0;
+    static HtmlTokenMap a;
+    return &a;
 }
 
 /*

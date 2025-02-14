@@ -84,7 +84,7 @@ static const char rcsid[] = "$Id: htmlimage.c,v 1.70 2008/01/20 06:17:49 danielk
  *     routine used to create a Tk image from an XImage (used by 
  *     the [widget image] command).
  * 
- *         HtmlXImageToImage()
+ *         HtmlPixmapToImage()
  *----------------------------------------------------------------------------
  */
 
@@ -198,7 +198,7 @@ HtmlImageServerShutdown (HtmlTree *pTree)
 /*
  *---------------------------------------------------------------------------
  *
- * photoputblock --
+ * Htmlphotoputblock --
  *
  *     This is a wrapper around Tk_PhotoPutBlock(). In tk 8.5, the 'interp'
  *     argument was added to the Tk_PhotoPutBlock() signature. This
@@ -216,7 +216,7 @@ HtmlImageServerShutdown (HtmlTree *pTree)
  *---------------------------------------------------------------------------
  */
 static void 
-photoputblock(
+Htmlphotoputblock(
     Tcl_Interp *interp,
     Tk_PhotoHandle handle,
     Tk_PhotoImageBlock *blockPtr,
@@ -305,13 +305,13 @@ getImageCompressed(HtmlImage2 *pImage)
         Tcl_IncrRefCount(apObj[1]);
         Tcl_IncrRefCount(apObj[2]);
         if (TCL_OK == Tcl_EvalObjv(interp, 3, apObj, TCL_EVAL_GLOBAL)) {
-	    int nData;
-	    Tcl_Obj *pData = Tcl_GetObjResult(interp);
-	    Tcl_GetByteArrayFromObj(pData, &nData);
-	    if (nData>0){
+        int nData;
+        Tcl_Obj *pData = Tcl_GetObjResult(interp);
+        Tcl_GetByteArrayFromObj(pData, &nData);
+        if (nData>0){
                 pImage->pCompressed = pData;
                 Tcl_IncrRefCount(pData);
-	    }
+        }
         }
         Tcl_DecrRefCount(apObj[2]);
         Tcl_DecrRefCount(apObj[1]);
@@ -437,7 +437,7 @@ HtmlImageServerGet (HtmlImageServer *p, const char *zUrl)
             Tcl_Obj **apObj = 0;
             Tk_Image img;
            
-	    /* The image could not be found in the hash table and an 
+        /* The image could not be found in the hash table and an 
              * -imagecmd callback is configured. The callback script 
              * must be executed to obtain an image. Build up a script 
              * in pEval and execute it. Put the result in variable pResult.
@@ -677,8 +677,6 @@ HtmlImageImage(HtmlImage2 *pImage)
             Tcl_Obj *apObj[4];
             int rc;
 
-/*printf("TODO: BAD. Have to recreate image to make scaled copy.\n");*/
-
             apObj[0] = pUnscaled->pImageName;
             apObj[1] = Tcl_NewStringObj("configure", -1);
             apObj[2] = Tcl_NewStringObj("-data", -1);
@@ -769,7 +767,7 @@ HtmlImageImage(HtmlImage2 *pImage)
                     zScale[3] = zOrig[block.offset[3]];
                 }
             }
-            photoputblock(interp, s_photo, &s_block, 0, 0, sw, sh, 0);
+            Htmlphotoputblock(interp, s_photo, &s_block, 0, 0, sw, sh, 0);
             HtmlFree(s_block.pixelPtr);
         } else {
             return HtmlImageImage(pImage->pUnscaled);
@@ -1102,7 +1100,7 @@ HtmlImageAlphaChannel (HtmlImage2 *pImage)
                     p->eAlpha = ALPHA_CHANNEL_TRUE;
                     return 1;
                 }
-		z += block.pixelSize;
+        z += block.pixelSize;
             }
         }
     }
@@ -1202,7 +1200,7 @@ HtmlImageTile(
         }
     }
 
-    photoputblock(interp,tilephoto,&tileblock,0,0,iTileWidth,iTileHeight,0);
+    Htmlphotoputblock(interp,tilephoto,&tileblock,0,0,iTileWidth,iTileHeight,0);
     HtmlFree(tileblock.pixelPtr);
     pImage->iTileWidth = iTileWidth;
     pImage->iTileHeight = iTileHeight;
@@ -1307,7 +1305,7 @@ HtmlImageServerCount (HtmlTree *pTree)
 /*
  *---------------------------------------------------------------------------
  *
- * HtmlXImageToImage --
+ * HtmlPixmapToImage --
  *
  *     This is a utility procedure to convert from an XImage to a Tk 
  *     image that can be used at the script level (this function is called
@@ -1326,11 +1324,10 @@ HtmlImageServerCount (HtmlTree *pTree)
  *
  *---------------------------------------------------------------------------
  */
-#ifndef WIN32
 #include <X11/Xutil.h>
-Tcl_Obj *HtmlXImageToImage(
+Tcl_Obj *HtmlPixmapToImage(
     HtmlTree *pTree,
-    XImage *pXImage,
+    Pixmap pixmap,
     int w,
     int h
     )
@@ -1338,10 +1335,10 @@ Tcl_Obj *HtmlXImageToImage(
     Tcl_Interp *interp = pTree->interp;
 
     Tcl_Obj *pImage;
+    XImage *pXImage;
     Tk_PhotoHandle photo;
     Tk_PhotoImageBlock block;
-    int x;
-    int y;
+    int x = 0, y = 0;
     unsigned long redmask, redshift;
     unsigned long greenmask, greenshift;
     unsigned long bluemask, blueshift;
@@ -1369,6 +1366,9 @@ Tcl_Obj *HtmlXImageToImage(
     for (redshift=0; !((redmask>>redshift)&0x000000001); redshift++);
     for (greenshift=0; !((greenmask>>greenshift)&0x00000001); greenshift++);
     for (blueshift=0; !((bluemask>>blueshift)&0x00000001); blueshift++);
+    
+    Display *pDisplay = Tk_Display(pTree->tkwin);
+    pXImage = XGetImage(pDisplay, pixmap, x, y, w, h, AllPlanes, ZPixmap);
 
     for (x=0; x<w; x++) {
         for (y=0; y<h; y++) {
@@ -1383,22 +1383,13 @@ Tcl_Obj *HtmlXImageToImage(
         }
     }
 
+    XDestroyImage(pXImage);
     photo = Tk_FindPhoto(interp, Tcl_GetString(pImage));
-    photoputblock(interp, photo, &block, 0, 0, w, h, 0);
+    Htmlphotoputblock(interp, photo, &block, 0, 0, w, h, 0);
     HtmlFree(block.pixelPtr);
 
     return pImage;
 }
-#else
-Tcl_Obj *HtmlXImageToImage(pTree, pXImage, w, h)
-    HtmlTree *pTree;
-    XImage *pXImage;
-    int w;
-    int h;
-{
-    return 0;
-}
-#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -1448,7 +1439,7 @@ HtmlImageServerReport(
           zUrl = pImage->zUrl;
         }
         Tcl_ListObjAppendElement(interp, p, Tcl_NewStringObj(zUrl, -1));
-	if (pImage->pImageName) {
+    if (pImage->pImageName) {
             Tcl_ListObjAppendElement(interp, p, pImage->pImageName);
         } else {
             Tcl_ListObjAppendElement(interp, p, Tcl_NewStringObj("", -1));

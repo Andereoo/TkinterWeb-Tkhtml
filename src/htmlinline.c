@@ -164,7 +164,7 @@ struct InlineContext {
     int isSizeOnly;         /* Do not draw, just estimate sizes of things */
 
     /* The effective values of 'text-align' used for this inline context. */
-    int eTextAlign;         /* One of TEXTALIGN_LEFT, TEXTALIGN_RIGHT etc. */
+    int iTextAlign;         /* One of TEXTALIGN_LEFT, TEXTALIGN_RIGHT etc. Renamed to distinguish it from HtmlComputedValues */
 
     int iTextIndent;        /* Pixels of 'text-indent' for next line */
     int ignoreLineHeight;   /* Boolean - true to ignore lineHeight */
@@ -203,7 +203,7 @@ struct InlineContext {
  */
 #define START_LOG(pLogNode) \
 if (pContext->pTree->options.logcmd && !pContext->isSizeOnly &&                \
-    pLogNode->iNode >= 0) {                                                    \
+    pLogNode->index >= 0) {                                                    \
     Tcl_Obj *pLog = Tcl_NewObj();                                              \
     Tcl_Obj *pLogCmd = HtmlNodeCommand(pContext->pTree, pLogNode);             \
     Tcl_IncrRefCount(pLog);                                                    \
@@ -289,7 +289,7 @@ inlineBoxMetrics (
         oprintf(pLog, "<tr><td>iFontBottom<td>%d", pMetrics->iFontBottom);
         oprintf(pLog, "<tr><td>iLogical<td>%d", pMetrics->iLogical);
         oprintf(pLog, "</table>");
-    END_LOG("inlineBoxMetrics()");
+    END_LOG("inlineBoxMetrics");
 }
 
 
@@ -339,8 +339,7 @@ inlineContextAddInlineCanvas (
     memset(pBox, 0, sizeof(InlineBox));
     pBox->pBorderStart = p->pBoxBorders;
     for (pBorder = pBox->pBorderStart; pBorder; pBorder = pBorder->pNext) {
-        pBox->nLeftPixels += pBorder->box.iLeft;
-        pBox->nLeftPixels += pBorder->margin.margin_left;
+        pBox->nLeftPixels += pBorder->box.iLeft + pBorder->margin.margin_left;
     }
     p->pBoxBorders = 0;
     /* pBox->eReplaced = eReplaced; */
@@ -478,7 +477,7 @@ HtmlInlineContextPushBorder (InlineContext *pContext, InlineBorder *pBorder)
             pBorder->iVerticalAlign = iVert; 
             START_LOG(pBorder->pNode);
                 oprintf(pLog, "Vertical offset is %d pixels\n", iVert);
-            END_LOG("HtmlInlineContextPushBorder()");
+            END_LOG("HtmlInlineContextPushBorder");
         } else {
             assert(!pContext->pRootBorder);
             pContext->pRootBorder = pBorder;
@@ -545,8 +544,8 @@ HtmlInlineContextPopBorder (InlineContext *p, InlineBorder *pBorder)
          *
          *     <a href="www.google.com"></a>
          *
-	 * For this case just remove an entry from
-	 * InlineContext.pBoxBorders. The border will never be drawn.
+     * For this case just remove an entry from
+     * InlineContext.pBoxBorders. The border will never be drawn.
          */
         InlineBorder *pBorder = p->pBoxBorders;
         p->pBoxBorders = pBorder->pNext;
@@ -745,7 +744,7 @@ inlineContextDrawBorder (
     HtmlNode *pNode = pBorder->pNode;
     HtmlElementNode *pElem = HtmlNodeAsElement(pNode);
 
-#if 0
+/*
     HtmlComputedValues *pComputed = pElem->pPropertyValues;
     if( pComputed->eTextDecoration == CSS_CONST_NONE &&
         pComputed->eBorderTopStyle == CSS_CONST_NONE &&
@@ -754,8 +753,7 @@ inlineContextDrawBorder (
         pComputed->eBorderLeftStyle == CSS_CONST_NONE &&
         pComputed->cBackgroundColor->xcolor == 0 &&
         pComputed->imBackgroundImage == 0
-    ) return;
-#endif
+    ) return;*/
 
     assert(pNode && pElem);
     assert(!pBorder->isReplaced);
@@ -1008,7 +1006,7 @@ calculateLineBoxWidth (
     }
 
     if (!isForceLine && (nBox == p->nInline)) {
-	/* There are not enough inline-boxes to fill the line-box and the
+    /* There are not enough inline-boxes to fill the line-box and the
          * 'force-line' flag is not set. In this case return 0 and set
          * *pWidth to 0 too.
          */
@@ -1019,7 +1017,7 @@ calculateLineBoxWidth (
 
     assert(nBox > 0 || !isForceBox || p->nInline == 0);
     if (nBox == 0 && p->nInline > 0) {
-	/* If we get here, then their are inline-boxes, but the first
+    /* If we get here, then their are inline-boxes, but the first
          * of them is too wide for the width we've been offered and the
          * 'forcebox' flag is not true. Return zero, but set *pWidth to the
          * minimum width required before doing so.
@@ -1176,7 +1174,7 @@ HtmlInlineContextGetLineBox (
      * pixels added between each inline-box. This is how text 
      * justification is implemented.
      */
-    switch(p->eTextAlign) {
+    switch(p->iTextAlign) {
 
         case CSS_CONST__TKHTML_CENTER:
         case CSS_CONST_CENTER:
@@ -1398,10 +1396,7 @@ HtmlInlineContextGetLineBox (
             memset(&tmpcanvas, 0, sizeof(HtmlCanvas));
             DRAW_CANVAS(&tmpcanvas, &borders, 0, 0, 0);
             memset(&borders, 0, sizeof(HtmlCanvas));
-            inlineContextDrawBorder(pLayout, &borders, pBorder, 
-                 x1, x2, iVerticalOffset, rb, 
-                 aReplacedX, nReplacedX
-            );
+            inlineContextDrawBorder(pLayout, &borders, pBorder, x1, x2, iVerticalOffset, rb, aReplacedX, nReplacedX);
             DRAW_CANVAS(&borders, &tmpcanvas, 0, 0, 0);
         }
 
@@ -1427,7 +1422,6 @@ HtmlInlineContextGetLineBox (
         if (!ignoreSpace) {
             x += pBox->nSpace;
         }
-
     }
 
     /* If any borders are still in the InlineContext.pBorders list, then
@@ -1592,19 +1586,17 @@ HtmlInlineContextNew (
      * all lines are centered. The style attribute of the <span> tag has no
      * effect on the layout.
      */
-    pContext->eTextAlign = pValues->eTextAlign;
+    pContext->iTextAlign = pValues->eTextAlign;
     if (isSizeOnly) { 
-        pContext->eTextAlign = CSS_CONST_LEFT;
+        pContext->iTextAlign = CSS_CONST_LEFT;
     } else if (
-        pValues->eWhitespace != CSS_CONST_NORMAL && 
-        pContext->eTextAlign == CSS_CONST_JUSTIFY
+        pValues->eWhitespace != CSS_CONST_NORMAL && pContext->iTextAlign == CSS_CONST_JUSTIFY
     ) {
-        pContext->eTextAlign = CSS_CONST_LEFT;
+        pContext->iTextAlign = CSS_CONST_LEFT;
     }
 
     if (
-        pTree->options.mode != HTML_MODE_STANDARDS &&
-        pValues->eDisplay == CSS_CONST_TABLE_CELL
+        pTree->options.mode != HTML_MODE_STANDARDS && pValues->eDisplay == CSS_CONST_TABLE_CELL
     ) {
         pContext->ignoreLineHeight = 1;
     }
@@ -1618,7 +1610,7 @@ HtmlInlineContextNew (
     pContext->isSizeOnly = isSizeOnly;
 
     START_LOG(pNode)
-        const char *zTextAlign = HtmlCssConstantToString(pContext->eTextAlign);
+        const char *zTextAlign = HtmlCssConstantToString(pContext->iTextAlign);
 
         oprintf(pLog, "<p>Created a new inline context initialised with:</p>");
         oprintf(pLog, "<ul><li>'text-align': %s", zTextAlign);
@@ -1675,9 +1667,7 @@ HtmlInlineContextAddText (InlineContext *pContext, HtmlNode *pNode)
     assert(HtmlNodeIsText(pNode));
 
     for (
-        HtmlTextIterFirst((HtmlTextNode *)pNode, &sIter);
-        HtmlTextIterIsValid(&sIter);
-        HtmlTextIterNext(&sIter)
+        HtmlTextIterFirst((HtmlTextNode *)pNode, &sIter); HtmlTextIterIsValid(&sIter); HtmlTextIterNext(&sIter)
     ) {
         int nData = HtmlTextIterLength(&sIter);
         char const *zData = HtmlTextIterData(&sIter);

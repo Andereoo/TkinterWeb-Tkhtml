@@ -95,10 +95,10 @@ HtmlCssSearchInvalidateCache (HtmlTree *pTree)
 
     while ((pEntry = Tcl_FirstHashEntry(p, &sSearch))) {
         CssCachedSearch *pCache = (CssCachedSearch *)Tcl_GetHashValue(pEntry);
-	if (pCache) {
-	  HtmlFree(pCache->apNode);
-	  HtmlFree(pCache);
-	}
+    if (pCache) {
+      HtmlFree(pCache->apNode);
+      HtmlFree(pCache);
+    }
         Tcl_DeleteHashEntry(pEntry);
     }
  
