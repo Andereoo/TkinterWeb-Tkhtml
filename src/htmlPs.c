@@ -374,11 +374,11 @@ int HtmlPostscript(
     if (psInfo.colorMode == NULL) {
 		psInfo.colorLevel = 2;  // Default to color
     } else {
-		if (strncmp(psInfo.colorMode, "m", 10) == 0)
+		if (strncmp(psInfo.colorMode, "m", 1) == 0)
 			psInfo.colorLevel = 0;  // Monochrome
-		else if (strncmp(psInfo.colorMode, "g", 4) == 0)
+		else if (strncmp(psInfo.colorMode, "g", 1) == 0)
 			psInfo.colorLevel = 1;  // Gray / grey
-		else if (strncmp(psInfo.colorMode, "c", 5) == 0)
+		else if (strncmp(psInfo.colorMode, "c", 1) == 0)
 			psInfo.colorLevel = 2;  // Color / colour
 		else {
 			Tcl_SetObjResult(interp, Tcl_ObjPrintf(
