@@ -544,8 +544,8 @@ HtmlInlineContextPopBorder (InlineContext *p, InlineBorder *pBorder)
          *
          *     <a href="www.google.com"></a>
          *
-	 * For this case just remove an entry from
-	 * InlineContext.pBoxBorders. The border will never be drawn.
+     * For this case just remove an entry from
+     * InlineContext.pBoxBorders. The border will never be drawn.
          */
         InlineBorder *pBorder = p->pBoxBorders;
         p->pBoxBorders = pBorder->pNext;
@@ -1006,7 +1006,7 @@ calculateLineBoxWidth (
     }
 
     if (!isForceLine && (nBox == p->nInline)) {
-	/* There are not enough inline-boxes to fill the line-box and the
+    /* There are not enough inline-boxes to fill the line-box and the
          * 'force-line' flag is not set. In this case return 0 and set
          * *pWidth to 0 too.
          */
@@ -1017,7 +1017,7 @@ calculateLineBoxWidth (
 
     assert(nBox > 0 || !isForceBox || p->nInline == 0);
     if (nBox == 0 && p->nInline > 0) {
-	/* If we get here, then their are inline-boxes, but the first
+    /* If we get here, then their are inline-boxes, but the first
          * of them is too wide for the width we've been offered and the
          * 'forcebox' flag is not true. Return zero, but set *pWidth to the
          * minimum width required before doing so.

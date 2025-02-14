@@ -1137,7 +1137,7 @@ eventHandler(
             int iHeight = Tk_Height(pTree->tkwin);
             HtmlLog(pTree, "EVENT", "ConfigureNotify: height=%dpx width=%dpx", iHeight, iWidth);
             if (iWidth != pTree->iCanvasWidth || iHeight != pTree->iCanvasHeight)
-			{
+            {
                 HtmlCallbackLayout(pTree, pTree->pRoot);
                 snapshotZero(pTree);
                 HtmlCallbackDamage(pTree, 0, 0, iWidth, iHeight);
@@ -1302,34 +1302,34 @@ configureCmd(
     /* Option table definition for the html widget. */
     static Tk_OptionSpec htmlOptionSpec[] = {
 
-		/* Standard geometry and scrolling interface - same as canvas, text */
-		GEOMETRY(height, "height", "Height", "600"),
-		GEOMETRY(width, "width", "Width", "800"),
-		PIXELS  (yscrollincrement, "yScrollIncrement", "ScrollIncrement", "20"),
-		PIXELS  (xscrollincrement, "xScrollIncrement", "ScrollIncrement", "20"),
-		STRING  (xscrollcommand, "xScrollCommand", "ScrollCommand", ""),
-		STRING  (yscrollcommand, "yScrollCommand", "ScrollCommand", ""),
+        /* Standard geometry and scrolling interface - same as canvas, text */
+        GEOMETRY(height, "height", "Height", "600"),
+        GEOMETRY(width, "width", "Width", "800"),
+        PIXELS  (yscrollincrement, "yScrollIncrement", "ScrollIncrement", "20"),
+        PIXELS  (xscrollincrement, "xScrollIncrement", "ScrollIncrement", "20"),
+        STRING  (xscrollcommand, "xScrollCommand", "ScrollCommand", ""),
+        STRING  (yscrollcommand, "yScrollCommand", "ScrollCommand", ""),
 
-		/* Non-debugging, non-standard options in alphabetical order. */
-		OBJ     (defaultstyle, "defaultStyle", "DefaultStyle", HTML_DEFAULT_CSS, 0),
-		DOUBLE  (fontscale, "fontScale", "FontScale", "1.0", F_MASK),
-		OBJ     (fonttable, "fontTable", "FontTable", "8 9 10 11 13 15 17", FT_MASK),
-		BOOLEAN (forcefontmetrics, "forceFontMetrics", "ForceFontMetrics", "1", F_MASK),
-		BOOLEAN (forcewidth, "forceWidth", "ForceWidth", "0", L_MASK),
-		BOOLEAN (imagecache, "imageCache", "ImageCache", "1", S_MASK),
-		BOOLEAN (imagepixmapify, "imagePixmapify", "ImagePixmapify", "0", 0),
-		STRING  (imagecmd, "imageCmd", "ImageCmd", ""),
-		STRING  (drawcleanupcrashcmd, "drawcleanupcrashCmd", "DrawCleanupCrashCmd", ""),
-		STRINGT (mode, "mode", "Mode", "standards", azModes),
-		STRINGT (parsemode, "parsemode", "Parsemode", "html", azParseModes),
-		BOOLEAN (shrink, "shrink", "Shrink", "0", S_MASK),
-		DOUBLE  (zoom, "zoom", "Zoom", "1.0", F_MASK),
+        /* Non-debugging, non-standard options in alphabetical order. */
+        OBJ     (defaultstyle, "defaultStyle", "DefaultStyle", HTML_DEFAULT_CSS, 0),
+        DOUBLE  (fontscale, "fontScale", "FontScale", "1.0", F_MASK),
+        OBJ     (fonttable, "fontTable", "FontTable", "8 9 10 11 13 15 17", FT_MASK),
+        BOOLEAN (forcefontmetrics, "forceFontMetrics", "ForceFontMetrics", "1", F_MASK),
+        BOOLEAN (forcewidth, "forceWidth", "ForceWidth", "0", L_MASK),
+        BOOLEAN (imagecache, "imageCache", "ImageCache", "1", S_MASK),
+        BOOLEAN (imagepixmapify, "imagePixmapify", "ImagePixmapify", "0", 0),
+        STRING  (imagecmd, "imageCmd", "ImageCmd", ""),
+        STRING  (drawcleanupcrashcmd, "drawcleanupcrashCmd", "DrawCleanupCrashCmd", ""),
+        STRINGT (mode, "mode", "Mode", "standards", azModes),
+        STRINGT (parsemode, "parsemode", "Parsemode", "html", azParseModes),
+        BOOLEAN (shrink, "shrink", "Shrink", "0", S_MASK),
+        DOUBLE  (zoom, "zoom", "Zoom", "1.0", F_MASK),
 
-		/* Debugging options */
-		BOOLEAN (enablelayout, "enableLayout", "EnableLayout", "1", S_MASK),
-		BOOLEAN (layoutcache, "layoutCache", "LayoutCache", "1", L_MASK),
-		STRING  (logcmd, "logCmd", "LogCmd", ""),
-		STRING  (timercmd, "timerCmd", "TimerCmd", ""),
+        /* Debugging options */
+        BOOLEAN (enablelayout, "enableLayout", "EnableLayout", "1", S_MASK),
+        BOOLEAN (layoutcache, "layoutCache", "LayoutCache", "1", L_MASK),
+        STRING  (logcmd, "logCmd", "LogCmd", ""),
+        STRING  (timercmd, "timerCmd", "TimerCmd", ""),
 
         {TK_OPTION_END, 0, 0, 0, 0, 0, 0, 0, 0}
     };
@@ -1533,7 +1533,7 @@ resetCmd(
     pTree->isParseFinished = 0;
     pTree->isSequenceOk = 1;
     if (pTree->eWriteState == HTML_WRITE_WAIT || pTree->eWriteState == HTML_WRITE_NONE)
-	{
+    {
         pTree->eWriteState = HTML_WRITE_NONE;
     } else {
         pTree->eWriteState = HTML_WRITE_INHANDLERRESET;
@@ -2552,7 +2552,7 @@ int widgetCmd(
         {"image",        imageCmd},
         {"node",         nodeCmd},
         {"parse",        parseCmd},
-		{"postscript",   postscriptCmd},
+        {"postscript",   postscriptCmd},
         {"preload",      preloadCmd},
         {"reset",        resetCmd},
         {"search",       searchCmd},
@@ -2564,7 +2564,7 @@ int widgetCmd(
         {"yview",        yviewCmd},
 
         /* The following are for debugging only. May change at any time.
-	 * They are not included in the documentation. Just don't touch Ok? :)
+     * They are not included in the documentation. Just don't touch Ok? :)
          */
         {"_delay",       delayCmd},
         {"_force",       forceCmd},

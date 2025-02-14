@@ -1210,11 +1210,11 @@ propertyValuesSetColor (HtmlComputedValuesCreator *p, HtmlColor **pCVar, CssProp
         XColor *color;
 
         if (zColor[0] == '#' && strlen(zColor) == 4) {
-	    /* Tk interprets a color value of "#ABC" as the same as "#A0B0C0".
+        /* Tk interprets a color value of "#ABC" as the same as "#A0B0C0".
              * But CSS implementations generally assume that it is equivalent
              * to "#AABBCC".
              */
-	    char zBuf[8];
+        char zBuf[8];
             zBuf[0] = '#';
             zBuf[1] = zColor[1]; zBuf[2] = zColor[1];
             zBuf[3] = zColor[2]; zBuf[4] = zColor[2];
@@ -1228,10 +1228,10 @@ propertyValuesSetColor (HtmlComputedValuesCreator *p, HtmlColor **pCVar, CssProp
         if (!color && strlen(zColor) <= 12) {
             /* Old versions of netscape used to support hex colors
              * without the '#' character (i.e. "FFF" is the same as
-	     * "#FFF"). So naturally this has become a defacto standard, even
-	     * though it is obviously wrong. At any rate, if Tk_GetColor()
-	     * cannot parse the color-name as it stands, put a '#' character in
-	     * front of it and give it another go.
+         * "#FFF"). So naturally this has become a defacto standard, even
+         * though it is obviously wrong. At any rate, if Tk_GetColor()
+         * cannot parse the color-name as it stands, put a '#' character in
+         * front of it and give it another go.
              */
             char zBuf[14];
             sprintf(zBuf, "#%s", zColor);
@@ -1418,7 +1418,7 @@ propertyValuesSetLength (HtmlComputedValuesCreator *p, int *pIVal, unsigned int 
             break;
 
         case CSS_TYPE_FLOAT: {
-	    /* There are two cases where a unitless number is a legal
+        /* There are two cases where a unitless number is a legal
              * value for a CSS %length%. Other than the following, it 
              * is a type mismatch:
              *
@@ -1673,7 +1673,7 @@ propertyValuesSetSize (HtmlComputedValuesCreator *p, int *pIVal, unsigned int p_
         case CSS_TYPE_PERCENT: {
             int iVal = INTEGER(pProp->v.rVal * 100.0);
             if ((allow_mask & SZ_PERCENT) && (iVal >= 0 || allow_mask & SZ_NEGATIVE))
-			{
+            {
                 p->values.mask |= p_mask;
                 *pIVal = iVal;
                 return 0;
@@ -1842,8 +1842,8 @@ getPrototypeCreator (HtmlTree *pTree, unsigned int *pMask, int *piCopyBytes)
         pValues = &p->values;
         values = (char *)pValues;
 
-		/* Initialise the CUSTOM properties. */
-		pValues->eVerticalAlign = CSS_CONST_BASELINE;
+        /* Initialise the CUSTOM properties. */
+        pValues->eVerticalAlign = CSS_CONST_BASELINE;
         pValues->iLineHeight = PIXELVAL_NORMAL;
         propertyValuesSetFontSize(p, &Medium);
         p->fontKey.zFontFamily = "Helvetica";
@@ -1996,7 +1996,7 @@ propertyValuesTclScript (HtmlComputedValuesCreator *p, int eProp, const char *zS
     zRes = Tcl_GetStringResult(interp);
     if (rc == TCL_ERROR) {
         if (*zRes) {
-    	    /* A tcl() script has returned a value that caused a type-mismatch
+            /* A tcl() script has returned a value that caused a type-mismatch
              * error. Run the -logcmd script if one exists.
              */
             LOG {
@@ -2013,7 +2013,7 @@ propertyValuesTclScript (HtmlComputedValuesCreator *p, int eProp, const char *zS
     pVal = HtmlCssStringToProperty(zRes, -1);
 
     if (HtmlComputedValuesSet(p, eProp, pVal)) {
-	/* A tcl() script has returned a value that caused a type-mismatch
+    /* A tcl() script has returned a value that caused a type-mismatch
          * error. Run the -logcmd script if one exists.
          */
         LOG {
@@ -2665,7 +2665,7 @@ HtmlComputedValuesFinish (HtmlComputedValuesCreator *p)
     pValues = (HtmlComputedValues *)Tcl_GetHashKey(&p->pTree->aValues, pEntry);
     assert(!ne || !pValues->imZoomedBackgroundImage);
     if (!ne) {
-	/* If this is not a new entry, we need to decrement the reference count
+    /* If this is not a new entry, we need to decrement the reference count
          * on the font, image and color values.
          */
         pValues->fFont->nRef--;

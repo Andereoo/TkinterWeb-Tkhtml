@@ -1997,10 +1997,10 @@ nodeInsertCmd(
         int iBefore;
         pBefore = HtmlNodeGetPointer(pTree, Tcl_GetString(objv[3]));
         iBefore = HtmlNodeIndexOfChild(pNode, pBefore);
-		if (HtmlNodeIsOrphan(pBefore)) {  // Complain if "-before" is an orphan
-			Tcl_SetResult(interp, "The node specified by -before is an orphan", TCL_STATIC);
-			return TCL_ERROR;
-		} if (iBefore < 0) {
+        if (HtmlNodeIsOrphan(pBefore)) {  // Complain if "-before" is an orphan
+            Tcl_SetResult(interp, "The node specified by -before is an orphan", TCL_STATIC);
+            return TCL_ERROR;
+        } if (iBefore < 0) {
             Tcl_ResetResult(pTree->interp);
             Tcl_AppendResult(pTree->interp, Tcl_GetString(objv[3]), 
                 " is not a child node of ", Tcl_GetString(objv[0]), 0
@@ -2497,7 +2497,7 @@ node_attr_usage:
                 /* Otherwise, fall through for the WrongNumArgs() message */
             }
 
-	    /* Orphan nodes may have an inline style specified (required by 
+        /* Orphan nodes may have an inline style specified (required by 
              * DOM implementations to implement HTMLElement.style), but 
              * they do not have a computed style, so the rest of this 
              * function is a no-op for orphan nodes.
@@ -2584,7 +2584,7 @@ node_attr_usage:
                 zWin = Tcl_GetString(aArgs[0]);
 
                 if (zWin[0]) {
-        	    /* If the replacement object is a Tk window,
+                /* If the replacement object is a Tk window,
                      * register Tkhtml as the geometry manager.
                      */
                     widget = Tk_NameToWindow(interp, zWin, mainwin);
@@ -2605,8 +2605,8 @@ node_attr_usage:
                     pReplace->win = widget;
                 }
 
-        	/* Free any existing replacement object and set
-        	 * pNode->pReplacement to point at the new structure. 
+            /* Free any existing replacement object and set
+             * pNode->pReplacement to point at the new structure. 
                  */
                 clearReplacement(pTree, pElem);
                 pElem->pReplacement = pReplace;
@@ -2825,10 +2825,10 @@ Tcl_Obj *
 HtmlNodeCommand(HtmlTree *pTree, HtmlNode *pNode)
 {
     static int nodeNumber = 0;
-	if (pNode == 0) {
-		nodeNumber = 0;
-		return 0;
-	}
+    if (pNode == 0) {
+        nodeNumber = 0;
+        return 0;
+    }
     HtmlNodeCmd *pNodeCmd = pNode->pNodeCmd;
 
     if (pNode->index == HTML_NODE_GENERATED) return 0;
@@ -2933,7 +2933,7 @@ HtmlTreeClear (HtmlTree *pTree)
     /* Free the tree representation - pTree->pRoot */
     freeNode(pTree, pTree->pRoot);
     pTree->pRoot = 0;
-	HtmlNodeCommand(pTree, pTree->pRoot);
+    HtmlNodeCommand(pTree, pTree->pRoot);
     pTree->state.pCurrent = 0;
     pTree->state.pFoster = 0;
 

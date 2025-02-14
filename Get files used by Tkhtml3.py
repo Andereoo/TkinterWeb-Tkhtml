@@ -27,6 +27,8 @@ unused = set(got) - set(used)
 
 if not os.path.exists(os.path.join(SRCDIR, O)): os.makedirs(os.path.join(SRCDIR, O))
 
+print(f"\nFiles moved to {O}:")
+
 for i in unused:
     move(os.path.join(SRCDIR, i), os.path.join(SRCDIR, O, i))
     print(i)

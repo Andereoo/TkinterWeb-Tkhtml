@@ -35,10 +35,7 @@ typedef struct HtmlFontCache HtmlFontCache;
  * position properties too ('top', 'right', 'bottom' and 'left').
  */
 struct HtmlFourSides {
-    int iTop;
-    int iLeft;
-    int iBottom;
-    int iRight;
+    int iTop, iLeft, iBottom, iRight;
 };
 
 /*
@@ -279,7 +276,7 @@ struct HtmlComputedValues {
     /* Properties not yet in use - TODO! */
     unsigned char eUnicodeBidi;       /* 'unicode-bidi' */
     unsigned char eTableLayout;       /* 'table-layout' */
-	
+    
     unsigned char ePageBreakAfter;    /* 'page-break-after' */
     unsigned char ePageBreakBefore;   /* 'page-break-before' */
     unsigned char ePageBreakInside;   /* 'page-break-inside' */
