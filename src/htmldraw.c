@@ -812,21 +812,18 @@ movePrimitives (HtmlCanvas *pCanvas, int x, int y)
 {
     HtmlCanvasItem *p;
 
-    //printf("movePrimitives\n");
     /* Optimization. Do nothing for a +0+0 translation. */
     if (x == 0 && y == 0) return;
 
     for (p = pCanvas->pFirst; p; p = p->pNext) {
-        //printf("A: %d; X = %d + %d; Y = %d + %d, ", p->type, p->c.generic.x, x, p->c.generic.y, y);
         p->c.generic.x += x;
         p->c.generic.y += y;
-        //printf("B: %d; X = %d; Y = %d\n", p->type, p->c.generic.x, p->c.generic.y);
         if (p->type == CANVAS_ORIGIN) {
             p = p->c.origin.pSkip;
             p->c.generic.x -= x;
             p->c.generic.y -= y;
         }
-    }//printf("######\n");
+    }
 }
 
 void 
