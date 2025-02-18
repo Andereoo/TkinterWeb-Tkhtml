@@ -182,5 +182,3 @@
     (((HtmlElementNode *)pNode)->apChildren[N])
 
 #endif
-
-#define itemToNode(pItem) (pItem->kind.generic.pNode)

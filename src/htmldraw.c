@@ -338,7 +338,7 @@ struct HtmlCanvasItem {
         CanvasLine     line;
         CanvasMarker   marker;
         CanvasOverflow overflow;
-    } kind;
+    } c;  // Content
     HtmlCanvasItem *pNext;
 };
 
@@ -395,18 +395,18 @@ CHECK_CANVAS (HtmlCanvas *pCanvas)
         pPrev = p;
         switch (p->type) {
             case CANVAS_MARKER:
-                if (p->kind.marker.flags == MARKER_FIXED){
+                if (p->c.marker.flags == MARKER_FIXED){
                     assert(bSeenFixed == 0);
                     bSeenFixed = 1;
                 }
                 break;
             case CANVAS_ORIGIN:
-                assert((p->kind.origin.nRef >= 1 && p->kind.origin.pSkip) || p->kind.origin.pSkip == 0);
-                assert(p->kind.origin.nRef <= 2);
+                assert((p->c.origin.nRef >= 1 && p->c.origin.pSkip) || p->c.origin.pSkip == 0);
+                assert(p->c.origin.nRef <= 2);
                 assert(p->nRef == 1);
-                ox += p->kind.origin.x;
-                oy += p->kind.origin.y;
-                if (p->kind.origin.pSkip) {
+                ox += p->c.origin.x;
+                oy += p->c.origin.y;
+                if (p->c.origin.pSkip) {
                     nOriginStart++; 
                 } else {
                     nOriginFin++;
@@ -465,16 +465,16 @@ sorterInsert (CanvasItemSorter *pSorter, HtmlCanvasItem *pItem, int x, int y, Ov
     CanvasItemSorterSlot *pSlot;
     switch( pItem->type) {
         case CANVAS_TEXT:
-            pNode = pItem->kind.text.pNode;
+            pNode = pItem->c.text.pNode;
             break;
         case CANVAS_IMAGE:
-            pNode = pItem->kind.image.pNode;
+            pNode = pItem->c.image.pNode;
             break;
         case CANVAS_BOX:
-            pNode = pItem->kind.box.pNode;
+            pNode = pItem->c.box.pNode;
             break;
         case CANVAS_LINE:
-            pNode = pItem->kind.line.pNode;
+            pNode = pItem->c.line.pNode;
             break;
 
         case CANVAS_WINDOW:
@@ -557,14 +557,14 @@ freeCanvasItem (HtmlTree *pTree, HtmlCanvasItem *p)
     if (p->nRef == 0) {
         switch (p->type) {
             case CANVAS_TEXT:
-                HtmlFontRelease(pTree, p->kind.text.fFont);
-                p->kind.text.fFont = 0;
+                HtmlFontRelease(pTree, p->c.text.fFont);
+                p->c.text.fFont = 0;
                 break;
             case CANVAS_IMAGE:
-                HtmlImageFree(p->kind.image.pImage);
+                HtmlImageFree(p->c.image.pImage);
                 break;
             case CANVAS_BOX:
-                HtmlComputedValuesRelease(pTree, p->kind.box.pComputed);
+                HtmlComputedValuesRelease(pTree, p->c.box.pComputed);
                 break;
         }
         HtmlFree(p);
@@ -679,20 +679,20 @@ HtmlDrawCleanup (HtmlTree *pTree, HtmlCanvas *pCanvas)
         int save = 0;
         switch (pItem->type) {
             case CANVAS_ORIGIN:
-                assert(pItem->kind.origin.nRef >= 1 || !pItem->kind.origin.pSkip);
-                if (pItem->kind.origin.pSkip) {
-                    pItem->kind.origin.nRef--;
-                    assert(pItem->kind.origin.pSkip->type == CANVAS_ORIGIN);
-                    if (pItem->kind.origin.nRef > 0) {
-                        assert(pItem->kind.origin.nRef == 1);
-                        pItem = pItem->kind.origin.pSkip;
+                assert(pItem->c.origin.nRef >= 1 || !pItem->c.origin.pSkip);
+                if (pItem->c.origin.pSkip) {
+                    pItem->c.origin.nRef--;
+                    assert(pItem->c.origin.pSkip->type == CANVAS_ORIGIN);
+                    if (pItem->c.origin.nRef > 0) {
+                        assert(pItem->c.origin.nRef == 1);
+                        pItem = pItem->c.origin.pSkip;
                         save = 1;
                     }
                 }
                 break;
             case CANVAS_MARKER:
-                assert(pItem->kind.marker.flags);
-                if (!pItem->kind.marker.flags) {
+                assert(pItem->c.marker.flags);
+                if (!pItem->c.marker.flags) {
                     Tcl_Obj *pCrashCmd = pTree->options.drawcleanupcrashcmd;
                     if (pCrashCmd) {
                         Tcl_Interp *interp = pTree->interp;
@@ -721,7 +721,7 @@ HtmlDrawCleanup (HtmlTree *pTree, HtmlCanvas *pCanvas)
         pItem = (pItem == pCanvas->pLast ? 0 : pItem->pNext);
 
         if (save) {
-            assert(pPrev->type == CANVAS_ORIGIN && !pPrev->kind.origin.pSkip);
+            assert(pPrev->type == CANVAS_ORIGIN && !pPrev->c.origin.pSkip);
             if (pItem) pPrev->pNext = 0;
             pPrev = 0;
         }
@@ -801,7 +801,7 @@ countPrimitives (HtmlCanvas *pCanvas)
     for (p = pCanvas->pFirst; p; p = p->pNext) {
         n++;
         if (p->type == CANVAS_ORIGIN) {
-            p = p->kind.origin.pSkip;
+            p = p->c.origin.pSkip;
         }
     }
     return n;
@@ -817,14 +817,14 @@ movePrimitives (HtmlCanvas *pCanvas, int x, int y)
     if (x == 0 && y == 0) return;
 
     for (p = pCanvas->pFirst; p; p = p->pNext) {
-        //printf("A: %d; X = %d + %d; Y = %d + %d, ", p->type, p->kind.generic.x, x, p->kind.generic.y, y);
-        p->kind.generic.x += x;
-        p->kind.generic.y += y;
-        //printf("B: %d; X = %d; Y = %d\n", p->type, p->kind.generic.x, p->kind.generic.y);
+        //printf("A: %d; X = %d + %d; Y = %d + %d, ", p->type, p->c.generic.x, x, p->c.generic.y, y);
+        p->c.generic.x += x;
+        p->c.generic.y += y;
+        //printf("B: %d; X = %d; Y = %d\n", p->type, p->c.generic.x, p->c.generic.y);
         if (p->type == CANVAS_ORIGIN) {
-            p = p->kind.origin.pSkip;
-            p->kind.generic.x -= x;
-            p->kind.generic.y -= y;
+            p = p->c.origin.pSkip;
+            p->c.generic.x -= x;
+            p->c.generic.y -= y;
         }
     }//printf("######\n");
 }
@@ -841,9 +841,9 @@ HtmlDrawOrigin (HtmlCanvas *pCanvas)
     pItem = allocateCanvasItem();
     memset(pItem, 0, sizeof(HtmlCanvasItem));
     /* Set the horizontal and vertical origin coordinates for pItem based on the left and top of HtmlCanvas */
-    pItem->kind.origin.horizontal = pCanvas->left;
-    pItem->kind.origin.vertical = pCanvas->top;
-    pItem->kind.origin.nRef = 1;
+    pItem->c.origin.horizontal = pCanvas->left;
+    pItem->c.origin.vertical = pCanvas->top;
+    pItem->c.origin.nRef = 1;
     pItem->type = CANVAS_ORIGIN;
     pItem->nRef = 1;
 
@@ -854,11 +854,11 @@ HtmlDrawOrigin (HtmlCanvas *pCanvas)
     /* Allocate the second CANVAS_ORIGIN item */
     pItem2 = allocateCanvasItem();
     memset(pItem2, 0, sizeof(HtmlCanvasItem));
-    pItem->kind.origin.pSkip = pItem2;
+    pItem->c.origin.pSkip = pItem2;
     pItem2->type = CANVAS_ORIGIN;
     /* Set the horizontal and vertical origin coordinates for pItem2 based on the right and bottom of HtmlCanvas */
-    pItem2->kind.origin.horizontal = pCanvas->right;
-    pItem2->kind.origin.vertical = pCanvas->bottom;
+    pItem2->c.origin.horizontal = pCanvas->right;
+    pItem2->c.origin.vertical = pCanvas->bottom;
     pItem2->nRef = 1;
 
     /* Add the second CANVAS_ORIGIN item to the end of the list */
@@ -888,10 +888,10 @@ CHECK_CANVAS(pCanvas);
 
     pItem = (HtmlCanvasItem *)HtmlClearAlloc("HtmlCanvasItem", sizeof(HtmlCanvasItem) + sizeof(Overflow));
     pItem->type = CANVAS_OVERFLOW;
-    pItem->kind.overflow.pNode = pNode;
-    pItem->kind.overflow.w = w;
-    pItem->kind.overflow.h = h;
-    pItem->kind.overflow.pEnd = pLast;
+    pItem->c.overflow.pNode = pNode;
+    pItem->c.overflow.w = w;
+    pItem->c.overflow.h = h;
+    pItem->c.overflow.pEnd = pLast;
     pItem->nRef = 1;
 
     pItem->pNext = pCanvas->pFirst;
@@ -908,7 +908,7 @@ void
 HtmlDrawCopyCanvas (HtmlCanvas *pTo, HtmlCanvas *pFrom)
 {
     assert(!pFrom->pFirst || pFrom->pFirst->type == CANVAS_ORIGIN);
-    assert(!pFrom->pFirst || pFrom->pFirst->kind.origin.nRef == 1);
+    assert(!pFrom->pFirst || pFrom->pFirst->c.origin.nRef == 1);
     assert(!pFrom->pLast || (pFrom->pLast->type == CANVAS_ORIGIN && pFrom->pLast->pNext == 0));
 
     CHECK_CANVAS(pTo);
@@ -921,12 +921,12 @@ HtmlDrawCopyCanvas (HtmlCanvas *pTo, HtmlCanvas *pFrom)
     memcpy(pTo, pFrom, sizeof(HtmlCanvas));
 
     if (pTo->pFirst) {
-        assert(pTo->pFirst->kind.origin.nRef == 1);
-        pTo->pFirst->kind.origin.nRef++;
-        pTo->pFirst->kind.origin.x = 0;
-        pTo->pFirst->kind.origin.y = 0;
-        pTo->pLast->kind.origin.x = 0;
-        pTo->pLast->kind.origin.y = 0;
+        assert(pTo->pFirst->c.origin.nRef == 1);
+        pTo->pFirst->c.origin.nRef++;
+        pTo->pFirst->c.origin.x = 0;
+        pTo->pFirst->c.origin.y = 0;
+        pTo->pLast->c.origin.x = 0;
+        pTo->pLast->c.origin.y = 0;
     }
 
     assert(pTo->pLast == 0 || pTo->pLast->pNext == 0);
@@ -978,43 +978,45 @@ HtmlDrawCanvas (HtmlCanvas *pCanvas, HtmlCanvas *pCanvas2, int x, int y, HtmlNod
     CHECK_CANVAS(pCanvas);
 }
 
+#define itemToNode(pItem) (pItem->c.generic.pNode)
+
 static HtmlNode *
 itemToBox (HtmlCanvasItem *pItem, int origin_x, int origin_y, int *pX, int *pY, int *pW, int *pH)
 {
     switch (pItem->type) {
         case CANVAS_BOX: {
             int ow = 0;
-            HtmlComputedValues *pV = pItem->kind.box.pComputed;
+            HtmlComputedValues *pV = pItem->c.box.pComputed;
             if (pV->eOutlineStyle != CSS_CONST_NONE) ow = MAX(0, pV->iOutlineWidth);
 
-            *pX = pItem->kind.box.x + origin_x - ow;
-            *pY = pItem->kind.box.y + origin_y - ow;
-            *pW = pItem->kind.box.w + ow + ow;
-            *pH = pItem->kind.box.h + ow + ow;
-            return pItem->kind.box.pNode;
+            *pX = pItem->c.box.x + origin_x - ow;
+            *pY = pItem->c.box.y + origin_y - ow;
+            *pW = pItem->c.box.w + ow + ow;
+            *pH = pItem->c.box.h + ow + ow;
+            return pItem->c.box.pNode;
         }
         case CANVAS_TEXT: {
-            HtmlFont *pFont = pItem->kind.text.fFont;
-            *pX = pItem->kind.text.x + origin_x;
-            *pY = pItem->kind.text.y + origin_y - pFont->metrics.ascent;
-            *pW = pItem->kind.text.w;
+            HtmlFont *pFont = pItem->c.text.fFont;
+            *pX = pItem->c.text.x + origin_x;
+            *pY = pItem->c.text.y + origin_y - pFont->metrics.ascent;
+            *pW = pItem->c.text.w;
             *pH = pFont->metrics.ascent + pFont->metrics.descent;
-            return pItem->kind.text.pNode;
+            return pItem->c.text.pNode;
         }
         case CANVAS_IMAGE:
-            *pX = pItem->kind.image.x + origin_x;
-            *pY = pItem->kind.image.y + origin_y;
-            *pW = pItem->kind.image.w;
-            *pH = pItem->kind.image.h;
-            return pItem->kind.image.pNode;
+            *pX = pItem->c.image.x + origin_x;
+            *pY = pItem->c.image.y + origin_y;
+            *pW = pItem->c.image.w;
+            *pH = pItem->c.image.h;
+            return pItem->c.image.pNode;
         case CANVAS_LINE:
-            *pX = pItem->kind.line.x + origin_x;
-            *pY = pItem->kind.line.y + origin_y;
-            *pW = pItem->kind.line.w;
-            *pH = pItem->kind.line.y_underline + 1;
-            return pItem->kind.line.pNode;
+            *pX = pItem->c.line.x + origin_x;
+            *pY = pItem->c.line.y + origin_y;
+            *pW = pItem->c.line.w;
+            *pH = pItem->c.line.y_underline + 1;
+            return pItem->c.line.pNode;
         case CANVAS_WINDOW: {
-            HtmlNodeReplacement *pR = pItem->kind.window.pElem->pReplacement;
+            HtmlNodeReplacement *pR = pItem->c.window.pElem->pReplacement;
             if (pR && pR->win) {
                 Tk_Window control = pR->win;
                 *pW = Tk_ReqWidth(control);
@@ -1023,9 +1025,9 @@ itemToBox (HtmlCanvasItem *pItem, int origin_x, int origin_y, int *pX, int *pY, 
                 *pW = 1;
                 *pH = 1;
             }
-            *pX = pItem->kind.window.x + origin_x;
-            *pY = pItem->kind.window.y + origin_y;
-            return &pItem->kind.window.pElem->node;
+            *pX = pItem->c.window.x + origin_x;
+            *pY = pItem->c.window.y + origin_y;
+            return &pItem->c.window.pElem->node;
         }
         default:
             assert(
@@ -1071,26 +1073,26 @@ HtmlDrawBox (HtmlCanvas *pCanvas, int x, int y, int w, int h, HtmlNode *pNode, i
         
         if (
             pCandidate && 
-            pCandidate->kind.box.w == w && pCandidate->kind.box.h == h &&
-            pCandidate->kind.box.flags == flags &&
-            pCandidate->kind.box.pComputed == pComputed
+            pCandidate->c.box.w == w && pCandidate->c.box.h == h &&
+            pCandidate->c.box.flags == flags &&
+            pCandidate->c.box.pComputed == pComputed
         ) {
             pItem = pCandidate;
             assert(pCandidate->type == CANVAS_BOX);
-            assert(pCandidate->kind.box.pNode == pNode);
+            assert(pCandidate->c.box.pNode == pNode);
         } else {
             pItem = allocateCanvasItem();
             pItem->type = CANVAS_BOX;
-            pItem->kind.box.w = w;
-            pItem->kind.box.h = h;
-            pItem->kind.box.pNode = pNode;
-            pItem->kind.box.flags = flags;
-            pItem->kind.box.pComputed = pComputed;
+            pItem->c.box.w = w;
+            pItem->c.box.h = h;
+            pItem->c.box.pNode = pNode;
+            pItem->c.box.flags = flags;
+            pItem->c.box.pComputed = pComputed;
             HtmlComputedValuesReference(pComputed);
         }
 
-        pItem->kind.box.x = x;
-        pItem->kind.box.y = y;
+        pItem->c.box.x = x;
+        pItem->c.box.y = y;
 
         linkItem(pCanvas, pItem);
         itemToBox(pItem, 0, 0, &x1, &y1, &w1, &h1);
@@ -1117,12 +1119,12 @@ HtmlDrawLine (HtmlCanvas *pCanvas, int x, int w, int y_over, int y_through, int 
         HtmlCanvasItem *pItem; 
         pItem = allocateCanvasItem();
         pItem->type = CANVAS_LINE;
-        pItem->kind.line.x = x;
-        pItem->kind.line.w = w;
-        pItem->kind.line.y = y_over;
-        pItem->kind.line.y_underline = (y_under - y_over);
-        pItem->kind.line.y_linethrough = (y_through - y_over);
-        pItem->kind.line.pNode = pNode;
+        pItem->c.line.x = x;
+        pItem->c.line.w = w;
+        pItem->c.line.y = y_over;
+        pItem->c.line.y_underline = (y_under - y_over);
+        pItem->c.line.y_linethrough = (y_through - y_over);
+        pItem->c.line.pNode = pNode;
         linkItem(pCanvas, pItem);
     }
 
@@ -1157,22 +1159,22 @@ HtmlDrawText (HtmlCanvas *pCanvas, const char *zText, int nText, int x, int y, i
 
         if (iIndex >= 0) {
             pItem = allocateCanvasItem();
-            pItem->kind.text.zText = zText;
+            pItem->c.text.zText = zText;
         } else {
             int nBytes = nText + sizeof(HtmlCanvasItem);
             pItem = (HtmlCanvasItem *)HtmlClearAlloc("HtmlCanvasItem", nBytes);
-            pItem->kind.text.zText = (char *)&pItem[1];
-            memcpy((char *)pItem->kind.text.zText, zText, nText);
+            pItem->c.text.zText = (char *)&pItem[1];
+            memcpy((char *)pItem->c.text.zText, zText, nText);
         }
 
         pItem->type = CANVAS_TEXT;
-        pItem->kind.text.nText = nText;
-        pItem->kind.text.x = x;
-        pItem->kind.text.y = y;
-        pItem->kind.text.w = w;
-        pItem->kind.text.pNode = pNode;
-        pItem->kind.text.iIndex = iIndex;
-        pItem->kind.text.fFont = pFont;
+        pItem->c.text.nText = nText;
+        pItem->c.text.x = x;
+        pItem->c.text.y = y;
+        pItem->c.text.w = w;
+        pItem->c.text.pNode = pNode;
+        pItem->c.text.iIndex = iIndex;
+        pItem->c.text.fFont = pFont;
         HtmlFontReference(pFont);
         linkItem(pCanvas, pItem);
     }
@@ -1187,15 +1189,15 @@ void
 HtmlDrawTextExtend (HtmlCanvas *pCanvas, int nChar, int nPixel) 
 {
     assert(pCanvas && pCanvas->pLast && pCanvas->pLast->type == CANVAS_TEXT);
-    pCanvas->pLast->kind.text.nText += nChar;
-    pCanvas->pLast->kind.text.w += nPixel;
+    pCanvas->pLast->c.text.nText += nChar;
+    pCanvas->pLast->c.text.w += nPixel;
 }
 
 int 
 HtmlDrawTextLength (HtmlCanvas *pCanvas)
 {
     assert(pCanvas && pCanvas->pLast && pCanvas->pLast->type == CANVAS_TEXT);
-    return pCanvas->pLast->kind.text.nText;
+    return pCanvas->pLast->c.text.nText;
 }
 
 void 
@@ -1215,13 +1217,13 @@ HtmlDrawImage (
         HtmlCanvasItem *pItem; 
         pItem = allocateCanvasItem();
         pItem->type = CANVAS_IMAGE;
-        pItem->kind.image.pImage = pImage;
+        pItem->c.image.pImage = pImage;
         HtmlImageRef(pImage);
-        pItem->kind.image.x = x;
-        pItem->kind.image.y = y;
-        pItem->kind.image.w = w;
-        pItem->kind.image.h = h;
-        pItem->kind.image.pNode = pNode;
+        pItem->c.image.x = x;
+        pItem->c.image.y = y;
+        pItem->c.image.w = w;
+        pItem->c.image.h = h;
+        pItem->c.image.pNode = pNode;
         linkItem(pCanvas, pItem);
     }
 
@@ -1261,11 +1263,11 @@ HtmlDrawWindow (
         pItem = allocateCanvasItem();
         memset(pItem, 0, sizeof(HtmlCanvasItem));
         pItem->type = CANVAS_WINDOW;
-        pItem->kind.window.pElem = (HtmlElementNode *)pNode;
-        pItem->kind.window.x = x;
-        pItem->kind.window.y = y;
-        pItem->kind.window.iWidth = w;
-        pItem->kind.window.iHeight = h;
+        pItem->c.window.pElem = (HtmlElementNode *)pNode;
+        pItem->c.window.x = x;
+        pItem->c.window.y = y;
+        pItem->c.window.iWidth = w;
+        pItem->c.window.iHeight = h;
         linkItem(pCanvas, pItem);
     }
 
@@ -1283,75 +1285,75 @@ static void outputPrimitive(HtmlCanvasItem *pItem, int x, int y, Tcl_Obj *pPrimi
         case CANVAS_OVERFLOW:
             nObj = 3;
             aObj[0] = Tcl_NewStringObj("draw_overflow W:H", -1);
-            aObj[1] = Tcl_NewIntObj(pItem->kind.overflow.w);
-            aObj[2] = Tcl_NewIntObj(pItem->kind.overflow.h);
+            aObj[1] = Tcl_NewIntObj(pItem->c.overflow.w);
+            aObj[2] = Tcl_NewIntObj(pItem->c.overflow.h);
             break;
         case CANVAS_ORIGIN:
             nObj = 5;
-            if (pItem->kind.origin.pSkip) {
+            if (pItem->c.origin.pSkip) {
                 aObj[0] = Tcl_NewStringObj("draw_origin_start X:Y H:V", -1);
             } else {
                 aObj[0] = Tcl_NewStringObj("draw_origin_end X:Y H:V", -1);
             }
-            aObj[1] = Tcl_NewIntObj(pItem->kind.origin.x);
-            aObj[2] = Tcl_NewIntObj(pItem->kind.origin.y);
-            aObj[3] = Tcl_NewIntObj(pItem->kind.origin.horizontal);
-            aObj[4] = Tcl_NewIntObj(pItem->kind.origin.vertical);
+            aObj[1] = Tcl_NewIntObj(pItem->c.origin.x);
+            aObj[2] = Tcl_NewIntObj(pItem->c.origin.y);
+            aObj[3] = Tcl_NewIntObj(pItem->c.origin.horizontal);
+            aObj[4] = Tcl_NewIntObj(pItem->c.origin.vertical);
             break;
         case CANVAS_TEXT: {
             nObj = 7;
             aObj[0] = Tcl_NewStringObj("draw_text X:Y W", -1);
-            aObj[1] = Tcl_NewIntObj(pItem->kind.text.x+x);
-            aObj[2] = Tcl_NewIntObj(pItem->kind.text.y+y);
-            aObj[3] = Tcl_NewIntObj(pItem->kind.text.w);
-            aObj[4] = HtmlNodeCommand(pTree, pItem->kind.text.pNode);
+            aObj[1] = Tcl_NewIntObj(pItem->c.text.x+x);
+            aObj[2] = Tcl_NewIntObj(pItem->c.text.y+y);
+            aObj[3] = Tcl_NewIntObj(pItem->c.text.w);
+            aObj[4] = HtmlNodeCommand(pTree, pItem->c.text.pNode);
             if( !aObj[4] ){
                 aObj[4] = Tcl_NewStringObj("(null)", 0);
             }
-            aObj[5] = Tcl_NewIntObj(pItem->kind.text.iIndex);
+            aObj[5] = Tcl_NewIntObj(pItem->c.text.iIndex);
             aObj[6] = Tcl_NewStringObj(
-                pItem->kind.text.zText, pItem->kind.text.nText 
+                pItem->c.text.zText, pItem->c.text.nText 
             );
             break;
         }
         case CANVAS_IMAGE:
-            if (pItem->kind.image.pImage) {
+            if (pItem->c.image.pImage) {
                 nObj = 7;
                 aObj[0] = Tcl_NewStringObj("draw_image X:Y W:H", -1);
-                aObj[1] = Tcl_NewIntObj(pItem->kind.image.x+x);
-                aObj[2] = Tcl_NewIntObj(pItem->kind.image.y+y);
-                aObj[3] = Tcl_NewIntObj(pItem->kind.image.w);
-                aObj[4] = Tcl_NewIntObj(pItem->kind.image.h);
-                aObj[5] = HtmlNodeCommand(pTree, pItem->kind.image.pNode);
-                aObj[6] = HtmlImageUnscaledName(pItem->kind.image.pImage);
+                aObj[1] = Tcl_NewIntObj(pItem->c.image.x+x);
+                aObj[2] = Tcl_NewIntObj(pItem->c.image.y+y);
+                aObj[3] = Tcl_NewIntObj(pItem->c.image.w);
+                aObj[4] = Tcl_NewIntObj(pItem->c.image.h);
+                aObj[5] = HtmlNodeCommand(pTree, pItem->c.image.pNode);
+                aObj[6] = HtmlImageUnscaledName(pItem->c.image.pImage);
             }
             break;
         case CANVAS_WINDOW:
             nObj = 5;
             aObj[0] = Tcl_NewStringObj("draw_window X:Y", -1);
-            aObj[1] = Tcl_NewIntObj(pItem->kind.window.x+x);
-            aObj[2] = Tcl_NewIntObj(pItem->kind.window.y+y);
-            aObj[3] = HtmlNodeCommand(pTree, (HtmlNode*)pItem->kind.window.pElem);
-            aObj[4] = pItem->kind.window.pElem->pReplacement->pReplace;
+            aObj[1] = Tcl_NewIntObj(pItem->c.window.x+x);
+            aObj[2] = Tcl_NewIntObj(pItem->c.window.y+y);
+            aObj[3] = HtmlNodeCommand(pTree, (HtmlNode*)pItem->c.window.pElem);
+            aObj[4] = pItem->c.window.pElem->pReplacement->pReplace;
             break;
         case CANVAS_BOX:
             nObj = 6;
             aObj[0] = Tcl_NewStringObj("draw_box X:Y W:H", -1);
-            aObj[1] = Tcl_NewIntObj(pItem->kind.box.x+x);
-            aObj[2] = Tcl_NewIntObj(pItem->kind.box.y+y);
-            aObj[3] = Tcl_NewIntObj(pItem->kind.box.w);
-            aObj[4] = Tcl_NewIntObj(pItem->kind.box.h);
-            aObj[5] = HtmlNodeCommand(pTree, pItem->kind.box.pNode);
+            aObj[1] = Tcl_NewIntObj(pItem->c.box.x+x);
+            aObj[2] = Tcl_NewIntObj(pItem->c.box.y+y);
+            aObj[3] = Tcl_NewIntObj(pItem->c.box.w);
+            aObj[4] = Tcl_NewIntObj(pItem->c.box.h);
+            aObj[5] = HtmlNodeCommand(pTree, pItem->c.box.pNode);
             break;
         case CANVAS_LINE:
             nObj = 7;
             aObj[0] = Tcl_NewStringObj("draw_line X:Y W Y:Y", -1);
-            aObj[1] = Tcl_NewIntObj(pItem->kind.line.x+x);
-            aObj[2] = Tcl_NewIntObj(pItem->kind.line.y+y);
-            aObj[3] = Tcl_NewIntObj(pItem->kind.line.w);
-            aObj[4] = Tcl_NewIntObj(pItem->kind.line.y_linethrough);
-            aObj[5] = Tcl_NewIntObj(pItem->kind.line.y_underline);
-            aObj[6] = HtmlNodeCommand(pTree, pItem->kind.line.pNode);
+            aObj[1] = Tcl_NewIntObj(pItem->c.line.x+x);
+            aObj[2] = Tcl_NewIntObj(pItem->c.line.y+y);
+            aObj[3] = Tcl_NewIntObj(pItem->c.line.w);
+            aObj[4] = Tcl_NewIntObj(pItem->c.line.y_linethrough);
+            aObj[5] = Tcl_NewIntObj(pItem->c.line.y_underline);
+            aObj[6] = HtmlNodeCommand(pTree, pItem->c.line.pNode);
             break;
     }
     if (nObj > 0) {
@@ -1441,7 +1443,7 @@ setClippingDrawable (GetPixmapQuery *pQuery, HtmlCanvasItem *pItem, Drawable *pD
         itemToBox(pItem, *pX + pQuery->x, *pY + pQuery->y, &x, &y, &w, &h);
         if (pItem->type == CANVAS_TEXT) {
             int nSpace = 0;
-            CanvasText *pText = &pItem->kind.text;
+            CanvasText *pText = &pItem->c.text;
             for (ii = pText->nText - 1; ii >= 0; ii--) {
               if (pText->zText[ii] == '\xA0' && pText->zText[ii-1] == '\xC2') {
                   ii--;
@@ -1708,22 +1710,22 @@ tileimage (
 static void 
 drawScrollbars (HtmlTree *pTree, HtmlCanvasItem *pItem, int origin_x, int origin_y)
 {
-    HtmlElementNode *pElem = (HtmlElementNode *)pItem->kind.generic.pNode;
-    assert(!HtmlNodeIsText(pItem->kind.generic.pNode));
+    HtmlElementNode *pElem = (HtmlElementNode *)pItem->c.generic.pNode;
+    assert(!HtmlNodeIsText(pItem->c.generic.pNode));
 
     if (pElem->pScrollbar) {
         HtmlNodeReplacement *pRep = &pElem->pScrollbar->vertical;
         HtmlNodeReplacement *p;
-        HtmlComputedValues *pV = HtmlNodeComputedValues(pItem->kind.box.pNode);
+        HtmlComputedValues *pV = HtmlNodeComputedValues(pItem->c.box.pNode);
 
         /* Vertical */
         if (pRep->win) {
-            pRep->iCanvasX  = origin_x + pItem->kind.box.x + pItem->kind.box.w;
+            pRep->iCanvasX  = origin_x + pItem->c.box.x + pItem->c.box.w;
             pRep->iCanvasX -= pRep->iWidth;
             if (pV->eBorderRightStyle != CSS_CONST_NONE) {
                 pRep->iCanvasX -= pV->border.iRight;
             }
-            pRep->iCanvasY = origin_y + pItem->kind.box.y;
+            pRep->iCanvasY = origin_y + pItem->c.box.y;
             if (pV->eBorderTopStyle != CSS_CONST_NONE) {
                 pRep->iCanvasY += pV->border.iTop;
             }
@@ -1737,12 +1739,12 @@ drawScrollbars (HtmlTree *pTree, HtmlCanvasItem *pItem, int origin_x, int origin
         /* Horizontal */
         pRep = &pElem->pScrollbar->horizontal;
         if (pRep->win) {
-            pRep->iCanvasY  = origin_y + pItem->kind.box.y + pItem->kind.box.h;
+            pRep->iCanvasY  = origin_y + pItem->c.box.y + pItem->c.box.h;
             pRep->iCanvasY -= pRep->iHeight;
             if (pV->eBorderBottomStyle != CSS_CONST_NONE) {
                 pRep->iCanvasY -= pV->border.iBottom;
             }
-            pRep->iCanvasX = origin_x + pItem->kind.box.x;
+            pRep->iCanvasX = origin_x + pItem->c.box.x;
             if (pV->eBorderLeftStyle != CSS_CONST_NONE) {
                 pRep->iCanvasX += pV->border.iLeft;
             }
@@ -2032,7 +2034,7 @@ drawLine (
 )
 {
     HtmlTree *pTree = pQuery->pTree;
-    CanvasLine *pLine = &pItem->kind.line;
+    CanvasLine *pLine = &pItem->c.line;
     XColor *xcolor;
     int yrel;
 
@@ -2085,7 +2087,7 @@ drawText (
 {
     HtmlTree *pTree = pQuery->pTree;
     Display *disp = Tk_Display(pTree->tkwin);
-    CanvasText *pT = &pItem->kind.text;
+    CanvasText *pT = &pItem->c.text;
 
     GC gc = 0;
     XGCValues gc_values;
@@ -2235,11 +2237,11 @@ searchCanvas(
         pSkip = 0;
         switch (pItem->type) {
             case CANVAS_ORIGIN: {
-                CanvasOrigin *pOrigin1 = &pItem->kind.origin;
+                CanvasOrigin *pOrigin1 = &pItem->c.origin;
                 CanvasOrigin *pOrigin2 = 0;
                 int ymin2 = ymin;
                 int ymax2 = ymax;
-                if (pOrigin1->pSkip) pOrigin2 = &pItem->kind.origin.pSkip->kind.origin;
+                if (pOrigin1->pSkip) pOrigin2 = &pItem->c.origin.pSkip->c.origin;
 
                 nOrigin += (pOrigin2?1:-1);
 
@@ -2259,7 +2261,7 @@ searchCanvas(
             }
 
             case CANVAS_MARKER: {
-                if(pItem->kind.marker.flags == MARKER_FIXED){
+                if(pItem->c.marker.flags == MARKER_FIXED){
                     assert(bSeenFixedMarker == 0);
                     assert(nOrigin == 0);
                     assert(origin_x == 0);
@@ -2274,7 +2276,7 @@ searchCanvas(
             case CANVAS_OVERFLOW: {
                 if (requireOverflow) {
                     Overflow *pOverflow = (Overflow *)&pItem[1];
-                    HtmlNode *pNode = pItem->kind.overflow.pNode;
+                    HtmlNode *pNode = pItem->c.overflow.pNode;
     
                     HtmlElementNode *pElem = (HtmlElementNode *)pNode;
                     assert(!HtmlNodeIsText(pNode));
@@ -2287,11 +2289,11 @@ searchCanvas(
                         nOverflow++;
                     }
                     apOverflow[iOverflow] = pOverflow;
-                    pOverflow->pItem = &pItem->kind.overflow;
-                    pOverflow->x = pItem->kind.overflow.x + origin_x;
-                    pOverflow->y = pItem->kind.overflow.y + origin_y;
-                    pOverflow->w = pItem->kind.overflow.w;
-                    pOverflow->h = pItem->kind.overflow.h;
+                    pOverflow->pItem = &pItem->c.overflow;
+                    pOverflow->x = pItem->c.overflow.x + origin_x;
+                    pOverflow->y = pItem->c.overflow.y + origin_y;
+                    pOverflow->w = pItem->c.overflow.w;
+                    pOverflow->h = pItem->c.overflow.h;
                     pOverflow->pixmap = 0;
                     pOverflow->pNext = 0;
     
@@ -2358,7 +2360,7 @@ static int sorterCb(
 
     /* Only visible items are added to the sorter. */
     if (pItem->type == CANVAS_BOX) {
-        HtmlComputedValues *p = HtmlNodeComputedValues(pItem->kind.box.pNode);
+        HtmlComputedValues *p = HtmlNodeComputedValues(pItem->c.box.pNode);
         if (
             (p->eBorderTopStyle == CSS_CONST_NONE || !p->border.iTop) && 
             (p->eBorderBottomStyle == CSS_CONST_NONE || !p->border.iBottom) && 
@@ -2372,7 +2374,7 @@ static int sorterCb(
         }
     }
     if (pItem->type == CANVAS_LINE) {
-        HtmlComputedValues *p = HtmlNodeComputedValues(pItem->kind.box.pNode);
+        HtmlComputedValues *p = HtmlNodeComputedValues(pItem->c.box.pNode);
         if (p->eTextDecoration == CSS_CONST_NONE) {
             return 0;
         }
@@ -2384,8 +2386,8 @@ static int sorterCb(
          */
         pItem->iSnapshot = pSorter->iSnapshot;
         if (pItem->type == CANVAS_BOX) {
-            x += pItem->kind.box.x;
-            y += pItem->kind.box.y;
+            x += pItem->c.box.x;
+            y += pItem->c.box.y;
         }
         pItem->nRef++;
         assert(pItem->nRef >= 2);
@@ -2523,13 +2525,13 @@ damageSlot (HtmlTree *pTree, CanvasItemSorterSlot *pSlot, int *pX1, int *pY1, in
     int x, y, h, w;
     itemToBox(pSlot->pItem, pSlot->x, pSlot->y, &x, &y, &w, &h);
     if (isOld && pSlot->pItem->type == CANVAS_BOX) {
-        x -= pSlot->pItem->kind.box.x;
-        y -= pSlot->pItem->kind.box.y;
+        x -= pSlot->pItem->c.box.x;
+        y -= pSlot->pItem->c.box.y;
     }
     /*printf("%dx%d +%d+%d (%d)\n", w, h, x, y, pSlot->pItem->type);*/
     if (pSlot->pItem->type == CANVAS_WINDOW) {
-        pSlot->pItem->kind.window.pElem->pReplacement->iCanvasX = -10000;
-        pSlot->pItem->kind.window.pElem->pReplacement->iCanvasY = -10000;
+        pSlot->pItem->c.window.pElem->pReplacement->iCanvasX = -10000;
+        pSlot->pItem->c.window.pElem->pReplacement->iCanvasY = -10000;
     }
     *pX1 = MIN(*pX1, x);
     *pY1 = MIN(*pY1, y);
@@ -2545,30 +2547,30 @@ itemsAreEqual (HtmlCanvasItem *p1, HtmlCanvasItem *p2)
         switch (p1->type) {
             case CANVAS_TEXT: {
                 return (
-                    p1->kind.text.x == p2->kind.text.x &&
-                    p1->kind.text.y == p2->kind.text.y &&
-                    p1->kind.text.w == p2->kind.text.w &&
-                    p1->kind.text.fFont == p2->kind.text.fFont &&
-                    p1->kind.text.zText == p2->kind.text.zText &&
-                    p1->kind.text.nText == p2->kind.text.nText
+                    p1->c.text.x == p2->c.text.x &&
+                    p1->c.text.y == p2->c.text.y &&
+                    p1->c.text.w == p2->c.text.w &&
+                    p1->c.text.fFont == p2->c.text.fFont &&
+                    p1->c.text.zText == p2->c.text.zText &&
+                    p1->c.text.nText == p2->c.text.nText
                 );
             }
             case CANVAS_LINE: {
                 return (
-                    p1->kind.line.x == p2->kind.line.x &&
-                    p1->kind.line.y == p2->kind.line.y &&
-                    p1->kind.line.w == p2->kind.line.w &&
-                    p1->kind.line.y_underline == p2->kind.line.y_underline &&
-                    p1->kind.line.y_linethrough == p2->kind.line.y_linethrough
+                    p1->c.line.x == p2->c.line.x &&
+                    p1->c.line.y == p2->c.line.y &&
+                    p1->c.line.w == p2->c.line.w &&
+                    p1->c.line.y_underline == p2->c.line.y_underline &&
+                    p1->c.line.y_linethrough == p2->c.line.y_linethrough
                 );
             }
             case CANVAS_IMAGE: {
                 return (
-                    p1->kind.image.x == p2->kind.image.x &&
-                    p1->kind.image.y == p2->kind.image.y &&
-                    p1->kind.image.w == p2->kind.image.w &&
-                    p1->kind.image.h == p2->kind.image.h &&
-                    p1->kind.image.pImage == p2->kind.image.pImage
+                    p1->c.image.x == p2->c.image.x &&
+                    p1->c.image.y == p2->c.image.y &&
+                    p1->c.image.w == p2->c.image.w &&
+                    p1->c.image.h == p2->c.image.h &&
+                    p1->c.image.pImage == p2->c.image.pImage
                 );
             }
         }
@@ -2623,8 +2625,8 @@ HtmlDrawSnapshotDamage (HtmlTree *pTree, HtmlCanvasSnapshot *pSnapshot, HtmlCanv
             int newx = pNewSlot->x;
             int newy = pNewSlot->y;
             if (pNewSlot->pItem->type == CANVAS_BOX) {
-                newx += pNewSlot->pItem->kind.box.x;
-                newy += pNewSlot->pItem->kind.box.y;
+                newx += pNewSlot->pItem->c.box.x;
+                newy += pNewSlot->pItem->c.box.y;
             }
             if (newx != pOldSlot->x || newy != pOldSlot->y) {
                 damageSlot(pTree, pOldSlot, &x1, &y1, &x2, &y2, 1);
@@ -2814,7 +2816,7 @@ pixmapQueryCb(
 
         case CANVAS_IMAGE: {
             setClippingDrawable(pQuery, pItem, &drawable, &x, &y);
-            drawImage(pQuery, &pItem->kind.image, drawable, x, y, w, h);
+            drawImage(pQuery, &pItem->c.image, drawable, x, y, w, h);
             break;
         }
 
@@ -2823,8 +2825,8 @@ pixmapQueryCb(
             int xv = pQuery->x - pQuery->pTree->iScrollX;
             int yv = pQuery->y - pQuery->pTree->iScrollY;
             int f = 0;
-            if (pQuery->pBgRoot == pItem->kind.box.pNode) f = DRAWBOX_NOBACKGROUND;
-            p = drawBox(pQuery, pItem, &pItem->kind.box, drawable, x, y, w, h, xv, yv, f);
+            if (pQuery->pBgRoot == pItem->c.box.pNode) f = DRAWBOX_NOBACKGROUND;
+            p = drawBox(pQuery, pItem, &pItem->c.box, drawable, x, y, w, h, xv, yv, f);
             if (p) {
                 p->pNext = pQuery->pOutline;
                 pQuery->pOutline = p;
@@ -2842,13 +2844,13 @@ pixmapQueryCb(
         case CANVAS_WINDOW: {
             if (pQuery->getwin) {
                 HtmlTree *pTree = pQuery->pTree;
-                HtmlNodeReplacement *pRep = pItem->kind.window.pElem->pReplacement;
+                HtmlNodeReplacement *pRep = pItem->c.window.pElem->pReplacement;
                 HtmlNodeReplacement *p;
 
-                pRep->iCanvasX = origin_x + pItem->kind.window.x;
-                pRep->iCanvasY = origin_y + pItem->kind.window.y;
-                pRep->iWidth   = pItem->kind.window.iWidth;
-                pRep->iHeight  = pItem->kind.window.iHeight;
+                pRep->iCanvasX = origin_x + pItem->c.window.x;
+                pRep->iCanvasY = origin_y + pItem->c.window.y;
+                pRep->iWidth   = pItem->c.window.iWidth;
+                pRep->iHeight  = pItem->c.window.iHeight;
                 pRep->clipped = 0;
 
                 if (pQuery->pCurrentOverflow) {
@@ -3160,7 +3162,7 @@ layoutNodeIndexCb(
     ClientData clientData
     )
 {
-    CanvasText *pT = &pItem->kind.text;
+    CanvasText *pT = &pItem->c.text;
     if (pItem->type == CANVAS_TEXT && pT->iIndex >= 0 && pT->pNode->index >= 0){
         NodeIndexQuery *pQuery = (NodeIndexQuery *)clientData;
 
@@ -3537,10 +3539,10 @@ bboxCb(
     )
 {
     BboxContext *pBbox = (BboxContext *)clientData;
-    if (pItem->kind.generic.pNode && (pItem->type == CANVAS_BOX || pItem->type == CANVAS_TEXT)) {
+    if (pItem->c.generic.pNode && (pItem->type == CANVAS_BOX || pItem->type == CANVAS_TEXT)) {
         int x, y, w, h;
         HtmlNode *pNode = itemToBox(pItem, origin_x, origin_y, &x, &y, &w, &h);
-        if (pItem->kind.generic.pNode == pBbox->pPrevNode) {
+        if (pItem->c.generic.pNode == pBbox->pPrevNode) {
             pNode->iBboxX = MIN(pNode->iBboxX, x);
             pNode->iBboxY = MIN(pNode->iBboxY, y);
             pNode->iBboxX2 = MAX(pNode->iBboxX2, x + w);
@@ -3654,7 +3656,7 @@ paintNodesSearchCb(
     PaintNodepQuery *p = (PaintNodepQuery *)clientData;
 
     if (pItem->type == CANVAS_TEXT) {
-        CanvasText *pT = &(pItem->kind.text);
+        CanvasText *pT = &(pItem->c.text);
         HtmlFont *pFont = fontFromNode(pT->pNode);
         if (pT->iIndex >= 0) {
             int nodeIndex = pT->pNode->index;
@@ -4030,11 +4032,11 @@ HtmlWidgetNodeBox (HtmlTree *pTree, HtmlNode *pNode, int *pX, int *pY, int *pW, 
     for (pItem = pCanvas->pFirst; pItem; pItem = (pSkip?pSkip:pItem->pNext)) {
         pSkip = 0;
         if (pItem->type == CANVAS_OVERFLOW) {
-            CanvasOverflow *pO = &pItem->kind.overflow;
+            CanvasOverflow *pO = &pItem->c.overflow;
             HtmlNode *p = pO->pNode;
             while (p && p != pNode) p = HtmlNodeParent(p);
             if (p) {
-                CanvasOverflow *pO = &pItem->kind.overflow;
+                CanvasOverflow *pO = &pItem->c.overflow;
                 pQuery.left = MIN(pQuery.left, pO->x + origin_x);
                 pQuery.top = MIN(pQuery.top, pO->y + origin_y);
                 pQuery.right = MAX(pQuery.right, pO->x + origin_x + pO->w);
@@ -4042,8 +4044,8 @@ HtmlWidgetNodeBox (HtmlTree *pTree, HtmlNode *pNode, int *pX, int *pY, int *pW, 
             }
             pSkip = pO->pEnd;
         } else if (pItem->type == CANVAS_ORIGIN) {
-            origin_x += pItem->kind.origin.x;
-            origin_y += pItem->kind.origin.y;
+            origin_x += pItem->c.origin.x;
+            origin_y += pItem->c.origin.y;
         } else {
             layoutBboxCb(pItem, origin_x, origin_y, 0, (ClientData)&pQuery);
         }
@@ -4185,9 +4187,9 @@ HtmlDrawMarker (HtmlCanvas *pCanvas, int x, int y, int fixed)
     CHECK_CANVAS(pCanvas);
     pItem = allocateCanvasItem();
     pItem->type = CANVAS_MARKER;
-    pItem->kind.marker.x = x;
-    pItem->kind.marker.y = y;
-    pItem->kind.marker.flags = (fixed ? MARKER_FIXED : 0);
+    pItem->c.marker.x = x;
+    pItem->c.marker.y = y;
+    pItem->c.marker.flags = (fixed ? MARKER_FIXED : 0);
     linkItem(pCanvas, pItem);
     CHECK_CANVAS(pCanvas);
     return pItem;
@@ -4200,9 +4202,9 @@ HtmlDrawLinebox (HtmlCanvas *pCanvas, int x, int y)
     CHECK_CANVAS(pCanvas);
     pItem = allocateCanvasItem();
     pItem->type = CANVAS_MARKER;
-    pItem->kind.marker.x = x;
-    pItem->kind.marker.y = y;
-    pItem->kind.marker.flags = MARKER_LINEBOX;
+    pItem->c.marker.x = x;
+    pItem->c.marker.y = y;
+    pItem->c.marker.flags = MARKER_LINEBOX;
     linkItem(pCanvas, pItem);
     CHECK_CANVAS(pCanvas);
     return;
@@ -4217,15 +4219,15 @@ HtmlDrawFindLinebox (HtmlCanvas *pCanvas, int *pX, int *pY)
     CHECK_CANVAS(pCanvas);
     for (pItem = pCanvas->pFirst; pItem; pItem = pItem->pNext) {
         if (pItem->type == CANVAS_ORIGIN) {
-            CanvasOrigin *pOrigin = &pItem->kind.origin;
+            CanvasOrigin *pOrigin = &pItem->c.origin;
             origin_x += pOrigin->x;
             origin_y += pOrigin->y;
         } else if (
             pItem->type == CANVAS_MARKER && 
-            pItem->kind.marker.flags == MARKER_LINEBOX
+            pItem->c.marker.flags == MARKER_LINEBOX
         ){
-            *pX = origin_x + pItem->kind.marker.x;
-            *pY = origin_y + pItem->kind.marker.y;
+            *pX = origin_x + pItem->c.marker.x;
+            *pY = origin_y + pItem->c.marker.y;
             return 1;
         }
     }
@@ -4242,12 +4244,12 @@ HtmlDrawGetMarker (HtmlCanvas *pCanvas, HtmlCanvasItem *pMarker, int *pX, int *p
     CHECK_CANVAS(pCanvas);
     for (pItem = pCanvas->pFirst; pItem && pMarker; pItem = pItem->pNext) {
         if (pItem->type == CANVAS_ORIGIN) {
-            CanvasOrigin *pOrigin = &pItem->kind.origin;
+            CanvasOrigin *pOrigin = &pItem->c.origin;
             origin_x += pOrigin->x;
             origin_y += pOrigin->y;
         } else if (pItem == pMarker) {
-            *pX = origin_x + pItem->kind.marker.x;
-            *pY = origin_y + pItem->kind.marker.y;
+            *pX = origin_x + pItem->c.marker.x;
+            *pY = origin_y + pItem->c.marker.y;
             if (pPrev) {
                 assert(pPrev->pNext == pMarker);
                 pPrev->pNext = pMarker->pNext;
@@ -4289,30 +4291,30 @@ static int HtmlPostscriptCb(
 
     switch (pItem->type) {
         case CANVAS_TEXT: {
-            CanvasText *pT = &pItem->kind.text;
+            CanvasText *pT = &pItem->c.text;
             rc = TextToPostscript(pPrint->pTree->psInfo, pT->zText, pT->nText, pT->x+x, pT->y+y, pPrint->prepass, pT->pNode, pPrint->interp);
             break;
         }
         case CANVAS_IMAGE: {
             if ((pPrint->nographics >> 1) & 1) goto done;
-            CanvasImage *pI = &pItem->kind.image;
+            CanvasImage *pI = &pItem->c.image;
             rc = ImageToPostscript(pPrint->pTree, pI->pImage, pI->x+x, pI->y+y, pPrint->prepass, pI->pNode, pPrint->interp);
             break;
         }
         case CANVAS_BOX: {
             int f = 0;
-            CanvasBox *pBox = &pItem->kind.box;
+            CanvasBox *pBox = &pItem->c.box;
             if (pPrint->nographics & 1 || pPrint->pBgRoot == pBox->pNode) f = DRAWBOX_NOBACKGROUND;
             rc = BoxToPostscript(pPrint->pTree, pBox->x+x, pBox->y+y, pBox->w, pBox->h, pPrint->prepass, pBox->pNode, f, pPrint->interp, pBox->pComputed);
             break;
         }
         case CANVAS_LINE: {
-            CanvasLine *pLine = &pItem->kind.line;
+            CanvasLine *pLine = &pItem->c.line;
             rc = LineToPostscript(pPrint->pTree->psInfo, pLine->x+x, pLine->y+y, pLine->w, pLine->y_linethrough, pLine->y_underline, pPrint->prepass, pLine->pNode, pPrint->interp);
             break;
         }
         case CANVAS_WINDOW: {
-            CanvasWindow *pWin = &pItem->kind.window;
+            CanvasWindow *pWin = &pItem->c.window;
             rc = WinItemToPostscript(pPrint->pTree, pWin->x+x, pWin->y+y, pWin->pElem->pReplacement->win, pPrint->prepass, pPrint->interp);
             break;
         }
