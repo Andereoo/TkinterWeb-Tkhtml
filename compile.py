@@ -3,6 +3,10 @@ import os, glob, subprocess, re, sys
 from pathlib import Path
 
 BASE_PATH = os.path.dirname(__file__)
+BUILD_PATH =  os.path.join(BASE_PATH, 'build')
+CONFIGURE_PATH =  os.path.join(BASE_PATH, 'configure')
+SRC_PATH =  os.path.join(BASE_PATH, 'src')
+CSSPROP_PATH =  os.path.join(BASE_PATH, 'src', 'cssprop.tcl')
 
 print("Welcome to TkinterWeb's TkHtml3.0 compile script. Note that for this to succeed you will likely need tcl-dev, tk-dev, gcc, and make installed on your system.")
 
@@ -127,26 +131,27 @@ def print_error(*args):
 def run_command(cmd):
     return subprocess.run(cmd, stdout=sys.stdout, stderr=sys.stderr, check=True)
 
-build_path =  os.path.join(BASE_PATH, 'build')
-configure_path =  os.path.join(BASE_PATH, 'configure')
+print("\nUpdating CSS property support...")
+with open(CSSPROP_PATH, "r") as h:
+    root.eval(f"cd {{{SRC_PATH}}}\n{h.read()}")
 
 print("\nCreating build directory...")
-if os.path.exists(build_path):
-    if len(os.listdir(build_path)) == 0:
+if os.path.exists(BUILD_PATH):
+    if len(os.listdir(BUILD_PATH)) == 0:
         print('Directory "build" already exists and is empty. Skipping.')
     else:
         print('Directory "build" already exists. Erase contents?')
-        override = input(f"Press Y to empty {build_path} or any other key to continue: ")
+        override = input(f"Press Y to empty {BUILD_PATH} or any other key to continue: ")
         if override.upper() == "Y":
-            files = glob.glob(build_path+os.sep+'*')
+            files = glob.glob(BUILD_PATH+os.sep+'*')
             for file in files:
                 os.remove(file)
 else:
-    Path(build_path).mkdir(parents=True, exist_ok=True)
+    Path(BUILD_PATH).mkdir(parents=True, exist_ok=True)
     print("Done!")
 
-os.chdir(build_path)
-run_command(['chmod', '+rwx', configure_path])
+os.chdir(BUILD_PATH)
+run_command(['chmod', '+rwx', CONFIGURE_PATH])
 
 def compile_tkhtml():
     print(f"Running configure script with the flags --with-tcl={tclConfig_folder} --with-tk={tkConfig_folder} --with-tclinclude={tcl_path} --with-tkinclude={tk_path}")
@@ -176,22 +181,9 @@ compile_tkhtml()
 
 print("\nOpening test window...")
 root = tkinter.Tk()
-root.tk.eval("set auto_path [linsert $auto_path 0 {"+build_path+"}]")
+root.tk.eval("set auto_path [linsert $auto_path 0 {"+BUILD_PATH+"}]")
 root.tk.eval("package require Tkhtml")
 widget = tkinter.Widget(root, "html")
 widget.tk.call(widget._w, "parse", "<p>If you see this, wohoo!!!</p>")
 widget.pack(expand=True, fill="both")
 root.mainloop()
-
-"""
-TCL=/mingw64
-export PATH=$TCL/bin:$PATH
-cd htmlwidget
-tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c
-mv *.c src && mv *.h src
-mkdir build && cd build
-../configure CC="gcc -static-libgcc" --with-tcl=$TCL/lib --with-tk=$TCL/lib --with-tclinclude=$TCL/include --with-tkinclude=$TCL/include
-
-# On 64-bit Windows, open Makefile and set  SHLIB_LD = gcc -static-libgcc -pipe -shared
-
-make binaries"""

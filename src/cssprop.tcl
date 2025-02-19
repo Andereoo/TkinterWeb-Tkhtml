@@ -69,6 +69,10 @@ E clear                 none left right both
 E cursor                auto crosshair default pointer move e-resize
 E cursor                ne-resize nw-resize n-resize se-resize sw-resize
 E cursor                s-resize w-resize text wait help progress
+E cursor                context-menu cell vertical-text alias copy
+E cursor                no-drop not-allowed grab grabbing all-scroll
+E cursor                col-resize row-resize ew-resize ns-resize nesw-resize
+E cursor                nwse-resize zoom-in zoom-out gobbler none
 E direction             ltr rtl
 E display               inline table-header-group table-footer-group 
 E display               table-row block list-item none
@@ -86,6 +90,8 @@ E list-style-type       decimal lower-alpha upper-alpha lower-roman
 E list-style-type       upper-roman decimal-leading-zero lower-latin
 E list-style-type       upper-latin lower-greek armenian georgian
 E overflow              visible auto hidden scroll
+E overflow-x            visible auto hidden scroll
+E overflow-y            visible auto hidden scroll
 E outline-style         none hidden dotted dashed solid 
 E outline-style         double groove ridge outset inset
 E position              static relative absolute fixed
@@ -125,13 +131,13 @@ P font-weight height left letter-spacing line-height list-style-image
 P list-style-position list-style-type margin-top margin-right 
 P margin-bottom margin-left marker-offset marks max-height max-width 
 P min-height min-width orphans outline-color outline-style outline-width 
-P overflow padding-top padding-right padding-bottom padding-left 
+P overflow overflow-x overflow-y padding-top padding-right padding-bottom padding-left 
 P page page-break-after page-break-before page-break-inside pause pause-after 
 P pause-before pitch pitch-range play-during position quotes richness right 
 P size speak speak-header speak-numeral speak-punctuation speech-rate stress 
 P table-layout text-align text-decoration text-indent text-shadow text-transform
 P top unicode-bidi vertical-align visibility voice-family volume white-space 
-P widows width word-spacing z-index 
+P widows width word-spacing z-index
 
 P -tkhtml-replacement-image
 P -tkhtml-ordered-list-start
