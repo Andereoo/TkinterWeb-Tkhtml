@@ -226,7 +226,7 @@ dequote (char *z)
             n--;
         }
   
-	/* Figure out if there is a quote character (" or ').  If there is one,
+    /* Figure out if there is a quote character (" or ').  If there is one,
          * strip it from the start of the string before proceeding. 
          */
         q = z[0];
@@ -253,7 +253,7 @@ dequote (char *z)
                     int inc = Tcl_UniCharToUtf(ch, zOut);
                     zOut += inc;
      
-		    /* Ignore a single white-space character after a
+            /* Ignore a single white-space character after a
                      * hexadecimal escape.
                      */
                     if (isspace((unsigned char)(z[i + 1]))) i++;
@@ -622,8 +622,8 @@ tokenToProperty (CssParse *pParse, const CssToken *pToken)
                     if (functions[i].type==-1) {
                         /* -1 means this is an RGB value. Transform to a
                          * color string that Tcl can understand before
-			 * storing it in the properties database. The color
-			 * string will be 7 characters long exactly.
+             * storing it in the properties database. The color
+             * string will be 7 characters long exactly.
                          */
                         int nAlloc = sizeof(CssProperty) + 7 + 1;
                         pProp = (CssProperty *)HtmlAlloc("CssProperty", nAlloc);
@@ -667,6 +667,7 @@ tokenToProperty (CssParse *pParse, const CssToken *pToken)
      */
     if (!pProp) {
         int eType;
+        char *token;
         int nAlloc = sizeof(CssProperty) + n + 1;
         pProp = (CssProperty *)HtmlAlloc("CssProperty", nAlloc);
         pProp->v.zVal = (char *)&pProp[1];
@@ -678,11 +679,15 @@ tokenToProperty (CssParse *pParse, const CssToken *pToken)
             pProp->eType = CSS_TYPE_STRING;
         } else {
             dequote(pProp->v.zVal);
-            eType = HtmlCssConstantLookup(-1, pProp->v.zVal);
-            if (eType <= 0) {
-                pProp->eType = CSS_TYPE_RAW;
-            } else {
-                pProp->eType = eType;
+            token = strtok(pProp->v.zVal, " "); // Tokenize the properties using space as a delimiter
+            while (token != NULL) { // Iterate through each token (property)
+                eType = HtmlCssConstantLookup(-1, token); // Lookup for each property
+                if (eType <= 0) {
+                    pProp->eType = CSS_TYPE_RAW; // Set the type to RAW if lookup fails
+                } else {
+                    pProp->eType = eType; // Set the type to the found eType
+                }
+                token = strtok(NULL, " "); // Get the next token
             }
         }
     }
@@ -864,9 +869,7 @@ propertySetAdd (
     */
 
     nBytes = (p->n + 1) * sizeof(struct CssPropertySetItem);
-    p->a = (struct CssPropertySetItem *)HtmlRealloc(
-        "CssPropertySet.a", (char *)p->a, nBytes
-    );
+    p->a = (struct CssPropertySetItem *)HtmlRealloc("CssPropertySet.a", (char *)p->a, nBytes);
     p->a[p->n].pProp = v;
     p->a[p->n].eProp = i;
     p->n++;
@@ -1242,7 +1245,7 @@ shortcutBackground (
         }
     }
 
-#if 0
+/*
     if (
         pPositionX && pPositionY && 
         ((pPositionX->eType == CSS_TYPE_PERCENT) ? 1 : 0) !=
@@ -1250,7 +1253,7 @@ shortcutBackground (
     ) {
         goto error_out;
     }
-#endif
+*/
 
     /*
      * From CSS2 description of the 'background-position' property:
@@ -1314,8 +1317,8 @@ error_out:
  *
  * shortcutListStyle --
  *
- * 	[ <'list-style-type'> || <'list-style-position'> ||
- * 	    <'list-style-image'> ] | inherit
+ *     [ <'list-style-type'> || <'list-style-position'> ||
+ *         <'list-style-image'> ] | inherit
  * Results:
  *     None.
  *
@@ -2495,16 +2498,14 @@ HtmlCssDeclaration (
      * declaration (CSS2 spec says to do this - besides, what else could we
      * do?).
      */
-#if 0
-    prop = HtmlCssPropertyLookup(pProp->n, pProp->z);
-#else
+    //prop = HtmlCssPropertyLookup(pProp->n, pProp->z);
     if (pProp->n > 127) pProp->n = 127;
     memcpy(zBuf, pProp->z, pProp->n);
     zBuf[pProp->n] = '\0';
     dequote(zBuf);
     prop = HtmlCssPropertyLookup(-1, zBuf);
-#endif
-    if( prop<0 ) return;
+
+    if(prop<0) return;
 
     if (isImportant) {
         ppPropertySet = &pParse->pImportant;
@@ -2551,7 +2552,7 @@ HtmlCssDeclaration (
             propertySetAddList(pParse, prop, *ppPropertySet, pExpr);
             break;
         default:
-            propertySetAdd(*ppPropertySet, prop, tokenToProperty(pParse,pExpr));
+            propertySetAdd(*ppPropertySet, prop, tokenToProperty(pParse, pExpr)); // CSS seems to be parsed though here
     }
 }
 
@@ -2607,10 +2608,10 @@ HtmlCssSelector (
     pSelector->pNext = pParse->pSelector;
     pSelector->isDynamic = (
         (pSelector->pNext && pSelector->pNext->isDynamic) ||
-#if 0
+/*
         (stype == CSS_PSEUDOCLASS_LINK)                   ||
         (stype == CSS_PSEUDOCLASS_VISITED)                ||
-#endif
+*/
         (stype == CSS_PSEUDOCLASS_HOVER)                  ||
         (stype == CSS_PSEUDOCLASS_FOCUS)                  ||
         (stype == CSS_PSEUDOCLASS_ACTIVE)
@@ -2677,7 +2678,7 @@ ruleCompare(CssRule *pLeft, CssRule *pRight) {
                  * priority rule is the one that appeared later in the 
                  * source stylesheet.
                  */
-		res = pLeft->iRule - pRight->iRule;
+        res = pLeft->iRule - pRight->iRule;
             }
         }
     }
@@ -2770,39 +2771,38 @@ cssSelectorPropertySetPair (CssParse *pParse, CssSelector *pSelector, CssPropert
      * See section 6.4, "The cascade", of CSS2 documentation for details on
      * selector specificity.
      */
-    for (pS=pSelector; pS; pS = pS->pNext) {
-         switch (pS->eSelector) {
-             case CSS_SELECTOR_TYPE:
-                 spec += 1;
-                 break;
+    for (pS = pSelector; pS; pS = pS->pNext) {
+        switch (pS->eSelector) {
+            case CSS_SELECTOR_TYPE:
+                spec += 1;
+                break;
 
-             case CSS_SELECTOR_ID:
-                 spec += 10000;
-                 break;
+            case CSS_SELECTOR_ID:
+                spec += 10000;
+                break;
 
-             case CSS_SELECTOR_ATTR:
-             case CSS_SELECTOR_ATTRVALUE:
-             case CSS_SELECTOR_ATTRLISTVALUE:
-             case CSS_SELECTOR_ATTRHYPHEN:
-                 spec += 100;
-                 break;
+            case CSS_SELECTOR_ATTR:
+            case CSS_SELECTOR_ATTRVALUE:
+            case CSS_SELECTOR_ATTRLISTVALUE:
+            case CSS_SELECTOR_ATTRHYPHEN:
+                spec += 100;
+                break;
 
-             case CSS_SELECTOR_CLASS:
-             case CSS_PSEUDOCLASS_LANG:
-             case CSS_PSEUDOCLASS_FIRSTCHILD:
-             case CSS_PSEUDOCLASS_LINK:
-             case CSS_PSEUDOCLASS_VISITED:
-             case CSS_PSEUDOCLASS_ACTIVE:
-             case CSS_PSEUDOCLASS_HOVER:
-             case CSS_PSEUDOCLASS_FOCUS:
-                 spec += 100;
-                 break;
-         }
+            case CSS_SELECTOR_CLASS:
+            case CSS_PSEUDOCLASS_LANG:
+            case CSS_PSEUDOCLASS_FIRSTCHILD:
+            case CSS_PSEUDOCLASS_LINK:
+            case CSS_PSEUDOCLASS_VISITED:
+            case CSS_PSEUDOCLASS_ACTIVE:
+            case CSS_PSEUDOCLASS_HOVER:
+            case CSS_PSEUDOCLASS_FOCUS:
+                spec += 100;
+                break;
+        }
     }
     pRule->specificity = spec;
     assert(
-        pPropertySet == pParse->pPropertySet || 
-        pPropertySet == pParse->pImportant
+        pPropertySet == pParse->pPropertySet || pPropertySet == pParse->pImportant
     );
     if (pParse->pPropertySet == pPropertySet) {
         pRule->pPriority = pParse->pPriority1;
@@ -2916,13 +2916,8 @@ HtmlCssRule (CssParse *pParse, int success)
         pImportant = 0;
     }
 
-    if (
-        success && 
-        !pParse->isIgnore && 
-        pSelector && 
-        (pPropertySet || pImportant)
-    ) {
-
+    if (success && !pParse->isIgnore && pSelector && (pPropertySet || pImportant))
+    {
         if (pPropertySet) {
             unsigned int flags = FREE_BOTH;
             cssSelectorPropertySetPair(pParse, pSelector, pPropertySet, flags);
@@ -2942,7 +2937,6 @@ HtmlCssRule (CssParse *pParse, int success)
                 cssSelectorPropertySetPair(pParse, pS, pImportant, flags2);
             }
         }
-
     } else {
         /* Some sort of a parse error has occured. We won't be including
          * this rule, so just free these structs so we don't leak memory.
@@ -2999,7 +2993,7 @@ attrTest (int eType, const char *zString, const char *zAttr)
         case CSS_SELECTOR_ATTRVALUE:
             return ((zAttr && 0==stricmp(zAttr, zString))?1:0);
 
-	/* Treat the attribute value (if it exists) as a space seperated list.
+    /* Treat the attribute value (if it exists) as a space seperated list.
          * Return true if zString exists in the list.
          */
         case CSS_SELECTOR_ATTRLISTVALUE: {
@@ -3051,39 +3045,37 @@ attrTest (int eType, const char *zString, const char *zAttr)
 #define N_NUMCHILDREN(x) HtmlNodeNumChildren(x)
 #define N_CHILD(x,y)     HtmlNodeChild(x,y)
 int 
-HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int dynamic_true)
+HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int flags)
 {
     CssSelector *p = pSelector;
-    HtmlNode *x = pNode;
+    HtmlNode *nodeX = pNode;
 
     HtmlElementNode *pElem = HtmlNodeAsElement(pNode);
     assert(pElem);
 
-    while( p && x ){
-        pElem = HtmlNodeAsElement(x);
+    while( p && nodeX ){
+        pElem = HtmlNodeAsElement(nodeX);
 
         switch( p->eSelector ){
             case CSS_SELECTOR_UNIVERSAL:
                 break;
 
             case CSS_SELECTOR_TYPE:
-                assert(x->zTag || HtmlNodeIsText(x));
-                if( HtmlNodeIsText(x) || strcmp(x->zTag, p->zValue) ) return 0;
+                assert(nodeX->zTag || HtmlNodeIsText(nodeX));
+                if( HtmlNodeIsText(nodeX) || strcmp(nodeX->zTag, p->zValue) ) return 0;
                 break;
 
             case CSS_SELECTOR_CLASS: {
-                const char *zClass = p->zValue;
-                const char *zAttr = N_ATTR(x, "class");
-                if( !attrTest(CSS_SELECTOR_ATTRLISTVALUE, zClass, zAttr) ){
+                const char *zAttr = N_ATTR(nodeX, "class");
+                if( !attrTest(CSS_SELECTOR_ATTRLISTVALUE, p->zValue, zAttr) ){
                     return 0;
                 }
                 break;
             }
 
             case CSS_SELECTOR_ID: {
-                const char *zId = p->zValue;
-                const char *zAttr = N_ATTR(x, "id");
-                if( !attrTest(CSS_SELECTOR_ATTRVALUE, zId, zAttr) ){
+                const char *zAttr = N_ATTR(nodeX, "id");
+                if( !attrTest(CSS_SELECTOR_ATTRVALUE, p->zValue, zAttr) ){
                     return 0;
                 }
                 break;
@@ -3093,16 +3085,16 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int dynamic_true)
             case CSS_SELECTOR_ATTRVALUE:
             case CSS_SELECTOR_ATTRLISTVALUE:
             case CSS_SELECTOR_ATTRHYPHEN:
-                if( !attrTest(p->eSelector, p->zValue, N_ATTR(x,p->zAttr)) ){
+                if( !attrTest(p->eSelector, p->zValue, N_ATTR(nodeX,p->zAttr)) ){
                     return 0;
                 }
                 break;
 
             case CSS_SELECTORCHAIN_DESCENDANT: {
-                HtmlNode *pParent = N_PARENT(x);
+                HtmlNode *pParent = N_PARENT(nodeX);
                 CssSelector *pNext = p->pNext;
                 while (pParent) {
-                    if (HtmlCssSelectorTest(pNext, pParent, dynamic_true)) {
+                    if (HtmlCssSelectorTest(pNext, pParent, flags&1)) {
                         return 1;
                     }
                     pParent = N_PARENT(pParent);
@@ -3110,59 +3102,57 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int dynamic_true)
                 return 0;
             }
             case CSS_SELECTORCHAIN_CHILD:
-                x = N_PARENT(x);
+                nodeX = N_PARENT(nodeX);
                 break;
             case CSS_SELECTORCHAIN_ADJACENT: {
-                HtmlNode *pParent = N_PARENT(x);
+                HtmlNode *pParent = N_PARENT(nodeX);
                 int i;
 
                 if (
                     !pParent || 
-                    ((HtmlElementNode *)pParent)->pBefore == x ||
-                    ((HtmlElementNode *)pParent)->pAfter == x 
-                ) {
-                    return 0;
-                }
+                    ((HtmlElementNode *)pParent)->pBefore == nodeX ||
+                    ((HtmlElementNode *)pParent)->pAfter == nodeX 
+                ) return 0;
 
                 /* Search for the nearest left-hand sibling that is not
-                 * white-space. If no such sibling exists, set x==0 (this
+                 * white-space. If no such sibling exists, set nodeX==0 (this
                  * will cause the selector-match to fail). If the sibling
-                 * does exist, set x to point at it.
+                 * does exist, set nodeX to point at it.
                  */
-                for (i = 0; N_CHILD(pParent, i) != x; i++);
+                for (i = 0; N_CHILD(pParent, i) != nodeX; i++);
                 i--;
                 do {
-                    x = N_CHILD(pParent, i);
+                    nodeX = N_CHILD(pParent, i);
                     i--;
-                } while (i >= 0 && HtmlNodeIsWhitespace(x));
+                } while (i >= 0 && HtmlNodeIsWhitespace(nodeX));
                 if (i < 0) return 0;
 
                 break;
             }
 
             case CSS_PSEUDOCLASS_FIRSTCHILD: {
-                /* :first-child selector matches if x is the left-most child
+                /* :first-child selector matches if nodeX is the left-most child
                  * of it's parent, not including white-space nodes. */
-                HtmlNode *pParent = N_PARENT(x);
+                HtmlNode *pParent = N_PARENT(nodeX);
                 int i;
                 if (!pParent) return 0;
                 for (i = 0; i < N_NUMCHILDREN(pParent); i++) {
                     HtmlNode *pChild = N_CHILD(pParent, i);
-                    if (pChild == x) break;
+                    if (pChild == nodeX) break;
                     if (!HtmlNodeIsWhitespace(pChild)) return 0;
                 }
                 assert(i < N_NUMCHILDREN(pParent));
                 break;
             }
             case CSS_PSEUDOCLASS_LASTCHILD: {
-                /* :last-child selector matches if x is the right-most child
+                /* :last-child selector matches if nodeX is the right-most child
                  * of it's parent, not including white-space nodes. */
-                HtmlNode *pParent = N_PARENT(x);
+                HtmlNode *pParent = N_PARENT(nodeX);
                 int i;
                 if (!pParent) return 0;
                 for (i = N_NUMCHILDREN(pParent) - 1; i >= 0; i--) {
                     HtmlNode *pChild = N_CHILD(pParent, i);
-                    if (pChild == x) break;
+                    if (pChild == nodeX) break;
                     if (!HtmlNodeIsWhitespace(pChild)) return 0;
                 }
                 assert(i >= 0);
@@ -3182,13 +3172,13 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int dynamic_true)
                 break;
 
             case CSS_PSEUDOCLASS_ACTIVE:
-                if (dynamic_true || (pElem->flags & HTML_DYNAMIC_ACTIVE)) break;
+                if (flags&1 || (pElem->flags & HTML_DYNAMIC_ACTIVE)) break;
                 return 0;
             case CSS_PSEUDOCLASS_HOVER:
-                if (dynamic_true || (pElem->flags & HTML_DYNAMIC_HOVER)) break;
+                if (flags&1 || (pElem->flags & HTML_DYNAMIC_HOVER)) break;
                 return 0;
             case CSS_PSEUDOCLASS_FOCUS:
-                if (dynamic_true || (pElem->flags & HTML_DYNAMIC_FOCUS)) break;
+                if (flags&1 || (pElem->flags & HTML_DYNAMIC_FOCUS)) break;
                 return 0;
             case CSS_PSEUDOCLASS_LINK:
                 if (pElem->flags & HTML_DYNAMIC_LINK) break;
@@ -3199,6 +3189,10 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int dynamic_true)
 
             case CSS_SELECTOR_NEVERMATCH:
                 return 0;
+                
+            case CSS_MEDIA_ALL: break;
+            case CSS_MEDIA_PRINT: if ((flags>>1)&1) break; return 0;
+            case CSS_MEDIA_SCREEN: if (!(flags>>1)&1) break; return 0;
 
             default:
                 assert(!"Impossible");
@@ -3206,7 +3200,7 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int dynamic_true)
         p = p->pNext;
     }
 
-    return (x && !p)?1:0;
+    return (nodeX && !p) ? 1 : 0;
 }
 
 /*
@@ -3240,18 +3234,16 @@ HtmlCssInlineFree (CssPropertySet *pPropertySet)
 static void 
 propertySetToPropertyValues (HtmlComputedValuesCreator *p, int *aPropDone, CssPropertySet *pSet)
 {
-    int i;
+    int i, eProp;
     assert(pSet);
 
     for (i = pSet->n - 1; i >= 0; i--) {
-        int eProp = pSet->a[i].eProp;
-	/* eProp may be greater than MAX_PROPERTY if it stores a composite
-	 * property that Tkhtml doesn't handle. In this case just ignore it.
+        eProp = pSet->a[i].eProp;
+        /* eProp may be greater than MAX_PROPERTY if it stores a composite
+         * property that Tkhtml doesn't handle. In this case just ignore it.
          */
-	if (eProp <= CSS_PROPERTY_MAX_PROPERTY && 0 == aPropDone[eProp]) {
-            if (0 == HtmlComputedValuesSet(p, eProp, pSet->a[i].pProp)) {
-                aPropDone[eProp] = 1;
-            }
+        if (eProp <= CSS_PROPERTY_MAX_PROPERTY && 0 == aPropDone[eProp]) {
+            if (0 == HtmlComputedValuesSet(p, eProp, pSet->a[i].pProp)) aPropDone[eProp] = 1;
         }
     }
 }
@@ -3310,7 +3302,7 @@ overrideToPropertyValues(
         zProp = Tcl_GetStringFromObj(apObj[ii], &nProp);
         eProp = HtmlCssPropertyLookup(nProp, zProp);
 
-	if (eProp <= CSS_PROPERTY_MAX_PROPERTY && 0 == aPropDone[eProp]) {
+    if (eProp <= CSS_PROPERTY_MAX_PROPERTY && 0 == aPropDone[eProp]) {
             const char *zVal = Tcl_GetString(apObj[ii + 1]);
             CssProperty *pProp = HtmlCssStringToProperty(zVal, -1);
             if (0 == HtmlComputedValuesSet(p, eProp, pProp)) {
@@ -3343,15 +3335,14 @@ applyRule (HtmlTree *pTree, HtmlNode *pNode, CssRule *pRule, int *aPropDone, cha
     /* Test if the selector matches the node. Variable isMatch is set to
      * true if the selector matches, or false otherwise. 
      */
-    CssSelector *pSelector = pRule->pSelector;
-    int isMatch = HtmlCssSelectorTest(pSelector, pNode, 0);
+    int isMatch = HtmlCssSelectorTest(pRule->pSelector, pNode, (pTree->isPrintedMedia<<1)|0);
 
     /* There is a match. Log some output for debugging. */
     LOG {
         CssPriority *pPriority = pRule->pPriority;
         Tcl_Obj *pS = Tcl_NewObj();
         Tcl_IncrRefCount(pS);
-        HtmlCssSelectorToString(pSelector, pS);
+        HtmlCssSelectorToString(pRule->pSelector, pS);
         HtmlLog(pTree, "STYLEENGINE", "%s %s (%s)"
             " from \"%s%s\"",
             Tcl_GetString(HtmlNodeCommand(pTree, pNode)),
@@ -3364,12 +3355,11 @@ applyRule (HtmlTree *pTree, HtmlNode *pNode, CssRule *pRule, int *aPropDone, cha
         Tcl_DecrRefCount(pS);
     }
     if (isMatch) {
-
         if (pzIfMatch) {
             HtmlComputedValuesInit(pTree, pNode, pNode, pCreator);
             pCreator->pzContent = pzIfMatch;
         }
-  
+
         /* Copy the properties from the rule into the computed values set. */
         ruleToPropertyValues(pCreator, aPropDone, pRule);
     }
@@ -3524,9 +3514,7 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
      * earlier in the list have a higher priority than those that occur later.
      */
     for (
-        pRule = nextRule(apRule, npRule); 
-        pRule; 
-        pRule = nextRule(apRule, npRule)
+        pRule = nextRule(apRule, npRule); pRule; pRule = nextRule(apRule, npRule)
     ) {
         CssPriority *pPriority = pRule->pPriority;
         CssSelector *pSelector = pRule->pSelector;
@@ -3536,27 +3524,24 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
         /* The contents of the "style" attribute, if one exists, are handled
          * after the important rules but before anything else. This is because:
          * 
-	 *     (a) CSS 2.1, in section 6.4.3 says that a style attribute has
-	 *         the maximum possible specificity, and
-	 *     (b) Tkhtml assumes the style attribute resides on the author
-	 *         stylesheet, with no !important flag - hence, according to
-	 *         section 6.4.1 it is handled just after the !important stuff.
+     *     (a) CSS 2.1, in section 6.4.3 says that a style attribute has
+     *         the maximum possible specificity, and
+     *     (b) Tkhtml assumes the style attribute resides on the author
+     *         stylesheet, with no !important flag - hence, according to
+     *         section 6.4.1 it is handled just after the !important stuff.
          */
         if (!isStyleDone && !pPriority->important) {
             isStyleDone = 1;
             if (pElem->pStyle) {
-                propertySetToPropertyValues(&sCreator,aPropDone,pElem->pStyle);
+                propertySetToPropertyValues(&sCreator, aPropDone, pElem->pStyle);
             }
         }
 
         /* If the selector is a match for our node, apply the rule properties */
-        nSelectorMatch += 
-                applyRule(pTree, pNode, pRule, aPropDone, (char **)0, &sCreator);
+        nSelectorMatch += applyRule(pTree, pNode, pRule, aPropDone, (char **)0, &sCreator);
 
-        if (
-            pSelector->isDynamic &&
-            HtmlCssSelectorTest(pSelector, pNode, 1)
-        ) {
+        if (pSelector->isDynamic && HtmlCssSelectorTest(pSelector, pNode, 1))
+        {
             HtmlCssAddDynamic(pElem, pSelector, 0);
         }
     }
@@ -3566,10 +3551,10 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
     }
 
     LOG {
-       HtmlLog(pTree, "STYLEENGINE", "%s matched %d/%d selectors",
-           Tcl_GetString(HtmlNodeCommand(pTree, pNode)),
-           nSelectorMatch, nSelectorTest
-       );
+        HtmlLog(pTree, "STYLEENGINE", "%s matched %d/%d selectors",
+            Tcl_GetString(HtmlNodeCommand(pTree, pNode)),
+            nSelectorMatch, nSelectorTest
+        );
     }
 
     /* Call HtmlComputedValuesFinish() to finish creating the
@@ -3655,7 +3640,7 @@ generatedContent (
          */
         HtmlTextNode *pTextNode = generateContentText(pTree, zContent);
         int idx = HtmlNodeAddTextChild(*ppNode, pTextNode);
-        HtmlNodeChild(*ppNode, idx)->iNode = HTML_NODE_GENERATED;
+        HtmlNodeChild(*ppNode, idx)->index = HTML_NODE_GENERATED;
         HtmlFree(zContent);
     }
 }
@@ -3775,10 +3760,10 @@ HtmlCssImport (CssParse *pParse, CssToken *pToken)
 
     if (pEval) {
         Tcl_Interp *interp = pParse->interp;
-        CssProperty *p = tokenToProperty(pParse, pToken);
-        CONST char *zUrl = p->v.zVal;
+        CssProperty *pProp = tokenToProperty(pParse, pToken);
+        CONST char *zUrl = pProp->v.zVal;
 
-        switch (p->eType) {
+        switch (pProp->eType) {
             case CSS_TYPE_URL:
                 break;
             case CSS_TYPE_RAW:
@@ -3797,7 +3782,7 @@ HtmlCssImport (CssParse *pParse, CssToken *pToken)
         Tcl_ListObjAppendElement(interp, pEval, Tcl_NewStringObj(zUrl, -1));
         Tcl_EvalObjEx(interp, pEval, TCL_EVAL_GLOBAL|TCL_EVAL_DIRECT);
         Tcl_DecrRefCount(pEval);
-        HtmlFree(p);
+        HtmlFree(pProp);
     }
 }
 

@@ -16,7 +16,7 @@
 #include "html.h"
 
 typedef struct LayoutContext LayoutContext;
-typedef struct NodeList NodeList;
+typedef struct NodeListLink NodeListLink;
 
 /*
  * A single Layout context object is allocated for use throughout
@@ -33,8 +33,8 @@ struct LayoutContext {
 
     int minmaxTest;          /* Currently figuring out min/max widths */
 
-    NodeList *pAbsolute;     /* List of nodes with "absolute" 'position' */
-    NodeList *pFixed;        /* List of nodes with "fixed" 'position' */
+    NodeListLink *pAbsolute;     /* List of nodes with "absolute" 'position' */
+    NodeListLink *pFixed;        /* List of nodes with "fixed" 'position' */
 };
 
 /* Values for LayoutContext.minmaxTest */
@@ -123,11 +123,11 @@ HtmlDrawQuad(a, b, c, d, e, f, g, h, i, j, pLayout->minmaxTest)
  */
 typedef struct BoxContext BoxContext;
 struct BoxContext {
-    int iContaining;       /* DOWN: Width of containing block. */
-    int iContainingHeight; /* DOWN: Height of containing block (may be AUTO). */
-    int height;            /* UP: Generated box height. */
-    int width;             /* UP: Generated box width. */
-    HtmlCanvas vc;         /* UP: Canvas to draw the block on. */
+    int iContainingW; /* DOWN: Width of containing block. */
+    int iContainingH; /* DOWN: Height of containing block (may be AUTO). */
+    int height;       /* UP: Generated box height. */
+    int width;        /* UP: Generated box width. */
+    HtmlCanvas vc;    /* UP: Canvas to draw the block on. */
 };
 
 void nodeGetBoxProperties(LayoutContext *, HtmlNode *, int, BoxProperties *);
@@ -150,6 +150,7 @@ int HtmlTableLayout(LayoutContext*, BoxContext*, HtmlNode*);
 int HtmlLayoutNodeContent(LayoutContext *, BoxContext *, HtmlNode *);
 
 void HtmlLayoutDrawBox(HtmlTree*,HtmlCanvas*,int,int,int,int,HtmlNode*,int,int);
+int paginationPageYOrigin(int, LayoutContext*);
 
 /*
  *---------------------------------------------------------------------------

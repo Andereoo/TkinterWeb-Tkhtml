@@ -35,10 +35,7 @@ typedef struct HtmlFontCache HtmlFontCache;
  * position properties too ('top', 'right', 'bottom' and 'left').
  */
 struct HtmlFourSides {
-    int iTop;
-    int iLeft;
-    int iBottom;
-    int iRight;
+    int iTop, iLeft, iBottom, iRight;
 };
 
 /*
@@ -239,8 +236,8 @@ struct HtmlComputedValues {
 
     int iWidth;                       /* 'width'          (pixels, %, AUTO)   */
     int iMinWidth;                    /* 'min-width'      (pixels, %)         */
-    int iMaxWidth;                    /* 'max-height'     (pixels, %, NONE)   */
-    int iHeight;                      /* 'height'         (pixels, % AUTO)    */
+    int iMaxWidth;                    /* 'max-width'      (pixels, %, NONE)   */
+    int iHeight;                      /* 'height'         (pixels, %, AUTO)   */
     int iMinHeight;                   /* 'min-height'     (pixels, %)         */
     int iMaxHeight;                   /* 'max-height'     (pixels, %, NONE)   */
     HtmlFourSides padding;            /* 'padding'        (pixels, %)         */
@@ -279,6 +276,10 @@ struct HtmlComputedValues {
     /* Properties not yet in use - TODO! */
     unsigned char eUnicodeBidi;       /* 'unicode-bidi' */
     unsigned char eTableLayout;       /* 'table-layout' */
+    
+    unsigned char ePageBreakAfter;    /* 'page-break-after' */
+    unsigned char ePageBreakBefore;   /* 'page-break-before' */
+    unsigned char ePageBreakInside;   /* 'page-break-inside' */
 
     HtmlCounterList *clCounterReset;
     HtmlCounterList *clCounterIncrement;

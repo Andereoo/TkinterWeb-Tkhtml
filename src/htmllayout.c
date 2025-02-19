@@ -55,7 +55,7 @@ static const char rcsid[] = "$Id: htmllayout.c,v 1.270 2008/01/07 04:48:02 danie
 #include <stdlib.h>
 
 #define LOG(X) if ( \
-(X)->iNode >= 0 && pLayout->pTree->options.logcmd && 0 == pLayout->minmaxTest)
+(X)->index >= 0 && pLayout->pTree->options.logcmd && 0 == pLayout->minmaxTest)
 
 /* Used for debugging the layout cache. Some output appears on stdout. */
 /* #define LAYOUT_CACHE_DEBUG */
@@ -78,9 +78,9 @@ typedef struct LayoutCache LayoutCache;
  * linked list. This is used as part of the process to layout a node with the
  * 'position' property set to "absolute".
  */
-struct NodeList {
+struct NodeListLink {
     HtmlNode *pNode;
-    NodeList *pNext;
+    NodeListLink *pNext;
     HtmlCanvasItem *pMarker;       /* Static position marker */
 };
 
@@ -109,7 +109,7 @@ struct NormalFlowCallback {
 struct LayoutCache {
     /* Cached input values for normalFlowLayout() */
     NormalFlow normalFlowIn;
-    int iContaining;
+    int iContainingW;
     int iFloatLeft;
     int iFloatRight;
 
@@ -216,7 +216,7 @@ static void wrapContent(LayoutContext*, BoxContext*, BoxContext*, HtmlNode*);
  *    
  *     Calculate and return the border and padding widths of a node as exact
  *     pixel values based on the width of the containing block (parameter
- *     iContaining) and the computed values of the following properties:
+ *     iContainingW) and the computed values of the following properties:
  *
  *         'padding'
  *         'border-width'
@@ -239,20 +239,20 @@ void
 nodeGetBoxProperties (
     LayoutContext *pLayout,            /* Unused */
     HtmlNode *pNode,                   /* Node to calculate values for */
-    int iContaining,                   /* Width of pNode's containing block */
+    int iContainingW,                   /* Width of pNode's containing block */
     BoxProperties *pBoxProperties     /* OUT: Write pixel values here */
 )
 {
     HtmlComputedValues *pV = HtmlNodeComputedValues(pNode);
 
-    /* Under some circumstance, a negative value may be passed for iContaining.
+    /* Under some circumstance, a negative value may be passed for iContainingW.
      * If this happens, use 0 as the containing width when calculating padding
      * widths with computed percentage values. Otherwise we will return a
      * negative padding width, which is illegal.
      *
      * Also, if we are running a min-max text, percentage widths are zero.
      */
-    int c = iContaining;
+    int c = iContainingW;
     if (pLayout->minmaxTest || c < 0) {
         c = 0;
     }
@@ -300,7 +300,7 @@ nodeGetBoxProperties (
  *---------------------------------------------------------------------------
  */
 void 
-nodeGetMargins (LayoutContext *pLayout, HtmlNode *pNode, int iContaining, MarginProperties *pMargins)
+nodeGetMargins (LayoutContext *pLayout, HtmlNode *pNode, int iContainingW, MarginProperties *pMargins)
 {
     int iMarginTop;
     int iMarginRight;
@@ -326,13 +326,13 @@ nodeGetMargins (LayoutContext *pLayout, HtmlNode *pNode, int iContaining, Margin
 
     /* If we are running a min-max text, percentage widths are zero. */
     if (pLayout->minmaxTest) {
-        iContaining = 0;
+        iContainingW = 0;
     }
 
-    iMarginTop =    PIXELVAL(pV, MARGIN_TOP, iContaining);
-    iMarginRight =  PIXELVAL(pV, MARGIN_RIGHT, iContaining);
-    iMarginBottom = PIXELVAL(pV, MARGIN_BOTTOM, iContaining);
-    iMarginLeft =   PIXELVAL(pV, MARGIN_LEFT, iContaining);
+    iMarginTop =    PIXELVAL(pV, MARGIN_TOP, iContainingW);
+    iMarginRight =  PIXELVAL(pV, MARGIN_RIGHT, iContainingW);
+    iMarginBottom = PIXELVAL(pV, MARGIN_BOTTOM, iContainingW);
+    iMarginLeft =   PIXELVAL(pV, MARGIN_LEFT, iContainingW);
 
     pMargins->margin_top = ((iMarginTop > MAX_PIXELVAL)?iMarginTop:0);
     pMargins->margin_bottom = ((iMarginBottom > MAX_PIXELVAL)?iMarginBottom:0);
@@ -397,7 +397,7 @@ normalFlowMarginCollapse (LayoutContext *pLayout, HtmlNode *pNode, NormalFlow *p
         char const *zNode = Tcl_GetString(HtmlNodeCommand(pTree, pNode));
         HtmlLog(pTree, "LAYOUTENGINE", "%s normalFlowMarginCollapse()"
             "<p>Margins collapse to: %dpx", zNode, iMargin
-		, NULL);
+        , NULL);
     }
 }
 static void 
@@ -421,8 +421,70 @@ normalFlowMarginAdd (LayoutContext *pLayout, HtmlNode *pNode, NormalFlow *pNorma
             zNode, y, pNormal->iMaxMargin, pNormal->iMinMargin,
             pNormal->isValid ? "true" : "false",
             pNormal->nonegative ? "true" : "false"
-		, NULL);
+        , NULL);
     }
+}
+
+static int 
+paginationOffsetInside(LayoutContext *pLayout, HtmlNode *pNode, HtmlComputedValues *pV, int *pY, int y, int h){
+    int pagebreak, paginationY = pLayout->pTree->options.pagination;
+    if (!paginationY || pNode == pLayout->pTree->pRoot) return y;
+    y += paginationPageYOrigin(0, pLayout);
+    switch (pV->ePageBreakInside) {
+        case CSS_CONST_AUTO: break;
+        case CSS_CONST_AVOID:
+            pagebreak = (y + paginationY - 1) / paginationY * paginationY; // Ceiling division to find the first multiple
+            if (pagebreak >= y && pagebreak <= y + h) {
+                *pY += pagebreak - y;
+                y = pagebreak;
+            }
+            break;
+    }
+    y -= paginationPageYOrigin(0, pLayout);
+    return y;
+}
+static void 
+paginationPageYOffset(LayoutContext *pLayout, HtmlComputedValues *pV, int *pY, int mode){
+    int pagenum, paginationY = pLayout->pTree->options.pagination;
+    if (!paginationY) return;
+    switch (mode) {
+        case 0:
+        switch (pV->ePageBreakAfter) {
+            case CSS_CONST_AUTO: break;
+            case CSS_CONST_ALWAYS:
+                *pY = (*pY + paginationY - 1) / paginationY * paginationY;
+                break;
+            case CSS_CONST_AVOID:
+                // Not sure what to put here
+                break;
+            case CSS_CONST_LEFT:
+                pagenum = (*pY + paginationY - 1) / paginationY;
+                *pY = paginationY * (pagenum + pagenum % 2);
+                break;
+            case CSS_CONST_RIGHT:
+                pagenum = (*pY + paginationY - 1) / paginationY;
+                *pY = paginationY * (pagenum + !(pagenum % 2));
+                break;
+        }
+        case 1:
+        switch (pV->ePageBreakBefore) {
+            case CSS_CONST_AUTO: break;
+            case CSS_CONST_ALWAYS:
+                *pY = (*pY + paginationY) / paginationY * paginationY;
+                break;
+            case CSS_CONST_AVOID:
+                // Not sure what to put here
+                break;
+            case CSS_CONST_LEFT:
+                pagenum = (*pY + paginationY) / paginationY;
+                *pY = paginationY * (pagenum + pagenum % 2);
+                break;
+            case CSS_CONST_RIGHT:
+                pagenum = (*pY + paginationY) / paginationY;
+                *pY = paginationY * (pagenum + !(pagenum % 2));
+                break;
+        }
+    } return;
 }
 
 static void 
@@ -479,7 +541,7 @@ nodeIsReplaced (HtmlNode *pNode)
 }
 
 static void 
-considerMinMaxHeight (HtmlNode *pNode, int iContaining, int *piHeight)
+considerMinMaxHeight (HtmlNode *pNode, int iContainingW, int *piHeight)
 {
     int iHeight = *piHeight;
     if (iHeight != PIXELVAL_AUTO) {
@@ -487,8 +549,8 @@ considerMinMaxHeight (HtmlNode *pNode, int iContaining, int *piHeight)
         int iMinHeight;
         int iMaxHeight;
  
-        iMinHeight = PIXELVAL(pV, MIN_HEIGHT, iContaining);
-        iMaxHeight = PIXELVAL(pV, MAX_HEIGHT, iContaining);
+        iMinHeight = PIXELVAL(pV, MIN_HEIGHT, iContainingW);
+        iMaxHeight = PIXELVAL(pV, MAX_HEIGHT, iContainingW);
 
         if (iMinHeight < MAX_PIXELVAL) iMinHeight = 0;
         if (iMaxHeight < MAX_PIXELVAL) iMaxHeight = PIXELVAL_NONE;
@@ -529,17 +591,17 @@ int
 getHeight (
     HtmlNode *pNode,             /* Node to determine height of */
     int iHeight,                 /* Natural Content height */
-    int iContainingHeight       /* Containing height, or PIXELVAL_AUTO */
+    int iContainingH       /* Containing height, or PIXELVAL_AUTO */
 )
 {
     HtmlComputedValues *pV = HtmlNodeComputedValues(pNode);
 
-    int height = PIXELVAL(pV, HEIGHT, iContainingHeight);
+    int height = PIXELVAL(pV, HEIGHT, iContainingH);
     if (height == PIXELVAL_AUTO) {
         height = iHeight;
     }
 
-    considerMinMaxHeight(pNode, iContainingHeight, &height);
+    considerMinMaxHeight(pNode, iContainingH, &height);
     return height;
 }
 
@@ -553,10 +615,10 @@ getWidth (int iWidthCalculated, int iWidthContent)
 }
 
 static int 
-getWidthProperty (LayoutContext *pLayout, HtmlComputedValues *pComputed, int iContaining)
+getWidthProperty (LayoutContext *pLayout, HtmlComputedValues *pComputed, int iContainingW)
 {
     return PIXELVAL(
-        pComputed, WIDTH, pLayout->minmaxTest ? PIXELVAL_AUTO : iContaining
+        pComputed, WIDTH, pLayout->minmaxTest ? PIXELVAL_AUTO : iContainingW
     );
 }
 
@@ -574,7 +636,7 @@ getWidthProperty (LayoutContext *pLayout, HtmlComputedValues *pComputed, int iCo
  *---------------------------------------------------------------------------
  */
 static void 
-considerMinMaxWidth (HtmlNode *pNode, int iContaining, int *piWidth)
+considerMinMaxWidth (HtmlNode *pNode, int iContainingW, int *piWidth)
 {
     int iWidth = *piWidth;
     if (iWidth != PIXELVAL_AUTO) {
@@ -582,8 +644,8 @@ considerMinMaxWidth (HtmlNode *pNode, int iContaining, int *piWidth)
         int iMinWidth;
         int iMaxWidth;
  
-        iMinWidth = PIXELVAL(pV, MIN_WIDTH, iContaining);
-        iMaxWidth = PIXELVAL(pV, MAX_WIDTH, iContaining);
+        iMinWidth = PIXELVAL(pV, MIN_WIDTH, iContainingW);
+        iMaxWidth = PIXELVAL(pV, MAX_WIDTH, iContainingW);
 
         assert(iMaxWidth == PIXELVAL_NONE || iMaxWidth >= MAX_PIXELVAL);
         assert(iMinWidth >= MAX_PIXELVAL);
@@ -810,9 +872,9 @@ normalFlowLayoutOverflow (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
     int useVertical = 0;   /* True to use a vertical scrollbar */
     int useHorizontal = 0; /* True to use a horizontal scrollbar */
 
-    nodeGetMargins(pLayout, pNode, pBox->iContaining, &margin);
-    nodeGetBoxProperties(pLayout, pNode, pBox->iContaining, &box);
-    iComputedWidth = getWidthProperty(pLayout, pV, pBox->iContaining);
+    nodeGetMargins(pLayout, pNode, pBox->iContainingW, &margin);
+    nodeGetBoxProperties(pLayout, pNode, pBox->iContainingW, &box);
+    iComputedWidth = getWidthProperty(pLayout, pV, pBox->iContainingW);
     iWidth = iComputedWidth;
 
     iMPB = margin.margin_left + margin.margin_right + box.iLeft + box.iRight;
@@ -834,28 +896,28 @@ normalFlowLayoutOverflow (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
         iMin = iMinContentWidth;
     }
     iMin += iMPB;
-    y = HtmlFloatListPlace(pFloat, pBox->iContaining, iMin, 1000, *pY);
+    y = HtmlFloatListPlace(pFloat, pBox->iContainingW, iMin, 1000, *pY);
     iLeft = 0;
-    iRight = pBox->iContaining;
+    iRight = pBox->iContainingW;
     HtmlFloatListMargins(pFloat, y, y+1000, &iLeft, &iRight);
     if (iWidth == PIXELVAL_AUTO) {
         iWidth = iRight - iLeft - iMPB;
     }
-    considerMinMaxWidth(pNode, pBox->iContaining, &iWidth);
+    considerMinMaxWidth(pNode, pBox->iContainingW, &iWidth);
 
     /* Set variable iHeight to the specified height of the block. If
      * there is no specified height "height:auto", set iHeight to 
      * PIXELVAL_AUTO.
      */
-    iHeight = PIXELVAL(pV, HEIGHT, pBox->iContainingHeight);
+    iHeight = PIXELVAL(pV, HEIGHT, pBox->iContainingH);
    
     /* Figure out whether or not this block uses a vertical scrollbar. */
     if (eOverflow == CSS_CONST_SCROLL) {
         useVertical = 1;
     } else if (eOverflow == CSS_CONST_AUTO && iHeight != PIXELVAL_AUTO) {
         memset(&sContent, 0, sizeof(BoxContext));
-        sContent.iContaining = iWidth;
-        sContent.iContainingHeight = iHeight;
+        sContent.iContainingW = iWidth;
+        sContent.iContainingH = iHeight;
         HtmlLayoutNodeContent(pLayout, &sContent, pNode);
         if ((sContent.height + SCROLLBAR_WIDTH) > iHeight) {
             useVertical = 1;
@@ -874,10 +936,10 @@ normalFlowLayoutOverflow (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
    
     memset(&sBox, 0, sizeof(BoxContext));
     memset(&sContent, 0, sizeof(BoxContext));
-    sContent.iContaining = iWidth - (useVertical?SCROLLBAR_WIDTH:0);
-    sContent.iContainingHeight = iHeight;
+    sContent.iContainingW = iWidth - (useVertical?SCROLLBAR_WIDTH:0);
+    sContent.iContainingH = iHeight;
     if (iHeight != PIXELVAL_AUTO) {
-        sContent.iContainingHeight -= (useHorizontal ? SCROLLBAR_WIDTH : 0);
+        sContent.iContainingH -= (useHorizontal ? SCROLLBAR_WIDTH : 0);
     }
     HtmlLayoutNodeContent(pLayout, &sContent, pNode);
     sContent.height = getHeight(pNode, sContent.height, iHeight);
@@ -892,8 +954,8 @@ normalFlowLayoutOverflow (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
         char const *zNode = Tcl_GetString(HtmlNodeCommand(pTree, pNode));
         HtmlLog(pTree, "LAYOUTENGINE", "%s normalFlowLayoutOverflow()"
             "containing width for content = %dpx",
-            zNode, sContent.iContaining
-		, NULL);
+            zNode, sContent.iContainingW
+        , NULL);
     }
 
     if (
@@ -923,7 +985,7 @@ normalFlowLayoutOverflow (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
         HtmlDrawOverflow(&sContent.vc, pNode, sContent.width, sContent.height);
     }
 
-    sBox.iContaining = pBox->iContaining;
+    sBox.iContainingW = pBox->iContainingW;
     wrapContent(pLayout, &sBox, &sContent, pNode);
 
     iSpareWidth = iRight - iLeft - sBox.width;
@@ -971,10 +1033,11 @@ normalFlowLayoutFloat (
     InlineContext *pDoNotUse, /* Unused by this function */
     NormalFlow *pNormal
 )
-{
+{    
     HtmlComputedValues *pV = HtmlNodeComputedValues(pNode);
     int eFloat = pV->eFloat;
-    int iContaining = pBox->iContaining;
+    int iContainingW = pBox->iContainingW;
+    int i = 0;
     HtmlFloatList *pFloat = pNormal->pFloat;
 
     int iTotalHeight;        /* Height of floating box (incl. margins) */
@@ -989,7 +1052,7 @@ normalFlowLayoutFloat (
     BoxContext sBox;         /* Box context for content to be drawn into */
 
     memset(&sBox, 0, sizeof(BoxContext));
-    sBox.iContaining = iContaining;
+    sBox.iContainingW = iContainingW;
 
     if (pLayout->minmaxTest) {
         eFloat = CSS_CONST_LEFT;
@@ -1010,22 +1073,21 @@ normalFlowLayoutFloat (
      *
      * Note: "outer-edge" means including the the top and bottom margins.
      */
-    y = (*pY);
+    y = *pY;
     y += normalFlowMarginQuery(pNormal);
     pBox->height = MAX(pBox->height, *pY);
     y = HtmlFloatListClear(pNormal->pFloat, pV->eClear, y);
     y = HtmlFloatListClearTop(pNormal->pFloat, y);
 
-    nodeGetMargins(pLayout, pNode, iContaining, &margin);
+    paginationPageYOffset(pLayout, pV, pY, 1);
+    nodeGetMargins(pLayout, pNode, iContainingW, &margin);
 
     /* The code that calculates computed values (htmlprop.c) should have
      * ensured that all floating boxes have a 'display' value of "block",
      * "table" or "list-item".
      */
     assert(
-      DISPLAY(pV) == CSS_CONST_BLOCK || 
-      DISPLAY(pV) == CSS_CONST_TABLE ||
-      DISPLAY(pV) == CSS_CONST_LIST_ITEM
+      DISPLAY(pV) == CSS_CONST_BLOCK || DISPLAY(pV) == CSS_CONST_TABLE || DISPLAY(pV) == CSS_CONST_LIST_ITEM
     );
     assert(eFloat == CSS_CONST_LEFT || eFloat == CSS_CONST_RIGHT);
 
@@ -1033,78 +1095,86 @@ normalFlowLayoutFloat (
      * width to use for the element is described in sections 10.3.5
      * (non-replaced) and 10.3.6 (replaced) of the CSS 2.1 spec.
      */
-    if (nodeIsReplaced(pNode)) {
-        /* For a replaced element, the drawReplacement() function takes care of
-         * calculating the actual width and height, and of drawing borders
-         * etc. As usual horizontal margins are included, but vertical are not.
-         */
-        CHECK_INTEGER_PLAUSIBILITY(sBox.vc.bottom);
-        drawReplacement(pLayout, &sBox, pNode);
-        CHECK_INTEGER_PLAUSIBILITY(sBox.vc.bottom);
-    } else {
-        /* A non-replaced element. */
-        BoxProperties box;   /* Box properties of pNode */
-        BoxContext sContent;
-        int c = pLayout->minmaxTest ? PIXELVAL_AUTO : iContaining;
-        int iWidth = PIXELVAL(pV, WIDTH, c);
-        int iHeight = PIXELVAL(pV, HEIGHT, pBox->iContainingHeight);
-        int isAuto = 0;
-
-        nodeGetBoxProperties(pLayout, pNode, iContaining, &box);
-
-        /* If the computed value if iWidth is "auto", calculate the
-         * shrink-to-fit content width and use that instead.  */
-        if (iWidth == PIXELVAL_AUTO) {
-            int iMax;            /* Preferred maximum width */
-            int iMin;            /* Preferred minimum width */
-            int iAvailable;      /* Available width */
-    
-            iAvailable = sBox.iContaining;
-            iAvailable -= (margin.margin_left + margin.margin_right);
-            iAvailable -= (box.iLeft + box.iRight);
-            blockMinMaxWidth(pLayout, pNode, &iMin, &iMax);
-            iWidth = MIN(MAX(iMin, iAvailable), iMax);
-            isAuto = 1;
-        }
-        considerMinMaxWidth(pNode, iContaining, &iWidth);
-
-        /* Layout the node content into sContent. Then add the border and
-         * transfer the result to sBox. 
-         */
-        memset(&sContent, 0, sizeof(BoxContext));
-        sContent.iContaining = iWidth;
-        sContent.iContainingHeight = iHeight;
-        HtmlLayoutNodeContent(pLayout, &sContent, pNode);
-
-        iHeight = getHeight(
-            pNode, sContent.height, pBox->iContainingHeight
-        );
-        if (pV->eDisplay == CSS_CONST_TABLE) {
-            sContent.height = MAX(iHeight, sContent.height);
+    do { // This part is repeated for pagination to get the Y origin of the float, it must be drawn to the cannot in order to get that.
+        if (i == 1) paginationPageYOrigin(iTop, pLayout);
+        if (nodeIsReplaced(pNode)) {
+            /* For a replaced element, the drawReplacement() function takes care of
+             * calculating the actual width and height, and of drawing borders
+             * etc. As usual horizontal margins are included, but vertical are not.
+             */
+            CHECK_INTEGER_PLAUSIBILITY(sBox.vc.bottom);
+            drawReplacement(pLayout, &sBox, pNode);
+            CHECK_INTEGER_PLAUSIBILITY(sBox.vc.bottom);
         } else {
-            sContent.height = iHeight;
+            /* A non-replaced element. */
+            BoxProperties box;   /* Box properties of pNode */
+            BoxContext sContent;
+            int c = pLayout->minmaxTest ? PIXELVAL_AUTO : iContainingW;
+            int iWidth = PIXELVAL(pV, WIDTH, c);
+            int iHeight = PIXELVAL(pV, HEIGHT, pBox->iContainingH);
+            int isAuto = 0;
+
+            nodeGetBoxProperties(pLayout, pNode, iContainingW, &box);
+
+            /* If the computed value if iWidth is "auto", calculate the
+             * shrink-to-fit content width and use that instead.  */
+            if (iWidth == PIXELVAL_AUTO) {
+                int iMax;            /* Preferred maximum width */
+                int iMin;            /* Preferred minimum width */
+                int iAvailable;      /* Available width */
+        
+                iAvailable = sBox.iContainingW;
+                iAvailable -= (margin.margin_left + margin.margin_right);
+                iAvailable -= (box.iLeft + box.iRight);
+                blockMinMaxWidth(pLayout, pNode, &iMin, &iMax);
+                iWidth = MIN(MAX(iMin, iAvailable), iMax);
+                isAuto = 1;
+            }
+            considerMinMaxWidth(pNode, iContainingW, &iWidth);
+
+            /* Layout the node content into sContent. Then add the border and
+             * transfer the result to sBox. 
+             */
+            memset(&sContent, 0, sizeof(BoxContext));
+            sContent.iContainingW = iWidth;
+            sContent.iContainingH = iHeight;
+            HtmlLayoutNodeContent(pLayout, &sContent, pNode);
+
+            iHeight = getHeight(
+                pNode, sContent.height, pBox->iContainingH
+            );
+            if (pV->eDisplay == CSS_CONST_TABLE) {
+                sContent.height = MAX(iHeight, sContent.height);
+            } else {
+                sContent.height = iHeight;
+            }
+
+            if (!isAuto && DISPLAY(pV) != CSS_CONST_TABLE) {
+                sContent.width = iWidth;
+            } else {
+                sContent.width = MAX(iWidth, sContent.width);
+            }
+            considerMinMaxWidth(pNode, iContainingW, &sContent.width);
+
+            wrapContent(pLayout, &sBox, &sContent, pNode);
         }
 
-        if (!isAuto && DISPLAY(pV) != CSS_CONST_TABLE) {
-            sContent.width = iWidth;
-        } else {
-            sContent.width = MAX(iWidth, sContent.width);
+        iTotalWidth = sBox.width;
+        iTotalHeight = sBox.height + margin.margin_top + margin.margin_bottom;
+        iTotalHeight = MAX(iTotalHeight, 0);
+        
+        if (pLayout->pTree->options.pagination) {
+            if (i < 1) memset(&sBox, 0, sizeof(BoxContext)); // Reset the box if we are just getting the height this pass
+            else paginationPageYOrigin(-iTop, pLayout);
+            i++;
         }
-        considerMinMaxWidth(pNode, iContaining, &sContent.width);
 
-        wrapContent(pLayout, &sBox, &sContent, pNode);
-    }
+        iLeft = 0;
+        iRight = iContainingW;
 
-    iTotalWidth = sBox.width;
-    iTotalHeight = sBox.height + margin.margin_top + margin.margin_bottom;
-    iTotalHeight = MAX(iTotalHeight, 0);
-
-    iLeft = 0;
-    iRight = iContaining;
-
-    iTop = y;
-    iTop = HtmlFloatListPlace(
-            pFloat, iContaining, iTotalWidth, iTotalHeight, iTop);
+        iTop = y;
+        iTop = HtmlFloatListPlace(pFloat, iContainingW, iTotalWidth, iTotalHeight, iTop);
+    } while (i == 1);
     HtmlFloatListMargins(pFloat, iTop, iTop+iTotalHeight, &iLeft, &iRight);
 
     y = iTop + margin.margin_top;
@@ -1113,7 +1183,10 @@ normalFlowLayoutFloat (
     } else {
         x = iRight - iTotalWidth;
     }
-    DRAW_CANVAS(&pBox->vc, &sBox.vc, x, y, pNode);
+    y += *pY;
+    y = paginationOffsetInside(pLayout, pNode, pV, pY, y, iTotalHeight);
+    DRAW_CANVAS(&pBox->vc, &sBox.vc, x, y, pNode); // This controls the CanvasOrigin Y-axis for CSS float
+    paginationPageYOffset(pLayout, pV, pY, 0);
 
     /* If the right-edge of this floating box exceeds the current actual
      * width of the box it is drawn in, set the actual width to the 
@@ -1147,8 +1220,7 @@ normalFlowLayoutFloat (
         HtmlTree *pTree = pLayout->pTree;
         char const *zNode = Tcl_GetString(HtmlNodeCommand(pTree, pNode));
         char const *zCaption = "normalFlowLayoutFloat() Float list after:";
-        HtmlLog(pTree, "LAYOUTENGINE", "%s (Float) %dx%d (%d,%d)", 
-		zNode, iTotalWidth, iTotalHeight, x, iTop, NULL);
+        HtmlLog(pTree, "LAYOUTENGINE", "%s (Float) %dx%d (%d,%d)", zNode, iTotalWidth, iTotalHeight, x, iTop, NULL);
         HtmlFloatListLog(pTree, zCaption, zNode, pNormal->pFloat);
     }
 
@@ -1379,6 +1451,15 @@ markerBoxLayout (
     return 1;
 }
 
+int paginationPageYOrigin (int y, LayoutContext *pLayout)
+{
+    if (pLayout->pTree->options.pagination > 0) {
+        static int origin = 0;
+        origin += y;
+        return origin;
+    }
+    return 0;
+}
 /*
  *---------------------------------------------------------------------------
  *
@@ -1421,9 +1502,11 @@ inlineLayoutDrawLines (
         int f;
         int y = *pY;               /* Y coord for line-box baseline. */
         int leftFloat = 0;
-        int rightFloat = pBox->iContaining;
+        int rightFloat = pBox->iContainingW;
         int nV = 0;                /* Vertical height of line. */
         int nA = 0;                /* Ascent of line box. */
+        int paginationY = pLayout->pTree->options.pagination;
+        int brk;
 
         /* If the inline-context is not completely empty, we collapse any
          * vertical margin here. Even though a line box may not be drawn by
@@ -1433,25 +1516,36 @@ inlineLayoutDrawLines (
         if (!HtmlInlineContextIsEmpty(pContext)) {
             HtmlNode *pNode = HtmlInlineContextCreator(pContext);
             normalFlowMarginCollapse(pLayout, pNode, pNormal, &y);
+            if (paginationY) {
+                brk = HtmlNodeComputedValues(pNode)->ePageBreakInside == CSS_CONST_AVOID;
+                HtmlNode *pParent = HtmlNodeParent(pNode);
+                if (pParent) brk |= HtmlNodeComputedValues(pParent)->ePageBreakInside == CSS_CONST_AVOID;
+            }
         }
 
         /* Todo: We need a real line-height here, not a hard-coded '10' */
         HtmlFloatListMargins(pNormal->pFloat, y, y+10, &leftFloat, &rightFloat);
-        forcebox = (rightFloat==pBox->iContaining && leftFloat==0);
+        forcebox = (rightFloat == pBox->iContainingW && leftFloat == 0);
 
         memset(&lc, 0, sizeof(HtmlCanvas));
         w = rightFloat - leftFloat;
-        f = (forcebox ? LINEBOX_FORCEBOX : 0) | 
-            (forceflag ? LINEBOX_FORCELINE : 0) |
-            (closeborders ? LINEBOX_CLOSEBORDERS : 0);
-        have = HtmlInlineContextGetLineBox(pLayout,pContext,f,&w,&lc,&nV,&nA);
+        f = (forcebox ? LINEBOX_FORCEBOX : 0) | (forceflag ? LINEBOX_FORCELINE : 0) | (closeborders ? LINEBOX_CLOSEBORDERS : 0);
+        have = HtmlInlineContextGetLineBox(pLayout, pContext, f, &w, &lc, &nV, &nA);
 
         if (have) {
-            DRAW_CANVAS(&pBox->vc, &lc, leftFloat, y, 0);
-            if (pLayout->minmaxTest == 0) {
-                HtmlDrawAddLinebox(&pBox->vc, leftFloat, y + nA);
+            if (paginationY && !brk) {
+                int pagebreak;
+                y += paginationPageYOrigin(0, pLayout);
+                pagebreak = (y + paginationY - 1) / paginationY * paginationY; // Ceiling division to find the first multiple
+                if (pagebreak >= y && pagebreak <= y+nV) {y = pagebreak; /*printf("@@\n");*/}
+                y -= paginationPageYOrigin(0, pLayout);
             }
-            y += nV;
+            DRAW_CANVAS(&pBox->vc, &lc, leftFloat, y, 0); // This is where content is drawn onto the canvas
+            if (pLayout->minmaxTest == 0) {
+                HtmlDrawLinebox(&pBox->vc, leftFloat, y + nA);
+            }
+            y += nV; // This is the variable used in normalFlowLayoutNode → layoutChildren → normalFlowLayout
+            // normalFlowLayoutBlock() sContent.height and sContent.width is assigned here, that controls the CanvasOrigin Y-axis
             pBox->width = MAX(pBox->width, lc.right + leftFloat);
             pBox->height = MAX(pBox->height, y);
         } else if( w ) {
@@ -1464,9 +1558,9 @@ inlineLayoutDrawLines (
              * HtmlFloatListPlace().
              */
             assert(!(f & LINEBOX_FORCEBOX));
-            y = HtmlFloatListPlace(pNormal->pFloat, pBox->iContaining,w,10,y);
+            y = HtmlFloatListPlace(pNormal->pFloat, pBox->iContainingW, w, 10, y);
             have = 1;
-        } 
+        }
 
         /* floatListClear(pBox->pFloats, y); */
         *pY = y;
@@ -1495,11 +1589,11 @@ inlineLayoutDrawLines (
  *     It is illegal to pass a replaced element (according to nodeIsReplaced())
  *     to this function.
  *
- *     When this function is called, pBox->iContaining should contain the pixel
+ *     When this function is called, pBox->iContainingW should contain the pixel
  *     width available for the content.  The top-left hand corner of the
  *     content is placed at the (0,0) coordinate of canvas pBox->vc.
  *     pBox->width and height are set to the intrinsic width and height of the
- *     content when rendered with containing block width pBox->iContaining.
+ *     content when rendered with containing block width pBox->iContainingW.
  *
  * Results:
  *     None.
@@ -1572,7 +1666,7 @@ HtmlLayoutNodeContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
  *     content.
  *
  *     If the 'width' property of pNode is set to a percentage it is calculated
- *     with respect to pBox->iContaining.
+ *     with respect to pBox->iContainingW.
  *
  *     See drawReplacement() for a wrapper around this function that also 
  *     draws borders and backgrounds.
@@ -1603,9 +1697,9 @@ drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
      * is treated as exactly 1 pixel.
      */
     iWidth = PIXELVAL(
-        pV, WIDTH, pLayout->minmaxTest ? PIXELVAL_AUTO : pBox->iContaining
+        pV, WIDTH, pLayout->minmaxTest ? PIXELVAL_AUTO : pBox->iContainingW
     );
-    height = PIXELVAL(pV, HEIGHT, pBox->iContainingHeight);
+    height = PIXELVAL(pV, HEIGHT, pBox->iContainingH);
     if (height != PIXELVAL_AUTO) height = MAX(height, 1);
     if (iWidth != PIXELVAL_AUTO) iWidth = MAX(iWidth, 1);
     assert(iWidth != 0);
@@ -1634,7 +1728,7 @@ drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
                         break;
                     }
                     default: 
-                        iWidth = MIN(pBox->iContaining, Tk_ReqWidth(win));
+                        iWidth = MIN(pBox->iContainingW, Tk_ReqWidth(win));
                 }
             }
             iWidth = MAX(iWidth, Tk_MinReqWidth(win));
@@ -1648,7 +1742,7 @@ drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
             height = MAX(height, Tk_MinReqHeight(win));
 
             if (!pLayout->minmaxTest) {
-                doConfigureCmd(pLayout->pTree, pElem, pBox->iContaining);
+                doConfigureCmd(pLayout->pTree, pElem, pBox->iContainingW);
                 pWin = Tcl_NewStringObj(zReplace, -1);
             }
 
@@ -1664,14 +1758,14 @@ drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
         if (iWidth == PIXELVAL_AUTO) {
             HtmlImageScale(pImg, &iWidth, &dummy_height, 0);
         }
-        considerMinMaxWidth(pNode, pBox->iContaining, &iWidth);
+        considerMinMaxWidth(pNode, pBox->iContainingW, &iWidth);
 
         pImg = HtmlImageScale(pImg, &iWidth, &height, (t ? 0 : 1));
         HtmlDrawImage(&pBox->vc, pImg, 0, 0, iWidth, height, pNode, t);
         HtmlImageFree(pImg);
     }
 
-    if ( pNode->iNode >= 0 && pLayout->pTree->options.logcmd ){
+    if ( pNode->index >= 0 && pLayout->pTree->options.logcmd ){
         HtmlTree *pTree = pLayout->pTree;
         HtmlLog(pTree, "LAYOUTENGINE", 
             "%s drawReplacementContent() (%s) %dx%d descent=%d",
@@ -1680,7 +1774,7 @@ drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
              pLayout->minmaxTest == MINMAX_TEST_MAX ? "maxtest" : "regular"),
              iWidth, height, 
              (pElem->pReplacement ? pElem->pReplacement->iOffset : 0)
-		, NULL);
+        , NULL);
     }
 
     /* Note that width and height may still be PIXELVAL_AUTO here (if we failed
@@ -1705,7 +1799,7 @@ drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
  *     margin and the upper edge of the top border. That is, horizontal margins
  *     are included but vertical are not.
  *
- *     Any percentage lengths are calculated with respect to pBox->iContaining.
+ *     Any percentage lengths are calculated with respect to pBox->iContainingW.
  *
  *     When this function returns, pBox->width is set to the width between
  *     outer edges of the right and left margins. pBox->height is set to the
@@ -1727,12 +1821,12 @@ drawReplacement (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode)
     MarginProperties margin;          /* Margin properties of pNode */
     BoxContext sBox;
 
-    nodeGetBoxProperties(pLayout, pNode, pBox->iContaining, &box);
-    nodeGetMargins(pLayout, pNode, pBox->iContaining, &margin);
+    nodeGetBoxProperties(pLayout, pNode, pBox->iContainingW, &box);
+    nodeGetMargins(pLayout, pNode, pBox->iContainingW, &margin);
 
     memset(&sBox, 0, sizeof(BoxContext));
-    sBox.iContaining = pBox->iContaining;
-    sBox.iContainingHeight = PIXELVAL_AUTO;
+    sBox.iContainingW = pBox->iContainingW;
+    sBox.iContainingH = PIXELVAL_AUTO;
     drawReplacementContent(pLayout, &sBox, pNode);
     wrapContent(pLayout, pBox, &sBox, pNode);
 }
@@ -1747,8 +1841,8 @@ drawAbsolute (
     int y                        /* Offset of padding edge in pStaticCanvas */
 )
 {
-    NodeList *pList;
-    NodeList *pNext;
+    NodeListLink *pList;
+    NodeListLink *pNext;
     int iBoxHeight = pBox->height;
     for (pList = pLayout->pAbsolute; pList; pList = pNext) {
         int s_x;               /* Static X offset */
@@ -1764,9 +1858,9 @@ drawAbsolute (
         HtmlComputedValues *pV= HtmlNodeComputedValues(pNode);
         int isReplaced = nodeIsReplaced(pList->pNode);
 
-        int iLeft   = PIXELVAL(pV, LEFT, pBox->iContaining);
-        int iRight  = PIXELVAL(pV, RIGHT, pBox->iContaining);
-        int iWidth  = PIXELVAL(pV, WIDTH, pBox->iContaining);
+        int iLeft   = PIXELVAL(pV, LEFT, pBox->iContainingW);
+        int iRight  = PIXELVAL(pV, RIGHT, pBox->iContainingW);
+        int iWidth  = PIXELVAL(pV, WIDTH, pBox->iContainingW);
         int iTop    = PIXELVAL(pV, TOP, iBoxHeight);
         int iBottom = PIXELVAL(pV, BOTTOM, iBoxHeight);
         int iHeight = PIXELVAL(pV, HEIGHT, iBoxHeight);
@@ -1774,7 +1868,7 @@ drawAbsolute (
 
         pNext = pList->pNext;
 
-        considerMinMaxWidth(pNode, pBox->iContaining, &iWidth);
+        considerMinMaxWidth(pNode, pBox->iContainingW, &iWidth);
         considerMinMaxHeight(pNode, iBoxHeight, &iHeight);
 
         if (HtmlDrawGetMarker(pStaticCanvas, pList->pMarker, &s_x, &s_y)) {
@@ -1786,8 +1880,8 @@ drawAbsolute (
         }
         pList->pMarker = 0;
 
-        nodeGetMargins(pLayout, pNode, pBox->iContaining, &margin);
-        nodeGetBoxProperties(pLayout, pNode, pBox->iContaining, &box);
+        nodeGetMargins(pLayout, pNode, pBox->iContainingW, &margin);
+        nodeGetBoxProperties(pLayout, pNode, pBox->iContainingW, &box);
 
         /* Correct the static position for the padding edge offset. After the
          * correction the point (s_x, s_y) is the static position in pBox.
@@ -1800,17 +1894,17 @@ drawAbsolute (
             char const *zNode = Tcl_GetString(HtmlNodeCommand(pTree, pNode));
             HtmlLog(pTree, "LAYOUTENGINE", "%s drawAbsolute() -> "
                 "containing block is %dx%d", zNode, pBox->width, iBoxHeight
-		    , NULL);
+            , NULL);
             HtmlLog(pTree, "LAYOUTENGINE", "%s "
                 "static position is (%d,%d) (includes correction of (%d,%d))", 
                 zNode, s_x, s_y, x, y
-		    , NULL);
+            , NULL);
         }
 
         memset(&sContent, 0, sizeof(BoxContext));
         if (isReplaced) {
-            sContent.iContaining = pBox->iContaining;
-            sContent.iContainingHeight = pBox->height;
+            sContent.iContainingW = pBox->iContainingW;
+            sContent.iContainingH = pBox->height;
             drawReplacementContent(pLayout, &sContent, pNode);
             iWidth = sContent.width;
         }
@@ -1826,7 +1920,7 @@ drawAbsolute (
          *     + horizontal margins (one or both may be "auto")
          *     + horizontal padding and borders.
          */
-        iSpace = pBox->iContaining - box.iLeft - box.iRight;
+        iSpace = pBox->iContainingW - box.iLeft - box.iRight;
         if (
             iLeft != PIXELVAL_AUTO && 
             iRight != PIXELVAL_AUTO &&  
@@ -1876,7 +1970,7 @@ drawAbsolute (
                     "Using shrink-to-fit width: %dpx "
                     "(min=%dpx max=%dpx available=%dpx)", zNode, 
                     iWidth, min, max, iSpace
-			, NULL);
+            , NULL);
             }
             iSpace -= iWidth;
         }
@@ -1895,8 +1989,8 @@ drawAbsolute (
 
         /* Layout the content into sContent */
         if (!isReplaced) {
-            considerMinMaxWidth(pNode, pBox->iContaining, &iWidth);
-            sContent.iContaining = iWidth;
+            considerMinMaxWidth(pNode, pBox->iContainingW, &iWidth);
+            sContent.iContainingW = iWidth;
             HtmlLayoutNodeContent(pLayout, &sContent, pNode);
         }
 
@@ -1969,7 +2063,7 @@ drawAbsolute (
         sContent.width = iWidth;
 
         memset(&sBox, 0, sizeof(BoxContext));
-        sBox.iContaining = pBox->iContaining;
+        sBox.iContainingW = pBox->iContainingW;
         /* Wrap an overflow primitive around the content of this box. At
          * the moment this just clips the displayed content. But eventually
          * the HtmlCanvas module will automatically insert scrollbars if 
@@ -1986,7 +2080,7 @@ drawAbsolute (
             HtmlLog(pTree, "LAYOUTENGINE", "%s Calculated values: "
                 "left=%d right=%d top=%d bottom=%d width=%d height=%d", 
                 zNode, iLeft, iRight, iTop, iBottom, iWidth, iHeight
-		    , NULL);
+            , NULL);
         }
 
         DRAW_CANVAS(&pBox->vc, &sBox.vc, iLeft, iTop+margin.margin_top, pNode);
@@ -1997,7 +2091,7 @@ drawAbsolute (
         if (pLayout->pAbsolute == pList) {
             pLayout->pAbsolute = pList->pNext;
         } else {
-            NodeList *pTmp = pLayout->pAbsolute;
+            NodeListLink *pTmp = pLayout->pAbsolute;
             for (; pTmp->pNext != pList; pTmp = pTmp->pNext);
             pTmp->pNext = pList->pNext;
         }
@@ -2025,7 +2119,7 @@ drawAbsolute (
  *         (including horizontal, but not vertical, margins).
  *
  *         Any percentage padding or margin values are calculated with
- *         respect to the value in pBox->iContaining. A value of "auto" for
+ *         respect to the value in pBox->iContainingW. A value of "auto" for
  *         the left or right margin is treated as 0.
  *
  *     RELATIVE POSITIONING
@@ -2035,7 +2129,7 @@ drawAbsolute (
  *         drawing to pBox->vc. The static position of the element is still
  *         described by the (0, 0) point, pBox->width and pBox->height.
  *         Percentage values of properties 'left' and 'right', are
- *         calculated with respect to pBox->iContaining. 
+ *         calculated with respect to pBox->iContainingW. 
  *
  *         Percentage values for 'top' and 'bottom' are treated as zero.
  *         TODO: This is a bug.
@@ -2056,16 +2150,13 @@ drawAbsolute (
  */
 static void 
 wrapContent (LayoutContext *pLayout, BoxContext *pBox, BoxContext *pContent, HtmlNode *pNode)
-{
-    HtmlComputedValues *pV= HtmlNodeComputedValues(pNode);
+{    
+    HtmlComputedValues *pV = HtmlNodeComputedValues(pNode);
     MarginProperties margin;      /* Margin properties of pNode */
     BoxProperties box;            /* Box properties of pNode */
     int iRelLeft = 0;
     int iRelTop = 0;
-    int x;
-    int y;
-    int w;
-    int h;
+    int x, y, w, h;
 
     /* We do not want to generate a box for an implicit table-node
      * created to wrap around a stray "display:table-cell" or
@@ -2073,15 +2164,15 @@ wrapContent (LayoutContext *pLayout, BoxContext *pBox, BoxContext *pContent, Htm
      * directly into the output box (without a border).
      */
     if (!pNode->pParent && pNode != pLayout->pTree->pRoot) {
-        int iContaining = pBox->iContaining;
+        int iContainingW = pBox->iContainingW;
         memcpy(pBox, pContent, sizeof(BoxContext));
-        pBox->iContaining = iContaining;
+        pBox->iContainingW = iContainingW;
         memset(pContent, 0x55, sizeof(BoxContext));
         return;
     }
 
-    nodeGetMargins(pLayout, pNode, pBox->iContaining, &margin);
-    nodeGetBoxProperties(pLayout, pNode, pBox->iContaining, &box);
+    nodeGetMargins(pLayout, pNode, pBox->iContainingW, &margin);
+    nodeGetBoxProperties(pLayout, pNode, pBox->iContainingW, &box);
 
     x = margin.margin_left;
     y = 0;
@@ -2091,7 +2182,7 @@ wrapContent (LayoutContext *pLayout, BoxContext *pBox, BoxContext *pContent, Htm
         assert(pV->position.iTop != PIXELVAL_AUTO);
         assert(pV->position.iLeft == -1 * pV->position.iRight);
         assert(pV->position.iTop == -1 * pV->position.iBottom);
-        iRelLeft = PIXELVAL(pV, LEFT, pBox->iContaining);
+        iRelLeft = PIXELVAL(pV, LEFT, pBox->iContainingW);
         iRelTop = PIXELVAL(pV, TOP, 0);
         x += iRelLeft;
         y += iRelTop;
@@ -2106,12 +2197,10 @@ wrapContent (LayoutContext *pLayout, BoxContext *pBox, BoxContext *pContent, Htm
 
     x += box.iLeft;
     y += box.iTop;
-    DRAW_CANVAS(&pBox->vc, &pContent->vc, x, y, pNode);
+    HtmlDrawCanvas(&pBox->vc, &pContent->vc, x, y, pNode);
 
     pBox->width = MAX(pBox->width, 
-        margin.margin_left + box.iLeft + 
-        pContent->width + 
-        box.iRight + margin.margin_right
+        margin.margin_left + box.iLeft + pContent->width + box.iRight + margin.margin_right
     );
     pBox->height = MAX(pBox->height, 
         box.iTop + pContent->height + box.iBottom
@@ -2147,7 +2236,7 @@ wrapContent (LayoutContext *pLayout, BoxContext *pBox, BoxContext *pContent, Htm
         HtmlLog(pTree, "LAYOUTENGINE", "%s wrapContent() %s",
             Tcl_GetString(HtmlNodeCommand(pTree, pNode)),
             Tcl_GetString(pLog)
-		, NULL);
+        , NULL);
         Tcl_DecrRefCount(pLog);
     }
 
@@ -2180,7 +2269,7 @@ wrapContent (LayoutContext *pLayout, BoxContext *pBox, BoxContext *pContent, Htm
         if (pV->eBorderRightStyle != CSS_CONST_NONE) {
             sAbsolute.width -= pV->border.iRight;
         }
-        sAbsolute.iContaining = sAbsolute.width;
+        sAbsolute.iContainingW = sAbsolute.width;
         drawAbsolute(pLayout, &sAbsolute, &pBox->vc,
             iLeftBorder + margin.margin_left, iTopBorder
         );
@@ -2225,11 +2314,11 @@ normalFlowLayoutTable (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
 {
     int iMinWidth;                     /* Minimum from blockMinMaxWidth */
     int iMaxWidth;                     /* Maximum from blockMinMaxWidth */
-    int iContaining = pBox->iContaining;
+    int iContainingW = pBox->iContainingW;
     HtmlFloatList *pFloat = pNormal->pFloat;
 
     int iLeftFloat = 0;
-    int iRightFloat = pBox->iContaining;
+    int iRightFloat = pBox->iContainingW;
 
     int iWidth;                        /* Specified content width */
     int iCalcWidth;                    /* Calculated content width */
@@ -2241,8 +2330,8 @@ normalFlowLayoutTable (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
     BoxProperties box;            /* Box properties of pNode */
     int iMPB;                     /* Sum of margins, padding and borders */
 
-    nodeGetMargins(pLayout, pNode, iContaining, &margin);
-    nodeGetBoxProperties(pLayout, pNode, iContaining, &box);
+    nodeGetMargins(pLayout, pNode, iContainingW, &margin);
+    nodeGetBoxProperties(pLayout, pNode, iContainingW, &box);
 
     iMPB = box.iLeft + box.iRight + margin.margin_left + margin.margin_right;
 
@@ -2254,7 +2343,7 @@ normalFlowLayoutTable (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
 
     iWidth = PIXELVAL(
         HtmlNodeComputedValues(pNode), WIDTH,
-        pLayout->minmaxTest ? PIXELVAL_AUTO : pBox->iContaining
+        pLayout->minmaxTest ? PIXELVAL_AUTO : pBox->iContainingW
     );
     if (iWidth == PIXELVAL_AUTO) {
         /* Move down if the minimum rendered width of this  table cannot fit at
@@ -2269,7 +2358,7 @@ normalFlowLayoutTable (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
          * than would have been necessary. But it's not that big of a deal.
          */
         blockMinMaxWidth(pLayout, pNode, &iMinWidth, &iMaxWidth);
-        *pY = HtmlFloatListPlace(pFloat,iContaining,iMPB+iMinWidth,10000,*pY);
+        *pY = HtmlFloatListPlace(pFloat,iContainingW,iMPB+iMinWidth,10000,*pY);
         HtmlFloatListMargins(pFloat, *pY, *pY+10000, &iLeftFloat, &iRightFloat);
         iCalcWidth = MIN(iMaxWidth, iRightFloat - iLeftFloat - iMPB);
     } else {
@@ -2290,22 +2379,22 @@ normalFlowLayoutTable (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
 
     memset(&sContent, 0, sizeof(BoxContext));
     memset(&sBox, 0, sizeof(BoxContext));
-    sContent.iContaining = iCalcWidth;
+    sContent.iContainingW = iCalcWidth;
+    y = HtmlFloatListPlace(
+        pFloat, pBox->iContainingW, sBox.width, sBox.height, *pY
+    );
+    sContent.height = y;
+    sContent.iContainingH = PIXELVAL(HtmlNodeComputedValues(pNode), HEIGHT, pBox->iContainingH);
     HtmlLayoutNodeContent(pLayout, &sContent, pNode);
 
-    sContent.height = MAX(sContent.height, 
-        getHeight(pNode, sContent.height, PIXELVAL_AUTO)
-    );
+    sContent.height = getHeight(pNode, sContent.height, pBox->iContainingH);
     if (iWidth != PIXELVAL_AUTO) {
         sContent.width = MAX(sContent.width, iWidth - iMPB);
     }
 
-    sBox.iContaining = iContaining;
+    sBox.iContainingW = iContainingW;
     wrapContent(pLayout, &sBox, &sContent, pNode);
-
-    y = HtmlFloatListPlace(
-        pFloat, pBox->iContaining, sBox.width, sBox.height, *pY
-    );
+    
     *pY = y + sBox.height;
     HtmlFloatListMargins(pFloat, y, *pY, &iLeftFloat, &iRightFloat);
  
@@ -2314,7 +2403,7 @@ normalFlowLayoutTable (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
     );
     x = MAX(0, x);
 
-    DRAW_CANVAS(&pBox->vc, &sBox.vc, x, y, pNode);
+    DRAW_CANVAS(&pBox->vc, &sBox.vc, x, y, pNode); // Table drawn onto canvas here
     pBox->height = MAX(pBox->height, *pY);
     pBox->width = MAX(pBox->width, x + sBox.width);
 
@@ -2333,8 +2422,7 @@ normalFlowLayoutTable (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
         HtmlLog(pTree, "LAYOUTENGINE", "%s normalFlowLayoutTable() %s",
             Tcl_GetString(HtmlNodeCommand(pTree, pNode)),
             Tcl_GetString(pLog),
-            x, y
-		, NULL);
+            x, y, NULL);
         Tcl_DecrRefCount(pLog);
     }
 
@@ -2399,7 +2487,7 @@ normalFlowLayoutTableComponent (LayoutContext *pLayout, BoxContext *pBox, HtmlNo
     memset(&sTable, 0, sizeof(HtmlElementNode));
     sTable.apChildren = &((HtmlElementNode *)pParent)->apChildren[idx];
     sTable.nChild = nChild;
-    sTable.node.iNode = -1;
+    sTable.node.index = -1;
 
     if (!pLayout->pImplicitTableProperties) {
         HtmlComputedValuesCreator sCreator;
@@ -2444,15 +2532,15 @@ normalFlowLayoutReplaced (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
     BoxContext sBox;   /* Box context for replacement to be drawn into */
 
     int iLeftFloat = 0;
-    int iRightFloat = pBox->iContaining;
+    int iRightFloat = pBox->iContainingW;
 
-    nodeGetMargins(pLayout, pNode, pBox->iContaining, &margin);
+    nodeGetMargins(pLayout, pNode, pBox->iContainingW, &margin);
 
     /* First lay out the content of the element into sBox. Then figure out
      * where to put it in the parent box. 
      */
     memset(&sBox, 0, sizeof(BoxContext));
-    sBox.iContaining = pBox->iContaining;
+    sBox.iContainingW = pBox->iContainingW;
     drawReplacement(pLayout, &sBox, pNode);
 
     /* Account for the 'margin-top' property of this node. The margin always
@@ -2462,7 +2550,7 @@ normalFlowLayoutReplaced (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
     normalFlowMarginCollapse(pLayout, pNode, pNormal, pY);
 
     *pY = HtmlFloatListPlace(
-        pNormal->pFloat, pBox->iContaining, sBox.width, sBox.height, *pY);
+        pNormal->pFloat, pBox->iContainingW, sBox.width, sBox.height, *pY);
     HtmlFloatListMargins(
         pNormal->pFloat, *pY, *pY + sBox.height, &iLeftFloat, &iRightFloat);
 
@@ -2507,7 +2595,7 @@ setValueCallback (NormalFlow *pNormal, NormalFlowCallback *pCallback, int y)
  */
 static int 
 normalFlowLayoutBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode, int *pY, InlineContext *pContext, NormalFlow *pNormal)
-{
+{    
     HtmlComputedValues *pV = HtmlNodeComputedValues(pNode);
 
     BoxProperties box;                /* Box properties of pNode */
@@ -2531,17 +2619,17 @@ normalFlowLayoutBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
     memset(&sBox, 0, sizeof(BoxContext));
     memset(&sTmp, 0, sizeof(BoxContext));
 
-    nodeGetBoxProperties(pLayout, pNode, pBox->iContaining, &box);
-    nodeGetMargins(pLayout, pNode, pBox->iContaining, &margin);
+    nodeGetBoxProperties(pLayout, pNode, pBox->iContainingW, &box);
+    nodeGetMargins(pLayout, pNode, pBox->iContainingW, &margin);
 
-    iContHeight = pBox->iContainingHeight;
+    iContHeight = pBox->iContainingH;
 
     /* Calculate iWidth and xBorderLeft. Both are interpreted as pixel values.
      * For a non-replaced block element, the width is always as calculated
      * here, even if the content is not as wide.
      */
     iWidth = PIXELVAL(
-        pV, WIDTH, pLayout->minmaxTest ? PIXELVAL_AUTO : pBox->iContaining
+        pV, WIDTH, pLayout->minmaxTest ? PIXELVAL_AUTO : pBox->iContainingW
     );
 
     iMPB = box.iLeft + box.iRight + margin.margin_left + margin.margin_right;
@@ -2551,15 +2639,15 @@ normalFlowLayoutBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
          * available for the content by subtracting the margins, padding and
          * borders from the width of the containing block.
          */
-        iUsedWidth = pBox->iContaining - iMPB;
+        iUsedWidth = pBox->iContainingW - iMPB;
     } else {
         iUsedWidth = iWidth;
     }
 
-    considerMinMaxWidth(pNode, pBox->iContaining, &iUsedWidth);
-    sContent.iContaining = iUsedWidth;
+    considerMinMaxWidth(pNode, pBox->iContainingW, &iUsedWidth);
+    sContent.iContainingW = iUsedWidth;
 
-    iSpareWidth = pBox->iContaining - iUsedWidth - iMPB;
+    iSpareWidth = pBox->iContainingW - iUsedWidth - iMPB;
     iWrappedX = doHorizontalBlockAlign(pLayout, pNode, &margin, iSpareWidth);
 
     if (!pLayout->minmaxTest) {
@@ -2568,7 +2656,7 @@ normalFlowLayoutBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
          * normalFlowLayout() below may increase sContent.width, but not
          * decrease it.
          */
-        sContent.width = sContent.iContaining;
+        sContent.width = sContent.iContainingW;
     }
 
     /* Account for the 'margin-top' property of this node. */
@@ -2585,13 +2673,14 @@ normalFlowLayoutBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
      */
     yBorderOffset = 0;
     if (box.iTop > 0 || pLayout->pTree->pRoot == pNode) {
-        normalFlowMarginCollapse(pLayout, pNode, pNormal, pY); 
+        normalFlowMarginCollapse(pLayout, pNode, pNormal, pY);
     } else {
         sNormalFlowCallback.xCallback = setValueCallback;
         sNormalFlowCallback.clientData = (ClientData)(&yBorderOffset);
         sNormalFlowCallback.pNext = 0;
         normalFlowCbAdd(pNormal, &sNormalFlowCallback);
     }
+    paginationPageYOffset(pLayout, pV, pY, 1);
 
     /* Calculate x and y as pixel values. */
     *pY += box.iTop;
@@ -2600,16 +2689,20 @@ normalFlowLayoutBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
 
     /* Set up the box-context used to draw the content. */
     HtmlFloatListNormalize(pNormal->pFloat, -1 * x, -1 * y);
+    
+    paginationPageYOrigin(y, pLayout);
 
     /* Layout the content of this non-replaced block box. For this kind
      * of box, we treat any computed 'height' value apart from "auto" as a
      * minimum height.
      */
-    sContent.iContainingHeight = PIXELVAL(pV, HEIGHT, iContHeight);
-    normalFlowLayout(pLayout, &sContent, pNode, pNormal);
+    sContent.iContainingH = PIXELVAL(pV, HEIGHT, iContHeight);
+    normalFlowLayout(pLayout, &sContent, pNode, pNormal); // This is where CanvasOrigin is added to Canvas
 
     /* Remove any margin-collapse callback added to the normal flow context. */
     normalFlowCbDelete(pNormal, &sNormalFlowCallback);
+    
+    paginationPageYOrigin(-y, pLayout);
 
     /* Special case. If the intrinsic height of the box is 0 (i.e. 
      * it is empty) but the 'height' or 'min-height' properties cause
@@ -2625,18 +2718,16 @@ normalFlowLayoutBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
     }
 
     /* Adjust for 'height', 'min-height' and 'max-height' properties */
-    sContent.height = yBorderOffset + 
-            getHeight(pNode, sContent.height - yBorderOffset, iContHeight);
+    sContent.height = yBorderOffset + getHeight(pNode, sContent.height - yBorderOffset, iContHeight);
     sContent.width = getWidth(iWidth, sContent.width);
-    considerMinMaxWidth(pNode, pBox->iContaining, &sContent.width);
+    considerMinMaxWidth(pNode, pBox->iContainingW, &sContent.width);
 
     LOG(pNode) {
         HtmlTree *pTree = pLayout->pTree;
-        const char *zFmt = "%s normalFlowLayoutBlock() -> "
-                "content size: %dx%d (y-border-offset: %d)";
+        const char *zFmt = "%s normalFlowLayoutBlock() -> content size: %dx%d (y-border-offset: %d)";
         const char *zNode = Tcl_GetString(HtmlNodeCommand(pTree, pNode));
         HtmlLog(pTree, "LAYOUTENGINE", zFmt, zNode, sContent.width, 
-		sContent.height - yBorderOffset, yBorderOffset, NULL);
+        sContent.height - yBorderOffset, yBorderOffset, NULL);
     }
 
     /* Re-normalize the float-list. */
@@ -2646,19 +2737,22 @@ normalFlowLayoutBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
         pNormal->nonegative = 1;
         normalFlowMarginCollapse(pLayout, pNode, pNormal, &sContent.height);
     } 
-    *pY += sContent.height;
+    *pY += sContent.height; // sContent.height is assigned in inlineLayoutDrawLines(), this is where pY is mainly determined
     *pY += box.iBottom;
 
-    sBox.iContaining = pBox->iContaining;
-    DRAW_CANVAS(&sTmp.vc, &sContent.vc, 0, -1 * yBorderOffset, pNode);
+    sBox.iContainingW = pBox->iContainingW;
+    DRAW_CANVAS(&sTmp.vc, &sContent.vc, 0, -1 * yBorderOffset, pNode); // This controls the CanvasOrigin Y-axis
     sTmp.width = sContent.width;
 
     sTmp.height = sContent.height - yBorderOffset;
 
     wrapContent(pLayout, &sBox, &sTmp, pNode);
-    DRAW_CANVAS(&pBox->vc, &sBox.vc,iWrappedX, y-box.iTop+yBorderOffset, pNode);
     pBox->width = MAX(pBox->width, sBox.width);
     pBox->height = MAX(pBox->height, *pY);
+    y = paginationOffsetInside(pLayout, pNode, pV, pY, y, sContent.height);
+    DRAW_CANVAS(&pBox->vc, &sBox.vc, iWrappedX, y-box.iTop+yBorderOffset, pNode); // This controls the CanvasOrigin Y-axis
+    
+    paginationPageYOffset(pLayout, pV, pY, 0);
 
     /* Account for the 'margin-bottom' property of this node. */
     normalFlowMarginAdd(pLayout, pNode, pNormal, margin.margin_bottom);
@@ -2740,7 +2834,7 @@ normalFlowLayoutInlineReplaced (LayoutContext *pLayout, BoxContext *pBox, HtmlNo
 {
     BoxContext sBox;
     HtmlCanvas canvas;
-    int w, h;
+    int h, i;
     int iOffset = 0;
 
     MarginProperties margin;
@@ -2748,16 +2842,15 @@ normalFlowLayoutInlineReplaced (LayoutContext *pLayout, BoxContext *pBox, HtmlNo
     HtmlNodeReplacement *pReplace = HtmlNodeAsElement(pNode)->pReplacement;
 
     memset(&sBox, 0, sizeof(BoxContext));
-    sBox.iContaining = pBox->iContaining;
+    sBox.iContainingW = pBox->iContainingW;
     drawReplacement(pLayout, &sBox, pNode);
 
     /* Include the top and bottom margins in the box passed to the 
      * inline context code. 
      */
-    nodeGetMargins(pLayout, pNode, pBox->iContaining, &margin);
-    nodeGetBoxProperties(pLayout, pNode, pBox->iContaining, &box);
+    nodeGetMargins(pLayout, pNode, pBox->iContainingW, &margin);
+    nodeGetBoxProperties(pLayout, pNode, pBox->iContainingW, &box);
     h = sBox.height + margin.margin_top + margin.margin_bottom;
-    w = sBox.width;
 
     /* If the box does not have a baseline (i.e. if the replaced content
      * is an image, not a widget), then the bottom margin edge of the box 
@@ -2766,10 +2859,13 @@ normalFlowLayoutInlineReplaced (LayoutContext *pLayout, BoxContext *pBox, HtmlNo
      */
     if (pReplace) {
         iOffset = box.iBottom + pReplace->iOffset;
-    } 
+    }
     memset(&canvas, 0, sizeof(HtmlCanvas));
     DRAW_CANVAS(&canvas, &sBox.vc, 0, margin.margin_top, pNode);
-    HtmlInlineContextAddBox(pContext, pNode, &canvas, w, h, iOffset);
+    HtmlInlineContextAddBox(pContext, pNode, &canvas, sBox.width, h, iOffset);
+    
+    for(i=0; i<HtmlNodeNumChildren(pNode) && HtmlNodeIsText(HtmlNodeChild(pNode, i)); i++);
+    if (i && i==HtmlNodeNumChildren(pNode)) normalFlowLayout(pLayout, pBox, pNode, pNormal);
 
     return 0;
 }
@@ -2790,7 +2886,7 @@ normalFlowLayoutInlineReplaced (LayoutContext *pLayout, BoxContext *pBox, HtmlNo
 static void 
 layoutChildren (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode, int *pY, InlineContext *pContext, NormalFlow *pNormal)
 {
-    int ii;
+    int i;
 
     HtmlNode *pBefore = HtmlNodeBefore(pNode);
     HtmlNode *pAfter = HtmlNodeAfter(pNode);
@@ -2799,12 +2895,12 @@ layoutChildren (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode, int *
     normalFlowLayoutNode(pLayout, pBox, pBefore, pY, pContext, pNormal);
 
     /* Layout each of the child nodes. */
-    for(ii = 0; ii < HtmlNodeNumChildren(pNode) ; ii++) {
-        HtmlNode *p = HtmlNodeChild(pNode, ii);
+    for(i = 0; i < HtmlNodeNumChildren(pNode); i++) {
+        HtmlNode *p = HtmlNodeChild(pNode, i);
         int r;
         r = normalFlowLayoutNode(pLayout, pBox, p, pY, pContext, pNormal);
         assert(r >= 0);
-        ii += r;
+        i += r;
     }
 
     /* Layout the :after pseudo-element */
@@ -2851,12 +2947,11 @@ normalFlowLayoutInline (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
 static int 
 normalFlowLayoutInlineBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode, int *pY, InlineContext *pContext, NormalFlow *pNormal)
 {
-    BoxContext sBox;           /* Content */
-    BoxContext sBox2;          /* After wrapContent() */
-    BoxContext sBox3;          /* Adjusted for vertical margins */
+    BoxContext sContent;       /* Content */
+    BoxContext sBox;           /* After wrapContent() */
 
     int iWidth;                /* Calculated value of 'width' */
-    int iContaining;
+    int iContainingW;
     HtmlComputedValues *pV = HtmlNodeComputedValues(pNode);
 
     int w;                     /* Width of wrapped inline-block */
@@ -2867,38 +2962,38 @@ normalFlowLayoutInlineBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode 
     HtmlCanvas canvas;
 
     MarginProperties margin;
-    nodeGetMargins(pLayout, pNode, pBox->iContaining, &margin);
+    nodeGetMargins(pLayout, pNode, pBox->iContainingW, &margin);
 
+    memset(&sContent, 0, sizeof(BoxContext));
     memset(&sBox, 0, sizeof(BoxContext));
-    memset(&sBox2, 0, sizeof(BoxContext));
-    memset(&sBox3, 0, sizeof(BoxContext));
 
     if (pV->eDisplay == CSS_CONST__TKHTML_INLINE_BUTTON) {
         iWidth = PIXELVAL_AUTO;
     } else {
-        iWidth = PIXELVAL(pV, WIDTH, pBox->iContaining);
+        iWidth = PIXELVAL(pV, WIDTH, pBox->iContainingW);
     }
-    iContaining = iWidth;
-    if (iContaining == PIXELVAL_AUTO) {
-        blockMinMaxWidth(pLayout, pNode, &iContaining, 0);
+    iContainingW = iWidth;
+    if (iContainingW == PIXELVAL_AUTO) {
+        blockMinMaxWidth(pLayout, pNode, &iContainingW, 0);
     }
 
-    sBox.iContaining = iContaining;
-    HtmlLayoutNodeContent(pLayout, &sBox, pNode);
+    sContent.iContainingW = iContainingW;
+    HtmlLayoutNodeContent(pLayout, &sContent, pNode);
     if (iWidth != PIXELVAL_AUTO) {
-        sBox.width = iWidth;
+        sContent.width = iWidth;
     }
-    wrapContent(pLayout, &sBox2, &sBox, pNode);
+    wrapContent(pLayout, &sBox, &sContent, pNode);
 
     /* Include the vertical margins in the box. */
     memset(&canvas, 0, sizeof(HtmlCanvas));
-    DRAW_CANVAS(&canvas, &sBox2.vc, 0, margin.margin_top, pNode);
-    w = sBox2.width;
-    h = sBox2.height + margin.margin_top + margin.margin_bottom;
+    DRAW_CANVAS(&canvas, &sBox.vc, 0, margin.margin_top, pNode);
+    w = sBox.width;
+    h = sBox.height + margin.margin_top + margin.margin_bottom;
     iLineBox = h;
     HtmlDrawFindLinebox(&canvas, &dummy, &iLineBox);
 
-    HtmlInlineContextAddBox(pContext, pNode, &canvas, w, h, h - iLineBox);
+    HtmlInlineContextAddBox(pContext, pNode, &canvas, w, h, h-iLineBox);
+    
     return 0;
 }
 
@@ -2915,7 +3010,7 @@ normalFlowLayoutAbsolute (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
 
         int y = *pY + normalFlowMarginQuery(pNormal);
 
-        NodeList *pNew = (NodeList *)HtmlClearAlloc(0, sizeof(NodeList));
+        NodeListLink *pNew = (NodeListLink *)HtmlClearAlloc(0, sizeof(NodeListLink));
         pNew->pNode = pNode;
         pNew->pNext = pLayout->pAbsolute;
 
@@ -2931,7 +3026,7 @@ normalFlowLayoutAbsolute (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
          * (this would only matter if right-to-left text was supported).
          */
         HtmlFloatListMargins(pNormal->pFloat, y, y, &iLeft, &iDummy);
-        pNew->pMarker = HtmlDrawAddMarker(&pBox->vc, iLeft, y, 0);
+        pNew->pMarker = HtmlDrawMarker(&pBox->vc, iLeft, y, 0);
 
         pLayout->pAbsolute = pNew;
     }
@@ -2943,10 +3038,10 @@ normalFlowLayoutFixed (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
 {
     if (pLayout->minmaxTest == 0) {
         int y = *pY + normalFlowMarginQuery(pNormal);
-        NodeList *pNew = (NodeList *)HtmlClearAlloc(0, sizeof(NodeList));
+        NodeListLink *pNew = (NodeListLink *)HtmlClearAlloc(0, sizeof(NodeListLink));
         pNew->pNode = pNode;
         pNew->pNext = pLayout->pFixed;
-        pNew->pMarker = HtmlDrawAddMarker(&pBox->vc, 0, y, 0);
+        pNew->pMarker = HtmlDrawMarker(&pBox->vc, 0, y, 0);
         pLayout->pFixed = pNew;
     }
     return 0;
@@ -2970,19 +3065,11 @@ normalFlowLayoutFixed (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
  *---------------------------------------------------------------------------
  */
 static void
-appendVerticalMarginsToObj(
-    Tcl_Obj *pObj,
-    NormalFlow *pNormal
-    )
+appendVerticalMarginsToObj(Tcl_Obj *pObj, NormalFlow *pNormal)
 {
-    char zBuf[1024];
-    sprintf(zBuf, "min=%d max=%d isValid=%d nonegative=%d", 
-        pNormal->iMinMargin,
-        pNormal->iMaxMargin,
-        pNormal->isValid,
-        pNormal->nonegative
+    Tcl_AppendPrintfToObj(pObj, "min=%d max=%d isValid=%d nonegative=%d", 
+        pNormal->iMinMargin, pNormal->iMaxMargin, pNormal->isValid, pNormal->nonegative
     );
-    Tcl_AppendToObj(pObj, zBuf, -1);
 }
 
 /*
@@ -3062,8 +3149,7 @@ normalFlowLayoutNode (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode,
             pFlow = &FT_INLINE_REPLACED;
         } 
     } else if (
-        eDisplay == CSS_CONST_INLINE_BLOCK ||
-        eDisplay == CSS_CONST__TKHTML_INLINE_BUTTON
+        eDisplay == CSS_CONST_INLINE_BLOCK || eDisplay == CSS_CONST__TKHTML_INLINE_BUTTON
     ) {
         pFlow = &FT_INLINE_BLOCK;
         if (nodeIsReplaced(pNode)) {
@@ -3104,13 +3190,9 @@ normalFlowLayoutNode (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode,
         Tcl_Obj *pLog = Tcl_NewObj();
         Tcl_IncrRefCount(pLog);
 
-        Tcl_AppendToObj(pLog, "<ul style=\"list-item-style:none\">", -1);
-        Tcl_AppendToObj(pLog, "<li>Layout as type: ", -1);
-        Tcl_AppendToObj(pLog, pFlow->z, -1);
-        Tcl_AppendToObj(pLog, "<li>Current y-coordinate: ", -1);
-        Tcl_AppendObjToObj(pLog, Tcl_NewIntObj(*pY));
-        Tcl_AppendToObj(pLog, "<li>Containing width: ", -1);
-        Tcl_AppendObjToObj(pLog, Tcl_NewIntObj(pBox->iContaining));
+        Tcl_AppendPrintfToObj(pLog, "<ul style=\"list-item-style:none\"><li>Layout as type: %s", pFlow->z);
+        Tcl_AppendPrintfToObj(pLog, "<li>Current y-coordinate: %d", *pY);
+        Tcl_AppendPrintfToObj(pLog, "<li>Containing width: %d", pBox->iContainingW);
         Tcl_AppendToObj(pLog, "<li>Vertical margins: ", -1);
         appendVerticalMarginsToObj(pLog, pNormal);
         Tcl_AppendToObj(pLog, "</ul>", -1);
@@ -3118,7 +3200,7 @@ normalFlowLayoutNode (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode,
         HtmlLog(pTree, "LAYOUTENGINE", "%s normalFlowLayoutNode() Before: %s",
             Tcl_GetString(HtmlNodeCommand(pTree, pNode)),
             Tcl_GetString(pLog)
-		, NULL);
+        , NULL);
 
         HtmlFloatListLog(pTree, "Float list Before:", 
             Tcl_GetString(HtmlNodeCommand(pTree, pNode)),
@@ -3153,8 +3235,7 @@ normalFlowLayoutNode (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode,
      */
     if (
         HtmlNodeTagType(pNode) == Html_BR &&
-        pV->eClear != CSS_CONST_NONE && 
-        pV->eDisplay == CSS_CONST_INLINE
+        pV->eClear != CSS_CONST_NONE && pV->eDisplay == CSS_CONST_INLINE
     ) {
         inlineLayoutDrawLines(pLayout, pBox, pContext, 1, pY, pNormal);
         *pY = normalFlowClearFloat(pBox, pNode, pNormal, *pY);
@@ -3166,9 +3247,8 @@ normalFlowLayoutNode (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode,
         Tcl_Obj *pLog = Tcl_NewObj();
         Tcl_IncrRefCount(pLog);
 
-        Tcl_AppendToObj(pLog, "<ul style=\"list-item-style:none\">", -1);
-        Tcl_AppendToObj(pLog, "<li>Current y-coordinate: ", -1);
-        Tcl_AppendObjToObj(pLog, Tcl_NewIntObj(*pY));
+        Tcl_AppendPrintfToObj(pLog, "<ul style=\"list-item-style:none\"><li>Layout as type: %s", pFlow->z);
+        Tcl_AppendPrintfToObj(pLog, "<li>Current y-coordinate: %d", *pY);
         Tcl_AppendToObj(pLog, "<li>Vertical margins: ", -1);
         appendVerticalMarginsToObj(pLog, pNormal);
         Tcl_AppendToObj(pLog, "</ul>", -1);
@@ -3176,7 +3256,7 @@ normalFlowLayoutNode (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode,
         HtmlLog(pTree, "LAYOUTENGINE", "%s normalFlowLayoutNode() After: %s",
             Tcl_GetString(HtmlNodeCommand(pTree, pNode)),
             Tcl_GetString(pLog)
-		, NULL);
+        , NULL);
 
         Tcl_DecrRefCount(pLog);
     }
@@ -3255,15 +3335,15 @@ normalFlowLayoutFromCache (
     assert(pNormal->isValid == 0 || pNormal->isValid == 1);
 
 #ifdef LAYOUT_CACHE_DEBUG
-  #define COND(x, y) ( (y) || ((aDebugUseCacheCond[x]++) < 0) )
+  #define COND(a, b) ( (a) || ((aDebugUseCacheCond[a]++) < 0) )
 #else
-  #define COND(x, y) (y)
+  #define COND(a, b) (b)
 #endif
 
     if ( 0 == (
         COND(1, pLayout->pTree->options.layoutcache) &&
         COND(2, pLayoutCache && (pLayoutCache->flags & cache_mask)) &&
-        COND(3, pBox->iContaining == pCache->iContaining) &&
+        COND(3, pBox->iContainingW == pCache->iContainingW) &&
         COND(4,
             pNormal->isValid    == pCache->normalFlowIn.isValid &&
             pNormal->iMinMargin == pCache->normalFlowIn.iMinMargin &&   
@@ -3271,7 +3351,8 @@ normalFlowLayoutFromCache (
             pNormal->nonegative == pCache->normalFlowIn.nonegative
         ) &&
         COND(5, iLeft == pCache->iFloatLeft && iRight == pCache->iFloatRight) &&
-        COND(6, HtmlFloatListIsConstant(pFloat, 0, pCache->iHeight))
+        COND(6, HtmlFloatListIsConstant(pFloat, 0, pCache->iHeight)) &&
+        COND(7, !pLayout->pTree->options.pagination)
     )) {
         if (pLayoutCache) {
             HtmlDrawCleanup(pLayout->pTree, &pCache->canvas);
@@ -3320,7 +3401,7 @@ normalFlowLayoutFromCache (
  *     top-left hand corner at canvas coordinates (0, 0). It is the callers
  *     responsibility to deal with margins, border padding and background. 
  *
- *     When this function is called, pBox->iContaining should contain the width
+ *     When this function is called, pBox->iContainingW should contain the width
  *     available for the content of pNode (*not* the width of pNode's
  *     containing block as for FlowLayoutFunc functions).
  *
@@ -3345,16 +3426,16 @@ normalFlowLayout (
     int rc = 0;                       /* Return Code */
     InlineBorder *pBorder;
     HtmlFloatList *pFloat = pNormal->pFloat;
-    NodeList *pAbsolute = pLayout->pAbsolute;
-    NodeList *pFixed = pLayout->pFixed;
+    NodeListLink *pAbsolute = pLayout->pAbsolute;
+    NodeListLink *pFixed = pLayout->pFixed;
 
     int left = 0; 
-    int right = pBox->iContaining;
+    int right = pBox->iContainingW;
     int overhang;
 
     HtmlComputedValues *pV = HtmlNodeComputedValues(pNode);
     int isSizeOnly = pLayout->minmaxTest;
-    int iTextIndent = PIXELVAL(pV, TEXT_INDENT, pBox->iContaining);
+    int iTextIndent = PIXELVAL(pV, TEXT_INDENT, pBox->iContainingW);
 
     HtmlLayoutCache *pLayoutCache = 0;
     LayoutCache *pCache = 0;
@@ -3379,7 +3460,7 @@ normalFlowLayout (
     );
     assert(!nodeIsReplaced(pNode));
 
-    /* Attempt to use a layout cache */
+    /* Attempt to use a layout cache. The function terminates here sometimes when the page is reloading */
     HtmlFloatListMargins(pFloat, 0, 1, &left, &right);
     if (normalFlowLayoutFromCache(pLayout, pBox, pElem, pNormal, left, right)) {
         return;
@@ -3405,7 +3486,7 @@ normalFlowLayout (
     pCache->normalFlowIn.iMinMargin = pNormal->iMinMargin;
     pCache->normalFlowIn.isValid = pNormal->isValid;
     pCache->normalFlowIn.nonegative = pNormal->nonegative;
-    pCache->iContaining = pBox->iContaining;
+    pCache->iContainingW = pBox->iContainingW;
     pCache->iFloatLeft = left;
     pCache->iFloatRight = right;
     pCache->iMarginCollapse = PIXELVAL_AUTO;
@@ -3416,9 +3497,7 @@ normalFlowLayout (
     normalFlowCbAdd(pNormal, &sCallback);
 
     /* Create the InlineContext object for this containing box */
-    pContext = HtmlInlineContextNew(
-            pLayout->pTree, pNode, isSizeOnly, iTextIndent
-    );
+    pContext = HtmlInlineContextNew(pLayout->pTree, pNode, isSizeOnly, iTextIndent);
 
     /* Add any inline-border created by the node that generated this
      * normal-flow to the InlineContext. Actual border attributes do not apply
@@ -3445,6 +3524,7 @@ normalFlowLayout (
         }
     }
 
+    // Add the child nodes to layout engine.
     layoutChildren(pLayout, pBox, pNode, &y, pContext, pNormal);
     
     /* Finish the inline-border started by the parent, if any. */
@@ -3458,8 +3538,7 @@ normalFlowLayout (
      * with the baseline of the first line box.
      */
     if (
-        DISPLAY(pV) == CSS_CONST_LIST_ITEM &&
-        pV->eListStylePosition == CSS_CONST_OUTSIDE
+        DISPLAY(pV) == CSS_CONST_LIST_ITEM && pV->eListStylePosition == CSS_CONST_OUTSIDE
     ) {
         BoxContext sMarker;
         int iAscent;
@@ -3477,7 +3556,7 @@ normalFlowLayout (
     }
 
     left = 0;
-    right = pBox->iContaining;
+    right = pBox->iContainingW;
     HtmlFloatListMargins(pFloat, pBox->height-1, pBox->height, &left, &right);
 
     /* TODO: Danger! elements with "position:relative" might break this? */
@@ -3487,9 +3566,9 @@ normalFlowLayout (
 
 #undef COND
 #ifdef LAYOUT_CACHE_DEBUG
-  #define COND(x, y) ( (y) || ((aDebugStoreCacheCond[x]++) < 0) )
+  #define COND(a, b) ( (b) || ((aDebugStoreCacheCond[a]++) < 0) )
 #else
-  #define COND(x, y) (y)
+  #define COND(a, b) (b)
 #endif
 
     if (
@@ -3501,9 +3580,9 @@ normalFlowLayout (
         COND(6, pLayout->pFixed == pFixed) &&
         COND(7, !HtmlNodeBefore(pNode) && !HtmlNodeAfter(pNode)) && 
         COND(8, pNode->pParent) &&
-        COND(9, pNode->iNode >= 0)
+        COND(9, pNode->index >= 0)
     ) {
-        HtmlDrawOrigin(&pBox->vc);
+        HtmlDrawOrigin(&pBox->vc); // The X and Y axes are controled in normalFlowLayoutBlock() 
         HtmlDrawCopyCanvas(&pCache->canvas, &pBox->vc);
         pCache->iWidth = pBox->width;
         pCache->iHeight = pBox->height;
@@ -3522,7 +3601,7 @@ normalFlowLayout (
                 "</ul>",
                 Tcl_GetString(HtmlNodeCommand(pTree, pNode)),
                 pCache->iWidth, pCache->iHeight
-		    , NULL);
+            , NULL);
         }
 
 #ifdef LAYOUT_CACHE_DEBUG
@@ -3554,8 +3633,7 @@ normalFlowLayout (
  *
  *---------------------------------------------------------------------------
  */
-int 
-blockMinMaxWidth (LayoutContext *pLayout, HtmlNode *pNode, int *pMin, int *pMax)
+int blockMinMaxWidth (LayoutContext *pLayout, HtmlNode *pNode, int *pMin, int *pMax)
 {
     BoxContext sBox;
     HtmlLayoutCache *pCache;
@@ -3596,7 +3674,7 @@ blockMinMaxWidth (LayoutContext *pLayout, HtmlNode *pNode, int *pMin, int *pMax)
         if (!(pCache->flags & CACHED_MAXWIDTH_OK)) {
             pLayout->minmaxTest = MINMAX_TEST_MAX;
             memset(&sBox, 0, sizeof(BoxContext));
-            sBox.iContaining = 10000;
+            sBox.iContainingW = 10000;
             HtmlLayoutNodeContent(pLayout, &sBox, pNode);
             HtmlDrawCleanup(0, &sBox.vc);
             pCache->iMaxWidth = sBox.width;
@@ -3646,7 +3724,7 @@ blockMinMaxWidth (LayoutContext *pLayout, HtmlNode *pNode, int *pMin, int *pMax)
             "min=%s max=%s",
             Tcl_GetString(HtmlNodeCommand(pTree, pNode)), 
             zMin, zMax
-		, NULL);
+        , NULL);
     }
 
     return TCL_OK;
@@ -3674,7 +3752,7 @@ blockMinMaxWidth (LayoutContext *pLayout, HtmlNode *pNode, int *pMin, int *pMax)
  *---------------------------------------------------------------------------
  */
 static void 
-doConfigureCmd (HtmlTree *pTree, HtmlElementNode *pElem, int iContaining)
+doConfigureCmd (HtmlTree *pTree, HtmlElementNode *pElem, int iContainingW)
 {
     Tcl_Obj *pConfigure;                           /* -configurecmd script */
 
@@ -3725,7 +3803,7 @@ doConfigureCmd (HtmlTree *pTree, HtmlElementNode *pElem, int iContaining)
 
         /* If the 'width' attribute is not PIXELVAL_AUTO, pass it to the
          * replacement window.  */
-        if (PIXELVAL_AUTO != (iWidth = PIXELVAL(pV, WIDTH, iContaining))) {
+        if (PIXELVAL_AUTO != (iWidth = PIXELVAL(pV, WIDTH, iContainingW))) {
             Tcl_Obj *pWidth = Tcl_NewStringObj("width",-1);
             iWidth = MAX(iWidth, 1);
             Tcl_ListObjAppendElement(interp, pArray, pWidth);
@@ -3852,8 +3930,8 @@ HtmlLayout (HtmlTree *pTree)
         sNormal.isValid = 1;
 
         /* Layout content */
-        sBox.iContaining =  nWidth;
-        sBox.iContainingHeight = nHeight;
+        sBox.iContainingW = nWidth;
+        sBox.iContainingH = nHeight;
         normalFlowLayoutBlock(&sLayout, &sBox, pBody, &y, 0, &sNormal);
         normalFlowMarginCollapse(&sLayout, pBody, &sNormal, &sBox.height);
 
@@ -3864,14 +3942,14 @@ HtmlLayout (HtmlTree *pTree)
         HtmlDrawCanvas(&pTree->canvas, &sBox.vc, 0, 0, pBody);
 
         /* This loop takes care of nested "position:fixed" elements. */
-        HtmlDrawAddMarker(&pTree->canvas, 0, 0, 1);
+        HtmlDrawMarker(&pTree->canvas, 0, 0, 1);
         while (sLayout.pFixed) {
             BoxContext sFixed;
             memset(&sFixed, 0, sizeof(BoxContext));
             sFixed.height = Tk_Height(pTree->tkwin);
             if (sFixed.height < 5) sFixed.height = pTree->options.height;
             sFixed.width = Tk_Width(pTree->tkwin);
-            sFixed.iContaining = sFixed.width;
+            sFixed.iContainingW = sFixed.width;
 
             assert(sLayout.pAbsolute == 0);
             sLayout.pAbsolute = sLayout.pFixed;

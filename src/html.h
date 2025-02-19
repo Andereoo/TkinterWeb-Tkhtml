@@ -295,7 +295,7 @@ struct HtmlTaggedRegion {
 struct HtmlNode {
     ClientData clientData;
     HtmlNode *pParent;             /* Parent of this node */
-    int iNode;                     /* Node index */
+    int index;                     /* Node index */
 
     Html_u8 eTag;                  /* Tag type (or 0) */
     const char *zTag;              /* Atom string for tag type */
@@ -304,11 +304,10 @@ struct HtmlNode {
     HtmlNodeCmd *pNodeCmd;         /* Tcl command for this node */
 
     /* Cache used for [$widget bbox] */
-    int iBboxX; int iBboxY;
-    int iBboxX2; int iBboxY2;
+    int iBboxX, iBboxY, iBboxX2, iBboxY2;
 };
 
-/* Value of HtmlNode.iNode for orphan and generated nodes. */
+/* Value of HtmlNode.index for orphan and generated nodes. */
 #define HTML_NODE_ORPHAN -23
 #define HTML_NODE_GENERATED -1
 
@@ -405,7 +404,7 @@ struct HtmlOptions {
     int      yscrollincrement;
     Tcl_Obj *yscrollcommand;
     Tcl_Obj *xscrollcommand;
-
+    /* Nonstandard options */
     Tcl_Obj *defaultstyle;
     double   fontscale;
     Tcl_Obj *fonttable;
@@ -418,8 +417,8 @@ struct HtmlOptions {
     int      mode;                      /* One of the HTML_MODE_XXX values */
     int      shrink;                    /* Boolean */
     double   zoom;                      /* Universal scaling factor. */
-
     int      parsemode;                 /* One of the HTML_PARSEMODE values */
+    unsigned int pagination;
 
     /* Debugging options. Not part of the official interface. */
     int      enablelayout;
@@ -649,7 +648,7 @@ struct HtmlTree {
     Tcl_HashTable aTag;
     Tk_OptionTable tagOptionTable;     /* Option table for tags*/
 
-    /* The isSequenceOk variable is true if the HtmlNode.iNode values for all
+    /* The isSequenceOk variable is true if the HtmlNode.index values for all
      * nodes in the tree are currently in tree order.
      */
     int isSequenceOk;    
@@ -669,6 +668,11 @@ struct HtmlTree {
      * HtmlTextXXX() API below. 
      */
     HtmlText *pText;
+    
+    /* Pointer to information used for generating Postscript for the canvas.
+     * NULL means no Postscript is currently being generated. */
+    Tk_PostscriptInfo psInfo;
+    unsigned char isPrintedMedia;
 
 #ifdef TKHTML_ENABLE_PROFILE
     /*
@@ -695,16 +699,18 @@ int HtmlWriteContinue(HtmlTree *);
 
 void HtmlFinishNodeHandlers(HtmlTree *);
 
-Tcl_ObjCmdProc HtmlTreeCollapseWhitespace;
-Tcl_ObjCmdProc HtmlStyleSyntaxErrs;
-Tcl_ObjCmdProc HtmlLayoutSize;
-Tcl_ObjCmdProc HtmlLayoutNode;
-Tcl_ObjCmdProc HtmlLayoutImage;
-Tcl_ObjCmdProc HtmlLayoutPrimitives;
 Tcl_ObjCmdProc HtmlCssStyleConfigDump;
-Tcl_ObjCmdProc Rt_AllocCommand;
-Tcl_ObjCmdProc HtmlWidgetBboxCmd;
 Tcl_ObjCmdProc HtmlImageServerReport;
+Tcl_ObjCmdProc HtmlLayoutImage;
+Tcl_ObjCmdProc HtmlLayoutNode;
+Tcl_ObjCmdProc HtmlLayoutPrimitives;
+Tcl_ObjCmdProc HtmlLayoutSize;
+Tcl_ObjCmdProc HtmlPostscript;
+Tcl_ObjCmdProc HtmlStyleSyntaxErrs;
+Tcl_ObjCmdProc HtmlTreeCollapseWhitespace;
+Tcl_ObjCmdProc HtmlWidgetBboxCmd;
+Tcl_ObjCmdProc Rt_AllocCommand;
+Tcl_ObjCmdProc layoutPrimitives;
 
 Tcl_ObjCmdProc HtmlDebug;
 Tcl_ObjCmdProc HtmlDecode;
@@ -727,6 +733,8 @@ int HtmlStyleParse(HtmlTree*, Tcl_Obj*, Tcl_Obj*, Tcl_Obj*, Tcl_Obj*, Tcl_Obj*);
 void HtmlTokenizerAppend(HtmlTree *, const char *, int, int);
 int HtmlNameToType(void *, char *);
 Html_u8 HtmlMarkupFlags(int);
+
+HtmlComputedValues * getCanvasBackground(HtmlNode*);
 
 
 #define HTML_WALK_ABANDON            4
@@ -780,11 +788,13 @@ void HtmlDrawCopyCanvas(HtmlCanvas*, HtmlCanvas*);
 
 void HtmlDrawOverflow(HtmlCanvas*, HtmlNode*, int, int);
 
-HtmlCanvasItem *HtmlDrawAddMarker(HtmlCanvas*, int, int, int);
+HtmlCanvasItem *HtmlDrawMarker(HtmlCanvas*, int, int, int);
 int HtmlDrawGetMarker(HtmlCanvas*, HtmlCanvasItem *, int*, int*);
 
-void HtmlDrawAddLinebox(HtmlCanvas*, int, int);
+void HtmlDrawLinebox(HtmlCanvas*, int, int);
 int HtmlDrawFindLinebox(HtmlCanvas*, int*, int*);
+
+HtmlColor *colorFromNode(HtmlNode *pNode);
 
 HtmlCanvasSnapshot *HtmlDrawSnapshotZero(HtmlTree *);
 HtmlCanvasSnapshot *HtmlDrawSnapshot(HtmlTree *, int);
@@ -839,7 +849,7 @@ void HtmlImageFree(HtmlImage2 *);
 void HtmlImageRef(HtmlImage2 *);
 const char *HtmlImageUrl(HtmlImage2 *);
 void HtmlImageCheck(HtmlImage2 *);
-Tcl_Obj *HtmlXImageToImage(HtmlTree *, XImage *, int, int);
+Tcl_Obj *HtmlPixmapToImage(HtmlTree *, Pixmap, int, int);
 int HtmlImageAlphaChannel(HtmlImage2 *);
 
 void HtmlImageServerSuspendGC(HtmlTree *);
@@ -1020,4 +1030,3 @@ void *HtmlInstrumentCall2(ClientData, int, void*(*)(ClientData), ClientData);
 const char *HtmlTypeToName(void *, int);
 
 #endif
-
