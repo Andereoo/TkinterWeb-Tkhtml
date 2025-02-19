@@ -1041,6 +1041,8 @@ eListStylePosition	htmlprop.h	/^    unsigned char eListStylePosition; \/* 'list-
 eListStyleType	htmlprop.h	/^    unsigned char eListStyleType;     \/* 'list-style-type' *\/$/;"	m	struct:HtmlComputedValues
 eOutlineStyle	htmlprop.h	/^    unsigned char eOutlineStyle;      \/* 'outline-style' *\/$/;"	m	struct:HtmlComputedValues
 eOverflow	htmlprop.h	/^    unsigned char eOverflow;          \/* 'overflow' *\/$/;"	m	struct:HtmlComputedValues
+eOverflowX	htmlprop.h	/^    unsigned char eOverflowX;          \/* 'overflow-x' *\/$/;"	m	struct:HtmlComputedValues
+eOverflowY	htmlprop.h	/^    unsigned char eOverflowY;          \/* 'overflow-x' *\/$/;"	m	struct:HtmlComputedValues
 ePosition	htmlprop.h	/^    unsigned char ePosition;          \/* 'position' *\/$/;"	m	struct:HtmlComputedValues
 eProp	cssInt.h	/^        int eProp;$/;"	m	struct:CssPropertySet::CssPropertySetItem
 eProp	htmlprop.c	/^    int eProp;$/;"	m	struct:PropertyDef	file:
