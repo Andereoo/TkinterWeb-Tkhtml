@@ -2832,7 +2832,7 @@ normalFlowLayoutText (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode,
 static int 
 normalFlowLayoutInlineReplaced (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode, int *pY, InlineContext *pContext, NormalFlow *pNormal)
 {
-    BoxContext sBox;
+    BoxContext sBox, sContent;
     HtmlCanvas canvas;
     int h, i;
     int iOffset = 0;
@@ -2852,6 +2852,16 @@ normalFlowLayoutInlineReplaced (LayoutContext *pLayout, BoxContext *pBox, HtmlNo
     nodeGetBoxProperties(pLayout, pNode, pBox->iContainingW, &box);
     h = sBox.height + margin.margin_top + margin.margin_bottom;
 
+	// Add alt Attribute text
+	for(i=0; i<HtmlNodeNumChildren(pNode) && HtmlNodeIsText(HtmlNodeChild(pNode, i)); i++);
+	if (i && i == HtmlNodeNumChildren(pNode)) { // Make sure ALL child nodes are text
+		memset(&sContent, 0, sizeof(BoxContext));
+		sContent.iContainingW = sBox.width - box.iRight;
+        sContent.iContainingH = sBox.height - box.iBottom;
+		HtmlLayoutNodeContent(pLayout, &sContent, pNode);
+		HtmlDrawCanvas(&sBox.vc, &sContent.vc, box.iLeft, box.iTop, pNode);
+	}
+
     /* If the box does not have a baseline (i.e. if the replaced content
      * is an image, not a widget), then the bottom margin edge of the box 
      * is it's baseline. See the description of "baseline" in CSS2.1 section
@@ -2863,9 +2873,6 @@ normalFlowLayoutInlineReplaced (LayoutContext *pLayout, BoxContext *pBox, HtmlNo
     memset(&canvas, 0, sizeof(HtmlCanvas));
     DRAW_CANVAS(&canvas, &sBox.vc, 0, margin.margin_top, pNode);
     HtmlInlineContextAddBox(pContext, pNode, &canvas, sBox.width, h, iOffset);
-    
-    for(i=0; i<HtmlNodeNumChildren(pNode) && HtmlNodeIsText(HtmlNodeChild(pNode, i)); i++);
-    if (i && i==HtmlNodeNumChildren(pNode)) normalFlowLayout(pLayout, pBox, pNode, pNormal);
 
     return 0;
 }
