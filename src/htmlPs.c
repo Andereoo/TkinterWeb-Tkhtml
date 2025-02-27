@@ -1306,11 +1306,11 @@ int BoxToPostscript(HtmlTree *pTree, int x, int y, int w, int h, int prepass, Ht
         }
     }
     if (0 == (f & DRAWBOX_NOBACKGROUND) && pV->imZoomedBackgroundImage) { /* Image background, if required. */
-
+		Tk_Window win = HtmlTreeTkwin(pTree);
         int iWidth, iHeight, eR = pV->eBackgroundRepeat;
         HtmlImageSize(pV->imZoomedBackgroundImage, &iWidth, &iHeight);
 
-        /*if (iWidth > 0 && iHeight > 0) {
+        if (iWidth > 0 && iHeight > 0) {
             int iPosX, iPosY;
             iPosX = pV->iBackgroundPositionX;
             iPosY = pV->iBackgroundPositionY;
@@ -1328,10 +1328,10 @@ int BoxToPostscript(HtmlTree *pTree, int x, int y, int w, int h, int prepass, Ht
             }
             Tcl_AppendPrintfToObj(psObj, "%d %.15g translate\n", bg_x, Tk_PostscriptY(bg_y, psInfo)-bg_h);
             if (Tk_PostscriptImage(HtmlImageImage(pV->imZoomedBackgroundImage), interp, 
-                pTree->tkwin, psInfo, iPosX, iPosY, bg_w, bg_h, prepass
+                win, psInfo, iPosX, iPosY, bg_w, bg_h, prepass
             ) != TCL_OK) goto error;
             Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
-        }*/
+        }
     }
     // Plug the accumulated postscript back into the result.
     done:
