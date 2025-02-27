@@ -1310,7 +1310,7 @@ int BoxToPostscript(HtmlTree *pTree, int x, int y, int w, int h, int prepass, Ht
         int iWidth, iHeight, eR = pV->eBackgroundRepeat;
         HtmlImageSize(pV->imZoomedBackgroundImage, &iWidth, &iHeight);
 
-        if (iWidth > 0 && iHeight > 0) {
+        /*if (iWidth > 0 && iHeight > 0) {
             int iPosX, iPosY;
             iPosX = pV->iBackgroundPositionX;
             iPosY = pV->iBackgroundPositionY;
@@ -1331,7 +1331,7 @@ int BoxToPostscript(HtmlTree *pTree, int x, int y, int w, int h, int prepass, Ht
                 pTree->tkwin, psInfo, iPosX, iPosY, bg_w, bg_h, prepass
             ) != TCL_OK) goto error;
             Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
-        }
+        }*/
     }
     // Plug the accumulated postscript back into the result.
     done:
