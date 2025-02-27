@@ -1183,7 +1183,7 @@ normalFlowLayoutFloat (
     } else {
         x = iRight - iTotalWidth;
     }
-    y += *pY;
+    if (pLayout->pTree->options.pagination) y += *pY;
     y = paginationOffsetInside(pLayout, pNode, pV, pY, y, iTotalHeight);
     DRAW_CANVAS(&pBox->vc, &sBox.vc, x, y, pNode); // This controls the CanvasOrigin Y-axis for CSS float
     paginationPageYOffset(pLayout, pV, pY, 0);
@@ -1537,7 +1537,7 @@ inlineLayoutDrawLines (
                 int pagebreak;
                 y += paginationPageYOrigin(0, pLayout);
                 pagebreak = (y + paginationY - 1) / paginationY * paginationY; // Ceiling division to find the first multiple
-                if (pagebreak >= y && pagebreak <= y+nV) {y = pagebreak; /*printf("@@\n");*/}
+                if (pagebreak >= y && pagebreak <= y+nV) y = pagebreak;
                 y -= paginationPageYOrigin(0, pLayout);
             }
             DRAW_CANVAS(&pBox->vc, &lc, leftFloat, y, 0); // This is where content is drawn onto the canvas
