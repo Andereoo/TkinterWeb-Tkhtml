@@ -1,7 +1,7 @@
 
 ##### BUILD can be DEBUG or RELEASE.
 #
-BUILD = DEBUG
+BUILD = RELEASE
 
 HV3_POLIPO = C:\Users\billa\Downloads\hv3_polipo.exe
 
