@@ -2856,8 +2856,11 @@ normalFlowLayoutInlineReplaced (LayoutContext *pLayout, BoxContext *pBox, HtmlNo
 	for(i=0; i<HtmlNodeNumChildren(pNode) && HtmlNodeIsText(HtmlNodeChild(pNode, i)); i++);
 	if (i && i == HtmlNodeNumChildren(pNode)) { // Make sure ALL child nodes are text
 		memset(&sContent, 0, sizeof(BoxContext));
-		sContent.iContainingW = sBox.width - box.iRight;
-        sContent.iContainingH = sBox.height - box.iBottom;
+		HtmlComputedValues *pV = HtmlNodeComputedValues(pNode);
+		sContent.width = PIXELVAL(pV, WIDTH, sBox.iContainingW) == PIXELVAL_AUTO ? pBox->width : sBox.width;
+		sContent.height = PIXELVAL(pV, HEIGHT, sBox.iContainingW) == PIXELVAL_AUTO ? pBox->height : sBox.height;
+		sContent.iContainingW = sContent.width - box.iRight;
+        sContent.iContainingH = sContent.height - box.iBottom;
 		HtmlLayoutNodeContent(pLayout, &sContent, pNode);
 		HtmlDrawCanvas(&sBox.vc, &sContent.vc, box.iLeft, box.iTop, pNode);
 	}
