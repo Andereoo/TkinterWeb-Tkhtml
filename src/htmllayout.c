@@ -2852,18 +2852,18 @@ normalFlowLayoutInlineReplaced (LayoutContext *pLayout, BoxContext *pBox, HtmlNo
     nodeGetBoxProperties(pLayout, pNode, pBox->iContainingW, &box);
     h = sBox.height + margin.margin_top + margin.margin_bottom;
 
-	// Add alt Attribute text
-	for(i=0; i<HtmlNodeNumChildren(pNode) && HtmlNodeIsText(HtmlNodeChild(pNode, i)); i++);
-	if (i && i == HtmlNodeNumChildren(pNode)) { // Make sure ALL child nodes are text
-		memset(&sContent, 0, sizeof(BoxContext));
-		HtmlComputedValues *pV = HtmlNodeComputedValues(pNode);
-		sContent.width = PIXELVAL(pV, WIDTH, sBox.iContainingW) == PIXELVAL_AUTO ? pBox->width : sBox.width;
-		sContent.height = PIXELVAL(pV, HEIGHT, sBox.iContainingW) == PIXELVAL_AUTO ? pBox->height : sBox.height;
-		sContent.iContainingW = sContent.width - box.iRight;
+    // Add alt Attribute text
+    for(i=0; i<HtmlNodeNumChildren(pNode) && HtmlNodeIsText(HtmlNodeChild(pNode, i)); i++);
+    if (i && i == HtmlNodeNumChildren(pNode)) { // Make sure ALL child nodes are text
+        memset(&sContent, 0, sizeof(BoxContext));
+        HtmlComputedValues *pV = HtmlNodeComputedValues(pNode);
+        sContent.width = PIXELVAL(pV, WIDTH, sBox.iContainingW) == PIXELVAL_AUTO ? pBox->width : sBox.width;
+        sContent.height = PIXELVAL(pV, HEIGHT, sBox.iContainingW) == PIXELVAL_AUTO ? pBox->height : sBox.height;
+        sContent.iContainingW = sContent.width - box.iRight;
         sContent.iContainingH = sContent.height - box.iBottom;
-		HtmlLayoutNodeContent(pLayout, &sContent, pNode);
-		HtmlDrawCanvas(&sBox.vc, &sContent.vc, box.iLeft, box.iTop, pNode);
-	}
+        HtmlLayoutNodeContent(pLayout, &sContent, pNode);
+        HtmlDrawCanvas(&sBox.vc, &sContent.vc, box.iLeft, box.iTop, pNode);
+    }
 
     /* If the box does not have a baseline (i.e. if the replaced content
      * is an image, not a widget), then the bottom margin edge of the box 

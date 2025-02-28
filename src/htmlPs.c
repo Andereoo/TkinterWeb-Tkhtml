@@ -1306,7 +1306,7 @@ int BoxToPostscript(HtmlTree *pTree, int x, int y, int w, int h, int prepass, Ht
         }
     }
     if (0 == (f & DRAWBOX_NOBACKGROUND) && pV->imZoomedBackgroundImage) { /* Image background, if required. */
-		Tk_Window win = HtmlTreeTkwin(pTree);
+        Tk_Window win = HtmlTreeTkwin(pTree);
         int iWidth, iHeight, eR = pV->eBackgroundRepeat;
         HtmlImageSize(pV->imZoomedBackgroundImage, &iWidth, &iHeight);
 
