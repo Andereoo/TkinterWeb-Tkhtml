@@ -1826,7 +1826,7 @@ drawReplacement (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode)
 
     memset(&sBox, 0, sizeof(BoxContext));
     sBox.iContainingW = pBox->iContainingW;
-    sBox.iContainingH = PIXELVAL_AUTO;
+    sBox.iContainingH = pBox->iContainingH;
     drawReplacementContent(pLayout, &sBox, pNode);
     wrapContent(pLayout, pBox, &sBox, pNode);
 }
@@ -2540,6 +2540,7 @@ normalFlowLayoutReplaced (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
      * where to put it in the parent box. 
      */
     memset(&sBox, 0, sizeof(BoxContext));
+    sBox.iContainingH = pBox->iContainingH;
     sBox.iContainingW = pBox->iContainingW;
     drawReplacement(pLayout, &sBox, pNode);
 
@@ -2842,6 +2843,7 @@ normalFlowLayoutInlineReplaced (LayoutContext *pLayout, BoxContext *pBox, HtmlNo
     HtmlNodeReplacement *pReplace = HtmlNodeAsElement(pNode)->pReplacement;
 
     memset(&sBox, 0, sizeof(BoxContext));
+    sBox.iContainingH = pBox->iContainingH;
     sBox.iContainingW = pBox->iContainingW;
     drawReplacement(pLayout, &sBox, pNode);
 
