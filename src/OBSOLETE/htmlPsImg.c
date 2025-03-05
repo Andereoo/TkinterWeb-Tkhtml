@@ -1,4 +1,4 @@
-//#if TKHTML_PS
+#if TKHTML_PS
 
 /*
  * So blatently ripped off from Tk, comments aren't even updated.

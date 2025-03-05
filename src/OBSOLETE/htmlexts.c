@@ -3624,7 +3624,7 @@ Htmlexts_Init(interp)
     }
 #endif /* _TCLHTML_ */
 #else
-//#if TKHTML_PS
+#if TKHTML_PS
     HtmlPostscriptPtr = HtmlPostscript;
 #endif
     Tcl_PkgProvide(interp, HTML_PKGNAME "pr", HTML_PKGVERSION);
