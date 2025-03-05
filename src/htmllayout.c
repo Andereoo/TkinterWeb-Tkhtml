@@ -1682,7 +1682,7 @@ HtmlLayoutNodeContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
 static void 
 drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode)
 {
-    int iWidth;
+    int width;
     int height;
 
     HtmlComputedValues *pV= HtmlNodeComputedValues(pNode);
@@ -1696,13 +1696,13 @@ drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
      * PIXELVAL_AUTO. A value of less than 1 pixel that is not PIXELVAL_AUTO
      * is treated as exactly 1 pixel.
      */
-    iWidth = PIXELVAL(
+    width = PIXELVAL(
         pV, WIDTH, pLayout->minmaxTest ? PIXELVAL_AUTO : pBox->iContainingW
     );
-    height = PIXELVAL(pV, HEIGHT, pBox->iContainingH);
+    height = PIXELVAL(pV, HEIGHT, pLayout->minmaxTest ? PIXELVAL_AUTO : pBox->iContainingH);
     if (height != PIXELVAL_AUTO) height = MAX(height, 1);
-    if (iWidth != PIXELVAL_AUTO) iWidth = MAX(iWidth, 1);
-    assert(iWidth != 0);
+    if (width != PIXELVAL_AUTO) width = MAX(width, 1);
+    assert(width != 0);
 
     if (pElem->pReplacement && pElem->pReplacement->win) {
         CONST char *zReplace = Tcl_GetString(pElem->pReplacement->pReplace);
@@ -1712,26 +1712,26 @@ drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
             int iOffset;
             int mmt = pLayout->minmaxTest;
 
-            /* At this point local variable iWidth may be either a pixel 
+            /* At this point local variable width may be either a pixel 
              * width or PIXELVAL_AUTO. If it is PIXELVAL_AUTO we need to
              * figure out the actual width to use. This block does that
-             * and sets iWidth to a pixel value.
+             * and sets width to a pixel value.
              */
-            assert(iWidth != 0);
-            if (iWidth == PIXELVAL_AUTO) {
+            assert(width != 0);
+            if (width == PIXELVAL_AUTO) {
                 switch (mmt) {
                     case MINMAX_TEST_MIN: {
                         int isPercent = ((PIXELVAL(pV, WIDTH, 0) == 0) ? 1 : 0);
                         if (!isPercent && pV->eDisplay == CSS_CONST_INLINE) {
-                            iWidth = Tk_ReqWidth(win);
+                            width = Tk_ReqWidth(win);
                         }
                         break;
                     }
                     default: 
-                        iWidth = MIN(pBox->iContainingW, Tk_ReqWidth(win));
+                        width = MIN(pBox->iContainingW, Tk_ReqWidth(win));
                 }
             }
-            iWidth = MAX(iWidth, Tk_MinReqWidth(win));
+            width = MAX(width, Tk_MinReqWidth(win));
 
             if (height == PIXELVAL_AUTO) {
                 switch (mmt) {
@@ -1747,21 +1747,20 @@ drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
             }
 
             iOffset = pElem->pReplacement->iOffset;
-            DRAW_WINDOW(&pBox->vc, pNode, 0, 0, iWidth, height);
+            DRAW_WINDOW(&pBox->vc, pNode, 0, 0, width, height);
         }
     } else {
-        int t = pLayout->minmaxTest;
         int dummy_height = height;
         HtmlImage2 *pImg = pV->imReplacementImage;
 
         /* Take the 'max-width'/'min-width' properties into account */
-        if (iWidth == PIXELVAL_AUTO) {
-            HtmlImageScale(pImg, &iWidth, &dummy_height, 0);
+        if (width == PIXELVAL_AUTO) {
+            HtmlImageScale(pImg, &width, &dummy_height, 0);
         }
-        considerMinMaxWidth(pNode, pBox->iContainingW, &iWidth);
+        considerMinMaxWidth(pNode, pBox->iContainingW, &width);
 
-        pImg = HtmlImageScale(pImg, &iWidth, &height, (t ? 0 : 1));
-        HtmlDrawImage(&pBox->vc, pImg, 0, 0, iWidth, height, pNode, t);
+        pImg = HtmlImageScale(pImg, &width, &height, (pLayout->minmaxTest ? 0 : 1));
+        HtmlDrawImage(&pBox->vc, pImg, 0, 0, width, height, pNode, pLayout->minmaxTest);
         HtmlImageFree(pImg);
     }
 
@@ -1772,7 +1771,7 @@ drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
             Tcl_GetString(HtmlNodeCommand(pTree, pNode)),
             (pLayout->minmaxTest == MINMAX_TEST_MIN ? "mintest" : 
              pLayout->minmaxTest == MINMAX_TEST_MAX ? "maxtest" : "regular"),
-             iWidth, height, 
+             width, height, 
              (pElem->pReplacement ? pElem->pReplacement->iOffset : 0)
         , NULL);
     }
@@ -1782,7 +1781,7 @@ drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
      * because PIXELVAL_AUTO is a large negative number.
      */
     assert(PIXELVAL_AUTO < 0);
-    pBox->width = MAX(pBox->width, iWidth);
+    pBox->width = MAX(pBox->width, width);
     pBox->height = MAX(pBox->height, height);
 }
 
