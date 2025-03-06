@@ -265,7 +265,7 @@ struct HtmlComputedValues {
 
     unsigned char eOverflow;          /* 'overflow' */
     unsigned char eOverflowX;          /* 'overflow-x' */
-    unsigned char eOverflowY;          /* 'overflow-x' */
+    unsigned char eOverflowY;          /* 'overflow-y' */
 
     int iZIndex;                      /* 'z-index'        (integer, AUTO) */
 
@@ -313,6 +313,7 @@ struct HtmlComputedValues {
     unsigned char eCaptionSide;       /* 'caption-side' */
     unsigned char eEmptyCells;        /* 'empty-cells' */
 };
+unsigned char eOverflow(HtmlComputedValues *, int);
 
 /*
  * If pzContent is not NULL, then the pointer it points to may be set

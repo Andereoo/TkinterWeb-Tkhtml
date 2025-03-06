@@ -617,9 +617,7 @@ getWidth (int iWidthCalculated, int iWidthContent)
 static int 
 getWidthProperty (LayoutContext *pLayout, HtmlComputedValues *pComputed, int iContainingW)
 {
-    return PIXELVAL(
-        pComputed, WIDTH, pLayout->minmaxTest ? PIXELVAL_AUTO : iContainingW
-    );
+    return PIXELVAL(pComputed, WIDTH, pLayout->minmaxTest ? PIXELVAL_AUTO : iContainingW);
 }
 
 /*
@@ -850,7 +848,6 @@ static int
 normalFlowLayoutOverflow (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode, int *pY, InlineContext *pContext, NormalFlow *pNormal)
 {
     HtmlComputedValues *pV = HtmlNodeComputedValues(pNode);
-    int eOverflow = pV->eOverflow;
 
     MarginProperties margin;
     BoxProperties box;
@@ -912,9 +909,9 @@ normalFlowLayoutOverflow (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
     iHeight = PIXELVAL(pV, HEIGHT, pBox->iContainingH);
    
     /* Figure out whether or not this block uses a vertical scrollbar. */
-    if (eOverflow == CSS_CONST_SCROLL) {
+    if (pV->eOverflow == CSS_CONST_SCROLL || pV->eOverflowY == CSS_CONST_SCROLL) {
         useVertical = 1;
-    } else if (eOverflow == CSS_CONST_AUTO && iHeight != PIXELVAL_AUTO) {
+    } else if ((pV->eOverflow == CSS_CONST_AUTO || pV->eOverflowY == CSS_CONST_AUTO) && iHeight != PIXELVAL_AUTO) {
         memset(&sContent, 0, sizeof(BoxContext));
         sContent.iContainingW = iWidth;
         sContent.iContainingH = iHeight;
@@ -926,13 +923,10 @@ normalFlowLayoutOverflow (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
     }
 
     /* Figure out whether or not this block uses a horizontal scrollbar. */
-    if (eOverflow == CSS_CONST_SCROLL || (
-            eOverflow == CSS_CONST_AUTO && 
-            iMinContentWidth > (iWidth - (useVertical ? SCROLLBAR_WIDTH : 0))
-        )
-    ) {
-        useHorizontal = 1;
-    }
+    if (
+		(pV->eOverflow == CSS_CONST_SCROLL || pV->eOverflowX == CSS_CONST_SCROLL) || 
+		((pV->eOverflow == CSS_CONST_AUTO || pV->eOverflowX == CSS_CONST_AUTO) && iMinContentWidth > (iWidth - (useVertical ? SCROLLBAR_WIDTH : 0)))
+    ) useHorizontal = 1;
    
     memset(&sBox, 0, sizeof(BoxContext));
     memset(&sContent, 0, sizeof(BoxContext));
@@ -959,19 +953,14 @@ normalFlowLayoutOverflow (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
     }
 
     if (
-        pLayout->minmaxTest == 0 && (
-            pV->eOverflow == CSS_CONST_SCROLL || 
-            (pV->eOverflow == CSS_CONST_AUTO && (useHorizontal || useVertical)
-    ))) {
+        pLayout->minmaxTest == 0 && 
+		(eOverflow(pV, CSS_CONST_SCROLL) || (eOverflow(pV, CSS_CONST_AUTO) && (useHorizontal || useVertical)))
+	) {
         HtmlElementNode *pElem = (HtmlElementNode *)pNode;
         if (pElem->pScrollbar == 0) {
             pElem->pScrollbar = HtmlNew(HtmlNodeScrollbars);
         }
-        createScrollbars(pLayout->pTree, pNode, 
-            sContent.width, sContent.height,
-            useHorizontal ? sContent.vc.right : -1, 
-            useVertical ? sContent.vc.bottom : -1
-        );
+        createScrollbars(pLayout->pTree, pNode, sContent.width, sContent.height, useHorizontal ? sContent.vc.right : -1, useVertical ? sContent.vc.bottom : -1);
     }
 
     /* Wrap an overflow primitive around the content of this box. This
@@ -979,8 +968,7 @@ normalFlowLayoutOverflow (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
      * it modifies the sContent.vc.right and sContent.vc.bottom variables.
      */
     if (
-        sContent.width < sContent.vc.right ||
-        sContent.height < sContent.vc.bottom
+        sContent.width < sContent.vc.right || sContent.height < sContent.vc.bottom
     ) {
         HtmlDrawOverflow(&sContent.vc, pNode, sContent.width, sContent.height);
     }
@@ -2068,8 +2056,8 @@ drawAbsolute (
          * the HtmlCanvas module will automatically insert scrollbars if 
          * required.
          */
-        if (pV->eOverflow == CSS_CONST_HIDDEN) {
-            HtmlDrawOverflow(&sContent.vc,pNode,sContent.width,sContent.height);
+        if (eOverflow(pV, CSS_CONST_HIDDEN)) {
+            HtmlDrawOverflow(&sContent.vc, pNode, sContent.width, sContent.height);
         }
         wrapContent(pLayout, &sBox, &sContent, pNode);
 
@@ -3176,7 +3164,7 @@ normalFlowLayoutNode (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode,
         pFlow = &FT_BLOCK_REPLACED;
     } else if (eDisplay == CSS_CONST_BLOCK || eDisplay == CSS_CONST_LIST_ITEM) {
         pFlow = &FT_BLOCK;
-        if (pV->eOverflow != CSS_CONST_VISIBLE) {
+        if (eOverflow(pV, CSS_CONST_VISIBLE)) {
             pFlow = &FT_OVERFLOW;
         }
     } else if (eDisplay == CSS_CONST_TABLE) {
