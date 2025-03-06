@@ -106,7 +106,7 @@ static PropertyDef propdefs[] = {
   PROPDEF(ENUM, LIST_STYLE_POSITION,   eListStylePosition),
   PROPDEF(ENUM, LIST_STYLE_TYPE,       eListStyleType),
   PROPDEF(ENUM, OUTLINE_STYLE,         eOutlineStyle),
-  PROPDEF(ENUM, OVERFLOW,              eOverflow),  // This member shouldn't be necessary but still is for some reason
+  PROPDEF(ENUM, OVERFLOW,              eOverflow),
   PROPDEF(ENUM, OVERFLOW_X,            eOverflowX),
   PROPDEF(ENUM, OVERFLOW_Y,            eOverflowY),
   PROPDEF(ENUM, POSITION,              ePosition),
@@ -3394,8 +3394,5 @@ HtmlComputedValuesCompare (HtmlComputedValues *pV1, HtmlComputedValues *pV2)
     }
 
     return HTML_REQUIRE_PAINT;
-}
-unsigned char eOverflow(HtmlComputedValues *pV, int css_const) {
-	return pV->eOverflow == css_const || pV->eOverflowY == css_const || pV->eOverflowX == css_const;
 }
 

@@ -313,7 +313,7 @@ struct HtmlComputedValues {
     unsigned char eCaptionSide;       /* 'caption-side' */
     unsigned char eEmptyCells;        /* 'empty-cells' */
 };
-unsigned char eOverflow(HtmlComputedValues *, int);
+#define IS_OVERFLOW(pV, css_const) ((pV)->eOverflow == (css_const) || (pV)->eOverflowY == (css_const) || (pV)->eOverflowX == (css_const))
 
 /*
  * If pzContent is not NULL, then the pointer it points to may be set

@@ -954,7 +954,7 @@ normalFlowLayoutOverflow (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
 
     if (
         pLayout->minmaxTest == 0 && 
-		(eOverflow(pV, CSS_CONST_SCROLL) || (eOverflow(pV, CSS_CONST_AUTO) && (useHorizontal || useVertical)))
+		(IS_OVERFLOW(pV, CSS_CONST_SCROLL) || (IS_OVERFLOW(pV, CSS_CONST_AUTO) && (useHorizontal || useVertical)))
 	) {
         HtmlElementNode *pElem = (HtmlElementNode *)pNode;
         if (pElem->pScrollbar == 0) {
@@ -2056,7 +2056,7 @@ drawAbsolute (
          * the HtmlCanvas module will automatically insert scrollbars if 
          * required.
          */
-        if (eOverflow(pV, CSS_CONST_HIDDEN)) {
+        if (IS_OVERFLOW(pV, CSS_CONST_HIDDEN)) {
             HtmlDrawOverflow(&sContent.vc, pNode, sContent.width, sContent.height);
         }
         wrapContent(pLayout, &sBox, &sContent, pNode);
@@ -3164,9 +3164,7 @@ normalFlowLayoutNode (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode,
         pFlow = &FT_BLOCK_REPLACED;
     } else if (eDisplay == CSS_CONST_BLOCK || eDisplay == CSS_CONST_LIST_ITEM) {
         pFlow = &FT_BLOCK;
-        if (eOverflow(pV, CSS_CONST_VISIBLE)) {
-            pFlow = &FT_OVERFLOW;
-        }
+        if (IS_OVERFLOW(pV, CSS_CONST_VISIBLE)) pFlow = &FT_OVERFLOW;
     } else if (eDisplay == CSS_CONST_TABLE) {
         /* Todo: 'inline-table' is currently handled as 'table' */
         pFlow = &FT_TABLE;
