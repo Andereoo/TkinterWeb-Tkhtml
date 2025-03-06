@@ -107,8 +107,6 @@ static PropertyDef propdefs[] = {
   PROPDEF(ENUM, LIST_STYLE_TYPE,       eListStyleType),
   PROPDEF(ENUM, OUTLINE_STYLE,         eOutlineStyle),
   PROPDEF(ENUM, OVERFLOW,              eOverflow),  // This member shouldn't be necessary but still is for some reason
-  PROPDEF(ENUM, OVERFLOW,              eOverflowX),
-  PROPDEF(ENUM, OVERFLOW,              eOverflowY),
   PROPDEF(ENUM, OVERFLOW_X,            eOverflowX),
   PROPDEF(ENUM, OVERFLOW_Y,            eOverflowY),
   PROPDEF(ENUM, POSITION,              ePosition),
