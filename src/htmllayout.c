@@ -617,9 +617,7 @@ getWidth (int iWidthCalculated, int iWidthContent)
 static int 
 getWidthProperty (LayoutContext *pLayout, HtmlComputedValues *pComputed, int iContainingW)
 {
-    return PIXELVAL(
-        pComputed, WIDTH, pLayout->minmaxTest ? PIXELVAL_AUTO : iContainingW
-    );
+    return PIXELVAL(pComputed, WIDTH, pLayout->minmaxTest ? PIXELVAL_AUTO : iContainingW);
 }
 
 /*
@@ -850,7 +848,6 @@ static int
 normalFlowLayoutOverflow (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode, int *pY, InlineContext *pContext, NormalFlow *pNormal)
 {
     HtmlComputedValues *pV = HtmlNodeComputedValues(pNode);
-    int eOverflow = pV->eOverflow;
 
     MarginProperties margin;
     BoxProperties box;
@@ -912,9 +909,9 @@ normalFlowLayoutOverflow (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
     iHeight = PIXELVAL(pV, HEIGHT, pBox->iContainingH);
    
     /* Figure out whether or not this block uses a vertical scrollbar. */
-    if (eOverflow == CSS_CONST_SCROLL) {
+    if (pV->eOverflow == CSS_CONST_SCROLL || pV->eOverflowY == CSS_CONST_SCROLL) {
         useVertical = 1;
-    } else if (eOverflow == CSS_CONST_AUTO && iHeight != PIXELVAL_AUTO) {
+    } else if ((pV->eOverflow == CSS_CONST_AUTO || pV->eOverflowY == CSS_CONST_AUTO) && iHeight != PIXELVAL_AUTO) {
         memset(&sContent, 0, sizeof(BoxContext));
         sContent.iContainingW = iWidth;
         sContent.iContainingH = iHeight;
@@ -926,13 +923,10 @@ normalFlowLayoutOverflow (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
     }
 
     /* Figure out whether or not this block uses a horizontal scrollbar. */
-    if (eOverflow == CSS_CONST_SCROLL || (
-            eOverflow == CSS_CONST_AUTO && 
-            iMinContentWidth > (iWidth - (useVertical ? SCROLLBAR_WIDTH : 0))
-        )
-    ) {
-        useHorizontal = 1;
-    }
+    if (
+		(pV->eOverflow == CSS_CONST_SCROLL || pV->eOverflowX == CSS_CONST_SCROLL) 
+		|| (pV->eOverflow == CSS_CONST_AUTO && iMinContentWidth > (iWidth - (useVertical ? SCROLLBAR_WIDTH : 0)))
+    ) useHorizontal = 1;
    
     memset(&sBox, 0, sizeof(BoxContext));
     memset(&sContent, 0, sizeof(BoxContext));
@@ -959,19 +953,14 @@ normalFlowLayoutOverflow (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
     }
 
     if (
-        pLayout->minmaxTest == 0 && (
-            pV->eOverflow == CSS_CONST_SCROLL || 
-            (pV->eOverflow == CSS_CONST_AUTO && (useHorizontal || useVertical)
-    ))) {
+        pLayout->minmaxTest == 0 && 
+		(IS_OVERFLOW(pV, CSS_CONST_SCROLL) || (IS_OVERFLOW(pV, CSS_CONST_AUTO) && (useHorizontal || useVertical)))
+	) {
         HtmlElementNode *pElem = (HtmlElementNode *)pNode;
         if (pElem->pScrollbar == 0) {
             pElem->pScrollbar = HtmlNew(HtmlNodeScrollbars);
         }
-        createScrollbars(pLayout->pTree, pNode, 
-            sContent.width, sContent.height,
-            useHorizontal ? sContent.vc.right : -1, 
-            useVertical ? sContent.vc.bottom : -1
-        );
+        createScrollbars(pLayout->pTree, pNode, sContent.width, sContent.height, useHorizontal ? sContent.vc.right : -1, useVertical ? sContent.vc.bottom : -1);
     }
 
     /* Wrap an overflow primitive around the content of this box. This
@@ -979,8 +968,7 @@ normalFlowLayoutOverflow (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
      * it modifies the sContent.vc.right and sContent.vc.bottom variables.
      */
     if (
-        sContent.width < sContent.vc.right ||
-        sContent.height < sContent.vc.bottom
+        sContent.width < sContent.vc.right || sContent.height < sContent.vc.bottom
     ) {
         HtmlDrawOverflow(&sContent.vc, pNode, sContent.width, sContent.height);
     }
@@ -1183,7 +1171,7 @@ normalFlowLayoutFloat (
     } else {
         x = iRight - iTotalWidth;
     }
-    y += *pY;
+    if (pLayout->pTree->options.pagination) y += *pY;
     y = paginationOffsetInside(pLayout, pNode, pV, pY, y, iTotalHeight);
     DRAW_CANVAS(&pBox->vc, &sBox.vc, x, y, pNode); // This controls the CanvasOrigin Y-axis for CSS float
     paginationPageYOffset(pLayout, pV, pY, 0);
@@ -1537,7 +1525,7 @@ inlineLayoutDrawLines (
                 int pagebreak;
                 y += paginationPageYOrigin(0, pLayout);
                 pagebreak = (y + paginationY - 1) / paginationY * paginationY; // Ceiling division to find the first multiple
-                if (pagebreak >= y && pagebreak <= y+nV) {y = pagebreak; /*printf("@@\n");*/}
+                if (pagebreak >= y && pagebreak <= y+nV) y = pagebreak;
                 y -= paginationPageYOrigin(0, pLayout);
             }
             DRAW_CANVAS(&pBox->vc, &lc, leftFloat, y, 0); // This is where content is drawn onto the canvas
@@ -1682,7 +1670,7 @@ HtmlLayoutNodeContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
 static void 
 drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode)
 {
-    int iWidth;
+    int width;
     int height;
 
     HtmlComputedValues *pV= HtmlNodeComputedValues(pNode);
@@ -1696,13 +1684,13 @@ drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
      * PIXELVAL_AUTO. A value of less than 1 pixel that is not PIXELVAL_AUTO
      * is treated as exactly 1 pixel.
      */
-    iWidth = PIXELVAL(
+    width = PIXELVAL(
         pV, WIDTH, pLayout->minmaxTest ? PIXELVAL_AUTO : pBox->iContainingW
     );
-    height = PIXELVAL(pV, HEIGHT, pBox->iContainingH);
+    height = PIXELVAL(pV, HEIGHT, pLayout->minmaxTest ? PIXELVAL_AUTO : pBox->iContainingH);
     if (height != PIXELVAL_AUTO) height = MAX(height, 1);
-    if (iWidth != PIXELVAL_AUTO) iWidth = MAX(iWidth, 1);
-    assert(iWidth != 0);
+    if (width != PIXELVAL_AUTO) width = MAX(width, 1);
+    assert(width != 0);
 
     if (pElem->pReplacement && pElem->pReplacement->win) {
         CONST char *zReplace = Tcl_GetString(pElem->pReplacement->pReplace);
@@ -1712,26 +1700,26 @@ drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
             int iOffset;
             int mmt = pLayout->minmaxTest;
 
-            /* At this point local variable iWidth may be either a pixel 
+            /* At this point local variable width may be either a pixel 
              * width or PIXELVAL_AUTO. If it is PIXELVAL_AUTO we need to
              * figure out the actual width to use. This block does that
-             * and sets iWidth to a pixel value.
+             * and sets width to a pixel value.
              */
-            assert(iWidth != 0);
-            if (iWidth == PIXELVAL_AUTO) {
+            assert(width != 0);
+            if (width == PIXELVAL_AUTO) {
                 switch (mmt) {
                     case MINMAX_TEST_MIN: {
                         int isPercent = ((PIXELVAL(pV, WIDTH, 0) == 0) ? 1 : 0);
                         if (!isPercent && pV->eDisplay == CSS_CONST_INLINE) {
-                            iWidth = Tk_ReqWidth(win);
+                            width = Tk_ReqWidth(win);
                         }
                         break;
                     }
                     default: 
-                        iWidth = MIN(pBox->iContainingW, Tk_ReqWidth(win));
+                        width = MIN(pBox->iContainingW, Tk_ReqWidth(win));
                 }
             }
-            iWidth = MAX(iWidth, Tk_MinReqWidth(win));
+            width = MAX(width, Tk_MinReqWidth(win));
 
             if (height == PIXELVAL_AUTO) {
                 switch (mmt) {
@@ -1747,21 +1735,20 @@ drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
             }
 
             iOffset = pElem->pReplacement->iOffset;
-            DRAW_WINDOW(&pBox->vc, pNode, 0, 0, iWidth, height);
+            DRAW_WINDOW(&pBox->vc, pNode, 0, 0, width, height);
         }
     } else {
-        int t = pLayout->minmaxTest;
         int dummy_height = height;
         HtmlImage2 *pImg = pV->imReplacementImage;
 
         /* Take the 'max-width'/'min-width' properties into account */
-        if (iWidth == PIXELVAL_AUTO) {
-            HtmlImageScale(pImg, &iWidth, &dummy_height, 0);
+        if (width == PIXELVAL_AUTO) {
+            HtmlImageScale(pImg, &width, &dummy_height, 0);
         }
-        considerMinMaxWidth(pNode, pBox->iContainingW, &iWidth);
+        considerMinMaxWidth(pNode, pBox->iContainingW, &width);
 
-        pImg = HtmlImageScale(pImg, &iWidth, &height, (t ? 0 : 1));
-        HtmlDrawImage(&pBox->vc, pImg, 0, 0, iWidth, height, pNode, t);
+        pImg = HtmlImageScale(pImg, &width, &height, (pLayout->minmaxTest ? 0 : 1));
+        HtmlDrawImage(&pBox->vc, pImg, 0, 0, width, height, pNode, pLayout->minmaxTest);
         HtmlImageFree(pImg);
     }
 
@@ -1772,7 +1759,7 @@ drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
             Tcl_GetString(HtmlNodeCommand(pTree, pNode)),
             (pLayout->minmaxTest == MINMAX_TEST_MIN ? "mintest" : 
              pLayout->minmaxTest == MINMAX_TEST_MAX ? "maxtest" : "regular"),
-             iWidth, height, 
+             width, height, 
              (pElem->pReplacement ? pElem->pReplacement->iOffset : 0)
         , NULL);
     }
@@ -1782,7 +1769,7 @@ drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
      * because PIXELVAL_AUTO is a large negative number.
      */
     assert(PIXELVAL_AUTO < 0);
-    pBox->width = MAX(pBox->width, iWidth);
+    pBox->width = MAX(pBox->width, width);
     pBox->height = MAX(pBox->height, height);
 }
 
@@ -1826,7 +1813,7 @@ drawReplacement (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode)
 
     memset(&sBox, 0, sizeof(BoxContext));
     sBox.iContainingW = pBox->iContainingW;
-    sBox.iContainingH = PIXELVAL_AUTO;
+    sBox.iContainingH = pBox->iContainingH;
     drawReplacementContent(pLayout, &sBox, pNode);
     wrapContent(pLayout, pBox, &sBox, pNode);
 }
@@ -2069,8 +2056,8 @@ drawAbsolute (
          * the HtmlCanvas module will automatically insert scrollbars if 
          * required.
          */
-        if (pV->eOverflow == CSS_CONST_HIDDEN) {
-            HtmlDrawOverflow(&sContent.vc,pNode,sContent.width,sContent.height);
+        if (IS_OVERFLOW(pV, CSS_CONST_HIDDEN)) {
+            HtmlDrawOverflow(&sContent.vc, pNode, sContent.width, sContent.height);
         }
         wrapContent(pLayout, &sBox, &sContent, pNode);
 
@@ -2540,6 +2527,7 @@ normalFlowLayoutReplaced (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
      * where to put it in the parent box. 
      */
     memset(&sBox, 0, sizeof(BoxContext));
+    sBox.iContainingH = pBox->iContainingH;
     sBox.iContainingW = pBox->iContainingW;
     drawReplacement(pLayout, &sBox, pNode);
 
@@ -2832,7 +2820,7 @@ normalFlowLayoutText (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode,
 static int 
 normalFlowLayoutInlineReplaced (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode, int *pY, InlineContext *pContext, NormalFlow *pNormal)
 {
-    BoxContext sBox;
+    BoxContext sBox, sContent;
     HtmlCanvas canvas;
     int h, i;
     int iOffset = 0;
@@ -2842,6 +2830,7 @@ normalFlowLayoutInlineReplaced (LayoutContext *pLayout, BoxContext *pBox, HtmlNo
     HtmlNodeReplacement *pReplace = HtmlNodeAsElement(pNode)->pReplacement;
 
     memset(&sBox, 0, sizeof(BoxContext));
+    sBox.iContainingH = pBox->iContainingH;
     sBox.iContainingW = pBox->iContainingW;
     drawReplacement(pLayout, &sBox, pNode);
 
@@ -2851,6 +2840,19 @@ normalFlowLayoutInlineReplaced (LayoutContext *pLayout, BoxContext *pBox, HtmlNo
     nodeGetMargins(pLayout, pNode, pBox->iContainingW, &margin);
     nodeGetBoxProperties(pLayout, pNode, pBox->iContainingW, &box);
     h = sBox.height + margin.margin_top + margin.margin_bottom;
+
+    // Add alt Attribute text
+    for(i=0; i<HtmlNodeNumChildren(pNode) && HtmlNodeIsText(HtmlNodeChild(pNode, i)); i++);
+    if (i && i == HtmlNodeNumChildren(pNode)) { // Make sure ALL child nodes are text
+        memset(&sContent, 0, sizeof(BoxContext));
+        HtmlComputedValues *pV = HtmlNodeComputedValues(pNode);
+        sContent.width = PIXELVAL(pV, WIDTH, sBox.iContainingW) == PIXELVAL_AUTO ? pBox->width : sBox.width;
+        sContent.height = PIXELVAL(pV, HEIGHT, sBox.iContainingH) == PIXELVAL_AUTO ? pBox->height : sBox.height;
+        sContent.iContainingW = sContent.width - box.iRight;
+        sContent.iContainingH = sContent.height - box.iBottom;
+        HtmlLayoutNodeContent(pLayout, &sContent, pNode);
+        HtmlDrawCanvas(&sBox.vc, &sContent.vc, box.iLeft, box.iTop, pNode);
+    }
 
     /* If the box does not have a baseline (i.e. if the replaced content
      * is an image, not a widget), then the bottom margin edge of the box 
@@ -2863,9 +2865,6 @@ normalFlowLayoutInlineReplaced (LayoutContext *pLayout, BoxContext *pBox, HtmlNo
     memset(&canvas, 0, sizeof(HtmlCanvas));
     DRAW_CANVAS(&canvas, &sBox.vc, 0, margin.margin_top, pNode);
     HtmlInlineContextAddBox(pContext, pNode, &canvas, sBox.width, h, iOffset);
-    
-    for(i=0; i<HtmlNodeNumChildren(pNode) && HtmlNodeIsText(HtmlNodeChild(pNode, i)); i++);
-    if (i && i==HtmlNodeNumChildren(pNode)) normalFlowLayout(pLayout, pBox, pNode, pNormal);
 
     return 0;
 }
@@ -3165,9 +3164,7 @@ normalFlowLayoutNode (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode,
         pFlow = &FT_BLOCK_REPLACED;
     } else if (eDisplay == CSS_CONST_BLOCK || eDisplay == CSS_CONST_LIST_ITEM) {
         pFlow = &FT_BLOCK;
-        if (pV->eOverflow != CSS_CONST_VISIBLE) {
-            pFlow = &FT_OVERFLOW;
-        }
+        if (pV->eOverflow != CSS_CONST_VISIBLE || (pV->eOverflowY != CSS_CONST_VISIBLE || pV->eOverflowX != CSS_CONST_VISIBLE)) pFlow = &FT_OVERFLOW;
     } else if (eDisplay == CSS_CONST_TABLE) {
         /* Todo: 'inline-table' is currently handled as 'table' */
         pFlow = &FT_TABLE;
