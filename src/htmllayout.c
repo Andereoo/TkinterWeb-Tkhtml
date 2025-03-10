@@ -3164,7 +3164,7 @@ normalFlowLayoutNode (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode,
         pFlow = &FT_BLOCK_REPLACED;
     } else if (eDisplay == CSS_CONST_BLOCK || eDisplay == CSS_CONST_LIST_ITEM) {
         pFlow = &FT_BLOCK;
-        if (IS_OVERFLOW(pV, CSS_CONST_VISIBLE)) pFlow = &FT_OVERFLOW;
+        if (pV->eOverflow != CSS_CONST_VISIBLE || (pV->eOverflowY != CSS_CONST_VISIBLE || pV->eOverflowX != CSS_CONST_VISIBLE)) pFlow = &FT_OVERFLOW;
     } else if (eDisplay == CSS_CONST_TABLE) {
         /* Todo: 'inline-table' is currently handled as 'table' */
         pFlow = &FT_TABLE;
