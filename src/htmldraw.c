@@ -4331,14 +4331,6 @@ int HtmlGetPostscript(
 HtmlTree *pTree, HtmlNode *pBgRoot, int ymin, int ymax, int prepass, int nogfx, Tcl_Interp *interp, Tcl_Obj *psObj, HtmlComputedValues *pV
 ) {
     struct printingInfo sPrint = {pTree, pBgRoot, prepass, nogfx, interp, psObj};
-    ClientData clientData = (ClientData)&sPrint;
-    if (pBgRoot && !nogfx & 1) {
-        BoxToPostscript(pTree, 0, 0, pTree->canvas.right, ymax, prepass, pBgRoot, DRAWBOX_NOBORDER, interp, pV);
-        Tcl_AppendToObj(psObj, "gsave % Background is drawn separately.\n", -1);
-        Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
-        Tcl_ResetResult(interp);
-        Tcl_AppendToObj(psObj, "grestore ", -1);
-    }
-    return searchSortedCanvas(pTree, ymin, ymax, 0, HtmlPostscriptCb, clientData);
+    return searchSortedCanvas(pTree, ymin, ymax, 0, HtmlPostscriptCb, (ClientData)&sPrint);
 }
 
