@@ -2167,7 +2167,6 @@ nodeTextCommand(
         ) {
             int eType = HtmlTextIterType(&sIter);
             int nData = HtmlTextIterLength(&sIter);
-            char const * zData = HtmlTextIterData(&sIter);
     
             if (eChoice == NODE_TEXT_TOKENS) {
                 char *zType = 0;
@@ -2177,7 +2176,7 @@ nodeTextCommand(
                 switch (eType) {
                     case HTML_TEXT_TOKEN_TEXT:
                         zType = "text";
-                        pObj = Tcl_NewStringObj(zData, nData);
+                        pObj = Tcl_NewStringObj(HtmlTextIterData(&sIter), nData);
                         break;
                     case HTML_TEXT_TOKEN_SPACE:
                         zType = "space";
