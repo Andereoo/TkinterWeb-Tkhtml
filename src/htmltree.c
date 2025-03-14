@@ -336,19 +336,14 @@ nodeGetPreText(HtmlTextNode *pTextNode)
     Tcl_Obj *pRet = Tcl_NewObj();
 
     for (
-        HtmlTextIterFirst(pTextNode, &sIter);
-        HtmlTextIterIsValid(&sIter);
-        HtmlTextIterNext(&sIter)
+        HtmlTextIterFirst(pTextNode, &sIter); HtmlTextIterIsValid(&sIter); HtmlTextIterNext(&sIter)
     ) {
         char *zWhite = " ";
-
-        int eType = HtmlTextIterType(&sIter);
         int nData = HtmlTextIterLength(&sIter);
-        char const * zData = HtmlTextIterData(&sIter);
 
-        switch (eType) {
+        switch (HtmlTextIterType(&sIter)) {
             case HTML_TEXT_TOKEN_TEXT:
-                Tcl_AppendToObj(pRet, zData, nData);
+                Tcl_AppendToObj(pRet, HtmlTextIterData(&sIter), nData);
                 break;
 
             case HTML_TEXT_TOKEN_NEWLINE: 
@@ -362,7 +357,6 @@ nodeGetPreText(HtmlTextNode *pTextNode)
             }
         }
     }
-
     return pRet;
 }
 
