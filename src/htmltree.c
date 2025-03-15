@@ -1356,14 +1356,6 @@ HtmlTreeAddText (HtmlTree *pTree, HtmlTextNode *pTextNode, int iOffset)
         pTextNode->node.index = pTree->iNextNode++;
         pTree->state.isCdataInHead = 0;
         nodeHandlerCallbacks(pTree, pTitle);
-    } else if (
-        eCurrentType == Html_TABLE || eCurrentType == Html_TBODY || 
-        eCurrentType == Html_TFOOT || eCurrentType == Html_THEAD || 
-        eCurrentType == Html_TR
-    ) {
-        treeAddFosterText(pTree, pTextNode);
-        pTextNode->node.index = pTree->iNextNode++;
-        pTextNode->node.eTag = Html_Text;
     } else {
         HtmlNodeAddTextChild(pCurrent, pTextNode);
         pTextNode->node.index = pTree->iNextNode++;
@@ -2161,9 +2153,7 @@ nodeTextCommand(
         Tcl_IncrRefCount(pRet);
 
         for (
-            HtmlTextIterFirst((HtmlTextNode *)pNode, &sIter);
-            HtmlTextIterIsValid(&sIter);
-            HtmlTextIterNext(&sIter)
+            HtmlTextIterFirst((HtmlTextNode *)pNode, &sIter); HtmlTextIterIsValid(&sIter); HtmlTextIterNext(&sIter)
         ) {
             int eType = HtmlTextIterType(&sIter);
             int nData = HtmlTextIterLength(&sIter);
@@ -2188,9 +2178,7 @@ nodeTextCommand(
                         break;
                 }
                 assert(zType);
-                Tcl_ListObjAppendElement(
-                    0, p, Tcl_NewStringObj(zType, -1)
-                );
+                Tcl_ListObjAppendElement(0, p, Tcl_NewStringObj(zType, -1));
                 Tcl_ListObjAppendElement(0, p, pObj);
                 Tcl_ListObjAppendElement(0, pRet, p);
             } else {
@@ -3028,7 +3016,6 @@ static void
 fragmentAddText (HtmlTree *pTree, HtmlTextNode *pTextNode, int iOffset)
 {
     HtmlFragmentContext *pFragment = pTree->pFragment;
-
     pTextNode->node.eTag = Html_Text;
 
     if (pFragment->pRoot) {
@@ -3137,9 +3124,7 @@ HtmlParseFragment (HtmlTree *pTree, const char *zHtml)
     sContext.pNodeListLink = Tcl_NewObj();
 
     pTree->pFragment = &sContext;
-    HtmlTokenize(pTree, zHtml, 1,
-        fragmentAddText, fragmentAddElement, fragmentAddClosingTag
-    );
+    HtmlTokenize(pTree, zHtml, 1, fragmentAddText, fragmentAddElement, fragmentAddClosingTag);
 
     while (sContext.pCurrent) {
         HtmlNode *pParent = HtmlNodeParent(sContext.pCurrent); 
