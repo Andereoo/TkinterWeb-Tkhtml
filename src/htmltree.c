@@ -334,10 +334,8 @@ nodeGetPreText(HtmlTextNode *pTextNode)
 {
     HtmlTextIter sIter;
     Tcl_Obj *pRet = Tcl_NewObj();
-
-    for (
-        HtmlTextIterFirst(pTextNode, &sIter); HtmlTextIterIsValid(&sIter); HtmlTextIterNext(&sIter)
-    ) {
+    for (HtmlTextIterFirst(pTextNode, &sIter); HtmlTextIterIsValid(&sIter); HtmlTextIterNext(&sIter))
+	{
         char *zWhite = " ";
         int nData = HtmlTextIterLength(&sIter);
 
@@ -345,7 +343,6 @@ nodeGetPreText(HtmlTextNode *pTextNode)
             case HTML_TEXT_TOKEN_TEXT:
                 Tcl_AppendToObj(pRet, HtmlTextIterData(&sIter), nData);
                 break;
-
             case HTML_TEXT_TOKEN_NEWLINE: 
                 zWhite = "\n";
             case HTML_TEXT_TOKEN_SPACE: {
@@ -1511,31 +1508,6 @@ HtmlNodeNumChildren (HtmlNode *pNode)
 /*
  *---------------------------------------------------------------------------
  *
- * HtmlNodeChild --
- *
- * Results:
- *     None.
- *
- * Side effects:
- *     None.
- *
- *---------------------------------------------------------------------------
- */
-#if 0
-HtmlNode * 
-HtmlNodeChild(pNode, n)
-    HtmlNode *pNode;
-    int n;
-{
-    HtmlElementNode *pElem = (HtmlElementNode *)pNode;
-    if (!pNode || HtmlNodeIsText(pNode) || pElem->nChild <= n) return 0;
-    return pElem->apChildren[n];
-}
-#endif
-
-/*
- *---------------------------------------------------------------------------
- *
  * HtmlNodeBefore --
  *
  * Results:
@@ -1554,21 +1526,6 @@ HtmlNodeBefore (HtmlNode *pNode)
     }
     return 0;
 }
-
-#if 0
-HtmlComputedValues * 
-HtmlNodeComputedValues(pNode)
-    HtmlNode *pNode;
-{
-    if (HtmlNodeIsText(pNode)) {
-        pNode = HtmlNodeParent(pNode);
-    }
-    if (pNode) {
-        return ((HtmlElementNode *)pNode)->pPropertyValues;
-    }
-    return 0;
-}
-#endif
 
 /*
  *---------------------------------------------------------------------------
