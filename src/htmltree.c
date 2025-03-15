@@ -334,23 +334,15 @@ nodeGetPreText(HtmlTextNode *pTextNode)
 {
     HtmlTextIter sIter;
     Tcl_Obj *pRet = Tcl_NewObj();
-
-    for (
-        HtmlTextIterFirst(pTextNode, &sIter);
-        HtmlTextIterIsValid(&sIter);
-        HtmlTextIterNext(&sIter)
-    ) {
+    for (HtmlTextIterFirst(pTextNode, &sIter); HtmlTextIterIsValid(&sIter); HtmlTextIterNext(&sIter))
+	{
         char *zWhite = " ";
-
-        int eType = HtmlTextIterType(&sIter);
         int nData = HtmlTextIterLength(&sIter);
-        char const * zData = HtmlTextIterData(&sIter);
 
-        switch (eType) {
+        switch (HtmlTextIterType(&sIter)) {
             case HTML_TEXT_TOKEN_TEXT:
-                Tcl_AppendToObj(pRet, zData, nData);
+                Tcl_AppendToObj(pRet, HtmlTextIterData(&sIter), nData);
                 break;
-
             case HTML_TEXT_TOKEN_NEWLINE: 
                 zWhite = "\n";
             case HTML_TEXT_TOKEN_SPACE: {
@@ -362,7 +354,6 @@ nodeGetPreText(HtmlTextNode *pTextNode)
             }
         }
     }
-
     return pRet;
 }
 
@@ -1362,14 +1353,6 @@ HtmlTreeAddText (HtmlTree *pTree, HtmlTextNode *pTextNode, int iOffset)
         pTextNode->node.index = pTree->iNextNode++;
         pTree->state.isCdataInHead = 0;
         nodeHandlerCallbacks(pTree, pTitle);
-    } else if (
-        eCurrentType == Html_TABLE || eCurrentType == Html_TBODY || 
-        eCurrentType == Html_TFOOT || eCurrentType == Html_THEAD || 
-        eCurrentType == Html_TR
-    ) {
-        treeAddFosterText(pTree, pTextNode);
-        pTextNode->node.index = pTree->iNextNode++;
-        pTextNode->node.eTag = Html_Text;
     } else {
         HtmlNodeAddTextChild(pCurrent, pTextNode);
         pTextNode->node.index = pTree->iNextNode++;
@@ -1525,31 +1508,6 @@ HtmlNodeNumChildren (HtmlNode *pNode)
 /*
  *---------------------------------------------------------------------------
  *
- * HtmlNodeChild --
- *
- * Results:
- *     None.
- *
- * Side effects:
- *     None.
- *
- *---------------------------------------------------------------------------
- */
-#if 0
-HtmlNode * 
-HtmlNodeChild(pNode, n)
-    HtmlNode *pNode;
-    int n;
-{
-    HtmlElementNode *pElem = (HtmlElementNode *)pNode;
-    if (!pNode || HtmlNodeIsText(pNode) || pElem->nChild <= n) return 0;
-    return pElem->apChildren[n];
-}
-#endif
-
-/*
- *---------------------------------------------------------------------------
- *
  * HtmlNodeBefore --
  *
  * Results:
@@ -1568,21 +1526,6 @@ HtmlNodeBefore (HtmlNode *pNode)
     }
     return 0;
 }
-
-#if 0
-HtmlComputedValues * 
-HtmlNodeComputedValues(pNode)
-    HtmlNode *pNode;
-{
-    if (HtmlNodeIsText(pNode)) {
-        pNode = HtmlNodeParent(pNode);
-    }
-    if (pNode) {
-        return ((HtmlElementNode *)pNode)->pPropertyValues;
-    }
-    return 0;
-}
-#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -2167,13 +2110,10 @@ nodeTextCommand(
         Tcl_IncrRefCount(pRet);
 
         for (
-            HtmlTextIterFirst((HtmlTextNode *)pNode, &sIter);
-            HtmlTextIterIsValid(&sIter);
-            HtmlTextIterNext(&sIter)
+            HtmlTextIterFirst((HtmlTextNode *)pNode, &sIter); HtmlTextIterIsValid(&sIter); HtmlTextIterNext(&sIter)
         ) {
             int eType = HtmlTextIterType(&sIter);
             int nData = HtmlTextIterLength(&sIter);
-            char const * zData = HtmlTextIterData(&sIter);
     
             if (eChoice == NODE_TEXT_TOKENS) {
                 char *zType = 0;
@@ -2183,7 +2123,7 @@ nodeTextCommand(
                 switch (eType) {
                     case HTML_TEXT_TOKEN_TEXT:
                         zType = "text";
-                        pObj = Tcl_NewStringObj(zData, nData);
+                        pObj = Tcl_NewStringObj(HtmlTextIterData(&sIter), nData);
                         break;
                     case HTML_TEXT_TOKEN_SPACE:
                         zType = "space";
@@ -2195,9 +2135,7 @@ nodeTextCommand(
                         break;
                 }
                 assert(zType);
-                Tcl_ListObjAppendElement(
-                    0, p, Tcl_NewStringObj(zType, -1)
-                );
+                Tcl_ListObjAppendElement(0, p, Tcl_NewStringObj(zType, -1));
                 Tcl_ListObjAppendElement(0, p, pObj);
                 Tcl_ListObjAppendElement(0, pRet, p);
             } else {
@@ -3035,7 +2973,6 @@ static void
 fragmentAddText (HtmlTree *pTree, HtmlTextNode *pTextNode, int iOffset)
 {
     HtmlFragmentContext *pFragment = pTree->pFragment;
-
     pTextNode->node.eTag = Html_Text;
 
     if (pFragment->pRoot) {
@@ -3144,9 +3081,7 @@ HtmlParseFragment (HtmlTree *pTree, const char *zHtml)
     sContext.pNodeListLink = Tcl_NewObj();
 
     pTree->pFragment = &sContext;
-    HtmlTokenize(pTree, zHtml, 1,
-        fragmentAddText, fragmentAddElement, fragmentAddClosingTag
-    );
+    HtmlTokenize(pTree, zHtml, 1, fragmentAddText, fragmentAddElement, fragmentAddClosingTag);
 
     while (sContext.pCurrent) {
         HtmlNode *pParent = HtmlNodeParent(sContext.pCurrent); 

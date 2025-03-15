@@ -1159,7 +1159,6 @@ int TextToPostscript(Tk_PostscriptInfo psInfo, char *z, int n, int x, int y, int
         default:               anchor = 0;    justify = "0";   break;
     }
     Tk_FontMetrics fm = pV->fFont->metrics;
-	printf("%d %d\t%s\n", n, strlen(z), z);
 	if (n < strlen(z)) z[n] = '\0';  // Turns out 'z' is 1 char to long, not sure why. Add a null terminator
 
     // Angle, horizontal and vertical positions to render at
