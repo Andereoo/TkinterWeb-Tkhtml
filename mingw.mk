@@ -62,9 +62,9 @@ STARKITRT = /home/dan/work/tclkit-win32.upx.exe
 #
 JS_SHARED_LIB = libTclsee.dll
 
-JSLIB   = $(HOME)/work/tkhtml/jswin/lib/libsee.a
-JSLIB  += $(HOME)/work/tkhtml/jswin/lib/libgc.a
-JSFLAGS = -I$(HOME)/work/tkhtml/jswin/include
+JSLIB   = /home/billa/SEE/libsee/.libs/libsee.lib
+JSLIB  += /mingw64/lib/libgc.a
+JSFLAGS = -I/home/billa/SEE/include
 
 #
 # End of configuration section.
