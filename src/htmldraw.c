@@ -2941,7 +2941,7 @@ getPixmap (
             pBgRoot = HtmlNodeChild(pBgRoot, 1);
         }
         pV = HtmlNodeComputedValues(pBgRoot);
-        if (!pV->cBackgroundColor->xcolor && !pV->imZoomedBackgroundImage) {
+        if (!pV || !pV->cBackgroundColor->xcolor && !pV->imZoomedBackgroundImage) {
             pBgRoot = 0;
         }
     }
