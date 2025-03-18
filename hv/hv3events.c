@@ -500,9 +500,9 @@ dispatchEventFunc(interp, self, thisobj, argc, argv, res)
  *---------------------------------------------------------------------------
  */
 static int
-eventDispatchCmd(clientData, pTcl, objc, objv)
+eventDispatchCmd(clientData, interp, objc, objv)
     ClientData clientData;
-    Tcl_Interp *pTcl;
+    Tcl_Interp *interp;
     int objc;
     Tcl_Obj *CONST objv[];             /* Argument strings. */
 {
@@ -536,9 +536,9 @@ eventDispatchCmd(clientData, pTcl, objc, objv)
         int isHandled = getBooleanFlag(p, pEvent, CALLED_LISTENER);
         int isPrevent = getBooleanFlag(p, pEvent, PREVENT_DEFAULT);
         Tcl_Obj *pRet = Tcl_NewObj();
-        Tcl_ListObjAppendElement(pTcl, pRet, Tcl_NewBooleanObj(isHandled));
-        Tcl_ListObjAppendElement(pTcl, pRet, Tcl_NewBooleanObj(isPrevent));
-        Tcl_SetObjResult(pTcl, pRet);
+        Tcl_ListObjAppendElement(interp, pRet, Tcl_NewBooleanObj(isHandled));
+        Tcl_ListObjAppendElement(interp, pRet, Tcl_NewBooleanObj(isPrevent));
+        Tcl_SetObjResult(interp, pRet);
     }
 
     return rc;
@@ -770,7 +770,7 @@ eventTargetInit(pTclSeeInterp, p)
     SeeTclObject *p;
 {
     struct SEE_interpreter *pSee = (struct SEE_interpreter *)pTclSeeInterp;
-    Tcl_Interp *pTcl = pTclSeeInterp->pTclInterp;
+    Tcl_Interp *interp = pTclSeeInterp->pTclInterp;
     Tcl_Obj *pList;
     Tcl_Obj **apWord;
     int nWord;
@@ -779,16 +779,16 @@ eventTargetInit(pTclSeeInterp, p)
     struct SEE_scope *pScope = 0;
 
     int rc;
-    rc = callSeeTclMethod(pTcl, 0, p, "Events", 0, 0);
+    rc = callSeeTclMethod(interp, 0, p, "Events", 0, 0);
     if (rc != TCL_OK) {
-        Tcl_BackgroundError(pTcl);
+        Tcl_BackgroundError(interp);
         return;
     }
 
-    pList = Tcl_GetObjResult(pTcl);
-    rc = Tcl_ListObjGetElements(pTcl, pList, &nWord, &apWord);
+    pList = Tcl_GetObjResult(interp);
+    rc = Tcl_ListObjGetElements(interp, pList, &nWord, &apWord);
     if (rc != TCL_OK) {
-        Tcl_BackgroundError(pTcl);
+        Tcl_BackgroundError(interp);
         return;
     }
     Tcl_IncrRefCount(pList);
@@ -798,17 +798,17 @@ eventTargetInit(pTclSeeInterp, p)
         Tcl_Obj **apS;
         Tcl_Obj *pScopeList;
 
-        rc = callSeeTclMethod(pTcl, 0, p, "Scope", 0, 0);
+        rc = callSeeTclMethod(interp, 0, p, "Scope", 0, 0);
         if (rc != TCL_OK) {
-            Tcl_BackgroundError(pTcl);
+            Tcl_BackgroundError(interp);
             return;
         }
 
-        pScopeList = Tcl_GetObjResult(pTcl);
-        rc = Tcl_ListObjGetElements(pTcl, pScopeList, &nS, &apS);
+        pScopeList = Tcl_GetObjResult(interp);
+        rc = Tcl_ListObjGetElements(interp, pScopeList, &nS, &apS);
         if (rc != TCL_OK) {
             Tcl_DecrRefCount(pList);
-            Tcl_BackgroundError(pTcl);
+            Tcl_BackgroundError(interp);
             return;
         }
         Tcl_IncrRefCount(pScopeList);
@@ -858,7 +858,7 @@ eventTargetInit(pTclSeeInterp, p)
         Tcl_DecrRefCount(pJ);
     }
     Tcl_DecrRefCount(pList);
-    Tcl_ResetResult(pTcl);
+    Tcl_ResetResult(interp);
 
     if (!pTclSeeInterp->pEventPrototype) {
         struct SEE_object *pP = SEE_native_new(pSee);
@@ -935,9 +935,9 @@ listenerToString(pSeeInterp, pListener)
  *---------------------------------------------------------------------------
  */
 static int
-eventDumpCmd(clientData, pTcl, objc, objv)
+eventDumpCmd(clientData, interp, objc, objv)
     ClientData clientData;
-    Tcl_Interp *pTcl;
+    Tcl_Interp *interp;
     int objc;
     Tcl_Obj *CONST objv[];             /* Argument strings. */
 {
@@ -971,7 +971,7 @@ eventDumpCmd(clientData, pTcl, objc, objv)
             const char *zType = (pL->isCapture?"capturing":"non-capturing");
             apRow[1] = Tcl_NewStringObj(zType, -1);
             apRow[2] = listenerToString(pInterp, pL->pListener);
-            Tcl_ListObjAppendElement(pTcl, pRet, Tcl_NewListObj(3, apRow));
+            Tcl_ListObjAppendElement(interp, pRet, Tcl_NewListObj(3, apRow));
         }
 
         Tcl_DecrRefCount(pEventType);
@@ -989,12 +989,12 @@ eventDumpCmd(clientData, pTcl, objc, objv)
                 apRow[0] = Tcl_NewStringObj(&zProp[2], -1);
                 apRow[1] = Tcl_NewStringObj("legacy", -1);
                 apRow[2] = listenerToString(pInterp, val.u.object);
-                Tcl_ListObjAppendElement(pTcl, pRet, Tcl_NewListObj(3, apRow));
+                Tcl_ListObjAppendElement(interp, pRet, Tcl_NewListObj(3, apRow));
             }
         }
     }
 
-    Tcl_SetObjResult(pTcl, pRet);
+    Tcl_SetObjResult(interp, pRet);
     Tcl_DecrRefCount(pRet);
 
     return TCL_OK;

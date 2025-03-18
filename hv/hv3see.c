@@ -725,19 +725,19 @@ argValueToTcl(pTclSeeInterp, pValue, piObject)
 }
 
 
-static int evalObjv(pTcl, nWord, apWord)
-    Tcl_Interp *pTcl;
+static int evalObjv(interp, nWord, apWord)
+    Tcl_Interp *interp;
     int nWord;
     Tcl_Obj **apWord;
 {
-#if 0
+#if 1
     int ii;
     for (ii = 0; ii < nWord; ii++){
          printf("%s ", Tcl_GetString(apWord[ii]));
     }
     printf("\n");
 #endif
-    return Tcl_EvalObjv(pTcl, nWord, apWord, TCL_EVAL_GLOBAL);
+    return Tcl_EvalObjv(interp, nWord, apWord, TCL_EVAL_GLOBAL);
 } 
 
 /*
@@ -762,8 +762,8 @@ static int evalObjv(pTcl, nWord, apWord)
  *---------------------------------------------------------------------------
  */
 static int 
-callSeeTclMethod(pTcl, pLog, p, zMethod, pProperty, pVal)
-    Tcl_Interp *pTcl;                      /* Tcl Interpreter context */
+callSeeTclMethod(interp, pLog, p, zMethod, pProperty, pVal)
+    Tcl_Interp *interp;                      /* Tcl Interpreter context */
     Tcl_Obj *pLog;                         /* Log command */
     SeeTclObject *p;                       /* Object to call method of */
     const char *zMethod;                   /* Method name */
@@ -793,12 +793,12 @@ callSeeTclMethod(pTcl, pLog, p, zMethod, pProperty, pVal)
         nArg++;
     }
 
-    rc = evalObjv(pTcl, p->nWord + nArg, p->apWord);
+    rc = evalObjv(interp, p->nWord + nArg, p->apWord);
 
     if (pLog && rc==TCL_OK) {
         Tcl_Obj *pEval;
         Tcl_Obj *pSubject;
-        Tcl_Obj *pRes = Tcl_GetObjResult(pTcl);
+        Tcl_Obj *pRes = Tcl_GetObjResult(interp);
         Tcl_IncrRefCount(pRes);
 
         pSubject = Tcl_NewStringObj("ECMASCRIPT ", -1);
@@ -812,10 +812,10 @@ callSeeTclMethod(pTcl, pLog, p, zMethod, pProperty, pVal)
         if (pProp) Tcl_ListObjAppendElement(0, pEval, pProp);
         if (pVal) Tcl_ListObjAppendElement(0, pEval, pVal);
         Tcl_ListObjAppendElement(0, pEval, pRes);
-        Tcl_EvalObjEx(pTcl, pEval, TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL);
+        Tcl_EvalObjEx(interp, pEval, TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL);
         Tcl_DecrRefCount(pEval);
 
-        Tcl_SetObjResult(pTcl, pRes);
+        Tcl_SetObjResult(interp, pRes);
         Tcl_DecrRefCount(pRes);
     }
 
@@ -945,9 +945,9 @@ createTransient(pTclSeeInterp, pTclCommand)
     SeeInterp *pTclSeeInterp;
     Tcl_Obj *pTclCommand;
 {
-    Tcl_Interp *pTcl = pTclSeeInterp->pTclInterp;
+    Tcl_Interp *interp = pTclSeeInterp->pTclInterp;
     SeeTclObject *p = newSeeTclObject(pTclSeeInterp, pTclCommand);
-    GC_register_finalizer_no_order(p, finalizeObject, pTcl, 0, 0);
+    GC_register_finalizer_no_order(p, finalizeObject, interp, 0, 0);
     return (struct SEE_object *)p;
 }
 
@@ -969,7 +969,7 @@ createNative(pTclSeeInterp, pTclList)
     SeeInterp *pTclSeeInterp;
     Tcl_Obj *pTclList;
 {
-    Tcl_Interp *pTcl = pTclSeeInterp->pTclInterp;
+    Tcl_Interp *interp = pTclSeeInterp->pTclInterp;
     struct SEE_interpreter *pSee = (struct SEE_interpreter *)pTclSeeInterp;
     int nElem = 0;
     Tcl_Obj **apElem = 0;
@@ -977,7 +977,7 @@ createNative(pTclSeeInterp, pTclList)
     int ii;
     struct SEE_object *pRet;
 
-    rc = Tcl_ListObjGetElements(pTcl, pTclList, &nElem, &apElem);
+    rc = Tcl_ListObjGetElements(interp, pTclList, &nElem, &apElem);
     if (rc != TCL_OK) return 0;
 
     pRet = (struct SEE_object *)SEE_native_new(pSee);
@@ -1059,7 +1059,7 @@ findOrCreateObject(pTclSeeInterp, pTclCommand, isGlobal)
      * new SeeTclObject.
      */
     if (!pObject) {
-        Tcl_Interp *pTcl = pTclSeeInterp->pTclInterp;
+        Tcl_Interp *interp = pTclSeeInterp->pTclInterp;
         if (isGlobal) {
             pObject = &pTclSeeInterp->global;
         }else{
@@ -1077,7 +1077,7 @@ findOrCreateObject(pTclSeeInterp, pTclCommand, isGlobal)
          * attach a finalizer. See comments above finalizeObject().
          */
         if (!isGlobal) {
-            GC_register_finalizer_no_order(pObject, finalizeObject, pTcl, 0, 0);
+            GC_register_finalizer_no_order(pObject, finalizeObject, interp, 0, 0);
         } 
     }
 
@@ -1089,14 +1089,14 @@ createNode(pTclSeeInterp, pTclCommand)
     SeeInterp *pTclSeeInterp;
     Tcl_Obj *pTclCommand;
 {
-    Tcl_Interp *pTcl = pTclSeeInterp->pTclInterp;
+    Tcl_Interp *interp = pTclSeeInterp->pTclInterp;
     SeeTclObject * p;
 
     p = (SeeTclObject *)findOrCreateObject(pTclSeeInterp, pTclCommand, 0);
     if (p->nodehandle == 0) {
         Tcl_Command t;
         Tcl_CmdInfo info;
-        t = Tcl_GetCommandFromObj(pTcl, p->apWord[2]);
+        t = Tcl_GetCommandFromObj(interp, p->apWord[2]);
         assert(t);
         Tcl_GetCommandInfoFromToken(t, &info);
         p->nodehandle = info.objClientData;
@@ -1528,8 +1528,8 @@ struct TclCmdArg {
 };
 
 static int
-processArgs(pTcl, aOpt, nArg, apArg)
-    Tcl_Interp *pTcl;
+processArgs(interp, aOpt, nArg, apArg)
+    Tcl_Interp *interp;
     TclCmdArg *aOpt;
     int nArg;
     Tcl_Obj **apArg;
@@ -1539,13 +1539,13 @@ processArgs(pTcl, aOpt, nArg, apArg)
         Tcl_Obj *p = apArg[ii];
         size_t s = sizeof(TclCmdArg);
         int iIdx;
-        if (Tcl_GetIndexFromObjStruct(pTcl, p, aOpt, s, "option", 0, &iIdx)) {
+        if (Tcl_GetIndexFromObjStruct(interp, p, aOpt, s, "option", 0, &iIdx)) {
             return TCL_ERROR;
         }
         if (0 == aOpt[iIdx].isBoolean) {
             ii++;
             if (ii >= nArg) {
-                Tcl_AppendResult(pTcl, 
+                Tcl_AppendResult(interp, 
                     "option ", aOpt[iIdx].zName, " requires an argument", 0
                 );
                 return TCL_ERROR;
@@ -2297,10 +2297,10 @@ SeeTcl_HasProperty(pInterp, pObj, pProp)
     if (!ret && (
         !p->pClass || Tcl_FindHashEntry(&p->pClass->aProperty, (char *)pProp)
     )) {
-        Tcl_Interp *pTcl = pTclSeeInterp->pTclInterp;
-        rc = callSeeTclMethod(pTcl, 0, p, "HasProperty", pProp, 0);
+        Tcl_Interp *interp = pTclSeeInterp->pTclInterp;
+        rc = callSeeTclMethod(interp, 0, p, "HasProperty", pProp, 0);
         throwTclError(pInterp, rc);
-        rc = Tcl_GetBooleanFromObj(pTcl, Tcl_GetObjResult(pTcl), &ret);
+        rc = Tcl_GetBooleanFromObj(interp, Tcl_GetObjResult(interp), &ret);
         throwTclError(pInterp, rc);
     }
 
