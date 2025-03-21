@@ -2377,9 +2377,7 @@ node_attr_usage:
             if (!pElem) {
                 pElem = HtmlNodeAsElement(HtmlNodeParent(pNode));
             }
-            assert(
-                pNode==pTree->pRoot || pElem->pStack || HtmlNodeIsOrphan(pNode)
-            );
+            assert(pNode==pTree->pRoot || pElem->pStack || HtmlNodeIsOrphan(pNode));
             if ((HtmlNode *)pElem != pTree->pRoot && pElem->pStack) {
                 HtmlNode *p = &(pElem->pStack->pElem->node);
                 Tcl_SetObjResult(interp, HtmlNodeCommand(pTree, p));

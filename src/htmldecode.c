@@ -670,16 +670,16 @@ uriObjCmd(
         int nArg;
         const char *zUsage;
     } aSub[] = {
-        {"resolve",   URI_RESOLVE,   1, "URI"},  
-        {"load",      URI_LOAD,      1, "URI"},      
-        {"get",             URI_GET,        0, ""},      
-        {"get_no_fragment", URI_NOFRAGMENT, 0, ""},      
-        {"scheme",    URI_SCHEME,    0, ""},      
+        {"resolve",   URI_RESOLVE,   1, "URI"},
+        {"load",      URI_LOAD,      1, "URI"},
+        {"get",             URI_GET,        0, ""},
+        {"get_no_fragment", URI_NOFRAGMENT, 0, ""},
+        {"scheme",    URI_SCHEME,    0, ""},
         {"authority", URI_AUTHORITY, 0, ""},
-        {"path",      URI_PATH,      0, ""},      
-        {"query",     URI_QUERY,     0, ""},      
-        {"fragment",  URI_FRAGMENT,  0, ""},      
-        {"destroy",   URI_DESTROY,   0, ""},      
+        {"path",      URI_PATH,      0, ""},
+        {"query",     URI_QUERY,     0, ""},
+        {"fragment",  URI_FRAGMENT,  0, ""},
+        {"destroy",   URI_DESTROY,   0, ""},
         {0, 0, 0}
     };
     p = (Uri *)clientData;
@@ -726,17 +726,13 @@ uriObjCmd(
             HtmlFree(p);
             break;
         }
-
         case URI_GET: 
         case URI_NOFRAGMENT: {
-            char *zRes = makeUri(p->zScheme, p->zAuthority, p->zPath, 
-                p->zQuery, ((aSub[iChoice].eSymbol==URI_GET)?p->zFragment:0)
-            );
+            char *zRes = makeUri(p->zScheme, p->zAuthority, p->zPath, p->zQuery, ((aSub[iChoice].eSymbol==URI_GET)?p->zFragment:0));
             Tcl_SetObjResult(interp, Tcl_NewStringObj(zRes, -1));
             HtmlFree(zRes);
             break;
         }
-
         case URI_SCHEME: 
             Tcl_SetObjResult(interp, TO_STRING_OBJ(p->zScheme));
             break;

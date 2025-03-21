@@ -730,11 +730,8 @@ static int evalObjv(interp, nWord, apWord)
     int nWord;
     Tcl_Obj **apWord;
 {
-#if 1
-    int ii;
-    for (ii = 0; ii < nWord; ii++){
-         printf("%s ", Tcl_GetString(apWord[ii]));
-    }
+#if 0
+    for (i=0; i<nWord;) printf("%d: %s. ", i++, Tcl_GetString(apWord[i]));
     printf("\n");
 #endif
     return Tcl_EvalObjv(interp, nWord, apWord, TCL_EVAL_GLOBAL);
@@ -787,7 +784,6 @@ callSeeTclMethod(interp, pLog, p, zMethod, pProperty, pVal)
         p->apWord[p->nWord + nArg] = pProp;
         nArg++;
     }
-
     if (pVal) {
         p->apWord[p->nWord + nArg] = pVal;
         nArg++;
@@ -2062,11 +2058,9 @@ tclSeeInterp(clientData, interp, objc, objv)
     Tcl_SetResult(interp, zCmd, TCL_VOLATILE);
 
 #ifndef NDEBUG
-    if (1) {
-        Tcl_CmdInfo cmdinfo;
-        if (Tcl_GetCommandInfo(interp, "::tkhtml::instrument", &cmdinfo)) {
-            pInterp->pInstrumentData = cmdinfo.objClientData;
-        }
+    Tcl_CmdInfo cmdinfo;
+    if (Tcl_GetCommandInfo(interp, "::tkhtml::instrument", &cmdinfo)) {
+        pInterp->pInstrumentData = cmdinfo.objClientData;
     }
 #endif
 
@@ -2077,7 +2071,7 @@ static void throwTclError(p, rc)
     struct SEE_interpreter *p;
     int rc;
 {
-    if (rc!=TCL_OK) {
+    if (rc != TCL_OK) {
         SeeInterp *pTclSeeInterp = (SeeInterp *)p;
 
         Tcl_Interp *interp = pTclSeeInterp->pTclInterp;

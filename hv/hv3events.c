@@ -779,7 +779,7 @@ eventTargetInit(pTclSeeInterp, p)
     struct SEE_scope *pScope = 0;
 
     int rc;
-    rc = callSeeTclMethod(interp, 0, p, "Events", 0, 0);
+    rc = callSeeTclMethod(interp, 0, p, "Events", NULL, NULL);
     if (rc != TCL_OK) {
         Tcl_BackgroundError(interp);
         return;
