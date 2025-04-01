@@ -2046,10 +2046,7 @@ tclSeeInterp(clientData, interp, objc, objv)
     initSeeTclObject(pInterp, &pInterp->global, objv[1]);
  
     /* Initialize the SEE interpreter. */
-    SEE_interpreter_init_hostglobal(&pInterp->interp, 
-        SEE_COMPAT_JS15|SEE_COMPAT_SGMLCOM|SEE_COMPAT_262_3B,
-	(struct SEE_object *)&pInterp->global
-    );
+    SEE_interpreter_init_compat(&pInterp->interp, SEE_COMPAT_JS15|SEE_COMPAT_SGMLCOM|SEE_COMPAT_262_3B);
     pInterp->interp.trace = seeTraceHook;
 
     /* This call puts the global object in the hash table with the other

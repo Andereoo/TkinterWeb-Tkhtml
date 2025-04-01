@@ -92,7 +92,7 @@ This file has two sections:
     The SEE library depends on the Boehm garbage-collector libary. To build
     "Tclsee", the following third-party components are required:
   
-      SEE:      http://www.adaptive-enterprises.com.au/~d/software/see/
+      SEE:      https://adaptive-enterprises.com/~d/software/see/
       Boehm GC: http://www.hpl.hp.com/personal/Hans_Boehm/gc/
   
     Libraries need to be built from these two packages (files libsee.a 

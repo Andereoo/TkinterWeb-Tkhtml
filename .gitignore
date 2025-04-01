@@ -1,6 +1,9 @@
+*.o
+*.so
 /Makefile
 /config.log
 /config.status
-*.o
-*.so
+/src/MODIFIED/
+/src/OBSOLETE/
+/src/stdout
 build/

@@ -1127,7 +1127,7 @@ TkPostscriptImage(
  *
  *--------------------------------------------------------------
  */
-int TextToPostscript(Tk_PostscriptInfo psInfo, const char *z, int n, int x, int y, int prepass, HtmlNode *pNode, Tcl_Interp *interp)
+int TextToPostscript(Tk_PostscriptInfo psInfo, char *z, int n, int x, int y, int prepass, HtmlNode *pNode, Tcl_Interp *interp)
 {
     float anchor;
     const char *justify;
@@ -1159,6 +1159,7 @@ int TextToPostscript(Tk_PostscriptInfo psInfo, const char *z, int n, int x, int 
         default:               anchor = 0;    justify = "0";   break;
     }
     Tk_FontMetrics fm = pV->fFont->metrics;
+	if (n < strlen(z)) z[n] = '\0';  // Turns out 'z' is 1 char to long, not sure why. Add a null terminator
 
     // Angle, horizontal and vertical positions to render at
     Tcl_AppendPrintfToObj(psObj, "0 %d %.15g [\n", x, Tk_PostscriptY(y, psInfo));
@@ -1306,7 +1307,7 @@ int BoxToPostscript(HtmlTree *pTree, int x, int y, int w, int h, int prepass, Ht
         }
     }
     if (0 == (f & DRAWBOX_NOBACKGROUND) && pV->imZoomedBackgroundImage) { /* Image background, if required. */
-
+        Tk_Window win = HtmlTreeTkwin(pTree);
         int iWidth, iHeight, eR = pV->eBackgroundRepeat;
         HtmlImageSize(pV->imZoomedBackgroundImage, &iWidth, &iHeight);
 
@@ -1328,7 +1329,7 @@ int BoxToPostscript(HtmlTree *pTree, int x, int y, int w, int h, int prepass, Ht
             }
             Tcl_AppendPrintfToObj(psObj, "%d %.15g translate\n", bg_x, Tk_PostscriptY(bg_y, psInfo)-bg_h);
             if (Tk_PostscriptImage(HtmlImageImage(pV->imZoomedBackgroundImage), interp, 
-                pTree->tkwin, psInfo, iPosX, iPosY, bg_w, bg_h, prepass
+                win, psInfo, iPosX, iPosY, bg_w, bg_h, prepass
             ) != TCL_OK) goto error;
             Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
         }
