@@ -123,7 +123,7 @@ P azimuth background-attachment background-color background-image
 P background-repeat border-collapse border-spacing 
 P border-top-color border-right-color border-bottom-color border-left-color 
 P border-top-style border-right-style border-bottom-style border-left-style 
-P border-top-width border-right-width border-bottom-width border-left-width 
+P border-top-width border-right-width border-bottom-width border-left-width border-radius
 P bottom caption-side clear clip color content counter-increment counter-reset 
 P cue-after cue-before cursor direction display elevation empty-cells float 
 P font-family font-size font-size-adjust font-stretch font-style font-variant 
