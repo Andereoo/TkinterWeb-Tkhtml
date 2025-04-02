@@ -26,7 +26,7 @@ def test():
     root.tk.eval("set auto_path [linsert $auto_path 0 {"+BUILD_PATH+"}]")
     root.tk.eval("package require Tkhtml")
     widget = tkinter.Widget(root, "html")
-    widget.tk.call(widget._w, "parse", """<body style="background-color:grey;"><p style="background-color: lightgrey; padding:15px; border: 2px solid black; border-radius: 10px;">If you see this, wohoo!!!</p></body>""")
+    widget.tk.call(widget._w, "parse", """<body style="background-color:grey;"><p style="background-color: lightgrey; padding:15px; display: inline-block; white-space: nowrap; margin:0; border: 2px solid black; border-radius: 10px;">If you see this, wohoo!!!</p></body>""")
     widget.pack(expand=True, fill="both")
     root.mainloop()
 

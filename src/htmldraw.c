@@ -1752,6 +1752,11 @@ fill_round_rectangle(
         cairo_rectangle(cr, 0, 0, width, height);
         cairo_fill(cr);
 
+        float max_radius = MIN(height, width) / 2;
+        if (radius > max_radius) {
+            radius = max_radius;
+        }
+
         cairo_set_antialias(cr, CAIRO_ANTIALIAS_BEST);
 
         cairo_arc(cr, width - radius, radius, radius, -3.14/2, 0);  // top-right corner
