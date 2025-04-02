@@ -2,7 +2,7 @@ import tkinter
 import os, glob, subprocess, re, sys
 from pathlib import Path
 
-TEST = True
+TEST = False
 
 BASE_PATH = os.path.dirname(__file__)
 BUILD_PATH =  os.path.join(BASE_PATH, 'build')
@@ -26,7 +26,7 @@ def test():
     root.tk.eval("set auto_path [linsert $auto_path 0 {"+BUILD_PATH+"}]")
     root.tk.eval("package require Tkhtml")
     widget = tkinter.Widget(root, "html")
-    widget.tk.call(widget._w, "parse", """<body style="background-color:grey"><p style="background-color: lightgrey; padding:15px; border: 2px solid black; border-radius: 10px;">If you see this, wohoo!!!</p></body>""")
+    widget.tk.call(widget._w, "parse", """<body style="background-color:grey;"><p style="background-color: lightgrey; padding:15px; border: 2px solid black; border-radius: 10px;">If you see this, wohoo!!!</p></body>""")
     widget.pack(expand=True, fill="both")
     root.mainloop()
 
