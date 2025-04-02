@@ -93,10 +93,11 @@ TEA_ADD_SOURCES([restrack.c])
 TEA_ADD_SOURCES([htmldecode.c])
 TEA_ADD_SOURCES([htmltext.c])
 TEA_ADD_SOURCES([htmlutil.c])
+TEA_ADD_SOURCES([htmlPs.c])
 
 TEA_ADD_HEADERS([])
 TEA_ADD_INCLUDES([])
-TEA_ADD_LIBS([])
+TEA_ADD_LIBS([-lcairo])
 TEA_ADD_CFLAGS([])
 TEA_ADD_STUB_SOURCES([])
 TEA_ADD_TCL_SOURCES([])
@@ -174,6 +175,19 @@ TEA_CONFIG_CFLAGS
 TEA_ENABLE_SYMBOLS
 
 #--------------------------------------------------------------------
+# Check for cairo.
+#--------------------------------------------------------------------
+
+AC_CHECK_HEADERS([cairo/cairo.h],
+  [AC_SUBST(CAIRO_CFLAGS) AC_SUBST(CAIRO_LIBS)],
+  [AC_MSG_ERROR([Cairo library not found!])])
+
+AC_CHECK_HEADERS([cairo/cairo-xlib.h],
+  [AC_SUBST(CAIRO_CFLAGS) AC_SUBST(CAIRO_LIBS)],
+  [AC_MSG_ERROR([Cairo library missing Cairo-Xlib!])])
+
+
+#--------------------------------------------------------------------
 # Everyone should be linking against the Tcl stub library.  If you
 # can't for some reason, remove this definition.  If you aren't using
 # stubs, you also need to modify the SHLIB_LD_LIBS setting below to
@@ -208,4 +222,5 @@ TEA_PROG_WISH
 # which require substituting th AC variables in.  Include these here.
 #--------------------------------------------------------------------
 
-AC_OUTPUT([Makefile])
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT

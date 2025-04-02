@@ -243,6 +243,8 @@ struct HtmlComputedValues {
     HtmlFourSides padding;            /* 'padding'        (pixels, %)         */
     HtmlFourSides margin;             /* 'margin'         (pixels, %, AUTO)   */
 
+    int iBorderRadius;                /* 'border-radius' */
+
     HtmlFourSides border;             /* 'border-width'   (pixels)            */
     unsigned char eBorderTopStyle;    /* 'border-top-style' */
     unsigned char eBorderRightStyle;  /* 'border-right-style' */
@@ -386,6 +388,7 @@ struct HtmlComputedValuesCreator {
 #define PROP_MASK_TEXT_INDENT             0x10000000
 #define PROP_MASK_WORD_SPACING            0x20000000
 #define PROP_MASK_LETTER_SPACING          0x40000000
+#define PROP_MASK_BORDER_RADIUS           0x80000000
 
 /*
  * Pixel values in the HtmlComputedValues struct may also take the following
@@ -510,6 +513,7 @@ int HtmlComputedValuesCompare(HtmlComputedValues *, HtmlComputedValues *);
 #define HTML_COMPUTED_MAX_HEIGHT      iMaxHeight
 #define HTML_COMPUTED_MAX_WIDTH       iMaxWidth
 #define HTML_COMPUTED_TEXT_INDENT     iTextIndent
+#define HTML_COMPUTED_BORDER_RADIUS   iBorderRadius; /* 'border-radius' */
 
 /* The PIXELVAL macro takes three arguments:
  * 

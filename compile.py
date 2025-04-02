@@ -2,13 +2,15 @@ import tkinter
 import os, glob, subprocess, re, sys
 from pathlib import Path
 
+TEST = True
+
 BASE_PATH = os.path.dirname(__file__)
 BUILD_PATH =  os.path.join(BASE_PATH, 'build')
 CONFIGURE_PATH =  os.path.join(BASE_PATH, 'configure')
 SRC_PATH =  os.path.join(BASE_PATH, 'src')
 CSSPROP_PATH =  os.path.join(BASE_PATH, 'src', 'cssprop.tcl')
 
-print("Welcome to TkinterWeb's TkHtml3.0 compile script. Note that for this to succeed you will likely need tcl-dev, tk-dev, gcc, and make installed on your system.")
+print("Welcome to TkinterWeb's TkHtml3.0 compile script. Note that for this to succeed you will need tcl-dev, tk-dev, cairo, gcc, and make installed on your system.")
 
 root = tkinter.Tcl()
 paths = root.exprstring('$auto_path').split()#tcl_pkgPath
@@ -18,6 +20,19 @@ paths.sort(key=len)
 tclConfig_paths = []
 tkConfig_paths = []
 used_paths = []
+
+def test():
+    root = tkinter.Tk()
+    root.tk.eval("set auto_path [linsert $auto_path 0 {"+BUILD_PATH+"}]")
+    root.tk.eval("package require Tkhtml")
+    widget = tkinter.Widget(root, "html")
+    widget.tk.call(widget._w, "parse", """<body style="background-color:grey"><p style="background-color: lightgrey; padding:15px; border: 2px solid black; border-radius: 10px;">If you see this, wohoo!!!</p></body>""")
+    widget.pack(expand=True, fill="both")
+    root.mainloop()
+
+if TEST:
+    test()
+    exit()
 
 print("Searching for Tcl/Tk configuration files...")
 
@@ -180,10 +195,4 @@ print("\nCreating Makefile...")
 compile_tkhtml()
 
 print("\nOpening test window...")
-root = tkinter.Tk()
-root.tk.eval("set auto_path [linsert $auto_path 0 {"+BUILD_PATH+"}]")
-root.tk.eval("package require Tkhtml")
-widget = tkinter.Widget(root, "html")
-widget.tk.call(widget._w, "parse", "<p>If you see this, wohoo!!!</p>")
-widget.pack(expand=True, fill="both")
-root.mainloop()
+test()

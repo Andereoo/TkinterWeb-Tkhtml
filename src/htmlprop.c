@@ -156,6 +156,7 @@ static PropertyDef propdefs[] = {
   PROPDEFM(LENGTH, WIDTH,                 iWidth,            PIXELVAL_AUTO),
   PROPDEFM(LENGTH, WORD_SPACING,          iWordSpacing,      PIXELVAL_NORMAL),
   PROPDEFM(LENGTH, LETTER_SPACING,        iLetterSpacing,    PIXELVAL_NORMAL),
+  PROPDEFM(LENGTH, BORDER_RADIUS,         iBorderRadius,     0),
 
   PROPDEF(COLOR, BACKGROUND_COLOR,        cBackgroundColor),
   PROPDEF(COLOR, COLOR,                   cColor),
