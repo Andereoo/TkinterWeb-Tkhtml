@@ -2026,9 +2026,6 @@ drawBox (
     HtmlTree *pTree = pQuery->pTree;
     HtmlComputedValues *pV = HtmlNodeComputedValues(pBox->pNode);
 
-    HtmlNode *pBgRoot = pQuery->pBgRoot;
-    HtmlComputedValues *pVB = HtmlNodeComputedValues(pBgRoot);
-
     /* Figure out the widths of the top, bottom, right and left borders */
     int tw = ((pV->eBorderTopStyle != CSS_CONST_NONE) ? pV->border.iTop : 0);
     int bw = ((pV->eBorderBottomStyle != CSS_CONST_NONE)?pV->border.iBottom:0);
@@ -2070,6 +2067,9 @@ drawBox (
         int boxh = pBox->h + MIN((y + pBox->y), 0);
 
         if (br != 0) {
+            HtmlNode *pBgRoot = pQuery->pBgRoot;
+            HtmlComputedValues *pVB = HtmlNodeComputedValues(pBgRoot);
+
             fill_round_rectangle(pTree->tkwin, 
                 drawable, pV->cBackgroundColor->xcolor, pVB->cBackgroundColor->xcolor,
                 MAX(0, x + pBox->x), MAX(0, y + pBox->y),
@@ -2085,18 +2085,23 @@ drawBox (
                 MIN(boxw, w), MIN(boxh, h)
             );
         }
-    } else if (pVB->cBackgroundColor->xcolor && br && (0 == (flags & DRAWBOX_NOBORDER))) {
-        int boxw = pBox->w + MIN((x + pBox->x), 0);
-        int boxh = pBox->h + MIN((y + pBox->y), 0);
-        
-        fill_round_rectangle(pTree->tkwin, 
-                drawable, pVB->cBackgroundColor->xcolor, pVB->cBackgroundColor->xcolor,
-                MAX(0, x + pBox->x), MAX(0, y + pBox->y),
-                MIN(boxw, w), MIN(boxh, h), br,
-                (0 == (flags & DRAWBOX_NOBORDER)),
-                (tw > 0 && tc), (lw > 0 && lc), (bw > 0 && bc), (rw > 0 && rc),
-                tc, lc, bc, rc, tw, lw, bw, rw
-            );
+    } else if (br != 0 && (0 == (flags & DRAWBOX_NOBORDER))) {
+        HtmlNode *pBgRoot = pQuery->pBgRoot;
+        HtmlComputedValues *pVB = HtmlNodeComputedValues(pBgRoot);
+
+        if (pVB->cBackgroundColor->xcolor) {
+            int boxw = pBox->w + MIN((x + pBox->x), 0);
+            int boxh = pBox->h + MIN((y + pBox->y), 0);
+            
+            fill_round_rectangle(pTree->tkwin, 
+                    drawable, pVB->cBackgroundColor->xcolor, pVB->cBackgroundColor->xcolor,
+                    MAX(0, x + pBox->x), MAX(0, y + pBox->y),
+                    MIN(boxw, w), MIN(boxh, h), br,
+                    (0 == (flags & DRAWBOX_NOBORDER)),
+                    (tw > 0 && tc), (lw > 0 && lc), (bw > 0 && bc), (rw > 0 && rc),
+                    tc, lc, bc, rc, tw, lw, bw, rw
+                );
+        }
     }
 
     if (!br && (0 == (flags & DRAWBOX_NOBORDER))) {
