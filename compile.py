@@ -1,12 +1,21 @@
 import tkinter
-import os, glob, subprocess, re, sys
+import os, glob, subprocess, re, sys, argparse
 from pathlib import Path
 
-### If True, skip everything and test the binary
-TEST = False
-
-### If True, the configure script will only run if the build directory does not exist
-SKIP_CONFIGURE = True
+### May be "ask", "configure", "test", or "build"
+### Only applies if a command line argument is not supplied
+MODE = "ask"
+TEST_STRING = """<body><div>
+    <p style="padding: 15px; 
+        display: inline-block; 
+        white-space: nowrap; 
+        margin:0; 
+        border: 1px solid grey; 
+        border-color: lightgrey grey grey lightgrey; 
+        border-radius: 5px; 
+        background-color: #34ebb7;">
+    If you see this, wohoo!</p>
+</div></body>"""
 
 ### You probably won't need to change these
 BASE_PATH = os.path.dirname(__file__)
@@ -14,8 +23,6 @@ BUILD_PATH =  os.path.join(BASE_PATH, 'build')
 CONFIGURE_PATH =  os.path.join(BASE_PATH, 'configure')
 SRC_PATH =  os.path.join(BASE_PATH, 'src')
 CSSPROP_PATH =  os.path.join(BASE_PATH, 'src', 'cssprop.tcl')
-
-print("Welcome to TkinterWeb's TkHtml3.0 compile script. Note that for this to succeed you will need tcl-dev, tk-dev, cairo, gcc, and make installed on your system.")
 
 root = tkinter.Tcl()
 paths = root.exprstring('$auto_path').split()#tcl_pkgPath
@@ -26,12 +33,16 @@ tclConfig_paths = []
 tkConfig_paths = []
 used_paths = []
 
+parser = argparse.ArgumentParser(description="Greet someone by name.")
+parser.add_argument("mode", type=str, nargs="?", default=MODE, choices=["ask", "configure", "test", "build"], help="the default mode")
+mode = parser.parse_args().mode
+
 def test():
     root = tkinter.Tk()
     root.tk.eval("set auto_path [linsert $auto_path 0 {"+BUILD_PATH+"}]")
     root.tk.eval("package require Tkhtml")
     widget = tkinter.Widget(root, "html")
-    widget.tk.call(widget._w, "parse", """<body><div><p style="padding: 15px; display: inline-block; white-space: nowrap; margin:0; border: 1px solid grey; border-color: lightgrey grey grey lightgrey; border-radius: 5px; background-color: #34ebb7;">If you see this, wohoo!</p></div></body>""")
+    widget.tk.call(widget._w, "parse", TEST_STRING)
     widget.pack(expand=True, fill="both")
     root.mainloop()
 
@@ -40,8 +51,26 @@ def print_error(*args):
 
 def run_command(cmd):
     return subprocess.run(cmd, stdout=sys.stdout, stderr=sys.stderr, check=True)
-    
-if os.path.exists(BUILD_PATH) and SKIP_CONFIGURE and not TEST:
+
+if mode == "ask":
+    print("Welcome to TkinterWeb's TkHtml3.0 compile script. Note that for this to succeed you will need tcl-dev, tk-dev, cairo, gcc, and make installed on your system.")
+    mode = input("""Please enter an option:
+   C: update CSS support, run the configure script to generate a makefile, and build and test your binary
+   T: test the binary
+   Any other key: build and test your binary and only run the configure script if the build directory does not exist
+> """).upper()
+
+    if mode == "C":
+        mode = "configure"
+    elif mode == "T":
+        mode = "test"
+    else:
+        mode = "build"
+elif mode != "test":
+    print("Welcome to TkinterWeb's TkHtml3.0 compile script. Note that for this to succeed you will need tcl-dev, tk-dev, cairo, gcc, and make installed on your system.")
+
+
+if os.path.exists(BUILD_PATH) and mode == "build":
     os.chdir(BUILD_PATH)
     def compile_tkhtml():
         try:
@@ -56,8 +85,8 @@ if os.path.exists(BUILD_PATH) and SKIP_CONFIGURE and not TEST:
                 compile_tkhtml()
     compile_tkhtml()
     
-elif not TEST:
-    print("Searching for Tcl/Tk configuration files...")
+elif mode == "configure":
+    print("\nSearching for Tcl/Tk configuration files...")
 
     for path in paths: 
         if os.path.exists(path):
@@ -105,7 +134,7 @@ elif not TEST:
                     break
         return chosen_path
 
-    print("Reading files..")
+    print("\nReading files...")
 
     valid_tclConfig_paths = check_config_files(tclConfig_paths, "TCL", "tcl.h")
     valid_tkConfig_paths = check_config_files(tkConfig_paths, "TK", "tk.h")
@@ -123,7 +152,7 @@ elif not TEST:
         override = input("Error: no valid Tk configuration files found. Press N to override or any other key to abort: ")
         abort = True
     else:
-        print("Choosing a file...")
+        print("\nChoosing a file...")
         tclConfig_path = choose_path(valid_tclConfig_paths)
         tkConfig_path = choose_path(valid_tkConfig_paths)
         print(f"Using {tclConfig_path} and {tkConfig_path}")
