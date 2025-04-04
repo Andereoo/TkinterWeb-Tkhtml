@@ -156,8 +156,7 @@ static PropertyDef propdefs[] = {
   PROPDEFM(LENGTH, WIDTH,                 iWidth,            PIXELVAL_AUTO),
   PROPDEFM(LENGTH, WORD_SPACING,          iWordSpacing,      PIXELVAL_NORMAL),
   PROPDEFM(LENGTH, LETTER_SPACING,        iLetterSpacing,    PIXELVAL_NORMAL),
-  PROPDEFM(LENGTH, BORDER_RADIUS,         iBorderRadius,     0),
-
+  
   PROPDEF(COLOR, BACKGROUND_COLOR,        cBackgroundColor),
   PROPDEF(COLOR, COLOR,                   cColor),
   PROPDEF(COLOR, BORDER_TOP_COLOR,        cBorderTopColor),
@@ -175,6 +174,11 @@ static PropertyDef propdefs[] = {
   PROPDEFM(BORDERWIDTH, BORDER_RIGHT_WIDTH,  border.iRight,  2),
   PROPDEFM(BORDERWIDTH, BORDER_BOTTOM_WIDTH, border.iBottom, 2),
   PROPDEFM(BORDERWIDTH, OUTLINE_WIDTH,       iOutlineWidth,  2),
+
+  PROPDEF(LENGTH, BORDER_BOTTOM_RIGHT_RADIUS,   radius.iBottom),
+  PROPDEF(LENGTH, BORDER_BOTTOM_LEFT_RADIUS,    radius.iLeft),
+  PROPDEF(LENGTH, BORDER_TOP_RIGHT_RADIUS,      radius.iRight),
+  PROPDEF(LENGTH, BORDER_TOP_LEFT_RADIUS,       radius.iTop),
 
   PROPDEF(AUTOINTEGER, Z_INDEX,                    iZIndex),
   PROPDEF(AUTOINTEGER, _TKHTML_ORDERED_LIST_START, iOrderedListStart),
@@ -2462,7 +2466,7 @@ HtmlComputedValuesFinish (HtmlComputedValuesCreator *p)
         {PROP_MASK_BOTTOM,              OFFSET(position.iBottom)},
         {PROP_MASK_LEFT,                OFFSET(position.iLeft)},
         {PROP_MASK_RIGHT,               OFFSET(position.iRight)},
-        {PROP_MASK_TEXT_INDENT,         OFFSET(iTextIndent)}
+        {PROP_MASK_TEXT_INDENT,         OFFSET(iTextIndent)},
     };
 #undef OFFSET
 

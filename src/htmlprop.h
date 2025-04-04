@@ -242,8 +242,8 @@ struct HtmlComputedValues {
     int iMaxHeight;                   /* 'max-height'     (pixels, %, NONE)   */
     HtmlFourSides padding;            /* 'padding'        (pixels, %)         */
     HtmlFourSides margin;             /* 'margin'         (pixels, %, AUTO)   */
-
-    int iBorderRadius;                /* 'border-radius' */
+    
+    HtmlFourSides radius;             /* 'border-radius'  (pixels)         */
 
     HtmlFourSides border;             /* 'border-width'   (pixels)            */
     unsigned char eBorderTopStyle;    /* 'border-top-style' */
@@ -388,7 +388,6 @@ struct HtmlComputedValuesCreator {
 #define PROP_MASK_TEXT_INDENT             0x10000000
 #define PROP_MASK_WORD_SPACING            0x20000000
 #define PROP_MASK_LETTER_SPACING          0x40000000
-#define PROP_MASK_BORDER_RADIUS           0x80000000
 
 /*
  * Pixel values in the HtmlComputedValues struct may also take the following
@@ -496,10 +495,10 @@ int HtmlComputedValuesCompare(HtmlComputedValues *, HtmlComputedValues *);
 #define HTML_COMPUTED_PADDING_BOTTOM  padding.iBottom
 #define HTML_COMPUTED_PADDING_LEFT    padding.iLeft
 
-#define HTML_COMPUTED_PADDING_TOP     padding.iTop
-#define HTML_COMPUTED_PADDING_RIGHT   padding.iRight
-#define HTML_COMPUTED_PADDING_BOTTOM  padding.iBottom
-#define HTML_COMPUTED_PADDING_LEFT    padding.iLeft
+#define HTML_COMPUTED_BORDER_TOP_LEFT_RADIUS       radius.iTop
+#define HTML_COMPUTED_BORDER_TOP_RIGHT_RADIUS      radius.iRight
+#define HTML_COMPUTED_BORDER_BOTTOM_RIGHT_RADIUS   radius.iBottom
+#define HTML_COMPUTED_BORDER_BOTTOM_LEFT_RADIUS    radius.iLeft
 
 #define HTML_COMPUTED_TOP             position.iTop
 #define HTML_COMPUTED_RIGHT           position.iRight
@@ -513,7 +512,6 @@ int HtmlComputedValuesCompare(HtmlComputedValues *, HtmlComputedValues *);
 #define HTML_COMPUTED_MAX_HEIGHT      iMaxHeight
 #define HTML_COMPUTED_MAX_WIDTH       iMaxWidth
 #define HTML_COMPUTED_TEXT_INDENT     iTextIndent
-#define HTML_COMPUTED_BORDER_RADIUS   iBorderRadius; /* 'border-radius' */
 
 /* The PIXELVAL macro takes three arguments:
  * 

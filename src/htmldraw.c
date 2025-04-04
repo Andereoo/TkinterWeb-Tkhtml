@@ -1730,10 +1730,10 @@ fill_round_rectangle(
     Tk_Window win,
     Drawable d,
     XColor *xcolor, XColor *xbgcolor,
-    int x, int y,
-    int width, int height, int radius, int allow,
+    int x, int y, int width, int height, 
+    int tlradius, int trradius, int brradius, int blradius, int allow,
     XColor *xtcolor, XColor *xlcolor, XColor *xbcolor, XColor *xrcolor,
-    int btwidth, int blwidth, int bbwidth, int brwidth)
+    float btwidth, float blwidth, float bbwidth, float brwidth)
 {
     if (width > 0 && height > 0){
         Display *display = Tk_Display(win);
@@ -1749,16 +1749,22 @@ fill_round_rectangle(
         cairo_paint(cr);
 
         float max_radius = MIN(height, width) / 2;
-        if (radius > max_radius) {
-            radius = max_radius;
+        if (tlradius > max_radius) {
+            tlradius = max_radius;
+        } if (trradius > max_radius) {
+            trradius = max_radius;
+        } if (brradius > max_radius) {
+            brradius = max_radius;
+        } if (blradius > max_radius) {
+            blradius = max_radius;
         }
 
-        cairo_set_antialias(cr, CAIRO_ANTIALIAS_GOOD);
+        cairo_set_antialias(cr, CAIRO_ANTIALIAS_BEST);
 
-        cairo_arc(cr, width - radius, radius, radius, -3.14/2, 0);  // top-right corner
-        cairo_arc(cr, width - radius, height - radius, radius, 0, 3.14/2);  // bottom-right corner
-        cairo_arc(cr, radius, height - radius, radius, 3.14/2, 3.14);  // bottom-left corner
-        cairo_arc(cr, radius, radius, radius, 3.14, (3*3.14)/2);  // top-left corner
+        cairo_arc(cr, width - trradius, trradius, trradius, -3.14/2, 0);  // top-right corner
+        cairo_arc(cr, width - brradius, height - brradius, brradius, 0, 3.14/2);  // bottom-right corner
+        cairo_arc(cr, blradius, height - blradius, blradius, 3.14/2, 3.14);  // bottom-left corner
+        cairo_arc(cr, tlradius, tlradius, tlradius, 3.14, (3*3.14)/2);  // top-left corner
 
         cairo_set_source_rgb(cr, xcolor_to_cairo_rgb(xcolor->red), xcolor_to_cairo_rgb(xcolor->green), xcolor_to_cairo_rgb(xcolor->blue));
         cairo_fill_preserve(cr);
@@ -1768,37 +1774,56 @@ fill_round_rectangle(
         if (allow) {
             int halfheight = height / 2;
             int halfwidth = width / 2;
-            btwidth = MIN(btwidth, halfheight);
-            brwidth = MIN(brwidth, halfwidth);
-            bbwidth = MIN(bbwidth, halfheight);
-            blwidth = MIN(blwidth, halfwidth);
+            btwidth = MIN(MIN(btwidth, halfheight), halfwidth);
+            brwidth = MIN(MIN(brwidth, halfwidth), halfheight);
+            bbwidth = MIN(MIN(bbwidth, halfheight), halfwidth);
+            blwidth = MIN(MIN(blwidth, halfwidth), halfheight);
 
-            // TODO: optimize this
-            float toffset = btwidth / 2;
-            float roffset = brwidth / 2;
-            float boffset = bbwidth / 2;
-            float loffset = blwidth / 2;
+            float toffset, roffset, boffset, loffset, stlradius, strradius, srtradius, srbradius, sblradius, sbrradius, sltradius, slbradius;
+            int tlnewrad, trnewrad, rtnewrad, rbnewrad, brnewrad, blnewrad, lbnewrad, ltnewrad;
 
-            float tradius = radius - toffset;
-            float rradius = radius - roffset;
-            float bradius = radius - boffset;
-            float lradius = radius - loffset;
-            
+            if (btwidth < 10 || brwidth < 10 || bbwidth < 10 || blwidth < 10) {
+                toffset = btwidth / 2;
+                roffset = brwidth / 2;
+                boffset = bbwidth / 2;
+                loffset = blwidth / 2;
+
+                stlradius = tlradius - toffset;
+                strradius = trradius - toffset;
+                srtradius = trradius - roffset;
+                srbradius = brradius - roffset;
+                sblradius = blradius - boffset;
+                sbrradius = brradius - boffset;
+                sltradius = tlradius - loffset;
+                slbradius = blradius - loffset;
+            } if (btwidth >= 10 || brwidth >= 10 || bbwidth >= 10 || blwidth >= 10) {
+                tlnewrad = MAX(tlradius - btwidth, 0);
+                trnewrad = MAX(trradius - btwidth, 0);
+
+                rtnewrad = MAX(trradius - brwidth, 0);
+                rbnewrad = MAX(brradius - brwidth, 0);
+
+                brnewrad = MAX(brradius - brwidth, 0);
+                blnewrad = MAX(blradius - bbwidth, 0);
+
+                lbnewrad = MAX(blradius - bbwidth, 0);
+                ltnewrad = MAX(tlradius - blwidth, 0);
+            }
+
             if (btwidth > 0 && xtcolor) {
                 cairo_set_source_rgb(cr, xcolor_to_cairo_rgb(xtcolor->red), xcolor_to_cairo_rgb(xtcolor->green), xcolor_to_cairo_rgb(xtcolor->blue));
                 if (btwidth < 10) {
                     // This algorithm looks better for thinner lines and can be used for dotted etc. borders
                     cairo_set_line_width(cr, btwidth);
-                    cairo_arc(cr, lradius + loffset, tradius + toffset, tradius, (5 * 3.14) / 4, (3 * 3.14) / 2);
-                    cairo_arc(cr, width - rradius - roffset, tradius + toffset, tradius, (3 * 3.14) / 2, -(3.14) / 4);
+                    cairo_arc(cr, sltradius + loffset, stlradius + toffset, stlradius, (5 * 3.14) / 4, (3 * 3.14) / 2);
+                    cairo_arc(cr, width - srtradius - roffset, stlradius + toffset, stlradius, (3 * 3.14) / 2, -(3.14) / 4);
                     cairo_stroke(cr);
                 } else {
-                    int newrad = MAX(radius - btwidth, 0);
                     // This algorithm is better for thicker lines. The previous one leaves behind many strange artefacts on thick lines.
-                    cairo_arc(cr, radius, radius, radius, (5 * 3.14159) / 4, (3 * 3.14159) / 2);
-                    cairo_arc(cr, width - radius, radius, radius, (3 * 3.14159) / 2, -3.14159 / 4);
-                    cairo_arc_negative(cr, width - newrad - btwidth, newrad + btwidth, newrad, -3.14159 / 4, (3 * 3.14159) / 2);
-                    cairo_arc_negative(cr, newrad + btwidth, newrad + btwidth, newrad, (3 * 3.14159) / 2, (5 * 3.14159) / 4);
+                    cairo_arc(cr, tlradius, tlradius, tlradius, (5 * 3.14159) / 4, (3 * 3.14159) / 2);
+                    cairo_arc(cr, width - trradius, trradius, trradius, (3 * 3.14159) / 2, -3.14159 / 4);
+                    cairo_arc_negative(cr, width - trnewrad - btwidth, trnewrad + btwidth, trnewrad, -3.14159 / 4, (3 * 3.14159) / 2);
+                    cairo_arc_negative(cr, tlnewrad + btwidth, tlnewrad + btwidth, tlnewrad, (3 * 3.14159) / 2, (5 * 3.14159) / 4);
                     cairo_fill_preserve(cr);
                     cairo_fill(cr);
                 }
@@ -1806,15 +1831,14 @@ fill_round_rectangle(
                 cairo_set_source_rgb(cr, xcolor_to_cairo_rgb(xrcolor->red), xcolor_to_cairo_rgb(xrcolor->green), xcolor_to_cairo_rgb(xrcolor->blue));
                 if (brwidth < 10) {
                     cairo_set_line_width(cr, brwidth);
-                    cairo_arc(cr, width - rradius - roffset, tradius + toffset, rradius, -(3.14) / 4, 0);
-                    cairo_arc(cr, width - rradius - roffset, height - bradius - boffset, rradius, 0, (3.14) / 4);
+                    cairo_arc(cr, width - srtradius - roffset, strradius + toffset, srtradius, -(3.14) / 4, 0);
+                    cairo_arc(cr, width - srbradius - roffset, height - sbrradius - boffset, srbradius, 0, (3.14) / 4);
                     cairo_stroke(cr);
                 } else {
-                    int newrad = MAX(radius - brwidth, 0);
-                    cairo_arc(cr, width - radius, radius, radius, -3.14159 / 4, 0);
-                    cairo_arc(cr, width - radius, height - radius, radius, 0, 3.14159 / 4);
-                    cairo_arc_negative(cr, width - newrad - brwidth, height - newrad - brwidth, newrad, 3.14159 / 4, 0);
-                    cairo_arc_negative(cr, width - newrad - brwidth, newrad + brwidth, newrad, 0, -3.14159 / 4);
+                    cairo_arc(cr, width - trradius, trradius, trradius, -3.14159 / 4, 0);
+                    cairo_arc(cr, width - brradius, height - brradius, brradius, 0, 3.14159 / 4);
+                    cairo_arc_negative(cr, width - rbnewrad - brwidth, height - rbnewrad - brwidth, rbnewrad, 3.14159 / 4, 0);
+                    cairo_arc_negative(cr, width - rtnewrad - brwidth, rtnewrad + brwidth, rtnewrad, 0, -3.14159 / 4);
                     cairo_fill_preserve(cr);
                     cairo_fill(cr);
                 }
@@ -1822,15 +1846,14 @@ fill_round_rectangle(
                 cairo_set_source_rgb(cr, xcolor_to_cairo_rgb(xbcolor->red), xcolor_to_cairo_rgb(xbcolor->green), xcolor_to_cairo_rgb(xbcolor->blue));
                 if (bbwidth < 10) {
                     cairo_set_line_width(cr, bbwidth);
-                    cairo_arc(cr, width - rradius - roffset, height - bradius - boffset, bradius, (3.14) / 4, (3.14) / 2);
-                    cairo_arc(cr, lradius + loffset, height - bradius - boffset, bradius, (3.14) / 2, (3 * 3.14) / 4);
+                    cairo_arc(cr, width - srbradius - roffset, height - sbrradius - boffset, sbrradius, (3.14) / 4, (3.14) / 2);
+                    cairo_arc(cr, slbradius + loffset, height - sblradius - boffset, sblradius, (3.14) / 2, (3 * 3.14) / 4);
                     cairo_stroke(cr);
                 } else {
-                    int newrad = MAX(radius - bbwidth, 0);
-                    cairo_arc(cr, width - radius, height - radius, radius, 3.14159 / 4, 3.14159 / 2);
-                    cairo_arc(cr, radius, height - radius, radius, 3.14159 / 2, (3 * 3.14159) / 4);
-                    cairo_arc_negative(cr, newrad + bbwidth, height - newrad - bbwidth, newrad, (3 * 3.14159) / 4, 3.14159 / 2);
-                    cairo_arc_negative(cr, width - newrad - bbwidth, height - newrad - bbwidth, newrad, 3.14159 / 2, 3.14159 / 4);
+                    cairo_arc(cr, width - brradius, height - brradius, brradius, 3.14159 / 4, 3.14159 / 2);
+                    cairo_arc(cr, blradius, height - blradius, blradius, 3.14159 / 2, (3 * 3.14159) / 4);
+                    cairo_arc_negative(cr, blnewrad + bbwidth, height - blnewrad - bbwidth, blnewrad, (3 * 3.14159) / 4, 3.14159 / 2);
+                    cairo_arc_negative(cr, width - brnewrad - bbwidth, height - brnewrad - bbwidth, brnewrad, 3.14159 / 2, 3.14159 / 4);
                     cairo_fill_preserve(cr);
                     cairo_fill(cr);
                 }
@@ -1838,15 +1861,14 @@ fill_round_rectangle(
                 cairo_set_source_rgb(cr, xcolor_to_cairo_rgb(xlcolor->red), xcolor_to_cairo_rgb(xlcolor->green), xcolor_to_cairo_rgb(xlcolor->blue));
                 if (blwidth < 10) {
                     cairo_set_line_width(cr, blwidth);
-                    cairo_arc(cr, lradius + loffset, height - bradius - boffset, lradius, (3 * 3.14) / 4, 3.14);
-                    cairo_arc(cr, lradius + loffset, tradius + toffset, lradius, 3.14, (5 * 3.14) / 4);
+                    cairo_arc(cr, slbradius + loffset, height - sblradius - boffset, slbradius, (3 * 3.14) / 4, 3.14);
+                    cairo_arc(cr, sltradius + loffset, stlradius + toffset, sltradius, 3.14, (5 * 3.14) / 4);
                     cairo_stroke(cr);
                 } else {
-                    int newrad = MAX(radius - blwidth, 0);
-                    cairo_arc(cr, radius, height - radius, radius, (3 * 3.14159) / 4, 3.14159);
-                    cairo_arc(cr, radius, radius, radius, 3.14159, (5 * 3.14159) / 4);
-                    cairo_arc_negative(cr, newrad + blwidth, newrad + blwidth, newrad, (5 * 3.14159) / 4, 3.14159);
-                    cairo_arc_negative(cr, newrad + blwidth, height - newrad - blwidth, newrad, 3.14159, (3 * 3.14159) / 4);
+                    cairo_arc(cr, blradius, height - blradius, blradius, (3 * 3.14159) / 4, 3.14159);
+                    cairo_arc(cr, tlradius, tlradius, tlradius, 3.14159, (5 * 3.14159) / 4);
+                    cairo_arc_negative(cr, ltnewrad + blwidth, ltnewrad + blwidth, ltnewrad, (5 * 3.14159) / 4, 3.14159);
+                    cairo_arc_negative(cr, lbnewrad + blwidth, height - lbnewrad - blwidth, lbnewrad, 3.14159, (3 * 3.14159) / 4);
                     cairo_fill_preserve(cr);
                     cairo_fill(cr);
                 }
@@ -2098,7 +2120,10 @@ drawBox (
     XColor *oc = pV->cOutlineColor->xcolor;
 
     /* Figure out the border radius */
-    int br = pV->iBorderRadius;
+    int brtl = pV->radius.iTop;
+    int brtr = pV->radius.iRight;
+    int brbr = pV->radius.iBottom;
+    int brbl = pV->radius.iLeft;
 
     /* int isInline = (pV->eDisplay == CSS_CONST_INLINE); */
     if (pItem) {
@@ -2114,7 +2139,7 @@ drawBox (
     }
 
     /* Solid background, if required */
-    if (br != 0) {
+    if (brtl != 0 || brtr != 0 || brbr != 0 || brbl != 0) {
         XColor *bg_color = 0;
 
         // TODO: figure out how to make cairo draw directly to the window so that transparency is preserved instead of all the stuff below
@@ -2151,14 +2176,14 @@ drawBox (
             fill_round_rectangle(pTree->tkwin, 
                 drawable, pV->cBackgroundColor->xcolor, bg_color,
                 x + pBox->x, y + pBox->y,
-                boxw, boxh, br, btype,
+                boxw, boxh, brtl, brtr, brbr, brbl, btype,
                 tc, lc, bc, rc, tw, lw, bw, rw
                 );
-        } else if (btype && pV->cBackgroundColor->xcolor) {
+        } else if (btype && bg_color) {
             fill_round_rectangle(pTree->tkwin, 
                     drawable, bg_color, bg_color,
                     x + pBox->x, y + pBox->y,
-                    boxw, boxh, br, btype,
+                    boxw, boxh, brtl, brtr, brbr, brbl, btype,
                     tc, lc, bc, rc, tw, lw, bw, rw
                 );
         } 
