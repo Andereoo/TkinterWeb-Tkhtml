@@ -127,13 +127,13 @@ P azimuth background-attachment background-color background-image
 P background-repeat border-collapse border-spacing 
 P border-top-color border-right-color border-bottom-color border-left-color 
 P border-top-style border-right-style border-bottom-style border-left-style 
-P border-top-width border-right-width border-bottom-width border-left-width border-radius
+P border-top-width border-right-width border-bottom-width border-left-width
 P bottom caption-side clear clip color content counter-increment counter-reset 
 P cue-after cue-before cursor direction display elevation empty-cells float 
 P font-family font-size font-size-adjust font-stretch font-style font-variant 
 P font-weight height left letter-spacing line-height list-style-image
-P list-style-position list-style-type margin-top margin-right 
-P margin-bottom margin-left marker-offset marks max-height max-width 
+P list-style-position list-style-type margin-top margin-right margin-bottom margin-left 
+P marker-offset marks max-height max-width 
 P min-height min-width orphans outline-color outline-style outline-width 
 P overflow overflow-x overflow-y padding-top padding-right padding-bottom padding-left 
 P page page-break-after page-break-before page-break-inside pause pause-after 
@@ -150,6 +150,9 @@ P -tkhtml-ordered-list-value
 S background border border-top border-right border-bottom border-left
 S border-color border-style border-width cue font padding outline margin
 S list-style
+
+P border-top-left-radius border-top-right-radius border-bottom-right-radius border-bottom-left-radius
+S border-radius
 
 # We treat property 'background-position' as a composite property that sets
 # invented properties background-position-x and background-position-y.
