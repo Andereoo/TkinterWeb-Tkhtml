@@ -2761,10 +2761,6 @@ Tcl_Obj *
 HtmlNodeCommand(HtmlTree *pTree, HtmlNode *pNode)
 {
     static int nodeNumber = 0;
-    if (pNode == 0) {
-        nodeNumber = 0;
-        return 0;
-    }
     HtmlNodeCmd *pNodeCmd = pNode->pNodeCmd;
 
     if (pNode->index == HTML_NODE_GENERATED) return 0;
@@ -2869,7 +2865,6 @@ HtmlTreeClear (HtmlTree *pTree)
     /* Free the tree representation - pTree->pRoot */
     freeNode(pTree, pTree->pRoot);
     pTree->pRoot = 0;
-    HtmlNodeCommand(pTree, pTree->pRoot);
     pTree->state.pCurrent = 0;
     pTree->state.pFoster = 0;
 
