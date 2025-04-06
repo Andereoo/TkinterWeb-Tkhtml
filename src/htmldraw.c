@@ -2145,24 +2145,22 @@ drawBox (
 
     /* Solid background, if required */
     if (brtl != 0 || brtr != 0 || brbr != 0 || brbl != 0) {
-        int boxw = pBox->w + MIN((x + pBox->x), 0);
-        int boxh = pBox->h + MIN((y + pBox->y), 0);
         int btype = (0 == (flags & DRAWBOX_NOBORDER));
          
         if (0 == (flags & DRAWBOX_NOBACKGROUND) && pV->cBackgroundColor->xcolor) {
             fill_round_rectangle(pTree->tkwin, 
                 drawable, pV->cBackgroundColor->xcolor,
                 x + pBox->x, y + pBox->y,
-                boxw, boxh, brtl, brtr, brbr, brbl, btype,
+                pBox->w, pBox->h, brtl, brtr, brbr, brbl, btype,
                 tc, lc, bc, rc, tw, lw, bw, rw
-                );
+            );
         } else if (btype) {
             fill_round_rectangle(pTree->tkwin, 
-                    drawable, 0,
-                    x + pBox->x, y + pBox->y,
-                    boxw, boxh, brtl, brtr, brbr, brbl, btype,
-                    tc, lc, bc, rc, tw, lw, bw, rw
-                );
+                drawable, 0,
+                x + pBox->x, y + pBox->y,
+                pBox->w, pBox->h, brtl, brtr, brbr, brbl, btype,
+                tc, lc, bc, rc, tw, lw, bw, rw
+            );
         } 
     } else {
         if (0 == (flags & DRAWBOX_NOBACKGROUND) && pV->cBackgroundColor->xcolor) {
