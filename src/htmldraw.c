@@ -1606,7 +1606,7 @@ static int
 fill_round_rectangle(
     Tk_Window win,
     Drawable d,
-    XColor *xcolor, XColor *xbgcolor,
+    XColor *xcolor,
     int x, int y, int width, int height, 
     int tlradius, int trradius, int brradius, int blradius, int allow,
     XColor *xtcolor, XColor *xlcolor, XColor *xbcolor, XColor *xrcolor,
@@ -1614,16 +1614,25 @@ fill_round_rectangle(
 {
     if (width > 0 && height > 0){
         Display *display = Tk_Display(win);
-        Pixmap pixmap = Tk_GetPixmap(display, Tk_WindowId(win), width, height, Tk_Depth(win));
 
-        cairo_surface_t *surface = cairo_xlib_surface_create(display, pixmap,
+        cairo_surface_t *surface = cairo_xlib_surface_create(display, d,
                                                               Tk_Visual(win),
-                                                              width, height);
+                                                              x + width, y + height);
+
         cairo_t *cr = cairo_create(surface);
 
-        // TODO: figure out why cairo won't draw directly to the window instead
-        cairo_set_source_rgb(cr, xcolor_to_cairo_rgb(xbgcolor->red), xcolor_to_cairo_rgb(xbgcolor->green), xcolor_to_cairo_rgb(xbgcolor->blue));
-        cairo_paint(cr);
+
+        // TODO: figure this out in htmlprop instead of here
+        // TODO: split each radius into rx and ry
+        if (tlradius < 0) {
+            tlradius = MAX(height, width) * ((float)tlradius / -100);
+        } if (trradius < 0) {
+            trradius = MAX(height, width) * ((float)trradius / -100);
+        } if (brradius < 0) {
+            brradius = MAX(height, width) * ((float)brradius / -100);
+        } if (blradius < 0) {
+            blradius = MAX(height, width) * ((float)blradius / -100);
+        }
 
         float max_radius = MIN(height, width) / 2;
         if (tlradius > max_radius) {
@@ -1638,15 +1647,19 @@ fill_round_rectangle(
 
         cairo_set_antialias(cr, CAIRO_ANTIALIAS_BEST);
 
-        cairo_arc(cr, width - trradius, trradius, trradius, -3.14/2, 0);  // top-right corner
-        cairo_arc(cr, width - brradius, height - brradius, brradius, 0, 3.14/2);  // bottom-right corner
-        cairo_arc(cr, blradius, height - blradius, blradius, 3.14/2, 3.14);  // bottom-left corner
-        cairo_arc(cr, tlradius, tlradius, tlradius, 3.14, (3*3.14)/2);  // top-left corner
+        cairo_translate(cr, x, y);
 
-        cairo_set_source_rgb(cr, xcolor_to_cairo_rgb(xcolor->red), xcolor_to_cairo_rgb(xcolor->green), xcolor_to_cairo_rgb(xcolor->blue));
-        cairo_fill_preserve(cr);
-        cairo_set_line_width(cr, 0);
-        cairo_stroke(cr);
+        if (xcolor) {
+            cairo_arc(cr, width - trradius, trradius, trradius, -3.14/2, 0);  // top-right corner
+            cairo_arc(cr, width - brradius, height - brradius, brradius, 0, 3.14/2);  // bottom-right corner
+            cairo_arc(cr, blradius, height - blradius, blradius, 3.14/2, 3.14);  // bottom-left corner
+            cairo_arc(cr, tlradius, tlradius, tlradius, 3.14, (3*3.14)/2);  // top-left corner
+
+            cairo_set_source_rgb(cr, xcolor_to_cairo_rgb(xcolor->red), xcolor_to_cairo_rgb(xcolor->green), xcolor_to_cairo_rgb(xcolor->blue));
+            cairo_fill_preserve(cr);
+            cairo_set_line_width(cr, 0);
+            cairo_stroke(cr);
+        }
 
         if (allow) {
             int halfheight = height / 2;
@@ -1754,14 +1767,6 @@ fill_round_rectangle(
 
         cairo_destroy(cr);
         cairo_surface_destroy(surface);
-
-        // TODO: figure out why cairo won't draw directly to the window instead
-        GC gc;
-        XGCValues gc_values;
-        gc = Tk_GetGC(win, GCForeground, &gc_values);
-        XCopyArea(display, pixmap, d, gc, 0, 0, width, height, x, y);
-        Tk_FreeGC(display, gc);
-        Tk_FreePixmap(display, pixmap);
     }
 
     return 0;
@@ -2001,48 +2006,20 @@ drawBox (
 
     /* Solid background, if required */
     if (brtl != 0 || brtr != 0 || brbr != 0 || brbl != 0) {
-        XColor *bg_color = 0;
-
-        // TODO: figure out how to make cairo draw directly to the window so that transparency is preserved instead of all the stuff below
-
-        /* Get the parent node's background color for filling the areas behind the border radius. 
-        If the parent is transparent, check its parent, and so on.
-        Ideally the whole canvas would be drawn with cairo or something similar so that layering of images and alpha colours work, but for now this should be good enough.*/
-        HtmlNode *currentParent = pBox->pNode->pParent;
-
-        while (currentParent) {
-            // Check the current parent for a valid cBackgroundColor and xcolor
-            HtmlComputedValues *pVB = HtmlNodeComputedValues(currentParent);
-            if (pVB && pVB->cBackgroundColor->xcolor) {
-                bg_color = pVB->cBackgroundColor->xcolor;
-                break;  // Found a valid background color, break out of the loop
-            }
-            // Move to the parent of the current parent
-            currentParent = currentParent->pParent;
-        }
-
-        // If no valid bg_color was found, fall back to white
-        if (!bg_color) {
-            Tcl_HashEntry *pEntry;
-            pEntry = Tcl_FindHashEntry(&pTree->aColor, "white");
-            assert(pEntry);
-            bg_color = ((HtmlColor *)Tcl_GetHashValue(pEntry))->xcolor;
-        }
-
         int boxw = pBox->w + MIN((x + pBox->x), 0);
         int boxh = pBox->h + MIN((y + pBox->y), 0);
         int btype = (0 == (flags & DRAWBOX_NOBORDER));
          
         if (0 == (flags & DRAWBOX_NOBACKGROUND) && pV->cBackgroundColor->xcolor) {
             fill_round_rectangle(pTree->tkwin, 
-                drawable, pV->cBackgroundColor->xcolor, bg_color,
+                drawable, pV->cBackgroundColor->xcolor,
                 x + pBox->x, y + pBox->y,
                 boxw, boxh, brtl, brtr, brbr, brbl, btype,
                 tc, lc, bc, rc, tw, lw, bw, rw
                 );
-        } else if (btype && bg_color) {
+        } else if (btype) {
             fill_round_rectangle(pTree->tkwin, 
-                    drawable, bg_color, bg_color,
+                    drawable, 0,
                     x + pBox->x, y + pBox->y,
                     boxw, boxh, brtl, brtr, brbr, brbl, btype,
                     tc, lc, bc, rc, tw, lw, bw, rw

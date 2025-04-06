@@ -5,6 +5,7 @@ from pathlib import Path
 ### May be "ask", "configure", "test", or "build"
 ### Only applies if a command line argument is not supplied
 MODE = "ask"
+
 TEST_STRING = """<body><div>
     <p style="padding: 15px; 
         display: inline-block; 
