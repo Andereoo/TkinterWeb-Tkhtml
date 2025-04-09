@@ -6,5 +6,7 @@ This directory contains all source code files for the TkHtml widget.  Some of th
 
    src             All of the source code.
 
+   pypi            Precompiled Tkhtml binaries and source code for the PyPi package under the same name.
+
    tools           Source code to tools that are used to build the widget
                    but which do not become part of the widget.

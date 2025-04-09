@@ -222,6 +222,7 @@ HTML_COMPUTED_PADDING_TOP	htmlprop.h	461;"	d
 HTML_COMPUTED_PADDING_TOP	htmlprop.h	466;"	d
 HTML_COMPUTED_RIGHT	htmlprop.h	472;"	d
 HTML_COMPUTED_TEXT_INDENT	htmlprop.h	482;"	d
+HTML_COMPUTED_BORDER_RADIUS	htmlprop.h	483;"	d
 HTML_COMPUTED_TOP	htmlprop.h	471;"	d
 HTML_COMPUTED_WIDTH	htmlprop.h	477;"	d
 HTML_DAMAGE	html.h	472;"	d
@@ -612,7 +613,7 @@ HtmlWidgetTag	html.h	/^typedef struct HtmlWidgetTag HtmlWidgetTag;$/;"	t
 HtmlWriteContinue	htmlparse.c	/^HtmlWriteContinue(pTree)$/;"	f
 HtmlWriteText	htmlparse.c	/^HtmlWriteText(pTree, pText)$/;"	f
 HtmlWriteWait	htmlparse.c	/^HtmlWriteWait(pTree)$/;"	f
-HtmlXImageToImage	htmlimage.c	/^Tcl_Obj *HtmlXImageToImage(pTree, pXImage, w, h)$/;"	f
+HtmlPixmapToImage	htmlimage.c	/^Tcl_Obj *HtmlPixmapToImage(pTree, pXImage, w, h)$/;"	f
 Html_16	html.h	/^typedef short          Html_16;      \/* 16-bit signed integer *\/$/;"	t
 Html_32	html.h	/^typedef int            Html_32;      \/* 32-bit signed integer *\/$/;"	t
 Html_u16	html.h	/^typedef unsigned short Html_u16;     \/* 16-bit unsigned integer *\/$/;"	t
@@ -1041,6 +1042,8 @@ eListStylePosition	htmlprop.h	/^    unsigned char eListStylePosition; \/* 'list-
 eListStyleType	htmlprop.h	/^    unsigned char eListStyleType;     \/* 'list-style-type' *\/$/;"	m	struct:HtmlComputedValues
 eOutlineStyle	htmlprop.h	/^    unsigned char eOutlineStyle;      \/* 'outline-style' *\/$/;"	m	struct:HtmlComputedValues
 eOverflow	htmlprop.h	/^    unsigned char eOverflow;          \/* 'overflow' *\/$/;"	m	struct:HtmlComputedValues
+eOverflowX	htmlprop.h	/^    unsigned char eOverflowX;          \/* 'overflow-x' *\/$/;"	m	struct:HtmlComputedValues
+eOverflowY	htmlprop.h	/^    unsigned char eOverflowY;          \/* 'overflow-x' *\/$/;"	m	struct:HtmlComputedValues
 ePosition	htmlprop.h	/^    unsigned char ePosition;          \/* 'position' *\/$/;"	m	struct:HtmlComputedValues
 eProp	cssInt.h	/^        int eProp;$/;"	m	struct:CssPropertySet::CssPropertySetItem
 eProp	htmlprop.c	/^    int eProp;$/;"	m	struct:PropertyDef	file:
