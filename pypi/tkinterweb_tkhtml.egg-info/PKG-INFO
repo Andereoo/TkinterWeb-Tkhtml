@@ -12,6 +12,7 @@ Classifier: Natural Language :: English
 Classifier: Programming Language :: Python
 Classifier: Programming Language :: Python :: 3
 Classifier: Topic :: Software Development
+Requires-Python: >=3.2
 Description-Content-Type: text/markdown
 License-File: LICENSE.md
 
