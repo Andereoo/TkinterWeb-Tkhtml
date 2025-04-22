@@ -19,7 +19,7 @@ TEST_STRING = """<body><div>
 </div></body>"""
 
 ### You probably won't need to change these
-BASE_PATH = os.path.dirname(__file__)
+BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 BUILD_PATH = os.path.join(BASE_PATH, 'build')
 CONFIGURE_PATH = os.path.join(BASE_PATH, 'configure')
 #CONFIGUREIN_PATH = os.path.join(BASE_PATH, 'configure.in')
@@ -135,6 +135,8 @@ elif mode == "configure":
                 include_spec = re.findall(config_type+r"_INCLUDE_SPEC='(.*?)'", content, flags=re.MULTILINE)
                 used_paths.append(path)
                 if version and include_spec:
+                    if not include_spec[0]:
+                        continue
                     include_spec = include_spec[0].replace("-I", "")
                     if not os.path.isdir(include_spec) and os.name == "nt": # msys2
                         try:
