@@ -2,7 +2,7 @@ import tkinter
 import os, glob, subprocess, re, sys, argparse
 from pathlib import Path
 
-### May be "ask", "configure", "test", or "build"
+### May be "ask", "configure", "test", "build"
 ### Only applies if a command line argument is not supplied
 MODE = "ask"
 
@@ -20,10 +20,12 @@ TEST_STRING = """<body><div>
 
 ### You probably won't need to change these
 BASE_PATH = os.path.dirname(__file__)
-BUILD_PATH =  os.path.join(BASE_PATH, 'build')
-CONFIGURE_PATH =  os.path.join(BASE_PATH, 'configure')
-SRC_PATH =  os.path.join(BASE_PATH, 'src')
-CSSPROP_PATH =  os.path.join(BASE_PATH, 'src', 'cssprop.tcl')
+BUILD_PATH = os.path.join(BASE_PATH, 'build')
+CONFIGURE_PATH = os.path.join(BASE_PATH, 'configure')
+#CONFIGUREIN_PATH = os.path.join(BASE_PATH, 'configure.in')
+SRC_PATH = os.path.join(BASE_PATH, 'src')
+CSSPROP_PATH = os.path.join(BASE_PATH, 'src', 'cssprop.tcl')
+MAKE_PATH = os.path.join(BASE_PATH, 'build', 'Makefile')
 
 root = tkinter.Tcl()
 paths = root.exprstring('$auto_path').split()#tcl_pkgPath
@@ -53,6 +55,12 @@ def print_error(*args):
 def run_command(cmd):
     return subprocess.run(cmd, stdout=sys.stdout, stderr=sys.stderr, check=True)
 
+def make():
+    if os.name == "nt":
+        run_command(["make", "binaries"])
+    else:
+        run_command(["make"])
+
 if mode == "ask":
     print("Welcome to TkinterWeb's TkHtml3.0 compile script. Note that for this to succeed you will need tcl-dev, tk-dev, cairo, gcc, and make installed on your system.")
     mode = input("""Please enter an option:
@@ -76,7 +84,7 @@ if os.path.exists(BUILD_PATH) and mode == "build":
     def compile_tkhtml():
         try:
             print("\nCompiling...")
-            run_command(["make"])
+            make()
         except subprocess.CalledProcessError:
             print("\nFatal error encountered.")
             override = input("Press N to abort or any other key to try again: ")
@@ -85,8 +93,23 @@ if os.path.exists(BUILD_PATH) and mode == "build":
             else:
                 compile_tkhtml()
     compile_tkhtml()
-    
+
 elif mode == "configure":
+    print("\nCreating build directory...")
+    if os.path.exists(BUILD_PATH):
+        if len(os.listdir(BUILD_PATH)) == 0:
+            print('Directory "build" already exists and is empty. Skipping.')
+        else:
+            print('Directory "build" already exists. Erase contents?')
+            override = input(f"Press N to skip or any other key to empty {BUILD_PATH}: ")
+            if override.upper() != "N":
+                files = glob.glob(BUILD_PATH+os.sep+'*')
+                for file in files:
+                    os.remove(file)
+    else:
+        Path(BUILD_PATH).mkdir(parents=True, exist_ok=True)
+        print("Done!")
+
     print("\nSearching for Tcl/Tk configuration files...")
 
     for path in paths: 
@@ -113,14 +136,13 @@ elif mode == "configure":
                 used_paths.append(path)
                 if version and include_spec:
                     include_spec = include_spec[0].replace("-I", "")
-                    if not os.path.isdir(include_spec): #msys2
-                        print(f"Warning: the directory {include_spec} listed in {file} does not exist")
+                    if not os.path.isdir(include_spec) and os.name == "nt": # msys2
                         try:
                             old_include_spec = include_spec
                             include_spec = subprocess.run(['cygpath', '-w', include_spec], stdout=subprocess.PIPE, check=True).stdout.decode(sys.stdout.encoding).replace("\n", "")
                             print(f"Mapping {old_include_spec} to {include_spec}")
                         except subprocess.CalledProcessError:
-                            pass
+                            print(f"Warning: the directory {include_spec} listed in {file} does not exist")
                     include_file = glob.glob(include_spec+os.sep+'**/'+header_file, recursive=True)
                     if include_file:
                         valid_paths[file] = [version[0], os.path.dirname(include_file[0])]
@@ -187,54 +209,68 @@ elif mode == "configure":
     elif abort:
         sys.exit()
 
+    # Moved to configure.in
+    # tk_win_path = None
+    # if os.name == "nt":
+    #     valid_tkWinConfig_paths = check_config_files(tkConfig_paths, "TK", "tkWinInt.h")
+    #     if tkConfig_path in valid_tkWinConfig_paths:
+    #         tk_win_path = valid_tkWinConfig_paths[tkConfig_path][1]
+
     tclConfig_folder = os.path.dirname(tclConfig_path)
     tcl_path = valid_tclConfig_paths[tclConfig_path][1]
     tkConfig_folder = os.path.dirname(tkConfig_path)
     tk_path = valid_tkConfig_paths[tkConfig_path][1]
 
-    ###
-
     print("\nUpdating CSS property support...")
     with open(CSSPROP_PATH, "r") as h:
         root.eval(f"cd {{{SRC_PATH}}}\n{h.read()}")
 
-    print("\nCreating build directory...")
-    if os.path.exists(BUILD_PATH):
-        if len(os.listdir(BUILD_PATH)) == 0:
-            print('Directory "build" already exists and is empty. Skipping.')
-        else:
-            print('Directory "build" already exists. Erase contents?')
-            override = input(f"Press Y to empty {BUILD_PATH} or any other key to continue: ")
-            if override.upper() == "Y":
-                files = glob.glob(BUILD_PATH+os.sep+'*')
-                for file in files:
-                    os.remove(file)
-    else:
-        Path(BUILD_PATH).mkdir(parents=True, exist_ok=True)
-        print("Done!")
+    # print("\nUpdating configure script...")
+    # override = input(f"Press U to update or any other key to skip: ")
+    # if override.upper() == "U":
+    #     os.chdir(BASE_PATH)
+    #     rm -r autom4te.cache && autoconf
+    #     run_command(["rm", "-r", "autom4te.cache"])
+    #     run_command(["autoconf", "-o", CONFIGURE_PATH, CONFIGUREIN_PATH])
 
-    os.chdir(BUILD_PATH)
     run_command(['chmod', '+rwx', CONFIGURE_PATH])
+    os.chdir(BUILD_PATH)
 
     def compile_tkhtml():
-        print(f"Running configure script with the flags --with-tcl={tclConfig_folder} --with-tk={tkConfig_folder} --with-tclinclude={tcl_path} --with-tkinclude={tk_path}")
+        flags = f"--with-tcl={tclConfig_folder} --with-tk={tkConfig_folder} --with-tclinclude={tcl_path} --with-tkinclude={tk_path}"
+        if os.name == "nt":
+            flags += " --with-system=windows"
+            if sys.maxsize > 2**32:
+                flags += " --with-shlib-ld='gcc -static-libgcc -pipe -shared'"
+
+        print(f"Running configure script with the flags {flags}")
         override = input("Press N to add more flags or any other key to continue: ")
 
-        other_flags = ""
         if override.upper() == "N":
             print()
             run_command(["bash", "../configure", '--help'])
-            other_flags = " " + input("Please enter desired flags seperated by a space: ") #I.e. CC="gcc" --pipe --shared CC="gcc -static-libgcc"  SHLIB_LD = gcc -static-libgcc -pipe -shared
-            print(f"Running configure script with the flags --with-tcl={tclConfig_folder} --with-tk={tkConfig_folder} --with-tclinclude={tcl_path} --with-tkinclude={tk_path}{other_flags}")
-        
+            flags += " " + input("Please enter desired flags seperated by a space: ") #I.e. CC="gcc" --pipe --shared CC="gcc -static-libgcc"  SHLIB_LD = gcc -static-libgcc -pipe -shared
+            print(f"Running configure script with the flags {flags}")
+
         try:
-            run_command(["bash", "../configure", 
-                                f'--with-tcl={tclConfig_folder}', 
-                                f'--with-tk={tkConfig_folder}', 
-                                f'--with-tclinclude={tcl_path}', 
-                                f'--with-tkinclude={tk_path}'] + other_flags.split())
+            run_command(["bash", "../configure"] + flags.split())
+
+            # Moved to configure.in
+            # if os.name == "nt":
+            #     bit = sys.maxsize > 2**32
+            #     print(f"\nEditing Makefile with the following recommended changes for {'64' if bit else '32'}-bit Windows:")
+            #     ###
+            #     override = input("Press N to skip or any other key to continue: ")
+            #     if override.upper() != "N":
+            #         with open(MAKE_PATH, "r+") as handle:
+            #             contents = contents = handle.read()
+            #             ###
+            #             handle.seek(0)
+            #             handle.write(contents)
+            #             handle.truncate()
+
             print("\nCompiling...")
-            run_command(["make"])
+            make()
         except subprocess.CalledProcessError:
             print("Fatal error encountered. Try changing the configure script flags.\n")
             compile_tkhtml()

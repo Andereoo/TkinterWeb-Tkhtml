@@ -784,6 +784,8 @@ enable_wince
 with_celib
 enable_load
 enable_symbols
+with_system
+with_shlib_ld
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1436,6 +1438,8 @@ Optional Packages:
   --with-tkinclude      directory containing the public Tk header files.
   --with-x                use the X Window System
   --with-celib=DIR        use Windows/CE support library from DIR
+  --with-system=SYSTEM    Specify the system type (windows, unix)
+  --with-shlib-ld=FLAGS   Specify custom flags for SHLIB_LD
 
 Some influential environment variables:
   CC          C compiler command
@@ -6534,6 +6538,7 @@ printf "%s\n" "${INCLUDE_DIR_NATIVE}" >&6; }
 
 #TEA_PRIVATE_TK_HEADERS
 
+
     if test "${TEA_WINDOWINGSYSTEM}" = "x11" ; then
 
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for X" >&5
@@ -9306,20 +9311,6 @@ fi
 
 done
 
-       for ac_header in cairo/cairo-xlib.h
-do :
-  ac_fn_c_check_header_compile "$LINENO" "cairo/cairo-xlib.h" "ac_cv_header_cairo_cairo_xlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_cairo_cairo_xlib_h" = xyes
-then :
-  printf "%s\n" "#define HAVE_CAIRO_CAIRO_XLIB_H 1" >>confdefs.h
-
-else $as_nop
-  as_fn_error $? "Cairo library missing Cairo-Xlib!" "$LINENO" 5
-fi
-
-done
-
-
 #--------------------------------------------------------------------
 # Everyone should be linking against the Tcl stub library.  If you
 # can't for some reason, remove this definition.  If you aren't using
@@ -9481,6 +9472,70 @@ printf %s "checking for wish... " >&6; }
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: ${WISH_PROG}" >&5
 printf "%s\n" "${WISH_PROG}" >&6; }
 
+
+
+#--------------------------------------------------------------------
+# Handle extra, custom flags used for dealing with issues
+# on Windows. Also note that on msys ${TEA_PLATFORM} returns "unix".
+#--------------------------------------------------------------------
+
+
+
+# Check whether --with-system was given.
+if test ${with_system+y}
+then :
+  withval=$with_system; SYSTEM=$withval
+else $as_nop
+  SYSTEM="unix"
+
+fi
+
+
+case "$SYSTEM" in
+  windows)
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Detected Windows system" >&5
+printf "%s\n" "$as_me: Detected Windows system" >&6;}
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding private Tk headers from: ${TK_SRC_DIR}/win" >&5
+printf "%s\n" "$as_me: Adding private Tk headers from: ${TK_SRC_DIR}/win" >&6;}
+
+    vars="-I"${TK_SRC_DIR}/win""
+    for i in $vars; do
+	PKG_INCLUDES="$PKG_INCLUDES $i"
+    done
+
+
+
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Adding cairo to SHLIB_LD_LIBS" >&5
+printf "%s\n" "$as_me: Adding cairo to SHLIB_LD_LIBS" >&6;}
+    SHLIB_LD_LIBS="$SHLIB_LD_LIBS -lcairo"
+
+
+    TCLSH_PROG="tclsh"
+
+    WISH_PROG="wish"
+
+    ;;
+  unix)
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Detected Unix system" >&5
+printf "%s\n" "$as_me: Detected Unix system" >&6;}
+    # Perform Unix-specific setup here if needed
+    ;;
+  *)
+    as_fn_error $? "Invalid system type: $SYSTEM. Valid options are: windows, unix" "$LINENO" 5
+    ;;
+esac
+
+
+# Check whether --with-shlib-ld was given.
+if test ${with_shlib_ld+y}
+then :
+  withval=$with_shlib_ld; SHLIB_LD=$withval
+
+fi
+
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: Using SHLIB_LD: ${SHLIB_LD}" >&5
+printf "%s\n" "$as_me: Using SHLIB_LD: ${SHLIB_LD}" >&6;}
 
 
 #--------------------------------------------------------------------

@@ -36,8 +36,13 @@ static const char rcsid[] = "$Id: htmldraw.c,v 1.208 2008/02/14 08:43:49 danielk
 #include <assert.h>
 #include <X11/Xutil.h>
 #include <cairo/cairo.h>
-#include <cairo/cairo-xlib.h>
 
+#ifdef WIN32
+    #include <cairo/cairo-win32.h>
+    #include <tkWinInt.h>
+#else // TODO: Handle MacOS
+    #include <cairo/cairo-xlib.h>
+#endif
 
 /*-------------------------------------------------------------------------
  * OVERVIEW:
@@ -1615,12 +1620,17 @@ fill_round_rectangle(
     if (width > 0 && height > 0){
         Display *display = Tk_Display(win);
 
-        cairo_surface_t *surface = cairo_xlib_surface_create(display, d,
-                                                              Tk_Visual(win),
-                                                              x + width, y + height);
+        #ifdef WIN32
+            TkWinDCState state;
+            HDC hdc = TkWinGetDrawableDC(display, d, &state);
+            cairo_surface_t *surface = cairo_win32_surface_create(hdc);
+        #else // TODO: Handle MacOS
+            cairo_surface_t *surface = cairo_xlib_surface_create(display, d,
+                Tk_Visual(win),
+                x + width, y + height);
+        #endif
 
         cairo_t *cr = cairo_create(surface);
-
 
         // TODO: figure this out in htmlprop instead of here
         // TODO: split each radius into rx and ry
@@ -1767,6 +1777,10 @@ fill_round_rectangle(
 
         cairo_destroy(cr);
         cairo_surface_destroy(surface);
+
+        #ifdef WIN32
+            TkWinReleaseDrawableDC(d, hdc, &state);
+        #endif
     }
 
     return 0;

@@ -144,6 +144,7 @@ TEA_PUBLIC_TCL_HEADERS
 
 TEA_PUBLIC_TK_HEADERS
 #TEA_PRIVATE_TK_HEADERS
+
 TEA_PATH_X
 
 #--------------------------------------------------------------------
@@ -182,11 +183,6 @@ AC_CHECK_HEADERS([cairo/cairo.h],
   [AC_SUBST(CAIRO_CFLAGS) AC_SUBST(CAIRO_LIBS)],
   [AC_MSG_ERROR([Cairo library not found!])])
 
-AC_CHECK_HEADERS([cairo/cairo-xlib.h],
-  [AC_SUBST(CAIRO_CFLAGS) AC_SUBST(CAIRO_LIBS)],
-  [AC_MSG_ERROR([Cairo library missing Cairo-Xlib!])])
-
-
 #--------------------------------------------------------------------
 # Everyone should be linking against the Tcl stub library.  If you
 # can't for some reason, remove this definition.  If you aren't using
@@ -215,6 +211,50 @@ TEA_MAKE_LIB
 
 TEA_PROG_TCLSH
 TEA_PROG_WISH
+
+#--------------------------------------------------------------------
+# Handle extra, custom flags used for dealing with issues
+# on Windows. Also note that on msys ${TEA_PLATFORM} returns "unix".
+#--------------------------------------------------------------------
+
+
+AC_ARG_WITH([system],
+  [AS_HELP_STRING([--with-system=SYSTEM], [Specify the system type (windows, unix)])],
+  [SYSTEM=$withval],
+  [SYSTEM="unix"]
+)
+
+case "$SYSTEM" in
+  windows)
+    AC_MSG_NOTICE([Detected Windows system])
+    AC_MSG_NOTICE([Adding private Tk headers from: ${TK_SRC_DIR}/win])
+    TEA_ADD_INCLUDES([-I"${TK_SRC_DIR}/win"])
+
+    AC_MSG_NOTICE([Adding cairo to SHLIB_LD_LIBS])
+    SHLIB_LD_LIBS="$SHLIB_LD_LIBS -lcairo"
+    AC_SUBST([SHLIB_LD_LIBS])
+
+    TCLSH_PROG="tclsh"
+    AC_SUBST([TCLSH_PROG])
+    WISH_PROG="wish"
+    AC_SUBST([WISH_PROG])
+    ;;
+  unix)
+    AC_MSG_NOTICE([Detected Unix system])
+    # Perform Unix-specific setup here if needed
+    ;;
+  *)
+    AC_MSG_ERROR([Invalid system type: $SYSTEM. Valid options are: windows, unix])
+    ;;
+esac
+
+AC_ARG_WITH([shlib-ld],
+  [AS_HELP_STRING([--with-shlib-ld=FLAGS], [Specify custom flags for SHLIB_LD])],
+  [SHLIB_LD=$withval]
+)
+
+AC_MSG_NOTICE([Using SHLIB_LD: ${SHLIB_LD}])
+AC_SUBST([SHLIB_LD])
 
 #--------------------------------------------------------------------
 # Finally, substitute all of the various values into the Makefile.
