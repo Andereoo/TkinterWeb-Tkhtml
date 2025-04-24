@@ -1533,10 +1533,10 @@ fill_quad(
     Tk_Window win,
     Drawable d,
     XColor *xcolor,
-    int x1, int y1,
-    int x2, int y2,
-    int x3, int y3,
-    int x4, int y4)
+    int x1, int y1,  // Starting point (top-left corner)
+    int x2, int y2,  // Offset for the second point (top-right corner)
+    int x3, int y3,  // Offset for the third point (bottom-right corner)
+    int x4, int y4)  // Offset for the fourth point (bottom-left corner)
 {
     XPoint points[4];
     Display *display = Tk_Display(win);
@@ -1557,13 +1557,13 @@ fill_quad(
      * the mode set to CoordModeOrigin.
      */
     points[0].x = x1; 
-    points[0].y = y1;
+    points[0].y = y1; // Top-left corner
     points[1].x = points[0].x + x2; 
-    points[1].y = points[0].y + y2;
+    points[1].y = points[0].y + y2; // Top-right corner
     points[2].x = points[1].x + x3; 
-    points[2].y = points[1].y + y3;
+    points[2].y = points[1].y + y3; // Bottom-right corner
     points[3].x = points[2].x + x4; 
-    points[3].y = points[2].y + y4;
+    points[3].y = points[2].y + y4; // Bottom-left corner
 
     XFillPolygon(display, d, gc, points, 4, Convex, CoordModeOrigin);
 
@@ -1787,6 +1787,7 @@ drawBox (
 {
     HtmlTree *pTree = pQuery->pTree;
     HtmlComputedValues *pV = HtmlNodeComputedValues(pBox->pNode);
+	const int r = 25;
 
     /* Figure out the widths of the top, bottom, right and left borders */
     int tw = ((pV->eBorderTopStyle != CSS_CONST_NONE) ? pV->border.iTop :0);
@@ -1840,9 +1841,7 @@ drawBox (
                 pBox->w - lw - rw, 0,
                 rw, -1 * tw
             );
-        }
-    
-        /* Left border, if required */
+        } /* Left border, if required */
         if (lw > 0 && lc) {
             fill_quad(pQuery, pTree->tkwin, drawable, lc,
                 x + pBox->x, y + pBox->y,
@@ -1850,9 +1849,7 @@ drawBox (
                 0, pBox->h - tw - bw,
                 -1 * lw, bw
             );
-        }
-    
-        /* Bottom border, if required */
+        } /* Bottom border, if required */
         if (bw > 0 && bc) {
             fill_quad(pQuery, pTree->tkwin, drawable, bc,
                 x + pBox->x, y + pBox->y + pBox->h,
@@ -1860,9 +1857,7 @@ drawBox (
                 pBox->w - lw - rw, 0,
                 rw, bw
             );
-        }
-    
-        /* Right border, if required */
+        } /* Right border, if required */
         if (rw > 0 && rc) {
             fill_quad(pQuery, pTree->tkwin, drawable, rc,
                 x + pBox->x + pBox->w, y + pBox->y,

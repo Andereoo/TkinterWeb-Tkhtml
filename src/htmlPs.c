@@ -1311,9 +1311,8 @@ int BoxToPostscript(HtmlTree *pTree, int x, int y, int w, int h, int prepass, Ht
         HtmlImageSize(pV->imZoomedBackgroundImage, &iWidth, &iHeight);
 
         if (iWidth > 0 && iHeight > 0) {
-            int iPosX, iPosY;
-            iPosX = pV->iBackgroundPositionX;
-            iPosY = pV->iBackgroundPositionY;
+            int iPosX = pV->iBackgroundPositionX;
+            int iPosY = pV->iBackgroundPositionY;
 
 			if (pV->eBackgroundAttachment == CSS_CONST_SCROLL) {
                 if (pV->mask & PROP_MASK_BACKGROUND_POSITION_X)
@@ -1322,8 +1321,7 @@ int BoxToPostscript(HtmlTree *pTree, int x, int y, int w, int h, int prepass, Ht
                     iPosY = (double)iPosY * (double)(bg_h - iHeight) / 10000.0;
                 iPosX += bg_x;
                 iPosY += bg_y;
-            } else {
-                /* 'background-attachment' is "fixed" */
+            } else {  /* 'background-attachment' is "fixed" */
                 int rw = Tk_Width(pTree->tkwin);
                 int rh = Tk_Height(pTree->tkwin);
                 if (pV->mask & PROP_MASK_BACKGROUND_POSITION_X)
