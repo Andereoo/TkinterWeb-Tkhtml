@@ -40,10 +40,14 @@ tkConfig_paths = []
 parser = argparse.ArgumentParser(description="Compile Tkhtml")
 parser.add_argument("mode", type=str, nargs="?", default=MODE, choices=["ask", "configure", "test", "build"], help="the default mode")
 parser.add_argument('-n', '--noprompt', action='store_true', help='disable prompting for user input')
+parser.add_argument('-t', '--notest', action='store_true', help='disable opening a window to test the binary')
+parser.add_argument('-q', '--quiet', action='store_true', help='hide gcc & configure script output')
 args = parser.parse_args()
 
 mode = args.mode
 noprompt = args.noprompt
+notest = args.notest
+quiet = args.quiet
 
 def test():
     root = tkinter.Tk()
@@ -51,14 +55,22 @@ def test():
     root.tk.eval("package require Tkhtml")
     widget = tkinter.Widget(root, "html")
     widget.tk.call(widget._w, "parse", TEST_STRING)
-    widget.pack(expand=True, fill="both")
-    root.mainloop()
+    
+    if not notest:
+        widget.pack(expand=True, fill="both")
+        root.mainloop()
 
 def print_error(*args):
     print(args)
 
 def run_command(cmd):
-    return subprocess.run(cmd, stdout=sys.stdout, stderr=sys.stderr, check=True)
+    if quiet:
+        return subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+    else:
+        return subprocess.run(cmd, stdout=sys.stdout, stderr=sys.stderr, check=True)
+
+def return_command(cmd):
+    return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
 def make():
     if os.name == "nt":
@@ -104,6 +116,8 @@ if os.path.exists(BUILD_PATH) and mode == "build":
             else:
                 compile_tkhtml()
     compile_tkhtml()
+
+    print("\nTesting result...")
 
 elif mode == "configure":
     print("\nCreating build directory...")
@@ -179,7 +193,7 @@ elif mode == "configure":
     if len(valid_tclConfig_paths) == 0 or len(valid_tkConfig_paths) == 0:
         print("\nError: no valid Tcl/Tk configuration files were found. Trying tclsh...")
 
-        process = subprocess.Popen(f"tclsh {GET_PATHS_PATH}", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = return_command(f"tclsh {GET_PATHS_PATH}")
         out, err = process.communicate()
 
         if err:
@@ -326,6 +340,6 @@ elif mode == "configure":
     print("\nCreating Makefile...")
     compile_tkhtml()
 
-    print("\nOpening test window...")
+    print("\nTesting result...")
 
 test()
