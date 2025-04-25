@@ -29,7 +29,7 @@ MAKE_PATH = os.path.join(BASE_PATH, 'build', 'Makefile')
 GET_PATHS_PATH = os.path.join(BASE_PATH, 'get_paths.tcl')
 
 root = tkinter.Tcl()
-paths = root.exprstring('$auto_path').split()#tcl_pkgPath
+paths = root.exprstring('$auto_path').split()
 version = str(tkinter.TkVersion)
 paths = list(set(paths))
 paths.sort(key=len)
@@ -37,9 +37,13 @@ paths.sort(key=len)
 tclConfig_paths = []
 tkConfig_paths = []
 
-parser = argparse.ArgumentParser(description="Greet someone by name.")
+parser = argparse.ArgumentParser(description="Compile Tkhtml")
 parser.add_argument("mode", type=str, nargs="?", default=MODE, choices=["ask", "configure", "test", "build"], help="the default mode")
-mode = parser.parse_args().mode
+parser.add_argument('-n', '--noprompt', action='store_true', help='disable prompting for user input')
+args = parser.parse_args()
+
+mode = args.mode
+noprompt = args.noprompt
 
 def test():
     root = tkinter.Tk()
@@ -78,6 +82,12 @@ if mode == "ask":
         mode = "build"
 elif mode != "test":
     print("Welcome to TkinterWeb's TkHtml3.0 compile script. Note that for this to succeed you will need tcl-dev, tk-dev, cairo, gcc, and make installed on your system.")
+
+
+if noprompt:
+    def input(string):
+        print(string)
+        return ""
 
 
 if os.path.exists(BUILD_PATH) and mode == "build":
