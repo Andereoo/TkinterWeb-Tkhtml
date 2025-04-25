@@ -26,15 +26,16 @@ CONFIGURE_PATH = os.path.join(BASE_PATH, 'configure')
 SRC_PATH = os.path.join(BASE_PATH, 'src')
 CSSPROP_PATH = os.path.join(BASE_PATH, 'src', 'cssprop.tcl')
 MAKE_PATH = os.path.join(BASE_PATH, 'build', 'Makefile')
+GET_PATHS_PATH = os.path.join(BASE_PATH, 'get_paths.tcl')
 
 root = tkinter.Tcl()
 paths = root.exprstring('$auto_path').split()#tcl_pkgPath
 version = str(tkinter.TkVersion)
+paths = list(set(paths))
 paths.sort(key=len)
 
 tclConfig_paths = []
 tkConfig_paths = []
-used_paths = []
 
 parser = argparse.ArgumentParser(description="Greet someone by name.")
 parser.add_argument("mode", type=str, nargs="?", default=MODE, choices=["ask", "configure", "test", "build"], help="the default mode")
@@ -112,43 +113,49 @@ elif mode == "configure":
 
     print("\nSearching for Tcl/Tk configuration files...")
 
-    for path in paths: 
-        if os.path.exists(path):
-            may_continue = True
-            for i in used_paths:
-                if i in path:
-                    may_continue = False
-                    break
-            if may_continue:
-                tclConfig_paths += glob.glob(path+os.sep+'**/*tclConfig.sh', recursive=True)
-                tkConfig_paths += glob.glob(path+os.sep+'**/*tkConfig.sh', recursive=True)
-                used_paths.append(path)
+    def search():
+        global tclConfig_paths, tkConfig_paths, valid_tclConfig_paths, valid_tkConfig_paths
 
-    print(f"Found {len(tclConfig_paths)} Tcl configuration file{'' if len(tclConfig_paths) == 1 else 's'} and {len(tkConfig_paths)} Tk configuration file{'' if len(tkConfig_paths) == 1 else 's'}")
+        for path in paths: 
+            if os.path.exists(path):
+                may_continue = True
+                if may_continue:
+                    tclConfig_paths += glob.glob(path+os.sep+'**/*tclConfig.sh', recursive=True)
+                    tkConfig_paths += glob.glob(path+os.sep+'**/*tkConfig.sh', recursive=True)
 
-    def check_config_files(config_paths, config_type, header_file):
-        valid_paths = {}
-        for file in config_paths:
-            with open(file, "r") as handle:
-                content = handle.read()
-                version = re.findall(config_type+r"_VERSION='(.*?)'", content, flags=re.MULTILINE)
-                include_spec = re.findall(config_type+r"_INCLUDE_SPEC='(.*?)'", content, flags=re.MULTILINE)
-                used_paths.append(path)
-                if version and include_spec:
-                    if not include_spec[0]:
-                        continue
-                    include_spec = include_spec[0].replace("-I", "")
-                    if not os.path.isdir(include_spec) and os.name == "nt": # msys2
-                        try:
-                            old_include_spec = include_spec
-                            include_spec = subprocess.run(['cygpath', '-w', include_spec], stdout=subprocess.PIPE, check=True).stdout.decode(sys.stdout.encoding).replace("\n", "")
-                            print(f"Mapping {old_include_spec} to {include_spec}")
-                        except subprocess.CalledProcessError:
-                            print(f"Warning: the directory {include_spec} listed in {file} does not exist")
-                    include_file = glob.glob(include_spec+os.sep+'**/'+header_file, recursive=True)
-                    if include_file:
-                        valid_paths[file] = [version[0], os.path.dirname(include_file[0])]
-        return valid_paths
+        print(f"Found {len(tclConfig_paths)} Tcl configuration file{'' if len(tclConfig_paths) == 1 else 's'} and {len(tkConfig_paths)} Tk configuration file{'' if len(tkConfig_paths) == 1 else 's'}")
+
+        def check_config_files(config_paths, config_type, header_file):
+            valid_paths = {}
+            for file in config_paths:
+                with open(file, "r") as handle:
+                    content = handle.read()
+                    version = re.findall(config_type+r"_VERSION='(.*?)'", content, flags=re.MULTILINE)
+                    include_spec = re.findall(config_type+r"_INCLUDE_SPEC='(.*?)'", content, flags=re.MULTILINE)
+                    if version and include_spec:
+                        if not include_spec[0]:
+                            continue
+                        include_spec = include_spec[0].replace("-I", "")
+                        if not os.path.isdir(include_spec) and os.name == "nt": # msys2
+                            try:
+                                old_include_spec = include_spec
+                                include_spec = subprocess.run(['cygpath', '-w', include_spec], stdout=subprocess.PIPE, check=True).stdout.decode(sys.stdout.encoding).replace("\n", "")
+                                print(f"Mapping {old_include_spec} to {include_spec}")
+                            except subprocess.CalledProcessError:
+                                print(f"Warning: the directory {include_spec} listed in {file} does not exist")
+                        include_file = glob.glob(include_spec+os.sep+'**/'+header_file, recursive=True)
+                        if include_file:
+                            valid_paths[file] = [version[0], os.path.dirname(include_file[0])]
+            return valid_paths
+
+        print("\nReading files...")
+
+        valid_tclConfig_paths = check_config_files(tclConfig_paths, "TCL", "tcl.h")
+        valid_tkConfig_paths = check_config_files(tkConfig_paths, "TK", "tk.h")
+
+        print(f"Found {len(valid_tclConfig_paths)} valid Tcl configuration file{'' if len(valid_tclConfig_paths) == 1 else 's'} and {len(valid_tkConfig_paths)} valid Tk configuration file{'' if len(valid_tkConfig_paths) == 1 else 's'}")
+
+    search()
 
     def choose_path(config_paths): # If multiple tcl/tkConfig files exist, try to pick one that corresponds to the right version
         chosen_path = list(config_paths)[0]
@@ -158,13 +165,24 @@ elif mode == "configure":
                     chosen_path = path
                     break
         return chosen_path
+    
+    if len(valid_tclConfig_paths) == 0 or len(valid_tkConfig_paths) == 0:
+        print("\nError: no valid Tcl/Tk configuration files were found. Trying tclsh...")
 
-    print("\nReading files...")
+        process = subprocess.Popen(f"tclsh {GET_PATHS_PATH}", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        out, err = process.communicate()
 
-    valid_tclConfig_paths = check_config_files(tclConfig_paths, "TCL", "tcl.h")
-    valid_tkConfig_paths = check_config_files(tkConfig_paths, "TK", "tk.h")
+        if err:
+            raise RuntimeError
+ 
+        paths = paths + out.decode().split()
+        paths = list(set(paths))
+        paths.sort(key=len)
 
-    print(f"Found {len(valid_tclConfig_paths)} valid Tcl configuration file{'' if len(valid_tclConfig_paths) == 1 else 's'} and {len(valid_tkConfig_paths)} valid Tk configuration file{'' if len(valid_tkConfig_paths) == 1 else 's'}")
+        tclConfig_paths = []
+        tkConfig_paths = []
+
+        search()
 
     abort = False
     if len(valid_tclConfig_paths) == 0 and len(valid_tkConfig_paths) == 0:
@@ -185,24 +203,32 @@ elif mode == "configure":
         override = input("Press N to override or any other key to continue: ")
 
     def manual_choose_path(options):
-        text = ""
-        for index, path in enumerate(options):
-            if index == len(options)-2:
-                filler = " or"
-            elif index == len(options)-1:
-                filler = ""
+        if options:
+            text = ""
+            for index, path in enumerate(options):
+                if index == len(options)-2:
+                    filler = " or"
+                elif index == len(options)-1:
+                    filler = ""
+                else:
+                    filler = ","
+                text += f" {index} for {path}{filler}"
+            option = input(f"Choose{text}: ")
+            try:
+                chosen_path = list(options)[int(option)]
+                print(f"Using {chosen_path}")
+                return chosen_path
+            except (ValueError, IndexError):
+                print("Invalid selection")
+                return manual_choose_path(options)
+        else:
+            option = input("Please enter the file path: ")
+            if os.path.exists(option):
+                return option
             else:
-                filler = ","
-            text += f" {index} for {path}{filler}"
-        option = input(f"Choose{text}: ")
-        try:
-            chosen_path = list(options)[int(option)]
-            print(f"Using {chosen_path}")
-            return chosen_path
-        except (ValueError, IndexError):
-            print("Invalid selection")
-            return manual_choose_path(options)
-        
+                print("File does not exist")
+                return manual_choose_path(options)
+            
     if override.upper() == "N":
         print("Select a Tcl configuration file to use. ", end="")
         tclConfig_path = manual_choose_path(valid_tclConfig_paths)
@@ -217,11 +243,21 @@ elif mode == "configure":
     #     valid_tkWinConfig_paths = check_config_files(tkConfig_paths, "TK", "tkWinInt.h")
     #     if tkConfig_path in valid_tkWinConfig_paths:
     #         tk_win_path = valid_tkWinConfig_paths[tkConfig_path][1]
+    print(tclConfig_path)
+    print(tkConfig_path)
 
     tclConfig_folder = os.path.dirname(tclConfig_path)
-    tcl_path = valid_tclConfig_paths[tclConfig_path][1]
+    try:
+        tcl_path = valid_tclConfig_paths[tclConfig_path][1]
+    except (TypeError, IndexError):
+        tcl_path = tclConfig_path
     tkConfig_folder = os.path.dirname(tkConfig_path)
-    tk_path = valid_tkConfig_paths[tkConfig_path][1]
+    try:
+        tk_path = valid_tkConfig_paths[tkConfig_path][1]
+    except (TypeError, IndexError):
+        tk_path = tkConfig_path
+
+
 
     print("\nUpdating CSS property support...")
     with open(CSSPROP_PATH, "r") as h:
