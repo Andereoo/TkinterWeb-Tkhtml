@@ -1,0 +1,1 @@
+puts $auto_path
