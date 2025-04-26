@@ -140,7 +140,6 @@ static int scaledHeight(TkPostscriptInfo *);
 static void getLowerCorners(TkPostscriptInfo *);
 static void getPageCentre(TkPostscriptInfo *);
 static int GetPostscriptPoints(Tcl_Interp *, char *, double *);
-static void    PostscriptBitmap(Tk_Window , Pixmap , int , int , int , int , Tcl_Obj *);
 static inline Tcl_Obj *    GetPostscriptBuffer(Tcl_Interp *);
 
 /*
@@ -1389,9 +1388,9 @@ int BoxToPostscript(HtmlTree *pTree, int x, int y, int w, int h, int prepass, Ht
  */
 int LineToPostscript(Tk_PostscriptInfo psInfo, int x, int y, int w, int y_linethrough, int y_underline, int prepass, HtmlNode *pNode, Tcl_Interp *interp)
 {
-    Tcl_InterpState interpState;
+    Tcl_InterpState interpState = Tcl_SaveInterpState(interp, TCL_OK);
     XColor *xcolor;
-    Tcl_Obj *psObj;
+    Tcl_Obj *psObj = Tcl_NewObj();
     int yrel;
 
     switch (HtmlNodeComputedValues(pNode)->eTextDecoration) {
@@ -1407,8 +1406,6 @@ int LineToPostscript(Tk_PostscriptInfo psInfo, int x, int y, int w, int y_lineth
         default: goto done;
     }
     // Make our working space.
-    psObj = Tcl_NewObj();
-    interpState = Tcl_SaveInterpState(interp, TCL_OK);
     Tcl_AppendPrintfToObj(psObj, "%d %.15g moveto %d 0 rlineto closepath ",
         x, Tk_PostscriptY(yrel, psInfo), w
     );

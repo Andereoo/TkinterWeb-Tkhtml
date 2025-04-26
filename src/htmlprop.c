@@ -1186,7 +1186,7 @@ propertyValuesSetColor (HtmlComputedValuesCreator *p, HtmlColor **pCVar, CssProp
     HtmlTree *pTree = p->pTree;
 
     if (pProp->eType == CSS_CONST_INHERIT) {
-        HtmlColor **pInherit = (HtmlColor **)getInheritPointer(p, (char *)pCVar);
+        HtmlColor **pInherit = (HtmlColor **)getInheritPointer(p, (unsigned char *)pCVar);
         assert(pInherit);
         cVal = *pInherit;
         goto setcolor_out;
@@ -1685,7 +1685,7 @@ propertyValuesSetSize (HtmlComputedValuesCreator *p, int *pIVal, unsigned int p_
         case CSS_CONST_INHERIT:
             if (allow_mask & SZ_INHERIT) {
                 HtmlNode *pParent = p->pParent;
-                int *pInherit = (int *)getInheritPointer(p, (char*)pIVal);
+                int *pInherit = (int *)getInheritPointer(p, (unsigned char*)pIVal);
                 assert(pInherit);
                 assert(pParent);
 
