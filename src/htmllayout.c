@@ -426,7 +426,8 @@ normalFlowMarginAdd (LayoutContext *pLayout, HtmlNode *pNode, NormalFlow *pNorma
 }
 
 static int 
-paginationOffsetInside(LayoutContext *pLayout, HtmlNode *pNode, HtmlComputedValues *pV, int *pY, int y, int h){
+paginationOffsetInside(LayoutContext *pLayout, HtmlNode *pNode, HtmlComputedValues *pV, int *pY, int y, int h)
+{
     int pagebreak, paginationY = pLayout->pTree->options.pagination;
     if (!paginationY || pNode == pLayout->pTree->pRoot) return y;
 	if (pV->eFloat != CSS_CONST_NONE) y += *pY;
@@ -1696,8 +1697,6 @@ drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
         CONST char *zReplace = Tcl_GetString(pElem->pReplacement->pReplace);
         Tk_Window win = pElem->pReplacement->win;
         if (win) {
-            Tcl_Obj *pWin = 0;
-            int iOffset;
             int mmt = pLayout->minmaxTest;
 
             /* At this point local variable width may be either a pixel 
@@ -1731,10 +1730,9 @@ drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
 
             if (!pLayout->minmaxTest) {
                 doConfigureCmd(pLayout->pTree, pElem, pBox->iContainingW);
-                pWin = Tcl_NewStringObj(zReplace, -1);
+                Tcl_NewStringObj(zReplace, -1);
             }
 
-            iOffset = pElem->pReplacement->iOffset;
             DRAW_WINDOW(&pBox->vc, pNode, 0, 0, width, height);
         }
     } else {
@@ -3420,7 +3418,6 @@ normalFlowLayout (
 {
     InlineContext *pContext;
     int y = 0;
-    int rc = 0;                       /* Return Code */
     InlineBorder *pBorder;
     HtmlFloatList *pFloat = pNormal->pFloat;
     NodeListLink *pAbsolute = pLayout->pAbsolute;
@@ -3527,7 +3524,7 @@ normalFlowLayout (
     /* Finish the inline-border started by the parent, if any. */
     HtmlInlineContextPopBorder(pContext, pBorder);
 
-    rc = inlineLayoutDrawLines(pLayout, pBox, pContext, 1, &y, pNormal);
+    inlineLayoutDrawLines(pLayout, pBox, pContext, 1, &y, pNormal);
     HtmlInlineContextCleanup(pContext);
 
     /* If this element is a list-item with "list-style-position:outside", 

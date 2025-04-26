@@ -689,6 +689,9 @@ HtmlImageImage(HtmlImage2 *pImage)
             rc = Tcl_EvalObjv(interp, 4, apObj, TCL_EVAL_GLOBAL);
             pUnscaled->nIgnoreChange--;
             assert(rc==TCL_OK);
+		#ifdef NDEBUG
+			(void)rc; // prevent unused variable warning when assertions are disabled
+		#endif
             Tcl_IncrRefCount(apObj[3]);
             Tcl_DecrRefCount(apObj[2]);
             Tcl_DecrRefCount(apObj[1]);
@@ -946,6 +949,9 @@ printf("Pixmapifying - nData = %d\n", nData);
         pImage->nIgnoreChange--;
         Tcl_DecrRefCount(pGetData);
         assert(rc==TCL_OK);
+	#ifdef NDEBUG
+		(void)rc; // prevent unused variable warning when assertions are disabled
+	#endif
     }
     return pImage->pixmap;
 }

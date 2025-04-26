@@ -1787,7 +1787,6 @@ drawBox (
 {
     HtmlTree *pTree = pQuery->pTree;
     HtmlComputedValues *pV = HtmlNodeComputedValues(pBox->pNode);
-	const int r = 25;
 
     /* Figure out the widths of the top, bottom, right and left borders */
     int tw = ((pV->eBorderTopStyle != CSS_CONST_NONE) ? pV->border.iTop :0);
@@ -3008,10 +3007,10 @@ getPixmap (
         int w1 = pOutline->w;
         int h1 = pOutline->h;
         Outline *pPrev = pOutline;
-        fill_quad(0, pTree->tkwin, pixmap, oc, x1,y1, w1,0, 0,ow, -w1,0);
-        fill_quad(0, pTree->tkwin, pixmap, oc, x1,y1+h1, w1,0, 0,-ow, -w1,0);
-        fill_quad(0, pTree->tkwin, pixmap, oc, x1,y1, 0,h1, ow,0, 0,-h1);
-        fill_quad(0, pTree->tkwin, pixmap, oc, x1+w1,y1, 0,h1, -ow,0, 0,-h1);
+        fill_quad(0, pTree->tkwin, pixmap, oc, x1, y1, w1, 0, 0, ow, -w1, 0);
+        fill_quad(0, pTree->tkwin, pixmap, oc, x1, y1+h1, w1, 0, 0, -ow, -w1, 0);
+        fill_quad(0, pTree->tkwin, pixmap, oc, x1, y1, 0, h1, ow, 0, 0, -h1);
+        fill_quad(0, pTree->tkwin, pixmap, oc, x1+w1, y1, 0, h1, -ow, 0, 0, -h1);
         pOutline = pOutline->pNext;
         HtmlFree(pPrev);
     }
@@ -3047,7 +3046,7 @@ int HtmlLayoutImage(
     )
 {
     HtmlTree *pTree = (HtmlTree *)clientData;
-    int w, h, isFull;
+    int w, h;
 
     /* Force any pending style and/or layout operations to run. */
     HtmlCallbackForce(pTree);
