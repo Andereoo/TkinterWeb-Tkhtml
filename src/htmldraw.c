@@ -2663,6 +2663,7 @@ static int layoutPrimitivesCb(
 {
     primitivesvar *p = (primitivesvar *)clientData;
     outputPrimitive(pItem, origin_x, origin_y, p->pPrimitives, p->pTree, p->interp);
+    return TCL_OK;
 }
 int layoutPrimitives(
     ClientData clientData,         /* The HTML widget data structure */
