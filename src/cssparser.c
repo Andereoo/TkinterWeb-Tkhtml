@@ -836,8 +836,7 @@ static int parseDeclarationBlock(CssInput *pInput, CssParse *pParse){
 static int 
 parseMediaList(CssInput *pInput, unsigned char **media, unsigned char *count)
 {
-    unsigned char media_ok = 0; *count = 0; // Initialize the count to 0
-
+    *count = 0; // Initialize the count to 0
     while (1) {
         CssTokenType eToken;
         char *zToken;
@@ -847,19 +846,15 @@ parseMediaList(CssInput *pInput, unsigned char **media, unsigned char *count)
         if (eToken != CT_IDENT) return 1; // Parse all queries after at-rule, if matches: macros are added to array.
         if (nToken == 3 && strnicmp("all", zToken, nToken) == 0) {
             (*media)[(*count)++] = CSS_MEDIA_ALL;
-            media_ok = 1;
         } else if (nToken == 5 && strnicmp("print", zToken, nToken) == 0) {
             (*media)[(*count)++] = CSS_MEDIA_PRINT;
-            media_ok = 1;
         } else if (nToken == 6 && strnicmp("screen", zToken, nToken) == 0) {
             (*media)[(*count)++] = CSS_MEDIA_SCREEN;
-            media_ok = 1;
         }
         inputNextTokenIgnoreSpace(pInput); // Get next query, if is not a comma then stop.
         if (CT_COMMA != inputGetToken(pInput, 0, 0)) break;
         inputNextTokenIgnoreSpace(pInput);
     }
-
     return 0;
 }
 

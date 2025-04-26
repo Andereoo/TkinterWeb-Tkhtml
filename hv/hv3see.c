@@ -2022,23 +2022,23 @@ seeTraceHook(pSeeInterp, pThrowLoc, pContext, event)
  *---------------------------------------------------------------------------
  */
 static int 
-tclSeeInterp(clientData, interp, objc, objv)
+tclSeeInterp(clientData, pTcl, objc, objv)
     ClientData clientData;             /* Unused */
-    Tcl_Interp *interp;                /* Current interpreter. */
+    Tcl_Interp *pTcl;                /* Current interpreter. */
     int objc;                          /* Number of arguments. */
     Tcl_Obj *CONST objv[];             /* Argument strings. */
 {
     char zCmd[64];
     SeeInterp *pInterp;
     if (objc != 2) {
-        Tcl_WrongNumArgs(interp, 1, objv, "GLOBAL-OBJCOMMAND");
+        Tcl_WrongNumArgs(pTcl, 1, objv, "GLOBAL-OBJCOMMAND");
         return TCL_ERROR;
     }
 
     /* Allocate the interpreter structure and initialize the global object. */
     pInterp = (SeeInterp *)GC_MALLOC_UNCOLLECTABLE(sizeof(SeeInterp));
     memset(pInterp, 0, sizeof(SeeInterp));
-    pInterp->pTclInterp = interp;
+    pInterp->pTclInterp = pTcl;
     initSeeTclObject(pInterp, &pInterp->global, objv[1]);
  
     /* Initialize the SEE interpreter. */
@@ -2054,12 +2054,12 @@ tclSeeInterp(clientData, interp, objc, objv)
 
     /* Create the tcl command used to access this javascript interpreter. */
     sprintf(zCmd, "::see::interp_%d", iSeeInterp++);
-    Tcl_CreateObjCommand(interp, zCmd, interpCmd, pInterp, delInterpCmd);
-    Tcl_SetResult(interp, zCmd, TCL_VOLATILE);
+    Tcl_CreateObjCommand(pTcl, zCmd, interpCmd, pInterp, delInterpCmd);
+    Tcl_SetResult(pTcl, zCmd, TCL_VOLATILE);
 
 #ifndef NDEBUG
     Tcl_CmdInfo cmdinfo;
-    if (Tcl_GetCommandInfo(interp, "::tkhtml::instrument", &cmdinfo)) {
+    if (Tcl_GetCommandInfo(pTcl, "::tkhtml::instrument", &cmdinfo)) {
         pInterp->pInstrumentData = cmdinfo.objClientData;
     }
 #endif

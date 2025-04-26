@@ -1338,11 +1338,8 @@ void
 HtmlTreeAddText (HtmlTree *pTree, HtmlTextNode *pTextNode, int iOffset)
 {
     HtmlNode *pCurrent;
-    int eCurrentType;
-
     HtmlInitTree(pTree);
     pCurrent = pTree->state.pCurrent;
-    eCurrentType = HtmlNodeTagType(pCurrent);
 
     if (pTree->state.isCdataInHead) {
         HtmlNode *pHeadNode = HtmlNodeChild(pTree->pRoot, 0);

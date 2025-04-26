@@ -426,7 +426,7 @@ rgbToColor(char *zOut, CONST char *zRgb, int nRgb)
 {
     CONST char *z = zRgb;
     CONST char *zEnd = zRgb+nRgb;
-    int n = 0;
+    int n;
 
     int aN[3] = {0, 0, 0};
     CssToken aToken[3];
@@ -471,6 +471,9 @@ rgbToColor(char *zOut, CONST char *zRgb, int nRgb)
 
     n = sprintf(zOut, "#%.2x%.2x%.2x", aN[0], aN[1], aN[2]);
     assert(n==7);
+#ifdef NDEBUG
+	(void)n; // prevent unused variable warning when assertions are disabled
+#endif
     return;
 
   bad_color:

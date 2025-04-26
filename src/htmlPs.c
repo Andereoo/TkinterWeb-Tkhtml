@@ -574,7 +574,7 @@ int HtmlPostscript(
     }
     
     HtmlNode *pBgRoot = pTree->pRoot;
-    HtmlComputedValues *pBgRootV;
+    HtmlComputedValues *pBgRootV = 0;
     
     if (pBgRoot) {
         pBgRootV = HtmlNodeComputedValues(pBgRoot);
@@ -587,7 +587,7 @@ int HtmlPostscript(
         }
     }
     
-    int pagenum, page_h, pageYmin, pageYmax;
+    int page_h = 0, pagenum, pageYmin, pageYmax;
     if (psInfo.pageMode) page_h = scaledHeight(pPsInfo);
 
     /*
@@ -754,7 +754,7 @@ static int fill_rectanglePs(
     XColor *color,
     int x, double y, int h, int w)
 {
-    fill_quadPs(interp, psInfo, psObj, color, x, y, w, 0, 0, h, -w, 0);
+    return fill_quadPs(interp, psInfo, psObj, color, x, y, w, 0, 0, h, -w, 0);
 }
 
 Tk_Window HtmlTreeTkwin(HtmlTree *pTree) /* Token for tree on whose behalf Postscript is being generated. */
@@ -1351,6 +1351,12 @@ int BoxToPostscript(HtmlTree *pTree, int x, int y, int w, int h, int prepass, Ht
 				Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
 			}
         }
+    }
+    if (ow > 0 && oc) {  /* Outline, if required */
+        fill_quadPs(interp, psInfo, psObj, oc, x, y, w, 0, 0, ow, -w, 0);
+        fill_quadPs(interp, psInfo, psObj, oc, x, y+h, w, 0, 0, -ow, -w, 0);
+        fill_quadPs(interp, psInfo, psObj, oc, x, y, 0, h, ow, 0, 0, -h);
+        fill_quadPs(interp, psInfo, psObj, oc, x+w, y, 0, h, -ow, 0, 0, -h);
     }
     // Plug the accumulated postscript back into the result.
     done:

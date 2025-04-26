@@ -30,8 +30,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-static char const rcsid[] =
-        "@(#) $Id: htmlparse.c,v 1.121 2007/12/08 15:33:00 danielk1977 Exp $";
+static char const rcsid[] = "@(#) $Id: htmlparse.c,v 1.121 2007/12/08 15:33:00 danielk1977 Exp $";
 
 #include <string.h>
 #include <stdlib.h>
@@ -1025,13 +1024,12 @@ HtmlTokenize (
                      * </script>, </noscript> or whatever closing tag matches
                      * the tag that opened the script node.
                      */
-                    int rc;
                     HtmlCallbackRestyle(pTree, pTree->state.pCurrent);
 
                     assert(pTree->eWriteState == HTML_WRITE_NONE);
                     pTree->eWriteState = HTML_WRITE_INHANDLER;
                     pTree->iWriteInsert = n;
-                    rc = executeScript(pTree, pScript, pAttr, zScript, nScript);
+                    executeScript(pTree, pScript, pAttr, zScript, nScript);
 
                     assert(
                         pTree->eWriteState == HTML_WRITE_INHANDLER || 
