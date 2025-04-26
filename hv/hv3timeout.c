@@ -261,43 +261,43 @@ static void cancelTimeout(pSeeInterp, pThis, isInterval, argc, argv, res)
 }
 
 static void
-setTimeoutFunc(interp, self, thisobj, argc, argv, res)
-        struct SEE_interpreter *interp;
+setTimeoutFunc(pSee, self, thisobj, argc, argv, res)
+        struct SEE_interpreter *pSee;
         struct SEE_object *self, *thisobj;
         int argc;
         struct SEE_value **argv, *res;
 {
-    newTimeout((SeeInterp *)interp, thisobj, 0, argc, argv, res);
+    newTimeout((SeeInterp *)pSee, thisobj, 0, argc, argv, res);
 }
 
 static void
-setIntervalFunc(interp, self, thisobj, argc, argv, res)
-        struct SEE_interpreter *interp;
+setIntervalFunc(pSee, self, thisobj, argc, argv, res)
+        struct SEE_interpreter *pSee;
         struct SEE_object *self, *thisobj;
         int argc;
         struct SEE_value **argv, *res;
 {
-    newTimeout((SeeInterp *)interp, thisobj, 1, argc, argv, res);
+    newTimeout((SeeInterp *)pSee, thisobj, 1, argc, argv, res);
 }
 
 static void
-clearTimeoutFunc(interp, self, thisobj, argc, argv, res)
-        struct SEE_interpreter *interp;
+clearTimeoutFunc(pSee, self, thisobj, argc, argv, res)
+        struct SEE_interpreter *pSee;
         struct SEE_object *self, *thisobj;
         int argc;
         struct SEE_value **argv, *res;
 {
-    cancelTimeout((SeeInterp *)interp, thisobj, 0, argc, argv, res);
+    cancelTimeout((SeeInterp *)pSee, thisobj, 0, argc, argv, res);
 }
 
 static void
-clearIntervalFunc(interp, self, thisobj, argc, argv, res)
-        struct SEE_interpreter *interp;
+clearIntervalFunc(pSee, self, thisobj, argc, argv, res)
+        struct SEE_interpreter *pSee;
         struct SEE_object *self, *thisobj;
         int argc;
         struct SEE_value **argv, *res;
 {
-    cancelTimeout((SeeInterp *)interp, thisobj, 1, argc, argv, res);
+    cancelTimeout((SeeInterp *)pSee, thisobj, 1, argc, argv, res);
 }
 
 static void 
@@ -305,13 +305,13 @@ interpTimeoutInit(pSeeInterp, pWindow)
     SeeInterp *pSeeInterp;
     SeeTclObject *pWindow;
 {
-    struct SEE_interpreter *interp = (struct SEE_interpreter *)pSeeInterp;
+    struct SEE_interpreter *pSee = (struct SEE_interpreter *)pSeeInterp;
     struct SEE_object *g = (struct SEE_object *)pWindow;
  
-    SEE_CFUNCTION_PUTA(interp, g, "setTimeout", setTimeoutFunc, 2, 0);
-    SEE_CFUNCTION_PUTA(interp, g, "setInterval", setIntervalFunc, 2, 0);
-    SEE_CFUNCTION_PUTA(interp, g, "clearTimeout", clearTimeoutFunc, 1, 0);
-    SEE_CFUNCTION_PUTA(interp, g, "clearInterval", clearIntervalFunc, 1, 0);
+    SEE_CFUNCTION_PUTA(pSee, g, "setTimeout", setTimeoutFunc, 2, 0);
+    SEE_CFUNCTION_PUTA(pSee, g, "setInterval", setIntervalFunc, 2, 0);
+    SEE_CFUNCTION_PUTA(pSee, g, "clearTimeout", clearTimeoutFunc, 1, 0);
+    SEE_CFUNCTION_PUTA(pSee, g, "clearInterval", clearIntervalFunc, 1, 0);
 }
 
 static void 

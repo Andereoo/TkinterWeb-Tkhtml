@@ -33,8 +33,8 @@ struct SEE_object *SEE_function_inst_create(
 
 /* 15.3.2.1 new Function(...) */
 static void
-function_construct(interp, self, thisobj, argc, argv, res)
-    struct SEE_interpreter *interp;
+function_construct(pSee, self, thisobj, argc, argv, res)
+    struct SEE_interpreter *pSee;
     struct SEE_object *self, *thisobj;
     int argc;
     struct SEE_value **argv, *res;
@@ -46,29 +46,29 @@ function_construct(interp, self, thisobj, argc, argv, res)
 
     struct function *f;
     struct SEE_object *pFunction;
-    struct SEE_scope *pScope = ((SeeInterp *)interp)->pScope;
+    struct SEE_scope *pScope = ((SeeInterp *)pSee)->pScope;
     if (!pScope) {
-        pScope = interp->Global_scope;
+        pScope = pSee->Global_scope;
     }
 
-    P = SEE_string_new(interp, 0);
+    P = SEE_string_new(pSee, 0);
     for (k = 0; k < argc - 1; k++) {
         if (k)
             SEE_string_addch(P, ',');
-        SEE_ToString(interp, argv[k], &r9);
+        SEE_ToString(pSee, argv[k], &r9);
         SEE_string_append(P, r9.u.string);
     }
     if (argc) {
-        SEE_ToString(interp, argv[argc - 1], &r13);
+        SEE_ToString(pSee, argv[argc - 1], &r13);
         body = r13.u.string;
     } else
-        body = SEE_string_new(interp, 0);
+        body = SEE_string_new(pSee, 0);
 
-    paraminp = SEE_input_string(interp, P);
-    bodyinp = SEE_input_string(interp, body);
+    paraminp = SEE_input_string(pSee, P);
+    bodyinp = SEE_input_string(pSee, body);
 
-    f = SEE_parse_function(interp, NULL, paraminp, bodyinp);
-    pFunction = SEE_function_inst_create(interp, f, pScope);
+    f = SEE_parse_function(pSee, NULL, paraminp, bodyinp);
+    pFunction = SEE_function_inst_create(pSee, f, pScope);
     SEE_SET_OBJECT(res, pFunction);
     SEE_INPUT_CLOSE(bodyinp);
     SEE_INPUT_CLOSE(paraminp);
@@ -93,22 +93,22 @@ interpFunctionInit(pInterp, pObj)
     SeeInterp *pInterp; 
     SeeTclObject *pObj;
 {
-    struct SEE_interpreter *interp = &pInterp->interp;
+    struct SEE_interpreter *pSee = &pInterp->interp;
     struct SEE_object *pFunction;
     struct SEE_object *pNative = (struct SEE_object *)(pObj->pNative);
 
     struct SEE_value v;
 
-    pFunction = (struct SEE_object *)SEE_NEW(interp, struct SEE_native);
+    pFunction = (struct SEE_object *)SEE_NEW(pSee, struct SEE_native);
     SEE_native_init(
         (struct SEE_native *)(pFunction),
         &pInterp->interp,
         &function_const_class, 
-        interp->Function_prototype
+        pSee->Function_prototype
     );
 
     SEE_SET_OBJECT(&v, pFunction);
-    SEE_OBJECT_PUTA(interp, pNative, "Function", &v, SEE_ATTR_DONTENUM);
+    SEE_OBJECT_PUTA(pSee, pNative, "Function", &v, SEE_ATTR_DONTENUM);
 
     SEE_SET_NUMBER(&v, 1);
     SEE_OBJECT_PUTA(interp, pFunction, "length", &v, SEE_ATTR_LENGTH);

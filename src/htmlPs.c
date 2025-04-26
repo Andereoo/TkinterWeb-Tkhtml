@@ -1307,14 +1307,29 @@ int BoxToPostscript(HtmlTree *pTree, int x, int y, int w, int h, int prepass, Ht
         }
     }
     if (0 == (f & DRAWBOX_NOBACKGROUND) && pV->imZoomedBackgroundImage) { /* Image background, if required. */
-        Tk_Window win = HtmlTreeTkwin(pTree);
         int iWidth, iHeight, eR = pV->eBackgroundRepeat;
         HtmlImageSize(pV->imZoomedBackgroundImage, &iWidth, &iHeight);
 
         if (iWidth > 0 && iHeight > 0) {
-            int iPosX, iPosY;
-            iPosX = pV->iBackgroundPositionX;
-            iPosY = pV->iBackgroundPositionY;
+            int iPosX = pV->iBackgroundPositionX;
+            int iPosY = pV->iBackgroundPositionY;
+
+			if (pV->eBackgroundAttachment == CSS_CONST_SCROLL) {
+                if (pV->mask & PROP_MASK_BACKGROUND_POSITION_X)
+                    iPosX = (double)iPosX * (double)(bg_w - iWidth) / 10000.0;
+                if (pV->mask & PROP_MASK_BACKGROUND_POSITION_Y)
+                    iPosY = (double)iPosY * (double)(bg_h - iHeight) / 10000.0;
+                iPosX += bg_x;
+                iPosY += bg_y;
+            } else {  /* 'background-attachment' is "fixed" */
+                int rw = Tk_Width(pTree->tkwin);
+                int rh = Tk_Height(pTree->tkwin);
+                if (pV->mask & PROP_MASK_BACKGROUND_POSITION_X)
+                    iPosX = (double)iPosX * (double)(rw - iWidth) / 10000.0;
+                if (pV->mask & PROP_MASK_BACKGROUND_POSITION_Y)
+                    iPosY = (double)iPosY * (double)(rh - iHeight) / 10000.0;
+            }
+
             if (eR != CSS_CONST_REPEAT && eR != CSS_CONST_REPEAT_X) {
                 int draw_x1 = MAX(bg_x, iPosX);
                 int draw_x2 = MIN(bg_x + bg_w, iPosX + iWidth);
@@ -1327,11 +1342,14 @@ int BoxToPostscript(HtmlTree *pTree, int x, int y, int w, int h, int prepass, Ht
                 bg_y = draw_y1;
                 bg_h = draw_y2 - draw_y1;
             }
-            Tcl_AppendPrintfToObj(psObj, "%d %.15g translate\n", bg_x, Tk_PostscriptY(bg_y, psInfo)-bg_h);
-            if (Tk_PostscriptImage(HtmlImageImage(pV->imZoomedBackgroundImage), interp, 
-                win, psInfo, iPosX, iPosY, bg_w, bg_h, prepass
-            ) != TCL_OK) goto error;
-            Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
+
+			if(Tk_PostscriptImage(
+				HtmlImageImage(pV->imZoomedBackgroundImage), interp, pTree->tkwin, psInfo, 0, 0, bg_w, bg_h, prepass
+			) != TCL_OK) goto error;
+			if (!prepass) {
+				Tcl_AppendPrintfToObj(psObj, "%d %.15g translate %% Background Image\n", bg_x, Tk_PostscriptY(bg_y, psInfo)-bg_h);
+				Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
+			}
         }
     }
     // Plug the accumulated postscript back into the result.

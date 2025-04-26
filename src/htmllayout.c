@@ -429,6 +429,7 @@ static int
 paginationOffsetInside(LayoutContext *pLayout, HtmlNode *pNode, HtmlComputedValues *pV, int *pY, int y, int h){
     int pagebreak, paginationY = pLayout->pTree->options.pagination;
     if (!paginationY || pNode == pLayout->pTree->pRoot) return y;
+	if (pV->eFloat != CSS_CONST_NONE) y += *pY;
     y += paginationPageYOrigin(0, pLayout);
     switch (pV->ePageBreakInside) {
         case CSS_CONST_AUTO: break;
@@ -1171,7 +1172,6 @@ normalFlowLayoutFloat (
     } else {
         x = iRight - iTotalWidth;
     }
-    if (pLayout->pTree->options.pagination) y += *pY;
     y = paginationOffsetInside(pLayout, pNode, pV, pY, y, iTotalHeight);
     DRAW_CANVAS(&pBox->vc, &sBox.vc, x, y, pNode); // This controls the CanvasOrigin Y-axis for CSS float
     paginationPageYOffset(pLayout, pV, pY, 0);
