@@ -1352,10 +1352,11 @@ int BoxToPostscript(HtmlTree *pTree, int x, int y, int w, int h, int prepass, Ht
         }
     }
     if (ow > 0 && oc) {  /* Outline, if required */
-        fill_quadPs(interp, psInfo, psObj, oc, x, y, w, 0, 0, ow, -w, 0);
-        fill_quadPs(interp, psInfo, psObj, oc, x, y+h, w, 0, 0, -ow, -w, 0);
-        fill_quadPs(interp, psInfo, psObj, oc, x, y, 0, h, ow, 0, 0, -h);
-        fill_quadPs(interp, psInfo, psObj, oc, x+w, y, 0, h, -ow, 0, 0, -h);
+        Tcl_AppendToObj(psObj, "grestore gsave\n", -1);
+        fill_quadPs(interp, psInfo, psObj, oc, x, y2, w, 0, 0, ow, -w, 0);
+        fill_quadPs(interp, psInfo, psObj, oc, x, y2+h, w, 0, 0, -ow, -w, 0);
+        fill_quadPs(interp, psInfo, psObj, oc, x, y2, 0, h, ow, 0, 0, -h);
+        fill_quadPs(interp, psInfo, psObj, oc, x+w, y2, 0, h, -ow, 0, 0, -h);
     }
     // Plug the accumulated postscript back into the result.
     done:
