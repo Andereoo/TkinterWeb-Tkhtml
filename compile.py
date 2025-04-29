@@ -267,8 +267,6 @@ elif mode == "configure":
     #     valid_tkWinConfig_paths = check_config_files(tkConfig_paths, "TK", "tkWinInt.h")
     #     if tkConfig_path in valid_tkWinConfig_paths:
     #         tk_win_path = valid_tkWinConfig_paths[tkConfig_path][1]
-    print(tclConfig_path)
-    print(tkConfig_path)
 
     tclConfig_folder = os.path.dirname(tclConfig_path)
     try:
@@ -281,7 +279,16 @@ elif mode == "configure":
     except (TypeError, IndexError):
         tk_path = tkConfig_path
 
-
+    if any(" " in path for path in [tclConfig_folder, tkConfig_folder, tcl_path, tk_path]):
+        print("Warning: the following Tcl/Tk sources are in a directory that contains spaces:")
+        for path in [tclConfig_folder, tkConfig_folder, tcl_path, tk_path]:
+            if " " in path:
+                print(f"  - {path}")
+        print("You will likely encounter errors when trying to compile.")
+        print("On Windows, this can happen when MSYS is installed to C:/Program Files/msys/ instead of C:/msys/")
+        override = input("Press N to abort or any other key to continue: ")
+        if override.upper() == "N":
+            sys.exit()
 
     print("\nUpdating CSS property support...")
     with open(CSSPROP_PATH, "r") as h:
