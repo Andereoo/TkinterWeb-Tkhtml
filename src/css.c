@@ -1112,12 +1112,9 @@ propertySetAddShortcutOutline (
     CssProperty *pBorderColor = 0;
     CssProperty *pBorderStyle = 0;
     CssProperty *pBorderWidth = 0;
-    int aWidth = CSS_PROPERTY_OUTLINE_WIDTH;
-    int aStyle = CSS_PROPERTY_OUTLINE_STYLE;
-    int aColor = CSS_PROPERTY_OUTLINE_COLOR;
+    int n;
 
     while (z) {
-        int n;
         z = HtmlCssGetNextListItem(z, zEnd-z, &n);
         if (z) {
             CssToken token;
@@ -1129,9 +1126,8 @@ propertySetAddShortcutOutline (
             pProp = tokenToProperty(0, &token);
             eType = pProp->eType;
 
-            if (propertyIsLength(pParse, pProp) || eType == CSS_CONST_THIN || 
-                eType == CSS_CONST_THICK        || eType == CSS_CONST_MEDIUM
-            ) {
+            if (propertyIsLength(pParse, pProp) || eType == CSS_CONST_THIN || eType == CSS_CONST_THICK || eType == CSS_CONST_MEDIUM) 
+			{
                 if (pBorderWidth) {
                     HtmlFree(pProp);
                     goto parse_error;
@@ -1159,16 +1155,9 @@ propertySetAddShortcutOutline (
             z += n;
         }
     }
-
-    if (!pBorderColor) {
-        pBorderColor = HtmlCssStringToProperty("-tkhtml-no-color", -1);
-    }
-    if (!pBorderWidth) {
-        pBorderWidth = HtmlCssStringToProperty("medium", -1);
-    }
-    if (!pBorderStyle) {
-        pBorderStyle = HtmlCssStringToProperty("none", -1);
-    }
+    if (!pBorderColor) pBorderColor = HtmlCssStringToProperty("-tkhtml-no-color", -1);
+    if (!pBorderWidth) pBorderWidth = HtmlCssStringToProperty("medium", -1);
+    if (!pBorderStyle) pBorderStyle = HtmlCssStringToProperty("none", -1);
 
     CssProperty *pC = pBorderColor;
     CssProperty *pW = pBorderWidth;
@@ -1176,9 +1165,9 @@ propertySetAddShortcutOutline (
     pC = propertyDup(pC);
     pW = propertyDup(pW);
     pS = propertyDup(pS);
-    propertySetAdd(p, aColor, pC);
-    propertySetAdd(p, aWidth, pW);
-    propertySetAdd(p, aStyle, pS);
+    propertySetAdd(p, CSS_PROPERTY_OUTLINE_COLOR, pC);
+    propertySetAdd(p, CSS_PROPERTY_OUTLINE_WIDTH, pW);
+    propertySetAdd(p, CSS_PROPERTY_OUTLINE_STYLE, pS);
     return;
 
   parse_error:
