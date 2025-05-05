@@ -1099,6 +1099,83 @@ propertySetAddShortcutBorder (
     HtmlFree(pBorderWidth);
 }
 
+static void 
+propertySetAddShortcutOutline (
+    CssParse *pParse,
+    CssPropertySet *p,         /* Property set. */
+    int prop,
+    CssToken *v               /* Value for property. */
+)
+{
+    CONST char *z = v->z;
+    CONST char *zEnd = z + v->n;
+    CssProperty *pBorderColor = 0;
+    CssProperty *pBorderStyle = 0;
+    CssProperty *pBorderWidth = 0;
+    int n;
+
+    while (z) {
+        z = HtmlCssGetNextListItem(z, zEnd-z, &n);
+        if (z) {
+            CssToken token;
+            CssProperty *pProp;
+            int eType;
+
+            token.z = z;
+            token.n = n;
+            pProp = tokenToProperty(0, &token);
+            eType = pProp->eType;
+
+            if (propertyIsLength(pParse, pProp) || eType == CSS_CONST_THIN || eType == CSS_CONST_THICK || eType == CSS_CONST_MEDIUM) 
+			{
+                if (pBorderWidth) {
+                    HtmlFree(pProp);
+                    goto parse_error;
+                }
+                pBorderWidth = pProp;
+            } else if (
+                eType == CSS_CONST_NONE   || eType == CSS_CONST_HIDDEN ||
+                eType == CSS_CONST_DOTTED || eType == CSS_CONST_DASHED ||
+                eType == CSS_CONST_SOLID  || eType == CSS_CONST_DOUBLE ||
+                eType == CSS_CONST_GROOVE || eType == CSS_CONST_RIDGE  ||
+                eType == CSS_CONST_OUTSET || eType == CSS_CONST_INSET
+            ) {
+                if (pBorderStyle) {
+                    HtmlFree(pProp);
+                    goto parse_error;
+                }
+                pBorderStyle = pProp;
+            } else {
+                if (pBorderColor) {
+                    HtmlFree(pProp);
+                    goto parse_error;
+                }
+                pBorderColor = pProp;
+            }
+            z += n;
+        }
+    }
+    if (!pBorderColor) pBorderColor = HtmlCssStringToProperty("-tkhtml-no-color", -1);
+    if (!pBorderWidth) pBorderWidth = HtmlCssStringToProperty("medium", -1);
+    if (!pBorderStyle) pBorderStyle = HtmlCssStringToProperty("none", -1);
+
+    CssProperty *pC = pBorderColor;
+    CssProperty *pW = pBorderWidth;
+    CssProperty *pS = pBorderStyle;
+    pC = propertyDup(pC);
+    pW = propertyDup(pW);
+    pS = propertyDup(pS);
+    propertySetAdd(p, CSS_PROPERTY_OUTLINE_COLOR, pC);
+    propertySetAdd(p, CSS_PROPERTY_OUTLINE_WIDTH, pW);
+    propertySetAdd(p, CSS_PROPERTY_OUTLINE_STYLE, pS);
+    return;
+
+  parse_error:
+    HtmlFree(pBorderStyle);
+    HtmlFree(pBorderColor);
+    HtmlFree(pBorderWidth);
+}
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -2533,6 +2610,9 @@ HtmlCssDeclaration (
         case CSS_SHORTCUTPROPERTY_PADDING:
         case CSS_SHORTCUTPROPERTY_MARGIN:
             propertySetAddShortcutBorderColor(*ppPropertySet, prop, pExpr);
+            break;
+		case CSS_SHORTCUTPROPERTY_OUTLINE:
+            propertySetAddShortcutOutline(pParse, *ppPropertySet, prop, pExpr);
             break;
         case CSS_SHORTCUTPROPERTY_BACKGROUND:
             shortcutBackground(pParse, *ppPropertySet, pExpr);
