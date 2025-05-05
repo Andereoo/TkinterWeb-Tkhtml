@@ -1346,16 +1346,17 @@ int BoxToPostscript(HtmlTree *pTree, int x, int y, int w, int h, int prepass, Ht
 				HtmlImageImage(pV->imZoomedBackgroundImage), interp, pTree->tkwin, psInfo, 0, 0, bg_w, bg_h, prepass
 			) != TCL_OK) goto error;
 			if (!prepass) {
-				Tcl_AppendPrintfToObj(psObj, "%d %.15g translate %% Background Image\n", bg_x, Tk_PostscriptY(bg_y, psInfo)-bg_h);
+				Tcl_AppendPrintfToObj(psObj, "%d %.15g translate  %% Background Image\n", bg_x, Tk_PostscriptY(bg_y, psInfo)-bg_h);
 				Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
+				if (ow > 0 && oc) Tcl_AppendToObj(psObj, "grestore gsave\n", -1);
 			}
         }
     }
     if (ow > 0 && oc) {  /* Outline, if required */
-        fill_quadPs(interp, psInfo, psObj, oc, x, y, w, 0, 0, ow, -w, 0);
-        fill_quadPs(interp, psInfo, psObj, oc, x, y+h, w, 0, 0, -ow, -w, 0);
-        fill_quadPs(interp, psInfo, psObj, oc, x, y, 0, h, ow, 0, 0, -h);
-        fill_quadPs(interp, psInfo, psObj, oc, x+w, y, 0, h, -ow, 0, 0, -h);
+        fill_quadPs(interp, psInfo, psObj, oc, x, y2, w, 0, 0, ow, -w, 0);
+        fill_quadPs(interp, psInfo, psObj, oc, x, y2+h, w, 0, 0, -ow, -w, 0);
+        fill_quadPs(interp, psInfo, psObj, oc, x, y2, 0, h, ow, 0, 0, -h);
+        fill_quadPs(interp, psInfo, psObj, oc, x+w, y2, 0, h, -ow, 0, 0, -h);
     }
     // Plug the accumulated postscript back into the result.
     done:
