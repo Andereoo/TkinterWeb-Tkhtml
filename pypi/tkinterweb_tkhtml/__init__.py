@@ -52,21 +52,17 @@ else:
         TKHTML_ROOT_DIR = os.path.join(TKHTML_ROOT_DIR, "tkhtml", "win32")
 # End universal sdist
 
-os.environ["PATH"] = os.pathsep.join([
-    os.path.dirname(TKHTML_ROOT_DIR),
-    os.environ["PATH"]
-])
-
 TKHTML_BINARIES =  [file for file in os.listdir(TKHTML_ROOT_DIR) if "libTkhtml" in file]
+
 
 tkhtml_loaded = False
 
 
-def get_tkhtml_file(version=None):
+def get_tkhtml_file(version=None, index=-1):
     "Get the location of the platform's Tkhtml binary"
     if not version:
         # Get highest numbered avaliable file if a version is not provided
-        file = sorted(TKHTML_BINARIES)[-1]
+        file = sorted(TKHTML_BINARIES)[index]
         version = file.replace("libTkhtml", "")
         version = version[:version.rfind(".")]
         return os.path.join(TKHTML_ROOT_DIR, file), version
@@ -77,19 +73,23 @@ def get_tkhtml_file(version=None):
         raise OSError(f"Tkhtml version {version} either does not exist or is unsupported on your system")
 
 
-def load_tkhtml(master, use_prebuilt=True, version=None, file=None, force=False):
+def load_tkhtml_file(master, file, force=False):
     "Load Tkhtml into the current Tcl/Tk instance"
-    global tkhtml_loaded, tkhtml_version
+    global tkhtml_loaded
     if (not tkhtml_loaded) or force:
-        if use_prebuilt:
-            if not file:
-                file, version = get_tkhtml_file(version)
-            master.tk.call("load", file)
-            tkhtml_loaded = True
-            return version
-        else:
-            master.tk.call("package", "require", "Tkhtml")
-            tkhtml_loaded = True
-            return master.tk.call("package", "present", "Tkhtml")
+        if TKHTML_ROOT_DIR not in os.environ["PATH"].split(os.pathsep):
+            os.environ["PATH"] = os.pathsep.join([
+                TKHTML_ROOT_DIR,
+                os.environ["PATH"]
+            ])
+        master.tk.call("load", file)
+        tkhtml_loaded = True
 
-        
+
+def load_tkhtml(master, force=False):
+    "Load Tkhtml into the current Tcl/Tk instance"
+    global tkhtml_loaded
+    if (not tkhtml_loaded) or force:
+        master.tk.call("package", "require", "Tkhtml")
+        tkhtml_loaded = True
+        return master.tk.call("package", "present", "Tkhtml")
