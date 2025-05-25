@@ -65,7 +65,7 @@ def get_tkhtml_folder():
 
 def get_tkhtml_file(version=None, index=-1):
     "Get the location of the platform's Tkhtml binary"
-    if not isinstance(version, str):
+    if isinstance(version, float):
         version = str(version)
     if version:
         for file in TKHTML_BINARIES:
