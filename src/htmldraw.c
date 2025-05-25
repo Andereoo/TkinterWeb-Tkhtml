@@ -2663,6 +2663,7 @@ static int layoutPrimitivesCb(
 {
     primitivesvar *p = (primitivesvar *)clientData;
     outputPrimitive(pItem, origin_x, origin_y, p->pPrimitives, p->pTree, p->interp);
+    return TCL_OK;
 }
 int layoutPrimitives(
     ClientData clientData,         /* The HTML widget data structure */
@@ -3232,10 +3233,10 @@ getPixmap (
         int w1 = pOutline->w;
         int h1 = pOutline->h;
         Outline *pPrev = pOutline;
-        fill_quad(0, pTree->tkwin, pixmap, oc, x1,y1, w1,0, 0,ow, -w1,0);
-        fill_quad(0, pTree->tkwin, pixmap, oc, x1,y1+h1, w1,0, 0,-ow, -w1,0);
-        fill_quad(0, pTree->tkwin, pixmap, oc, x1,y1, 0,h1, ow,0, 0,-h1);
-        fill_quad(0, pTree->tkwin, pixmap, oc, x1+w1,y1, 0,h1, -ow,0, 0,-h1);
+        fill_quad(0, pTree->tkwin, pixmap, oc, x1, y1, w1, 0, 0, ow, -w1, 0);
+        fill_quad(0, pTree->tkwin, pixmap, oc, x1, y1+h1, w1, 0, 0, -ow, -w1, 0);
+        fill_quad(0, pTree->tkwin, pixmap, oc, x1, y1, 0, h1, ow, 0, 0, -h1);
+        fill_quad(0, pTree->tkwin, pixmap, oc, x1+w1, y1, 0, h1, -ow, 0, 0, -h1);
         pOutline = pOutline->pNext;
         HtmlFree(pPrev);
     }
@@ -3271,7 +3272,7 @@ int HtmlLayoutImage(
     )
 {
     HtmlTree *pTree = (HtmlTree *)clientData;
-    int w, h, isFull;
+    int w, h;
 
     /* Force any pending style and/or layout operations to run. */
     HtmlCallbackForce(pTree);

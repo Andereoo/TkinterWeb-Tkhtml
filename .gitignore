@@ -1,9 +1,8 @@
-*.o
-*.so
 /Makefile
+/build/
 /config.log
 /config.status
+/hv/pkgIndex.tcl
 /src/MODIFIED/
 /src/OBSOLETE/
 /src/stdout
-build/

@@ -140,7 +140,6 @@ static int scaledHeight(TkPostscriptInfo *);
 static void getLowerCorners(TkPostscriptInfo *);
 static void getPageCentre(TkPostscriptInfo *);
 static int GetPostscriptPoints(Tcl_Interp *, char *, double *);
-static void    PostscriptBitmap(Tk_Window , Pixmap , int , int , int , int , Tcl_Obj *);
 static inline Tcl_Obj *    GetPostscriptBuffer(Tcl_Interp *);
 
 /*
@@ -574,7 +573,7 @@ int HtmlPostscript(
     }
     
     HtmlNode *pBgRoot = pTree->pRoot;
-    HtmlComputedValues *pBgRootV;
+    HtmlComputedValues *pBgRootV = 0;
     
     if (pBgRoot) {
         pBgRootV = HtmlNodeComputedValues(pBgRoot);
@@ -587,7 +586,7 @@ int HtmlPostscript(
         }
     }
     
-    int pagenum, page_h, pageYmin, pageYmax;
+    int page_h = 0, pagenum, pageYmin, pageYmax;
     if (psInfo.pageMode) page_h = scaledHeight(pPsInfo);
 
     /*
@@ -754,7 +753,7 @@ static int fill_rectanglePs(
     XColor *color,
     int x, double y, int h, int w)
 {
-    fill_quadPs(interp, psInfo, psObj, color, x, y, w, 0, 0, h, -w, 0);
+    return fill_quadPs(interp, psInfo, psObj, color, x, y, w, 0, 0, h, -w, 0);
 }
 
 Tk_Window HtmlTreeTkwin(HtmlTree *pTree) /* Token for tree on whose behalf Postscript is being generated. */
@@ -1307,14 +1306,29 @@ int BoxToPostscript(HtmlTree *pTree, int x, int y, int w, int h, int prepass, Ht
         }
     }
     if (0 == (f & DRAWBOX_NOBACKGROUND) && pV->imZoomedBackgroundImage) { /* Image background, if required. */
-        Tk_Window win = HtmlTreeTkwin(pTree);
         int iWidth, iHeight, eR = pV->eBackgroundRepeat;
         HtmlImageSize(pV->imZoomedBackgroundImage, &iWidth, &iHeight);
 
         if (iWidth > 0 && iHeight > 0) {
-            int iPosX, iPosY;
-            iPosX = pV->iBackgroundPositionX;
-            iPosY = pV->iBackgroundPositionY;
+            int iPosX = pV->iBackgroundPositionX;
+            int iPosY = pV->iBackgroundPositionY;
+
+			if (pV->eBackgroundAttachment == CSS_CONST_SCROLL) {
+                if (pV->mask & PROP_MASK_BACKGROUND_POSITION_X)
+                    iPosX = (double)iPosX * (double)(bg_w - iWidth) / 10000.0;
+                if (pV->mask & PROP_MASK_BACKGROUND_POSITION_Y)
+                    iPosY = (double)iPosY * (double)(bg_h - iHeight) / 10000.0;
+                iPosX += bg_x;
+                iPosY += bg_y;
+            } else {  /* 'background-attachment' is "fixed" */
+                int rw = Tk_Width(pTree->tkwin);
+                int rh = Tk_Height(pTree->tkwin);
+                if (pV->mask & PROP_MASK_BACKGROUND_POSITION_X)
+                    iPosX = (double)iPosX * (double)(rw - iWidth) / 10000.0;
+                if (pV->mask & PROP_MASK_BACKGROUND_POSITION_Y)
+                    iPosY = (double)iPosY * (double)(rh - iHeight) / 10000.0;
+            }
+
             if (eR != CSS_CONST_REPEAT && eR != CSS_CONST_REPEAT_X) {
                 int draw_x1 = MAX(bg_x, iPosX);
                 int draw_x2 = MIN(bg_x + bg_w, iPosX + iWidth);
@@ -1327,12 +1341,22 @@ int BoxToPostscript(HtmlTree *pTree, int x, int y, int w, int h, int prepass, Ht
                 bg_y = draw_y1;
                 bg_h = draw_y2 - draw_y1;
             }
-            Tcl_AppendPrintfToObj(psObj, "%d %.15g translate\n", bg_x, Tk_PostscriptY(bg_y, psInfo)-bg_h);
-            if (Tk_PostscriptImage(HtmlImageImage(pV->imZoomedBackgroundImage), interp, 
-                win, psInfo, iPosX, iPosY, bg_w, bg_h, prepass
-            ) != TCL_OK) goto error;
-            Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
+
+			if(Tk_PostscriptImage(
+				HtmlImageImage(pV->imZoomedBackgroundImage), interp, pTree->tkwin, psInfo, 0, 0, bg_w, bg_h, prepass
+			) != TCL_OK) goto error;
+			if (!prepass) {
+				Tcl_AppendPrintfToObj(psObj, "%d %.15g translate  %% Background Image\n", bg_x, Tk_PostscriptY(bg_y, psInfo)-bg_h);
+				Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
+				if (ow > 0 && oc) Tcl_AppendToObj(psObj, "grestore gsave\n", -1);
+			}
         }
+    }
+    if (ow > 0 && oc) {  /* Outline, if required */
+        fill_quadPs(interp, psInfo, psObj, oc, x, y2, w, 0, 0, ow, -w, 0);
+        fill_quadPs(interp, psInfo, psObj, oc, x, y2+h, w, 0, 0, -ow, -w, 0);
+        fill_quadPs(interp, psInfo, psObj, oc, x, y2, 0, h, ow, 0, 0, -h);
+        fill_quadPs(interp, psInfo, psObj, oc, x+w, y2, 0, h, -ow, 0, 0, -h);
     }
     // Plug the accumulated postscript back into the result.
     done:
@@ -1365,9 +1389,9 @@ int BoxToPostscript(HtmlTree *pTree, int x, int y, int w, int h, int prepass, Ht
  */
 int LineToPostscript(Tk_PostscriptInfo psInfo, int x, int y, int w, int y_linethrough, int y_underline, int prepass, HtmlNode *pNode, Tcl_Interp *interp)
 {
-    Tcl_InterpState interpState;
+    Tcl_InterpState interpState = Tcl_SaveInterpState(interp, TCL_OK);
     XColor *xcolor;
-    Tcl_Obj *psObj;
+    Tcl_Obj *psObj = Tcl_NewObj();
     int yrel;
 
     switch (HtmlNodeComputedValues(pNode)->eTextDecoration) {
@@ -1383,8 +1407,6 @@ int LineToPostscript(Tk_PostscriptInfo psInfo, int x, int y, int w, int y_lineth
         default: goto done;
     }
     // Make our working space.
-    psObj = Tcl_NewObj();
-    interpState = Tcl_SaveInterpState(interp, TCL_OK);
     Tcl_AppendPrintfToObj(psObj, "%d %.15g moveto %d 0 rlineto closepath ",
         x, Tk_PostscriptY(yrel, psInfo), w
     );

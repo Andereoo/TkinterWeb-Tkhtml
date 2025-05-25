@@ -64,8 +64,8 @@ struct ListenerContainer {
  *---------------------------------------------------------------------------
  */
 static int
-valueToBoolean(interp, pValue, eDef)
-    struct SEE_interpreter *interp;
+valueToBoolean(pSee, pValue, eDef)
+    struct SEE_interpreter *pSee;
     struct SEE_value *pValue;
     int eDef;
 {
@@ -97,15 +97,15 @@ valueToBoolean(interp, pValue, eDef)
  *---------------------------------------------------------------------------
  */
 static void
-setBooleanFlag(interp, pObj, zName, v)
-    struct SEE_interpreter *interp;
+setBooleanFlag(pSee, pObj, zName, v)
+    struct SEE_interpreter *pSee;
     struct SEE_object *pObj;
     const char *zName;
     int v;
 {
     struct SEE_value yes;
     SEE_SET_BOOLEAN(&yes, v);
-    SEE_OBJECT_PUTA(interp, pObj, zName, &yes, 0);
+    SEE_OBJECT_PUTA(pSee, pObj, zName, &yes, 0);
 }
 
 /*
@@ -122,14 +122,14 @@ setBooleanFlag(interp, pObj, zName, v)
  *---------------------------------------------------------------------------
  */
 static int
-getBooleanFlag(interp, pObj, zName)
-    struct SEE_interpreter *interp;
+getBooleanFlag(pSee, pObj, zName)
+    struct SEE_interpreter *pSee;
     struct SEE_object *pObj;
     const char *zName;
 {
     struct SEE_value val;
-    SEE_OBJECT_GETA(interp, pObj, zName, &val);
-    return valueToBoolean(interp, &val, 0);
+    SEE_OBJECT_GETA(pSee, pObj, zName, &val);
+    return valueToBoolean(pSee, &val, 0);
 }
 
 /*
@@ -146,8 +146,8 @@ getBooleanFlag(interp, pObj, zName)
  *---------------------------------------------------------------------------
  */
 static EventType **
-getEventList(interp, pObj)
-    struct SEE_interpreter *interp;
+getEventList(pSee, pObj)
+    struct SEE_interpreter *pSee;
     struct SEE_object *pObj;
 {
     if (pObj->objectclass == getVtbl()) {
@@ -196,8 +196,8 @@ objectCall(pInterp, pObj, pThis, argc, argv, pRes)
  *---------------------------------------------------------------------------
  */
 static int
-runEvent(interp, pTarget, pEvent, zType, isCapture)
-        struct SEE_interpreter *interp;
+runEvent(pSee, pTarget, pEvent, zType, isCapture)
+        struct SEE_interpreter *pSee;
         struct SEE_object *pTarget;
         struct SEE_value *pEvent;
         struct SEE_string *zType;
@@ -219,10 +219,10 @@ runEvent(interp, pTarget, pEvent, zType, isCapture)
     assert(SEE_VALUE_GET_TYPE(pEvent) == SEE_OBJECT);
 
     SEE_SET_OBJECT(&target, pTarget);
-    SEE_OBJECT_PUTA(interp, pEvent->u.object, "currentTarget", &target, 0);
+    SEE_OBJECT_PUTA(pSee, pEvent->u.object, "currentTarget", &target, 0);
 
     /* Check if stopPropagation() has been called. */
-    if (getBooleanFlag(interp, pEvent->u.object, STOP_PROPAGATION)) {
+    if (getBooleanFlag(pSee, pEvent->u.object, STOP_PROPAGATION)) {
         return 0;
     }
 
@@ -237,8 +237,8 @@ runEvent(interp, pTarget, pEvent, zType, isCapture)
         for (pL = (pET ? pET->pListenerList: 0); rc && pL; pL = pL->pNext) {
             if (pL->isCapture == isCapture) {
                 struct SEE_value r;
-                objectCall(interp, pL->pListener, pTarget, 1, &pEvent, &r);
-                setBooleanFlag(interp, pEvent->u.object, CALLED_LISTENER, 1);
+                objectCall(pSee, pL->pListener, pTarget, 1, &pEvent, &r);
+                setBooleanFlag(pSee, pEvent->u.object, CALLED_LISTENER, 1);
             }
         }
     }
@@ -246,25 +246,25 @@ runEvent(interp, pTarget, pEvent, zType, isCapture)
     /* If this is not the "capturing" phase, run the legacy event-handler. */
     if (!isCapture) {
         struct SEE_value val;
-        struct SEE_string *e = SEE_string_new(interp, 128);
+        struct SEE_string *e = SEE_string_new(pSee, 128);
         struct SEE_object *pLookup = (pTclObject ?
             ((struct SEE_object *)pTclObject->pNative) : pTarget
         );
 
         SEE_string_append_ascii(e, "on");
         SEE_string_append(e, zType);
-        e = SEE_intern(interp, e);
+        e = SEE_intern(pSee, e);
 
-        SEE_OBJECT_GET(interp, pLookup, e, &val);
+        SEE_OBJECT_GET(pSee, pLookup, e, &val);
         if (SEE_VALUE_GET_TYPE(&val) == SEE_OBJECT) {
             struct SEE_object *pE = pEvent->u.object;
             struct SEE_value res;
-            objectCall(interp, val.u.object, pTarget, 1, &pEvent, &res);
-            setBooleanFlag(interp, pE, CALLED_LISTENER, 1);
-            rc = valueToBoolean(interp, &res, 1);
+            objectCall(pSee, val.u.object, pTarget, 1, &pEvent, &res);
+            setBooleanFlag(pSee, pE, CALLED_LISTENER, 1);
+            rc = valueToBoolean(pSee, &res, 1);
             if (!rc) {
-                setBooleanFlag(interp, pE, PREVENT_DEFAULT, 1);
-                setBooleanFlag(interp, pE, STOP_PROPAGATION, 1);
+                setBooleanFlag(pSee, pE, PREVENT_DEFAULT, 1);
+                setBooleanFlag(pSee, pE, STOP_PROPAGATION, 1);
             }
         }
     }
@@ -286,13 +286,13 @@ runEvent(interp, pTarget, pEvent, zType, isCapture)
  *---------------------------------------------------------------------------
  */
 static void
-preventDefaultFunc(interp, self, thisobj, argc, argv, res)
-    struct SEE_interpreter *interp;
+preventDefaultFunc(pSee, self, thisobj, argc, argv, res)
+    struct SEE_interpreter *pSee;
     struct SEE_object *self, *thisobj;
     int argc;
     struct SEE_value **argv, *res;
 {
-    setBooleanFlag(interp, thisobj, PREVENT_DEFAULT, 1);
+    setBooleanFlag(pSee, thisobj, PREVENT_DEFAULT, 1);
 }
 
 /*
@@ -309,18 +309,18 @@ preventDefaultFunc(interp, self, thisobj, argc, argv, res)
  *---------------------------------------------------------------------------
  */
 static void
-stopPropagationFunc(interp, self, thisobj, argc, argv, res)
-    struct SEE_interpreter *interp;
+stopPropagationFunc(pSee, self, thisobj, argc, argv, res)
+    struct SEE_interpreter *pSee;
     struct SEE_object *self, *thisobj;
     int argc;
     struct SEE_value **argv, *res;
 {
-    setBooleanFlag(interp, thisobj, STOP_PROPAGATION, 1);
+    setBooleanFlag(pSee, thisobj, STOP_PROPAGATION, 1);
 }
 
 static struct SEE_object *
-getParentNode(interp, p)
-    struct SEE_interpreter *interp;
+getParentNode(pSee, p)
+    struct SEE_interpreter *pSee;
     struct SEE_object *p;
 {
     struct SEE_value val;
@@ -338,7 +338,7 @@ getParentNode(interp, p)
         }
     }
 
-    SEE_OBJECT_GETA(interp, p, "parentNode", &val);
+    SEE_OBJECT_GETA(pSee, p, "parentNode", &val);
     if (SEE_VALUE_GET_TYPE(&val) != SEE_OBJECT) return 0;
     return val.u.object;
 }
@@ -374,8 +374,8 @@ getParentNode(interp, p)
  *---------------------------------------------------------------------------
  */
 static void
-dispatchEventFunc(interp, self, thisobj, argc, argv, res)
-    struct SEE_interpreter *interp;
+dispatchEventFunc(pSee, self, thisobj, argc, argv, res)
+    struct SEE_interpreter *pSee;
     struct SEE_object *self, *thisobj;
     int argc;
     struct SEE_value **argv, *res;
@@ -399,7 +399,7 @@ dispatchEventFunc(interp, self, thisobj, argc, argv, res)
     /* Check the number of function arguments. */
     if (argc != 1) {
         const char *zErr = "Function requires exactly 1 parameter";
-        SEE_error_throw(interp, interp->Error, zErr);
+        SEE_error_throw(pSee, pSee->Error, zErr);
     }
 
     if (SEE_VALUE_GET_TYPE(argv[0]) != SEE_OBJECT) {
@@ -408,29 +408,29 @@ dispatchEventFunc(interp, self, thisobj, argc, argv, res)
     pEvent = argv[0]->u.object;
     assert(pEvent);
 
-    SEE_CFUNCTION_PUTA(interp,pEvent,"stopPropagation",stopPropagationFunc,0,0);
-    SEE_CFUNCTION_PUTA(interp,pEvent,"preventDefault",preventDefaultFunc,0,0);
+    SEE_CFUNCTION_PUTA(pSee,pEvent,"stopPropagation",stopPropagationFunc,0,0);
+    SEE_CFUNCTION_PUTA(pSee,pEvent,"preventDefault",preventDefaultFunc,0,0);
 
     SEE_SET_OBJECT(&target, thisobj);
-    SEE_OBJECT_PUTA(interp, pEvent, "target", &target, 0);
+    SEE_OBJECT_PUTA(pSee, pEvent, "target", &target, 0);
 
-    setBooleanFlag(interp, pEvent, STOP_PROPAGATION, 0);
-    setBooleanFlag(interp, pEvent, PREVENT_DEFAULT, 0);
-    setBooleanFlag(interp, pEvent, CALLED_LISTENER, 0);
+    setBooleanFlag(pSee, pEvent, STOP_PROPAGATION, 0);
+    setBooleanFlag(pSee, pEvent, PREVENT_DEFAULT, 0);
+    setBooleanFlag(pSee, pEvent, CALLED_LISTENER, 0);
 
     /* Get the event type */
-    SEE_OBJECT_GETA(interp, pEvent, "type", &val);
-    SEE_ToString(interp, &val, &val2);
+    SEE_OBJECT_GETA(pSee, pEvent, "type", &val);
+    SEE_ToString(pSee, &val, &val2);
     if (SEE_VALUE_GET_TYPE(&val2) != SEE_STRING) {
         /* Event without a type - matches no listeners */
         /* TODO: DOM Level 3 says to throw "UNSPECIFIED_EVENT_TYPE_ERR" */
         return;
     }
-    zType = SEE_intern(interp, val2.u.string);
+    zType = SEE_intern(pSee, val2.u.string);
 
     /* Check if the event "bubbles". */
-    SEE_OBJECT_GETA(interp, pEvent, "bubbles", &val);
-    isBubbler = valueToBoolean(interp, &val, 0);
+    SEE_OBJECT_GETA(pSee, pEvent, "bubbles", &val);
+    isBubbler = valueToBoolean(pSee, &val, 0);
 
     /* If this is a bubbling event, create a list of the nodes ancestry
      * to deliver it to now. This is because any callbacks that modify
@@ -440,7 +440,7 @@ dispatchEventFunc(interp, self, thisobj, argc, argv, res)
     if (isBubbler) {
         struct SEE_object *p = thisobj;
         while (1) {
-            struct SEE_object *pObj = getParentNode(interp, p);
+            struct SEE_object *pObj = getParentNode(pSee, p);
             if (!pObj) break;
             if (nObj == nObjAlloc) {
                 int nNew;
@@ -448,7 +448,7 @@ dispatchEventFunc(interp, self, thisobj, argc, argv, res)
                 int nCopy = (sizeof(struct SEE_object *) * (nObjAlloc));
                 nObjAlloc += 10;
                 nNew = (sizeof(struct SEE_object *) * (nObjAlloc));
-                aNew = SEE_malloc(interp, nNew);
+                aNew = SEE_malloc(pSee, nNew);
                 if (nObj > 0){
                     memcpy(aNew, apObj, nCopy);
                 }
@@ -461,27 +461,27 @@ dispatchEventFunc(interp, self, thisobj, argc, argv, res)
 
     /* Deliver the "capturing" phase of the event. */
     SEE_SET_NUMBER(&eventPhase, 1);
-    SEE_OBJECT_PUTA(interp, pEvent, "eventPhase", &eventPhase, 0);
+    SEE_OBJECT_PUTA(pSee, pEvent, "eventPhase", &eventPhase, 0);
     for (ii = nObj - 1; isRun && ii >= 0; ii--) {
-        isRun = runEvent(interp, apObj[ii], argv[0], zType, 1);
+        isRun = runEvent(pSee, apObj[ii], argv[0], zType, 1);
     }
 
     /* Deliver the "target" phase of the event. */
     SEE_SET_NUMBER(&eventPhase, 2);
-    SEE_OBJECT_PUTA(interp, pEvent, "eventPhase", &eventPhase, 0);
+    SEE_OBJECT_PUTA(pSee, pEvent, "eventPhase", &eventPhase, 0);
     if (isRun) {
-        isRun = runEvent(interp, thisobj, argv[0], zType, 0);
+        isRun = runEvent(pSee, thisobj, argv[0], zType, 0);
     }
 
     /* Deliver the "bubbling" phase of the event. */
     SEE_SET_NUMBER(&eventPhase, 3);
-    SEE_OBJECT_PUTA(interp, pEvent, "eventPhase", &eventPhase, 0);
+    SEE_OBJECT_PUTA(pSee, pEvent, "eventPhase", &eventPhase, 0);
     for (ii = 0; isRun && ii < nObj; ii++) {
-        isRun = runEvent(interp, apObj[ii], argv[0], zType, 0);
+        isRun = runEvent(pSee, apObj[ii], argv[0], zType, 0);
     }
 
     /* Set the return value. */
-    SEE_SET_BOOLEAN(res, getBooleanFlag(interp, pEvent, PREVENT_DEFAULT));
+    SEE_SET_BOOLEAN(res, getBooleanFlag(pSee, pEvent, PREVENT_DEFAULT));
 }
 
 /*
@@ -500,9 +500,9 @@ dispatchEventFunc(interp, self, thisobj, argc, argv, res)
  *---------------------------------------------------------------------------
  */
 static int
-eventDispatchCmd(clientData, pTcl, objc, objv)
+eventDispatchCmd(clientData, interp, objc, objv)
     ClientData clientData;
-    Tcl_Interp *pTcl;
+    Tcl_Interp *interp;
     int objc;
     Tcl_Obj *CONST objv[];             /* Argument strings. */
 {
@@ -536,9 +536,9 @@ eventDispatchCmd(clientData, pTcl, objc, objv)
         int isHandled = getBooleanFlag(p, pEvent, CALLED_LISTENER);
         int isPrevent = getBooleanFlag(p, pEvent, PREVENT_DEFAULT);
         Tcl_Obj *pRet = Tcl_NewObj();
-        Tcl_ListObjAppendElement(pTcl, pRet, Tcl_NewBooleanObj(isHandled));
-        Tcl_ListObjAppendElement(pTcl, pRet, Tcl_NewBooleanObj(isPrevent));
-        Tcl_SetObjResult(pTcl, pRet);
+        Tcl_ListObjAppendElement(interp, pRet, Tcl_NewBooleanObj(isHandled));
+        Tcl_ListObjAppendElement(interp, pRet, Tcl_NewBooleanObj(isPrevent));
+        Tcl_SetObjResult(interp, pRet);
     }
 
     return rc;
@@ -566,8 +566,8 @@ eventDispatchCmd(clientData, pTcl, objc, objv)
  *---------------------------------------------------------------------------
  */
 static void
-addEventListenerFunc(interp, self, thisobj, argc, argv, res)
-    struct SEE_interpreter *interp;
+addEventListenerFunc(pSee, self, thisobj, argc, argv, res)
+    struct SEE_interpreter *pSee;
     struct SEE_object *self, *thisobj;
     int argc;
     struct SEE_value **argv, *res;
@@ -584,15 +584,15 @@ addEventListenerFunc(interp, self, thisobj, argc, argv, res)
     /* Check the number of function arguments. */
     if (argc != 3) {
         const char *zErr = "Function requires exactly 3 parameters";
-        SEE_error_throw(interp, interp->Error, zErr);
+        SEE_error_throw(pSee, pSee->Error, zErr);
     }
 
     /* Check that thisobj is a Tcl based object */
-    ppET = getEventList(interp, thisobj);
-    assert(thisobj != interp->Global || ppET);
+    ppET = getEventList(pSee, thisobj);
+    assert(thisobj != pSee->Global || ppET);
     if (!ppET) {
         const char *zErr = "Bad type for thisobj";
-        SEE_error_throw(interp, interp->Error, zErr);
+        SEE_error_throw(pSee, pSee->Error, zErr);
         return;
     }
 
@@ -601,20 +601,20 @@ addEventListenerFunc(interp, self, thisobj, argc, argv, res)
      * Need to figure out what it is and report to see-dev.
      */
 #if 0
-    SEE_parse_args(interp, argc, argv, "s|o|b|",&zType,&pListener,&useCapture);
+    SEE_parse_args(pSee, argc, argv, "s|o|b|",&zType,&pListener,&useCapture);
 #else
     assert(argc == 3);
-    SEE_parse_args(interp, 1, argv, "s",&zType);
-    SEE_parse_args(interp, 1, &argv[1], "o",&pListener);
-    SEE_parse_args(interp, 1, &argv[2], "b",&useCapture);
+    SEE_parse_args(pSee, 1, argv, "s",&zType);
+    SEE_parse_args(pSee, 1, &argv[1], "o",&pListener);
+    SEE_parse_args(pSee, 1, &argv[2], "b",&useCapture);
 #endif
 
-    zType = SEE_intern(interp, zType);
+    zType = SEE_intern(pSee, zType);
     useCapture = (useCapture ? 1 : 0);
 
     for (pET = *ppET; pET && pET->zType != zType; pET = pET->pNext);
     if (!pET) {
-        pET = SEE_NEW(interp, EventType);
+        pET = SEE_NEW(pSee, EventType);
         pET->pListenerList = 0;
         pET->zType = zType;
         pET->pNext = *ppET;
@@ -637,7 +637,7 @@ addEventListenerFunc(interp, self, thisobj, argc, argv, res)
         return;
     }
 
-    pL = SEE_NEW(interp, ListenerContainer);
+    pL = SEE_NEW(pSee, ListenerContainer);
     pL->pNext = pET->pListenerList;
     pET->pListenerList = pL;
     pL->isCapture = useCapture;
@@ -668,8 +668,8 @@ addEventListenerFunc(interp, self, thisobj, argc, argv, res)
  *---------------------------------------------------------------------------
  */
 static void
-removeEventListenerFunc(interp, self, thisobj, argc, argv, res)
-        struct SEE_interpreter *interp;
+removeEventListenerFunc(pSee, self, thisobj, argc, argv, res)
+        struct SEE_interpreter *pSee;
         struct SEE_object *self, *thisobj;
         int argc;
         struct SEE_value **argv, *res;
@@ -685,25 +685,25 @@ removeEventListenerFunc(interp, self, thisobj, argc, argv, res)
     /* Check the number of function arguments. */
     if (argc != 3) {
         const char *zErr = "Function requires exactly 3 parameters";
-        SEE_error_throw(interp, interp->Error, zErr);
+        SEE_error_throw(pSee, pSee->Error, zErr);
     }
 
     /* Check that thisobj is a Tcl based object. */
-    ppET = getEventList(interp, thisobj);
+    ppET = getEventList(pSee, thisobj);
     if (!ppET) {
         const char *zErr = "Bad type for thisobj";
-        SEE_error_throw(interp, interp->Error, zErr);
+        SEE_error_throw(pSee, pSee->Error, zErr);
         return;
     }
 
     /* Parse the arguments */
 #if 0
-    SEE_parse_args(interp, argc, argv, "s|o|b|",&zType,&pListener,&useCapture);
+    SEE_parse_args(pSee, argc, argv, "s|o|b|",&zType,&pListener,&useCapture);
 #endif
-    SEE_parse_args(interp, 1, argv, "s",&zType);
-    SEE_parse_args(interp, 1, &argv[1], "o",&pListener);
-    SEE_parse_args(interp, 1, &argv[2], "b",&useCapture);
-    zType = SEE_intern(interp, zType);
+    SEE_parse_args(pSee, 1, argv, "s",&zType);
+    SEE_parse_args(pSee, 1, &argv[1], "o",&pListener);
+    SEE_parse_args(pSee, 1, &argv[2], "b",&useCapture);
+    zType = SEE_intern(pSee, zType);
     useCapture = (useCapture ? 1 : 0);
 
     for (pET = *ppET; pET && pET->zType != zType; pET = pET->pNext);
@@ -770,7 +770,7 @@ eventTargetInit(pTclSeeInterp, p)
     SeeTclObject *p;
 {
     struct SEE_interpreter *pSee = (struct SEE_interpreter *)pTclSeeInterp;
-    Tcl_Interp *pTcl = pTclSeeInterp->pTclInterp;
+    Tcl_Interp *interp = pTclSeeInterp->pTclInterp;
     Tcl_Obj *pList;
     Tcl_Obj **apWord;
     int nWord;
@@ -779,16 +779,16 @@ eventTargetInit(pTclSeeInterp, p)
     struct SEE_scope *pScope = 0;
 
     int rc;
-    rc = callSeeTclMethod(pTcl, 0, p, "Events", 0, 0);
+    rc = callSeeTclMethod(interp, 0, p, "Events", NULL, NULL);
     if (rc != TCL_OK) {
-        Tcl_BackgroundError(pTcl);
+        Tcl_BackgroundError(interp);
         return;
     }
 
-    pList = Tcl_GetObjResult(pTcl);
-    rc = Tcl_ListObjGetElements(pTcl, pList, &nWord, &apWord);
+    pList = Tcl_GetObjResult(interp);
+    rc = Tcl_ListObjGetElements(interp, pList, &nWord, &apWord);
     if (rc != TCL_OK) {
-        Tcl_BackgroundError(pTcl);
+        Tcl_BackgroundError(interp);
         return;
     }
     Tcl_IncrRefCount(pList);
@@ -798,17 +798,17 @@ eventTargetInit(pTclSeeInterp, p)
         Tcl_Obj **apS;
         Tcl_Obj *pScopeList;
 
-        rc = callSeeTclMethod(pTcl, 0, p, "Scope", 0, 0);
+        rc = callSeeTclMethod(interp, 0, p, "Scope", 0, 0);
         if (rc != TCL_OK) {
-            Tcl_BackgroundError(pTcl);
+            Tcl_BackgroundError(interp);
             return;
         }
 
-        pScopeList = Tcl_GetObjResult(pTcl);
-        rc = Tcl_ListObjGetElements(pTcl, pScopeList, &nS, &apS);
+        pScopeList = Tcl_GetObjResult(interp);
+        rc = Tcl_ListObjGetElements(interp, pScopeList, &nS, &apS);
         if (rc != TCL_OK) {
             Tcl_DecrRefCount(pList);
-            Tcl_BackgroundError(pTcl);
+            Tcl_BackgroundError(interp);
             return;
         }
         Tcl_IncrRefCount(pScopeList);
@@ -858,7 +858,7 @@ eventTargetInit(pTclSeeInterp, p)
         Tcl_DecrRefCount(pJ);
     }
     Tcl_DecrRefCount(pList);
-    Tcl_ResetResult(pTcl);
+    Tcl_ResetResult(interp);
 
     if (!pTclSeeInterp->pEventPrototype) {
         struct SEE_object *pP = SEE_native_new(pSee);
@@ -935,9 +935,9 @@ listenerToString(pSeeInterp, pListener)
  *---------------------------------------------------------------------------
  */
 static int
-eventDumpCmd(clientData, pTcl, objc, objv)
+eventDumpCmd(clientData, interp, objc, objv)
     ClientData clientData;
-    Tcl_Interp *pTcl;
+    Tcl_Interp *interp;
     int objc;
     Tcl_Obj *CONST objv[];             /* Argument strings. */
 {
@@ -971,7 +971,7 @@ eventDumpCmd(clientData, pTcl, objc, objv)
             const char *zType = (pL->isCapture?"capturing":"non-capturing");
             apRow[1] = Tcl_NewStringObj(zType, -1);
             apRow[2] = listenerToString(pInterp, pL->pListener);
-            Tcl_ListObjAppendElement(pTcl, pRet, Tcl_NewListObj(3, apRow));
+            Tcl_ListObjAppendElement(interp, pRet, Tcl_NewListObj(3, apRow));
         }
 
         Tcl_DecrRefCount(pEventType);
@@ -989,12 +989,12 @@ eventDumpCmd(clientData, pTcl, objc, objv)
                 apRow[0] = Tcl_NewStringObj(&zProp[2], -1);
                 apRow[1] = Tcl_NewStringObj("legacy", -1);
                 apRow[2] = listenerToString(pInterp, val.u.object);
-                Tcl_ListObjAppendElement(pTcl, pRet, Tcl_NewListObj(3, apRow));
+                Tcl_ListObjAppendElement(interp, pRet, Tcl_NewListObj(3, apRow));
             }
         }
     }
 
-    Tcl_SetObjResult(pTcl, pRet);
+    Tcl_SetObjResult(interp, pRet);
     Tcl_DecrRefCount(pRet);
 
     return TCL_OK;

@@ -251,7 +251,6 @@ inlineBoxMetrics (
 )
 {
     int iLineHeight;
-    int iTopLeading;
     int iBottomLeading;
     int iContentHeight;
 
@@ -273,7 +272,6 @@ inlineBoxMetrics (
 
     iContentHeight = pFont->metrics.ascent + pFont->metrics.descent;
     iBottomLeading = (iLineHeight - iContentHeight) / 2;
-    iTopLeading = (iLineHeight - iContentHeight) - iBottomLeading;
 
     pMetrics->iLogical = iLineHeight;
     pMetrics->iFontBottom = pMetrics->iLogical - iBottomLeading;
@@ -1641,7 +1639,6 @@ HtmlInlineContextAddText (InlineContext *pContext, HtmlNode *pNode)
 {
     HtmlTextIter sIter;
 
-    XColor *color;                 /* Color to render in */
     HtmlFont *pFont;               /* Font to render in */
     Tk_Font tkfont;                /* Copy of pFont->tkfont */
     int eWhitespace;               /* Value of 'white-space' property */
@@ -1659,7 +1656,6 @@ HtmlInlineContextAddText (InlineContext *pContext, HtmlNode *pNode)
     eWhitespace = pValues->eWhitespace;
 
     tkfont = pFont->tkfont;
-    color = pValues->cColor->xcolor;
 
     sw = pFont->space_pixels;
     nh = pFont->metrics.ascent + pFont->metrics.descent;
