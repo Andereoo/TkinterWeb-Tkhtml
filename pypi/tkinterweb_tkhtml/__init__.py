@@ -62,19 +62,20 @@ def get_tkhtml_folder():
     # Backwards-compatibility. Will be removed.
     return TKHTML_ROOT_DIR
 
+
 def get_tkhtml_file(version=None, index=-1):
     "Get the location of the platform's Tkhtml binary"
-    if not version:
+    if version:
+        for file in TKHTML_BINARIES:
+            if version in file:
+                return os.path.join(TKHTML_ROOT_DIR, file), version
+        raise OSError(f"Tkhtml version {version} either does not exist or is unsupported on your system")
+    else:
         # Get highest numbered avaliable file if a version is not provided
         file = sorted(TKHTML_BINARIES)[index]
         version = file.replace("libTkhtml", "")
         version = version[:version.rfind(".")]
         return os.path.join(TKHTML_ROOT_DIR, file), version
-    else:
-        for file in TKHTML_BINARIES:
-            if version in file:
-                return os.path.join(TKHTML_ROOT_DIR, file), version
-        raise OSError(f"Tkhtml version {version} either does not exist or is unsupported on your system")
 
 
 def load_tkhtml_file(master, file, force=False):
