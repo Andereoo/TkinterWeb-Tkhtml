@@ -58,6 +58,10 @@ TKHTML_BINARIES =  [file for file in os.listdir(TKHTML_ROOT_DIR) if "libTkhtml" 
 tkhtml_loaded = False
 
 
+def get_tkhtml_folder():
+    # Backwards-compatibility. Will be removed.
+    return TKHTML_ROOT_DIR
+
 def get_tkhtml_file(version=None, index=-1):
     "Get the location of the platform's Tkhtml binary"
     if not version:
@@ -86,8 +90,14 @@ def load_tkhtml_file(master, file, force=False):
         tkhtml_loaded = True
 
 
-def load_tkhtml(master, force=False):
+def load_tkhtml(master, force=False, use_prebuilt=False):
     "Load Tkhtml into the current Tcl/Tk instance"
+    if use_prebuilt:
+        # Backwards-compatibility. Will likely be removed.
+        file, version = get_tkhtml_file(None, 0)
+        load_tkhtml_file(master, file, force)
+        return version
+    
     global tkhtml_loaded
     if (not tkhtml_loaded) or force:
         master.tk.call("package", "require", "Tkhtml")
