@@ -3,7 +3,7 @@
 #
 BUILD = DEBUG
 
-HV3_POLIPO = /home/dan/work/polipo/hv3_polipo.exe
+HV3_POLIPO = C:\Users\billa\Downloads\hv3_polipo.exe
 
 ##### Version of and path to the Tcl installation to use.
 #
@@ -55,16 +55,16 @@ STRIP_RELEASE = strip
 STRIP_DEBUG = true
 STRIP = $(STRIP_$(BUILD))
 
-MKSTARKIT = tclkit /home/dan/bin/sdx.kit wrap
-STARKITRT = /home/dan/work/tclkit-win32.upx.exe
+STARKITRT = /home/billa/work/tclkitsh-win32.upx.exe
+MKSTARKIT = $(STARKITRT) /home/billa/sdx.kit wrap
 
 ##### Javascript libaries - libgc.a and libsee.a
 #
 JS_SHARED_LIB = libTclsee.dll
 
-JSLIB   = /home/billa/SEE/libsee/.libs/libsee.lib
+JSLIB   = /home/billa/SEE-mirror/libsee/.libs/libsee.a
 JSLIB  += /mingw64/lib/libgc.a
-JSFLAGS = -I/home/billa/SEE/include
+JSFLAGS = -I/home/billa/SEE-mirror/include
 
 #
 # End of configuration section.
