@@ -927,7 +927,7 @@ normalFlowLayoutOverflow (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
     /* Figure out whether or not this block uses a horizontal scrollbar. */
     if (
 		(pV->eOverflow == CSS_CONST_SCROLL || pV->eOverflowX == CSS_CONST_SCROLL) 
-		|| (pV->eOverflow == CSS_CONST_AUTO && iMinContentWidth > (iWidth - (useVertical ? SCROLLBAR_WIDTH : 0)))
+		|| ((pV->eOverflow == CSS_CONST_AUTO || pV->eOverflowX == CSS_CONST_AUTO) && iMinContentWidth > (iWidth - (useVertical ? SCROLLBAR_WIDTH : 0)))
     ) useHorizontal = 1;
    
     memset(&sBox, 0, sizeof(BoxContext));

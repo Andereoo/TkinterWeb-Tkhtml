@@ -126,8 +126,7 @@ namespace eval ::hv3::protocol {
     set uri_scheme [$uri_obj scheme]
     $uri_obj destroy
 
-    # Fold the scheme to lower-case. Should ::tkhtml::uri have already 
-    # done this?
+    # Fold the scheme to lower-case. Should ::tkhtml::uri have already done this?
     set uri_scheme [string tolower $uri_scheme]
 
     # Execute the scheme-handler, or raise an error if no scheme-handler
