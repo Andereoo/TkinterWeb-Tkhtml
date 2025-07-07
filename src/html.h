@@ -425,6 +425,7 @@ struct HtmlOptions {
     int      layoutcache;
     Tcl_Obj *logcmd;
     Tcl_Obj *timercmd;
+    Tcl_Obj *unspptdcmd;
 };
 
 #define HTML_MODE_QUIRKS    0
@@ -437,6 +438,7 @@ struct HtmlOptions {
 
 void HtmlLog(HtmlTree *, CONST char *, CONST char *, ...);
 void HtmlTimer(HtmlTree *, CONST char *, CONST char *, ...);
+void HtmlUnspptd(HtmlTree *, CONST char *, ...);
 
 typedef struct HtmlCanvasSnapshot HtmlCanvasSnapshot;
 

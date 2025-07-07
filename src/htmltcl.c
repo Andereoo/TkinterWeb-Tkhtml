@@ -210,6 +210,12 @@ HtmlLog(HtmlTree *pTree, CONST char *zSubject, CONST char *zFormat, ...) {
     va_start(ap, zFormat);
     logCommon(pTree, pTree->options.logcmd, zSubject, zFormat, ap);
 }
+void 
+HtmlUnspptd(HtmlTree *pTree, CONST char *zFormat, ...) {
+    va_list ap;
+    va_start(ap, zFormat);
+    logCommon(pTree, pTree->options.unspptdcmd, "UNSUPPORTED", zFormat, ap);
+}
 
 /*
  *---------------------------------------------------------------------------
@@ -1328,6 +1334,7 @@ configureCmd(
         BOOLEAN (layoutcache, "layoutCache", "LayoutCache", "1", L_MASK),
         STRING  (logcmd, "logCmd", "LogCmd", ""),
         STRING  (timercmd, "timerCmd", "TimerCmd", ""),
+        STRING  (unspptdcmd, "unspptdCmd", "UnspptdCmd", ""),
 
         {TK_OPTION_END, 0, 0, 0, 0, 0, 0, 0, 0}
     };

@@ -863,18 +863,14 @@ HtmlTokenize (
                 }
                 arglen[argc] = j;
 
-                if (c == 0) {
-                    goto incomplete;
-                }
+                if (!c) goto incomplete;
                 i += j;
 
                 while (ISSPACE(c)) {
                     i++;
                     c = z[n + i];
                 }
-                if (c == 0) {
-                    goto incomplete;
-                }
+                if (!c) goto incomplete;
                 argc++;
                 if (c != '=') {
                     argv[argc] = "";
@@ -888,18 +884,14 @@ HtmlTokenize (
                     i++;
                     c = z[n + i];
                 }
-                if (c == 0) {
-                    goto incomplete;
-                }
+                if (!c) goto incomplete;
                 if (c == '\'' || c == '"') {
                     int cQuote = c;
                     i++;
                     argv[argc] = &z[n + i];
                     for (j = 0; (c = z[n + i + j]) != 0 && c != cQuote; j++) {
                     }
-                    if (c == 0) {
-                        goto incomplete;
-                    }
+                    if (!c) goto incomplete;
                     arglen[argc] = j;
                     i += j + 1;
                 }
@@ -909,9 +901,7 @@ HtmlTokenize (
                          (c = z[n + i + j]) != 0 && !ISSPACE(c) && c != '>';
                          j++) {
                     }
-                    if (c == 0) {
-                        goto incomplete;
-                    }
+                    if (!c) goto incomplete;
                     arglen[argc] = j;
                     i += j;
                 }
@@ -920,9 +910,7 @@ HtmlTokenize (
                     i++;
                 }
             }
-            if( c==0 ){
-                goto incomplete;
-            }
+            if (!c) goto incomplete;
             assert(c == '>');
             n += i + 1;
 
@@ -946,6 +934,7 @@ HtmlTokenize (
             if (pMap == 0) {
                 Tcl_HashEntry *pEntry;
                 int dummy;
+				if(argv[0][0] != '!') HtmlUnspptd(pTree, "%d %s", isClosingTag, argv[0]);
                 if (pTree->options.parsemode != HTML_PARSEMODE_XML){
                     argv[0][arglen[0]] = c;
                     continue;
@@ -1132,10 +1121,6 @@ void
 HtmlTokenizerAppend (HtmlTree *pTree, const char *zText, int nText, int isFinal)
 {
     /* TODO: Add a flag to prevent recursive calls to this routine. */
-    const char *z = zText;
-    int n = nText;
-    /* Tcl_DString utf8; */
-
     if (!pTree->pDocument) {
         pTree->pDocument = Tcl_NewObj();
         Tcl_IncrRefCount(pTree->pDocument);
@@ -1143,7 +1128,7 @@ HtmlTokenizerAppend (HtmlTree *pTree, const char *zText, int nText, int isFinal)
     }
 
     assert(!Tcl_IsShared(pTree->pDocument));
-    Tcl_AppendToObj(pTree->pDocument, z, n);
+    Tcl_AppendToObj(pTree->pDocument, zText, nText);
 
     if (pTree->eWriteState == HTML_WRITE_NONE) {
         tokenizeWrapper(pTree, isFinal, HtmlTreeAddText, HtmlTreeAddElement, HtmlTreeAddClosingTag);

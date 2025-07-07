@@ -2245,9 +2245,7 @@ cssParse(
         Tcl_IncrRefCount(sParse.pErrorLog);
     }
 
-    if( n<0 ){
-        n = strlen(z);
-    }
+    if(n<0) n = strlen(z);
 
     /* If *ppStyle is NULL, then create a new CssStyleSheet object. If it
      * is not zero, then append the rules from the new stylesheet document
@@ -2585,7 +2583,10 @@ HtmlCssDeclaration (
     dequote(zBuf);
     prop = HtmlCssPropertyLookup(-1, zBuf);
 
-    if(prop<0) return;
+    if (prop < 0) {
+		HtmlUnspptd(pParse->pTree, "CSS %s", zBuf);
+		return;
+	}
 
     if (isImportant) {
         ppPropertySet = &pParse->pImportant;
@@ -3155,7 +3156,6 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int flags)
                 }
                 break;
             }
-
             case CSS_SELECTOR_ID: {
                 const char *zAttr = N_ATTR(nodeX, "id");
                 if( !attrTest(CSS_SELECTOR_ATTRVALUE, p->zValue, zAttr) ){
@@ -3163,7 +3163,6 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int flags)
                 }
                 break;
             }
-
             case CSS_SELECTOR_ATTR:
             case CSS_SELECTOR_ATTRVALUE:
             case CSS_SELECTOR_ATTRLISTVALUE:
@@ -3212,7 +3211,6 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int flags)
 
                 break;
             }
-
             case CSS_PSEUDOCLASS_FIRSTCHILD: {
                 /* :first-child selector matches if nodeX is the left-most child
                  * of it's parent, not including white-space nodes. */
@@ -3273,9 +3271,14 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int flags)
             case CSS_SELECTOR_NEVERMATCH:
                 return 0;
                 
-            case CSS_MEDIA_ALL: break;
-            case CSS_MEDIA_PRINT: if ((flags>>1)&1) break; return 0;
-            case CSS_MEDIA_SCREEN: if (!(flags>>1)&1) break; return 0;
+            case CSS_MEDIA_ALL:
+				break;
+            case CSS_MEDIA_PRINT:
+				if ((flags>>1)&1) break;
+				return 0;
+            case CSS_MEDIA_SCREEN:
+				if (!(flags>>1)&1) break;
+				return 0;
 
             default:
                 assert(!"Impossible");

@@ -205,12 +205,12 @@ proc CodeInfrastructure {} {
             }
 
             for (
-                 t = aTable[Hash(nString, zString)]; 
-                 t >= 0 && (
-                     strlen(aHashTable[t].zString) != nString || 
-                     strnicmp(zString, aHashTable[t].zString, nString)
-                 );
-                 t = aHashTable[t].iNext
+                t = aTable[Hash(nString, zString)]; 
+                t >= 0 && (
+                    strlen(aHashTable[t].zString) != nString || 
+                    strnicmp(zString, aHashTable[t].zString, nString)
+                );
+                t = aHashTable[t].iNext
             );
 
             return t;

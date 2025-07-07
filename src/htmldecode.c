@@ -82,10 +82,7 @@ unsigned char readUriEncodedByte(unsigned char **pzIn){
 }
 
 int read6bits(unsigned char **pzIn){
-#if 0
-    char const z64[] = 
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-#endif
+    //char const z64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
     int map[256] = { 
     -1, -1, -1, -1, -1, -1, -1, -1,   -1, -1, -1, -1, -1, -1, -1, -1,  /* 0  */
@@ -144,7 +141,7 @@ HtmlDecode(
     Tcl_Obj *pData;
     int nData;
     unsigned char *zData;
-    int is64 = 0;
+    int is64;
 
     if (objc != 3 && objc != 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "?-base64? DATA");

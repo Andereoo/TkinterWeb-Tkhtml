@@ -268,7 +268,7 @@ HtmlNodeDeleteCommand (HtmlTree *pTree, HtmlNode *pNode)
 static void 
 freeNode (HtmlTree *pTree, HtmlNode *pNode)
 {
-    if( pNode ){
+    if(pNode){
         int i;
 
         /* Invalidate the cache of the parent node before deleting any
@@ -301,7 +301,6 @@ freeNode (HtmlTree *pTree, HtmlNode *pNode)
             clearReplacement(pTree, pElem);
 
             HtmlDrawCanvasItemRelease(pTree, pElem->pBox);
-
         } else {
             HtmlTextNode *pTextNode = HtmlNodeAsText(pNode);
             assert(pTextNode);
@@ -1272,23 +1271,22 @@ HtmlTreeAddElement (HtmlTree *pTree, int eType, const char *zType, HtmlAttribute
 
         default: {
             int eCurrentType = HtmlNodeTagType(pCurrent);
-            int isTableType = ((
+            int isTableType = (
                 eCurrentType == Html_TABLE || eCurrentType == Html_TBODY || 
                 eCurrentType == Html_TFOOT || eCurrentType == Html_THEAD || 
                 eCurrentType == Html_TR
-            ) ? 1 : 0);
+            );
             if (isTableType && eType != Html_FORM) {
                 /* Need to add this node to the foster tree. */
                 pParsed = treeAddFosterElement(pTree, eType, zType, pAttr);
             } else {
                 /* Add this node to pCurrent. */
                 int nClose = 0;
-                int i;
                 HtmlElementNode *pC;
                 int N;
 
                 implicitCloseCount(pTree, pCurrent, eType, &nClose);
-                for (i = 0; i < nClose && pCurrent != pBodyNode; i++) {
+                for (int i = 0; i < nClose && pCurrent != pBodyNode; i++) {
                     nodeHandlerCallbacks(pTree, pCurrent);
                     pCurrent = HtmlNodeParent(pCurrent);
                 }
