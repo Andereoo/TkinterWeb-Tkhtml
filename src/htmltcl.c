@@ -264,13 +264,13 @@ doLoadDefaultStyle (HtmlTree *pTree)
  *---------------------------------------------------------------------------
  */
 static void
-doSingleScrollCallback(interp, pScript, iOffScreen, iTotal, iPage)
-    Tcl_Interp *interp;
-    Tcl_Obj *pScript;
-    int iOffScreen;
-    int iTotal;
-    int iPage;
-{
+doSingleScrollCallback(
+    Tcl_Interp *interp,
+    Tcl_Obj *pScript,
+    int iOffScreen,
+    int iTotal,
+    int iPage
+) {
     if (pScript) {
         double fArg1;
         double fArg2;
