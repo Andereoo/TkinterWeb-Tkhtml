@@ -65,16 +65,10 @@ static void formatAlphanumeric(JsBlob *);
 static void formatSymbol(JsBlob *);
 
 static void
-backupEmptyLine(pBlob)
-    JsBlob *pBlob;
-{
-}
+backupEmptyLine(JsBlob *pBlob){}
 
 static void
-writeOut(pBlob, z, n)
-    JsBlob *pBlob;
-    const char *z;
-    int n;
+writeOut(JsBlob *pBlob, const char *z, int n)
 {
     if (!pBlob->pLine) {
         int i;
@@ -88,8 +82,7 @@ writeOut(pBlob, z, n)
 }
 
 static void
-writeLine(pBlob)
-    JsBlob *pBlob;
+writeLine(JsBlob *pBlob)
 {
     if (pBlob->pLine) {
         Tcl_ListObjAppendElement(0, pBlob->pOut, pBlob->pLine);
@@ -101,25 +94,20 @@ writeLine(pBlob)
 }
 
 static int
-prevWasKeyword(pBlob)
-    JsBlob *pBlob;
+prevWasKeyword(JsBlob *pBlob)
 {
-    static const char *aKeyword[] = {
-        "abstract",     "boolean",     "break",      "byte", 
-        "case",         "catch",       "char",       "class",
-        "const",        "continue",    "default",    "delete", 
-        "do",           "double",      "else",       "extends",
-        "false",        "final",       "finally",    "float", 
-        "for",          "function",    "goto",       "if",
-        "implements",   "import",      "in",         "instanceof", 
-        "int",          "interface",   "long",       "native", 
-        "new",          "null",        "package",    "private", 
-        "protected",    "public",      "return",     "short", 
-        "static",       "super",       "switch",     "synchronized", 
-        "this",         "throw",       "throws",     "transient", 
-        "true",         "try",         "typeof",     "var", 
-        "void",         "while",       "with",       0
-    };
+	static const char *aKeyword[] = {
+		"await",        "break",       "case",       "catch",
+		"class",        "const",       "continue",   "default",
+		"do",           "else",        "enum",       "export",
+		"false",        "for",         "function",   "if",
+		"import",       "in",          "instanceof", "let",
+		"new",          "null",        "return",     "static",
+		"super",        "switch",      "this",       "throw",
+		"true",         "try",         "typeof",     "var",
+		"void",         "while",       "with",       "yield",
+		0
+	};
 
     if( pBlob->nPrevWord>0 ){
         int i;
@@ -127,9 +115,7 @@ prevWasKeyword(pBlob)
             if( 
                 strlen(aKeyword[i]) == pBlob->nPrevWord &&
                 strncmp(aKeyword[i], pBlob->zPrevWord, pBlob->nPrevWord) == 0
-            ) {
-                return 1;
-            }
+            ) return 1;
         }
     }
 
@@ -137,15 +123,13 @@ prevWasKeyword(pBlob)
 }
 
 static void 
-formatLinefeed(pBlob)
-    JsBlob *pBlob;
+formatLinefeed(JsBlob *pBlob)
 {
     if (pBlob->pLine) writeLine(pBlob);
 }
 
 static void 
-formatSpace(pBlob)
-    JsBlob *pBlob;
+formatSpace(JsBlob *pBlob)
 {
     const char *zNext = &pBlob->zCsr[1];
     if (
@@ -160,8 +144,7 @@ formatSpace(pBlob)
 }
 
 static void 
-formatColon(pBlob)
-    JsBlob *pBlob;
+formatColon(JsBlob *pBlob)
 {
     if( 
         pBlob->pLine && 
@@ -175,8 +158,7 @@ formatColon(pBlob)
 }
 
 static void 
-formatSemicolon(pBlob)
-    JsBlob *pBlob;
+formatSemicolon(JsBlob *pBlob)
 {
     backupEmptyLine(pBlob);
     writeOut(pBlob, ";", -1);
@@ -191,8 +173,7 @@ formatSemicolon(pBlob)
 }
 
 static void 
-formatBracketOpen(pBlob)
-    JsBlob *pBlob;
+formatBracketOpen(JsBlob *pBlob)
 {
     char prev = 0;
     if (pBlob->zCsr>pBlob->zIn) {
@@ -204,28 +185,24 @@ formatBracketOpen(pBlob)
     writeOut(pBlob, "(", -1);
 }
 static void 
-formatBracketClose(pBlob)
-    JsBlob *pBlob;
+formatBracketClose(JsBlob *pBlob)
 {
     writeOut(pBlob, ")", -1);
 }
 
 static void 
-formatSquareOpen(pBlob)
-    JsBlob *pBlob;
+formatSquareOpen(JsBlob *pBlob)
 {
     writeOut(pBlob, "[", -1);
 }
 static void 
-formatSquareClose(pBlob)
-    JsBlob *pBlob;
+formatSquareClose(JsBlob *pBlob)
 {
     writeOut(pBlob, "]", -1);
 }
 
 static void 
-formatBlockOpen(pBlob)
-    JsBlob *pBlob;
+formatBlockOpen(JsBlob *pBlob)
 {
     if( 
         pBlob->pLine && 
@@ -233,23 +210,20 @@ formatBlockOpen(pBlob)
     ) {
         writeOut(pBlob, " ", -1);
     }
-    writeOut(pBlob, "{", -1);
+    writeOut(pBlob, " {", -1);
     writeLine(pBlob);
     pBlob->iLevel++;
 }
 static void 
-formatBlockClose(pBlob)
-    JsBlob *pBlob;
+formatBlockClose(JsBlob *pBlob)
 {
-#if 0
+/*
     if( 
-        pBlob->pLine && 
-        !Tcl_RegExpMatch(0, Tcl_GetString(pBlob->pLine), ";$")
+        pBlob->pLine && !Tcl_RegExpMatch(0, Tcl_GetString(pBlob->pLine), ";$")
     ) {
         formatSemicolon(pBlob);
-        writeLine(pBlob);
     }
-#endif
+*/
     if (pBlob->pLine) writeLine(pBlob);
 
     pBlob->iLevel--;
@@ -258,8 +232,7 @@ formatBlockClose(pBlob)
 }
 
 static void 
-formatQuotedstring(pBlob)
-    JsBlob *pBlob;
+formatQuotedstring(JsBlob *pBlob)
 {
     int isEscaped = 0;
     const char *z = pBlob->zCsr;
@@ -277,8 +250,7 @@ formatQuotedstring(pBlob)
 }
 
 static void 
-formatSlash(pBlob)
-    JsBlob *pBlob;
+formatSlash(JsBlob *pBlob)
 {
     char next = pBlob->zCsr[1];
     char prev = 0;
@@ -329,22 +301,19 @@ formatSlash(pBlob)
 }
 
 static void 
-formatDot(pBlob)
-    JsBlob *pBlob;
+formatDot(JsBlob *pBlob)
 {
     writeOut(pBlob, ".", -1);
 }
 
 static void 
-formatComma(pBlob)
-    JsBlob *pBlob;
+formatComma(JsBlob *pBlob)
 {
     writeOut(pBlob, ", ", -1);
 }
 
 static void 
-formatAlphanumeric(pBlob)
-    JsBlob *pBlob;
+formatAlphanumeric(JsBlob *pBlob)
 {
     if (!pBlob->zPrevWord) {
         pBlob->zPrevWord = pBlob->zCsr;
@@ -355,8 +324,7 @@ formatAlphanumeric(pBlob)
 }
 
 static void 
-formatSymbol(pBlob)
-    JsBlob *pBlob;
+formatSymbol(JsBlob *pBlob)
 {
     char zSpecial[] = "-+*%<=>?:&|/!";
 
@@ -393,8 +361,7 @@ formatSymbol(pBlob)
 }
 
 static void
-formatLessthan(pBlob)
-    JsBlob *pBlob;
+formatLessthan(JsBlob *pBlob)
 {
     if (0==strncmp("<!--", pBlob->zCsr, 4)) {
         const char *z = pBlob->zCsr;
@@ -426,12 +393,12 @@ formatLessthan(pBlob)
  *---------------------------------------------------------------------------
  */
 static int 
-tclSeeFormat(clientData, interp, objc, objv)
-    ClientData clientData;             /* Not used */
-    Tcl_Interp *interp;                /* Current interpreter. */
-    int objc;                          /* Number of arguments. */
-    Tcl_Obj *CONST objv[];             /* Argument strings. */
-{
+tclSeeFormat(
+    ClientData clientData,             /* Not used */
+    Tcl_Interp *interp,                /* Current interpreter. */
+    int objc,                          /* Number of arguments. */
+    Tcl_Obj *CONST objv[]              /* Argument strings. */
+) {
     JsBlob blob;
     Tcl_Obj *pScript;
 
@@ -486,7 +453,7 @@ tclSeeFormat(clientData, interp, objc, objv)
         }
 
         blob.zCsr++;
-        if (!iswordchar(c) && c != ' '&& c != '\t') {
+        if (!iswordchar(c) && c != ' ' && c != '\t') {
             blob.zPrevWord = 0;
             blob.nPrevWord = 0;
         }

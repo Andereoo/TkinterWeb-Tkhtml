@@ -731,7 +731,7 @@ static int evalObjv(interp, nWord, apWord)
     Tcl_Obj **apWord;
 {
 #if 0
-    for (i=0; i<nWord;) printf("%d: %s. ", i++, Tcl_GetString(apWord[i]));
+    for (int i=0; i<nWord;) printf("%d: %s. ", i++, Tcl_GetString(apWord[i]));
     printf("\n");
 #endif
     return Tcl_EvalObjv(interp, nWord, apWord, TCL_EVAL_GLOBAL);
@@ -1315,8 +1315,7 @@ objToValue(pInterp, pObj, pValue, pIsCacheable)
                 }
 
                 case SEE_OBJECT: {
-                    struct SEE_object *pObject = 
-                        findOrCreateObject(pInterp, apElem[1], 0);
+                    struct SEE_object *pObject = findOrCreateObject(pInterp, apElem[1], 0);
                     SEE_SET_OBJECT(pValue, pObject);
                     break;
                 }
@@ -2192,7 +2191,7 @@ SeeTcl_Get(pInterp, pObj, pProp, pRes)
      *     eval $obj Get $property
      */
     if (!p->pClass || Tcl_FindHashEntry(&p->pClass->aProperty, (char *)pProp)) {
-        rc = callSeeTclMethod(pTclInterp, pTclSeeInterp->pLog, p,"Get",pProp,0);
+        rc = callSeeTclMethod(pTclInterp, pTclSeeInterp->pLog, p, "Get", pProp, 0);
         throwTclError(pInterp, rc);
         pScriptRes = Tcl_GetObjResult(pTclInterp);
         Tcl_IncrRefCount(pScriptRes);
