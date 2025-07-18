@@ -54,43 +54,74 @@ else:
 
 TKHTML_BINARIES =  [file for file in os.listdir(TKHTML_ROOT_DIR) if "libTkhtml" in file]
 
+# NOTE:
+# File names should be in the format libTkhtml[major].[minor].[so/dll/dylib]
+# Experimental file names should be in the format libTkhtml[major].[minor]exp.[so/dll/dylib]
 
-tkhtml_loaded = False
+tkhtml_file = None
 
 
 def get_tkhtml_folder():
     # Backwards-compatibility. Will be removed.
     return TKHTML_ROOT_DIR
 
-
-def get_tkhtml_file(version=None, index=-1):
+def get_loaded_tkhtml_version():
+    global tkhtml_file
+    if tkhtml_file:
+        version = os.path.basename(tkhtml_file).replace("libTkhtml", "")
+        return version[:version.rfind(".")]
+    else:
+        return None
+    
+def get_tkhtml_file(version=None, index=-1, experimental=False):
     "Get the location of the platform's Tkhtml binary"
     if isinstance(version, float):
         version = str(version)
     if version:
         for file in TKHTML_BINARIES:
             if version in file:
-                return os.path.join(TKHTML_ROOT_DIR, file), version
+                # Note: experimental can be "auto"
+                if "exp" in file:
+                    if not experimental:
+                        raise OSError(f"Tkhtml version {version} is an experimental release but experimental mode is disabled")
+                    experimental = True
+                else:
+                    if experimental == True:
+                        raise OSError(f"Tkhtml version {version} is not an experimental release but experimental mode is enabled")
+                    experimental = False
+                return os.path.join(TKHTML_ROOT_DIR, file), version, experimental
         raise OSError(f"Tkhtml version {version} either does not exist or is unsupported on your system")
     else:
         # Get highest numbered avaliable file if a version is not provided
-        file = sorted(TKHTML_BINARIES)[index]
-        version = file.replace("libTkhtml", "")
+        if experimental == True:
+            files = [k for k in TKHTML_BINARIES if 'exp' in k]
+            if not files:
+                raise OSError(f"No experimental Tkhtml versions could be found on your system")
+        elif not experimental:
+            files = [k for k in TKHTML_BINARIES if 'exp' not in k]
+        else:
+            files = TKHTML_BINARIES
+        file = sorted(files)[index]
+        if "exp" in file:
+            experimental = True
+        else:
+            experimental = False
+        version = file.replace("libTkhtml", "").replace("exp", "")
         version = version[:version.rfind(".")]
-        return os.path.join(TKHTML_ROOT_DIR, file), version
+        return os.path.join(TKHTML_ROOT_DIR, file), version, experimental
 
 
 def load_tkhtml_file(master, file, force=False):
     "Load Tkhtml into the current Tcl/Tk instance"
-    global tkhtml_loaded
-    if (not tkhtml_loaded) or force:
+    global tkhtml_file
+    if (not tkhtml_file) or force:
         if TKHTML_ROOT_DIR not in os.environ["PATH"].split(os.pathsep):
             os.environ["PATH"] = os.pathsep.join([
                 TKHTML_ROOT_DIR,
                 os.environ["PATH"]
             ])
         master.tk.call("load", file)
-        tkhtml_loaded = True
+        tkhtml_file = file
 
 
 def load_tkhtml(master, force=False, use_prebuilt=False):
@@ -101,8 +132,8 @@ def load_tkhtml(master, force=False, use_prebuilt=False):
         load_tkhtml_file(master, file, force)
         return version
     
-    global tkhtml_loaded
-    if (not tkhtml_loaded) or force:
+    global tkhtml_file
+    if (not tkhtml_file) or force:
         master.tk.call("package", "require", "Tkhtml")
-        tkhtml_loaded = True
+        tkhtml_file = True
         return master.tk.call("package", "present", "Tkhtml")
