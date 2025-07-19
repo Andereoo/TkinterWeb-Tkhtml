@@ -24,32 +24,32 @@ __title__ = 'TkinterWeb-Tkhtml'
 __author__ = "Andereoo"
 __copyright__ = "Copyright (c) 2025 Andereoo"
 __license__ = "MIT"
-__version__ = '1.1.0'
+__version__ = '1.1.1'
 
 TKHTML_RELEASE = "3.0 (TkinterWeb standard)" # Backwards-compatibility. Not useful or even necessarily true anymore. Will be removed.
 
-TKHTML_ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
+TKHTML_ROOT_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), "tkhtml")
 
 # Begin universal sdist
 if PLATFORM.system == "Linux":
     if "arm" in PLATFORM.machine: # 32 bit arm Linux - Raspberry Pi and others
-        TKHTML_ROOT_DIR = os.path.join(TKHTML_ROOT_DIR, "tkhtml", "linux_armv71")
+        TKHTML_ROOT_DIR = os.path.join(TKHTML_ROOT_DIR, "linux_armv71")
     elif "aarch64" in PLATFORM.machine: # 64 bit arm Linux - Raspberry Pi and others
-        TKHTML_ROOT_DIR = os.path.join(TKHTML_ROOT_DIR, "tkhtml", "manylinux2014_aarch64")
+        TKHTML_ROOT_DIR = os.path.join(TKHTML_ROOT_DIR, "manylinux2014_aarch64")
     elif sys.maxsize > 2**32: # 64 bit Linux
-        TKHTML_ROOT_DIR = os.path.join(TKHTML_ROOT_DIR, "tkhtml", "manylinux1_x86_64")
+        TKHTML_ROOT_DIR = os.path.join(TKHTML_ROOT_DIR, "manylinux1_x86_64")
     else: # 32 bit Linux
-        TKHTML_ROOT_DIR = os.path.join(TKHTML_ROOT_DIR, "tkhtml", "manylinux1_i686")
+        TKHTML_ROOT_DIR = os.path.join(TKHTML_ROOT_DIR, "manylinux1_i686")
 elif PLATFORM.system == "Darwin":
     if "arm" in PLATFORM.machine: # M1 Mac
-        TKHTML_ROOT_DIR = os.path.join(TKHTML_ROOT_DIR, "tkhtml", "macosx_11_0_arm64")
+        TKHTML_ROOT_DIR = os.path.join(TKHTML_ROOT_DIR, "macosx_11_0_arm64")
     else:  # other Macs
-        TKHTML_ROOT_DIR = os.path.join(TKHTML_ROOT_DIR, "tkhtml", "macosx_10_6_x86_64")
+        TKHTML_ROOT_DIR = os.path.join(TKHTML_ROOT_DIR, "macosx_10_6_x86_64")
 else:
     if sys.maxsize > 2**32: # 64 bit Windows
-        TKHTML_ROOT_DIR = os.path.join(TKHTML_ROOT_DIR, "tkhtml", "win_amd64")
+        TKHTML_ROOT_DIR = os.path.join(TKHTML_ROOT_DIR, "win_amd64")
     else: # 32 bit Windows
-        TKHTML_ROOT_DIR = os.path.join(TKHTML_ROOT_DIR, "tkhtml", "win32")
+        TKHTML_ROOT_DIR = os.path.join(TKHTML_ROOT_DIR, "win32")
 # End universal sdist
 
 TKHTML_BINARIES =  [file for file in os.listdir(TKHTML_ROOT_DIR) if "libTkhtml" in file]
