@@ -24,7 +24,7 @@ __title__ = 'TkinterWeb-Tkhtml'
 __author__ = "Andereoo"
 __copyright__ = "Copyright (c) 2025 Andereoo"
 __license__ = "MIT"
-__version__ = '1.1.2'
+__version__ = '1.1.3'
 
 TKHTML_RELEASE = "3.0 (TkinterWeb standard)" # Backwards-compatibility. Not useful or even necessarily true anymore. Will be removed.
 
