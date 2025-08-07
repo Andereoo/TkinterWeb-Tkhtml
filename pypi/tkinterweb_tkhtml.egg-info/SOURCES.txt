@@ -17,10 +17,15 @@ tkinterweb_tkhtml/tkhtml/macosx_11_0_arm64/pkgIndex.tcl
 tkinterweb_tkhtml/tkhtml/manylinux1_i686/libTkhtml3.0.so
 tkinterweb_tkhtml/tkhtml/manylinux1_i686/pkgIndex.tcl
 tkinterweb_tkhtml/tkhtml/manylinux1_x86_64/libTkhtml3.0.so
+tkinterweb_tkhtml/tkhtml/manylinux1_x86_64/libTkhtml3.1.so
 tkinterweb_tkhtml/tkhtml/manylinux1_x86_64/pkgIndex.tcl
 tkinterweb_tkhtml/tkhtml/manylinux2014_aarch64/libTkhtml3.0.so
 tkinterweb_tkhtml/tkhtml/manylinux2014_aarch64/pkgIndex.tcl
 tkinterweb_tkhtml/tkhtml/win32/Tkhtml30.dll
 tkinterweb_tkhtml/tkhtml/win32/pkgIndex.tcl
-tkinterweb_tkhtml/tkhtml/win_amd64/Tkhtml30.dll
+tkinterweb_tkhtml/tkhtml/win_amd64/COPYING-CAIRO-LGPL-2.1.dll
+tkinterweb_tkhtml/tkhtml/win_amd64/libcairo-2.dll
+tkinterweb_tkhtml/tkhtml/win_amd64/libTkhtml3.0.dll
+tkinterweb_tkhtml/tkhtml/win_amd64/libTkhtml3.1.dll
 tkinterweb_tkhtml/tkhtml/win_amd64/pkgIndex.tcl
+
