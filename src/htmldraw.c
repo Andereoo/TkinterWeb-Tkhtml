@@ -600,7 +600,6 @@ windowsRepair (HtmlTree *pTree, HtmlCanvas *pCanvas)
      */
     while (p) {
         HtmlNodeReplacement *pNext = p->pNext;
-        Tk_Window control = p->win;
         int iViewY;
         int iWidth;
         int iHeight;
@@ -609,7 +608,7 @@ windowsRepair (HtmlTree *pTree, HtmlCanvas *pCanvas)
         if (pTree) {
             iViewX = p->iCanvasX - pTree->iScrollX; 
             iViewY = p->iCanvasY - pTree->iScrollY; 
-            if (Tk_Parent(control) == pTree->docwin) {
+            if (Tk_Parent(p->win) == pTree->docwin) {
                 iViewX -= Tk_X(pTree->docwin);
                 iViewY -= Tk_Y(pTree->docwin);
             }
@@ -621,9 +620,9 @@ windowsRepair (HtmlTree *pTree, HtmlCanvas *pCanvas)
          * widget is being destroyed (pTree==0) unmap the window and remove it
          * from the HtmlTree.pMapped linked-list. 
          */
-    if (!pTree || p->clipped || iWidth <= 0 || iHeight <= 0) {
-            if (Tk_IsMapped(control)) {
-                Tk_UnmapWindow(control);
+		if (!pTree || p->clipped || iWidth <= 0 || iHeight <= 0) {
+            if (Tk_IsMapped(p->win)) {
+                Tk_UnmapWindow(p->win);
             }
             if (pPrev) {
                 assert(pPrev->pNext == p);
@@ -634,14 +633,14 @@ windowsRepair (HtmlTree *pTree, HtmlCanvas *pCanvas)
             }
             p->pNext = 0;
         } else {
-            if (!Tk_IsMapped(control)) {
-                Tk_MoveResizeWindow(control, iViewX, iViewY, iWidth, iHeight);
-                Tk_MapWindow(control);
+            if (!Tk_IsMapped(p->win)) {
+                Tk_MoveResizeWindow(p->win, iViewX, iViewY, iWidth, iHeight);
+                Tk_MapWindow(p->win);
             } else if(
-                iViewX != Tk_X(control) || Tk_Y(control) != iViewY ||
-                iWidth != Tk_Width(control) || Tk_Height(control) != iHeight
+                iViewX != Tk_X(p->win) || Tk_Y(p->win) != iViewY ||
+                iWidth != Tk_Width(p->win) || Tk_Height(p->win) != iHeight
             ) {
-                Tk_MoveResizeWindow(control, iViewX, iViewY, iWidth, iHeight);
+                Tk_MoveResizeWindow(p->win, iViewX, iViewY, iWidth, iHeight);
             }
             pPrev = p;
         }
@@ -1015,9 +1014,8 @@ itemToBox (HtmlCanvasItem *pItem, int origin_x, int origin_y, int *pX, int *pY, 
         case CANVAS_WINDOW: {
             HtmlNodeReplacement *pR = pItem->c.window.pElem->pReplacement;
             if (pR && pR->win) {
-                Tk_Window control = pR->win;
-                *pW = Tk_ReqWidth(control);
-                *pH = Tk_ReqHeight(control);
+                *pW = Tk_ReqWidth(pR->win);
+                *pH = Tk_ReqHeight(pR->win);
             } else {
                 *pW = 1;
                 *pH = 1;
@@ -4280,7 +4278,6 @@ static int HtmlPostscriptCb(
 ) {
     printingInfo *pPrint = (printingInfo *)clientData;
     int rc = TCL_OK;
-
     switch (pItem->type) {
         case CANVAS_TEXT: {
             CanvasText *pT = &pItem->c.text;

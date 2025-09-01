@@ -934,7 +934,7 @@ HtmlTokenize (
             if (pMap == 0) {
                 Tcl_HashEntry *pEntry;
                 int dummy;
-				if(argv[0][0] != '!') HtmlUnspptd(pTree, "%d %s", isClosingTag, argv[0]);
+				if (argv[0][0] != '!') HtmlUnspptd(pTree, isClosingTag?"/%s":"%s", argv[0]);
                 if (pTree->options.parsemode != HTML_PARSEMODE_XML){
                     argv[0][arglen[0]] = c;
                     continue;

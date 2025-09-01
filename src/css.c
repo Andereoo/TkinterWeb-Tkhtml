@@ -3135,12 +3135,10 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int flags)
     HtmlNode *nodeX = pNode;
 
     HtmlElementNode *pElem = HtmlNodeAsElement(pNode);
-    assert(pElem);
+	if (!pElem) return 1;
 
-    while( p && nodeX ){
-        pElem = HtmlNodeAsElement(nodeX);
-
-        switch( p->eSelector ){
+    while (p && nodeX) {
+        switch (p->eSelector) {
             case CSS_SELECTOR_UNIVERSAL:
                 break;
 

@@ -378,9 +378,7 @@ HtmlInstrumentInit(interp)
     p->xCall = HtmlInstrumentCall;
     p->aCommand[0].pFullName = Tcl_NewStringObj("C: External Script Event", -1);
     p->aCommand[1].pFullName = Tcl_NewStringObj("C: callbackHandler()", -1);
-    p->aCommand[2].pFullName = Tcl_NewStringObj(
-        "C: runDynamicStyleEngine()", -1
-    );
+    p->aCommand[2].pFullName = Tcl_NewStringObj("C: runDynamicStyleEngine()", -1);
     p->aCommand[3].pFullName = Tcl_NewStringObj("C: runStyleEngine()", -1);
     p->aCommand[4].pFullName = Tcl_NewStringObj("C: runLayoutEngine()", -1);
     p->aCommand[5].pFullName = Tcl_NewStringObj("C: allocateNewFont()", -1);

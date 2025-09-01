@@ -185,8 +185,7 @@ clearReplacement (HtmlTree *pTree, HtmlElementNode *pElem)
 
         /* If there is a delete script, invoke it now. */
         if (p->pDelete) {
-            int flags = TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL;
-            Tcl_EvalObjEx(pTree->interp, p->pDelete, flags);
+            Tcl_EvalObjEx(pTree->interp, p->pDelete, TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL);
         }
 
         /* Remove any entry from the HtmlTree.pMapped list. */
@@ -194,7 +193,7 @@ clearReplacement (HtmlTree *pTree, HtmlElementNode *pElem)
             pTree->pMapped = p->pNext;
         } else {
             HtmlNodeReplacement *pCur = pTree->pMapped; 
-            while( pCur && pCur->pNext != p ) pCur = pCur->pNext;
+            while (pCur && pCur->pNext != p) pCur = pCur->pNext;
             if (pCur) {
                 pCur->pNext = p->pNext;
             }
@@ -202,7 +201,7 @@ clearReplacement (HtmlTree *pTree, HtmlElementNode *pElem)
 
         /* Cancel geometry management */
         if (p->win) {
-            if (Tk_IsMapped(p->win)) {
+            if (Tk_IsMapped(p->win) && Tk_WindowId(p->win) < 1) {
                 Tk_UnmapWindow(p->win);
             }
             Tk_ManageGeometry(p->win, 0, 0);
