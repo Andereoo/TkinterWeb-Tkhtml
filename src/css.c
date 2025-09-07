@@ -435,6 +435,7 @@ rgbToColor(char *zOut, CONST char *zRgb, int nRgb)
     for (ii = 0; ii < 3; ii++){
         aToken[ii].z = HtmlCssGetNextCommaListItem(z, zEnd - z, &aToken[ii].n);
         z = &(aToken[ii].z[aToken[ii].n]);
+		if (!z) break;
     }
     if (!aToken[0].z || !aToken[1].z || !aToken[2].z ||
         !aToken[0].n || !aToken[1].n || !aToken[2].n

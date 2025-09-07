@@ -114,8 +114,7 @@ inputDiscardComment (CssInput *pInput)
 
     if (n > 1 && z[0] == '/' && z[1] == '*') {
         int i;
-        for (i = 4; i <= n && (z[i-1] != '/' || z[i-2] != '*'); i++) {
-        }
+        for (i = 4; i <= n && (z[i-1] != '/' || z[i-2] != '*'); i++);
         pInput->iInput += i;
 
         /* If the previous token returned was CT_SPACE, then ignore any 
