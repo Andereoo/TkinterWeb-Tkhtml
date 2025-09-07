@@ -43,7 +43,7 @@ set BaseList {DocumentEvent}
   # The "title" attribute is supposed to be read/write. But this one
   # is only read-only for the meantime.
   dom_get title {
-    list string [$myHv3 title]
+    list [$myHv3 title]
   }
   dom_put title val {
     puts "TODO: HTMLDocument.title (Put method)"
@@ -55,17 +55,17 @@ set BaseList {DocumentEvent}
     if {$str eq ""} {
       list null
     } else {
-      list string $str
+      list $str
     }
   }
 
   # Read-only attribute "URL".
   dom_get URL {
-    list string [$myHv3 uri get]
+    list [$myHv3 uri get]
   }
 
   dom_get referrer {
-    list string [$myHv3 referrer]
+    list [$myHv3 referrer]
   }
 
   dom_todo open
@@ -149,7 +149,7 @@ set BaseList {DocumentEvent}
   # perhaps)?
   #
   dom_get cookie {
-    list string [::hv3::the_cookie_manager Cookie [$myHv3 uri get]]
+    list [::hv3::the_cookie_manager Cookie [$myHv3 uri get]]
   }
   dom_put -string cookie value {
     ::hv3::the_cookie_manager SetCookie [$myHv3 uri get] $value
@@ -312,56 +312,56 @@ set ::hv3::dom::code::HTMLELEMENT {
   #    BUG: For nodes other than the <HTML> node, values are always all 0.
   #
   dom_get offsetLeft { 
-    list number [lindex [HTMLElement_offsetBox $myDom $myNode] 0]
+    list [lindex [HTMLElement_offsetBox $myDom $myNode] 0]
   }
   dom_get offsetTop { 
-    list number [lindex [HTMLElement_offsetBox $myDom $myNode] 1]
+    list [lindex [HTMLElement_offsetBox $myDom $myNode] 1]
   }
   dom_get offsetHeight { 
     set bbox [HTMLElement_offsetBox $myDom $myNode]
-    list number [expr {[lindex $bbox 3] - [lindex $bbox 1]}]
+    list [expr {[lindex $bbox 3] - [lindex $bbox 1]}]
   }
   dom_get offsetWidth { 
     set bbox [HTMLElement_offsetBox $myDom $myNode]
-    list number [expr {[lindex $bbox 2] - [lindex $bbox 0]}]
+    list [expr {[lindex $bbox 2] - [lindex $bbox 0]}]
   }
 
   dom_get clientLeft {
     set bw [$myNode property border-left-width]
-    list number [string range $bw 0 end-2]
+    list [string range $bw 0 end-2]
   }
   dom_get clientTop {
     set bw [$myNode property border-top-width]
-    list number [string range $bw 0 end-2]
+    list [string range $bw 0 end-2]
   }
   dom_get clientHeight {
     set N $myNode
     set bbox [HTMLElement_nodeBox $myDom $N]
     set bt [string range [$N property border-top-width] 0 end-2]
     set bb [string range [$N property border-bottom-width] 0 end-2]
-    list number [expr [lindex $bbox 3] - [lindex $bbox 1] - $bt - $bb]
+    list [expr [lindex $bbox 3] - [lindex $bbox 1] - $bt - $bb]
   }
   dom_get clientWidth {
     set N $myNode
     set bbox [HTMLElement_nodeBox $myDom $N]
     set bt [string range [$N property border-left-width] 0 end-2]
     set bb [string range [$N property border-right-width] 0 end-2]
-    list number [expr [lindex $bbox 2] - [lindex $bbox 0] - $bt - $bb]
+    list [expr [lindex $bbox 2] - [lindex $bbox 0] - $bt - $bb]
   }
 
   # See comments above for what these are supposed to do.
   #
   dom_get scrollTop    { 
-    list number [HTMLElement_scrollTop [$myNode html] $myNode]
+    list [HTMLElement_scrollTop [$myNode html] $myNode]
   }
   dom_get scrollLeft   { 
-    list number [HTMLElement_scrollLeft [$myNode html] $myNode]
+    list [HTMLElement_scrollLeft [$myNode html] $myNode]
   }
   dom_get scrollWidth  {
-    list number [HTMLElement_scrollWidth [$myNode html] $myNode]
+    list [HTMLElement_scrollWidth [$myNode html] $myNode]
   }
   dom_get scrollHeight { 
-    list number [HTMLElement_scrollHeight [$myNode html] $myNode]
+    list [HTMLElement_scrollHeight [$myNode html] $myNode]
   }
 
   dom_events {
@@ -446,7 +446,7 @@ namespace eval ::hv3::DOM {
 
   proc HTMLElement_getInnerHTML {node} {
     set str [WidgetNode_ChildrenToHtml $node]
-    list string $str
+    list $str
   }
 
   proc HTMLElement_putInnerHTML {dom node newHtml} {
@@ -555,7 +555,7 @@ namespace eval ::hv3::DOM {
   #
   dom_get defaultChecked { 
     set c [$myNode attr -default 0 checked]
-    list boolean $c
+    list $c
   }
   dom_put -string defaultChecked C { 
     set F [$myNode replace]
@@ -569,7 +569,7 @@ namespace eval ::hv3::DOM {
   #
   dom_get checked { 
     set F [$myNode replace]
-    list boolean [$F dom_checked]
+    list [$F dom_checked]
   }
   dom_put -string checked C { 
     set F [$myNode replace]
@@ -591,9 +591,9 @@ namespace eval ::hv3::DOM {
     set T [string tolower [$myNode attr -default text type]]
     if {[lsearch $SPECIAL $T]>=0} {
       set F [$myNode replace]
-      list string [$F dom_value]
+      list [$F dom_value]
     } else {
-      list string [$myNode attr -default "" value]
+      list [$myNode attr -default "" value]
     }
   }
   dom_put -string value V { 
@@ -630,11 +630,11 @@ namespace eval ::hv3::DOM {
     # multiple attribute is true and the string "select-one" when false."
     # However since Hv3 does not support multiple-select controls, this
     # property is always set to "select-one".
-    list string "select-one"
+    list "select-one"
   }
 
   dom_get selectedIndex {
-    list number [[$myNode replace] dom_selectionIndex]
+    list [[$myNode replace] dom_selectionIndex]
   }
   dom_put -string selectedIndex value {
     [$myNode replace] dom_setSelectionIndex $value
@@ -645,14 +645,14 @@ namespace eval ::hv3::DOM {
     # the string value that will be submitted by this control during
     # form submission.
     if {[::hv3::boolean_attr $myNode disabled 0]} {
-      list string ""
+      list ""
     } else {
-      list string [[$myNode replace] value]
+      list [[$myNode replace] value]
     }
   }
 
   dom_get length {
-    list number [llength [HTMLSelectElement_getOptions $myNode]]
+    list [llength [HTMLSelectElement_getOptions $myNode]]
   }
 
   dom_get options {
@@ -662,7 +662,7 @@ namespace eval ::hv3::DOM {
   dom_get multiple {
     # In Hv3, this attribute is always 0. This is because Hv3 does not
     # support multiple-select controls. But maybe it should...
-    list number 0
+    list 0
   }
 
   element_attr name
@@ -671,7 +671,7 @@ namespace eval ::hv3::DOM {
 
   # The "disabled" property.
   dom_get disabled { 
-    list boolean [::hv3::boolean_attr $myNode disabled false] 
+    list [::hv3::boolean_attr $myNode disabled false]
   }
   dom_put -string disabled val { 
     ::hv3::put_boolean_attr $myNode disabled $val
@@ -758,7 +758,7 @@ namespace eval ::hv3::DOM {
   element_attr name;
   element_attr tabIndex -attribute tabindex; 
 
-  dom_get type { list string textarea }
+  dom_get type { list textarea }
 
   dom_todo disabled;
   dom_todo readOnly;
@@ -813,17 +813,17 @@ namespace eval ::hv3::DOM {
     } else {
       set ret [string length [$t get 0.0 [lindex $sel $isEnd]]]
     }
-    list number $ret
+    list $ret
   }
 
   proc HTMLTextAreaElement_select {node} {
     set t [[$node replace] get_text_widget]
     $t tag add sel 0.0 end
-    list undefined
+    list {}
   }
 
   proc HTMLTextAreaElement_getValue {node} {
-    list string [[$node replace] value] 
+    list [[$node replace] value] 
   }
 
   proc HTMLTextAreaElement_putValue {node str} {
@@ -883,7 +883,7 @@ namespace eval ::hv3::DOM {
   }
 
   dom_get text {
-    list string [HTMLOptionElement_getText $myNode]
+    list [HTMLOptionElement_getText $myNode]
   }
   dom_put -string text zText {
     set z [string map {< &lt; > &gt;} $zText]
@@ -894,7 +894,7 @@ namespace eval ::hv3::DOM {
   # TODO: After writing this attribute, have to update data 
   # structures in the hv3_forms module.
   dom_get label {
-    list string [HTMLOptionElement_getLabelOrValue $myNode label]
+    list [HTMLOptionElement_getLabelOrValue $myNode label]
   }
   dom_put -string label v {
     $myNode attr label $v
@@ -904,9 +904,9 @@ namespace eval ::hv3::DOM {
     set select [HTMLOptionElement_getSelect $myNode]
     set idx [lsearch [HTMLSelectElement_getOptions $select] $myNode]
     if {$idx == [[$select replace] dom_selectionIndex]} {
-      list boolean true
+      list true
     } else {
-      list boolean false
+      list false
     }
   }
   dom_put -string selected v {
@@ -920,7 +920,7 @@ namespace eval ::hv3::DOM {
   }
 
   dom_get value {
-    list string [HTMLOptionElement_getLabelOrValue $myNode value]
+    list [HTMLOptionElement_getLabelOrValue $myNode value]
   }
   dom_put -string value v {
     # TODO: After writing this attribute, have to update data structures in
@@ -1149,7 +1149,7 @@ namespace eval ::hv3::DOM {
   element_attr height
   element_attr hspace
 
-  dom_get isMap { list boolean [::hv3::boolean_attr $myNode ismap false] }
+  dom_get isMap { list [::hv3::boolean_attr $myNode ismap false] }
   dom_put -string isMap val { ::hv3::put_boolean_attr $myNode ismap $val }
 
   element_attr longDesc -attribute longdesc;
@@ -1208,7 +1208,7 @@ namespace eval ::hv3::DOM {
       if {$myNode eq [[$myNode html] node]} {
         # TODO: Maybe this is not quite cacheable... But caching it saves
         # calling this code for every single event propagation....
-        list cache object [node_to_document $myNode]
+        list object [node_to_document $myNode]
       } else {
         list null
       }

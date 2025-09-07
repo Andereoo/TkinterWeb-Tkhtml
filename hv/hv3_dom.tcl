@@ -57,7 +57,8 @@ snit::type ::hv3::dom {
     ::hv3::enable_javascript
 
     set myHv3 $hv3
-    set mySee [::see::interp [list ::hv3::DOM::Window $self $hv3]]
+    set mySee [::qjs::interp [list ::hv3::DOM::Window $self $hv3]]
+	$mySee function puts args {puts $args}
 
     $self configurelist $args
 
@@ -67,9 +68,7 @@ snit::type ::hv3::dom {
     }
   }
 
-  destructor { 
-    catch { $mySee destroy }
-  }
+  destructor { $mySee destroy }
 
   # Invoked to set the value of the -logcmd option
   method ConfigureLogcmd {option value} {
@@ -84,9 +83,7 @@ snit::type ::hv3::dom {
     foreach A {onload onunload} {
       catch {
         set V [$body attr $A]
-        append script [subst {
-          if (!window.$A) { window.$A = function(event) {$V} }
-        }]
+        append script [subst {if (!this.$A) {this.$A = function(event) {$V}}}]
       }
     }
     $mySee eval -noresult $script
@@ -155,7 +152,7 @@ snit::type ::hv3::dom {
       if {$::hv3::reformat_scripts_option} {
         set script [string map {"\r\n" "\n"} $script]
         set script [string map {"\r" "\n"} $script]
-        set script [::see::format $script]
+        set script [::qjs::format $script]
       }
     }
 
@@ -210,9 +207,7 @@ snit::type ::hv3::dom {
     }
 
     # Dispatch the event.
-    set rc [catch {
-      ::hv3::dom::dispatchHtmlEvent $self $event $js_obj
-    } msg]
+    set rc [catch {::hv3::dom::dispatchHtmlEvent $self $event $js_obj} msg]
 
     # If an error occured, log it in the debugging window.
     #
@@ -381,7 +376,7 @@ proc ::hv3::dom_init {{init_docs 0}} {
   if {$init_docs} {set ::hv3::dom::CREATE_DOM_DOCS 1}
 
   if {
-    $::hv3::dom::CREATE_DOM_DOCS == 0 && [info commands ::see::interp] eq ""
+    $::hv3::dom::CREATE_DOM_DOCS == 0 && [info commands ::qjs::interp] eq ""
   } return
 
   uplevel #0 {
@@ -406,7 +401,7 @@ proc ::hv3::dom_init {{init_docs 0}} {
 # interpreter library. If it fails, then we have a scriptless browser. 
 # The test for whether or not the browser is script-enabled is:
 #
-#     if {[info commands ::see::interp] ne ""} {
+#     if {[info commands ::qjs::interp] ne ""} {
 #         puts "We have scripting :)"
 #     } else {
 #         puts "No scripting here. Probably better that way."

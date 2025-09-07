@@ -141,7 +141,7 @@ snit::type ::hv3::config {
 
   foreach {opt def type} [list \
     -enableimages     1                         Boolean \
-    -enablejavascript 0                         Boolean \
+    -enablejavascript 1                         Boolean \
     -forcefontmetrics 1                         Boolean \
     -hidegui          0                         Boolean \
     -zoom             1.0                       Double  \
@@ -282,7 +282,7 @@ snit::type ::hv3::config {
         $path add checkbutton -label $label -variable $var -command $cmd
       }
     }
-    if {[info commands ::see::interp] eq ""} {
+    if {[info commands ::qjs::interp] eq ""} {
       $path entryconfigure end -state disabled
     }
   }

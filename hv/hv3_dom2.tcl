@@ -201,7 +201,7 @@ snit::type ::hv3::dom::HTMLDocument {
   # perhaps)?
   #
   js_get cookie {
-    list string [::hv3::the_cookie_manager Cookie [$myHv3 uri get]]
+    list [::hv3::the_cookie_manager Cookie [$myHv3 uri get]]
   }
   js_put cookie value {
     set str [[$self see] tostring $value]
@@ -297,7 +297,7 @@ namespace eval ::hv3::dom {
   } $DOM0Events_ElementCode {
 
     js_get tagName { 
-      list string [string toupper [$myNode tag]]
+      list [string toupper [$myNode tag]]
     }
   
     js_getobject style { ::hv3::dom::InlineStyle %AUTO% [$self dom] $myNode }
@@ -309,7 +309,7 @@ namespace eval ::hv3::dom {
       if {![catch {expr $bool}]} {
         return [list boolean [expr {$bool ? 1 : 0}]]
       } else {
-        return [list boolean 1]
+        return [list true]
       }
     }
     method PutBooleanAttribute {prop value} {
@@ -331,7 +331,7 @@ namespace eval ::hv3::dom {
     js_getput_attribute dir       dir
     js_getput_attribute className class
 
-    js_get nodeType { list number 1 ;# 1 -> ELEMENT_NODE }
+    js_get nodeType { list 1 ;# 1 -> ELEMENT_NODE }
 
     js_getobject childNodes { ::hv3::dom::NodeList %AUTO% [$self dom] $myNode }
   
@@ -339,7 +339,7 @@ namespace eval ::hv3::dom {
     # Get and set the innerHTML property. The implmenetation of this
     # is in hv3_dom2.tcl.
     #
-    js_get innerHTML { list string [::hv3::dom::get_inner_html $myNode] }
+    js_get innerHTML { list [::hv3::dom::get_inner_html $myNode] }
     js_put innerHTML {value} { 
       set code [[$self see] tostring $value ]
       ::hv3::dom::set_inner_html $myHv3 $myNode $code
@@ -364,7 +364,7 @@ namespace eval ::hv3::dom {
     }
 
     js_get length {
-      list number [llength [$myParent children]]
+      list [llength [$myParent children]]
     }
 
     js_scall item {THIS idx} {
@@ -407,11 +407,11 @@ namespace eval ::hv3::dom {
     variable myReadyState Uninitialized
     js_get readyState {
       switch -- $myReadyState {
-        Uninitialized {list number 0}
-        Open          {list number 1}
-        Sent          {list number 2}
-        Receiving     {list number 3}
-        Loaded        {list number 4}
+        Uninitialized {list 0}
+        Open          {list 1}
+        Sent          {list 2}
+        Receiving     {list 3}
+        Loaded        {list 4}
         default       {error "Bad myReadyState value: $myReadyState"}
       }
     }

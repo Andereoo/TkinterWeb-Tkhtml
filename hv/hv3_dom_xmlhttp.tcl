@@ -42,11 +42,11 @@ namespace eval hv3 { set {version($Id: hv3_dom_xmlhttp.tcl,v 1.18 2008/02/15 18:
   #
   dom_get readyState {
     switch -exact -- $state(readyState) {
-      Uninitialized {list number 0}
-      Open          {list number 1}
-      Sent          {list number 2}
-      Receiving     {list number 3}
-      Loaded        {list number 4}
+      Uninitialized {list 0}
+      Open          {list 1}
+      Sent          {list 2}
+      Receiving     {list 3}
+      Loaded        {list 4}
       default       {error "Bad myReadyState value: $myReadyState"}
     }
   }
@@ -68,9 +68,9 @@ namespace eval hv3 { set {version($Id: hv3_dom_xmlhttp.tcl,v 1.18 2008/02/15 18:
     return null
   }
 
-  dom_get responseText {list string $state(responseText)}
-  dom_get status       {list number $state(status)}
-  dom_get statusText   {list string $state(statusText)}
+  dom_get responseText {list $state(responseText)}
+  dom_get status       {list $state(status)}
+  dom_get statusText   {list $state(statusText)}
 
   dom_call open {THIS 
     method 
@@ -172,21 +172,21 @@ namespace eval hv3 { set {version($Id: hv3_dom_xmlhttp.tcl,v 1.18 2008/02/15 18:
 
   # Constants for Event.eventPhase (Definition group PhaseType)
   #
-  dom_get CAPTURING_PHASE { list number 1 }
-  dom_get AT_TARGET       { list number 2 }
-  dom_get BUBBLING_PHASE  { list number 3 }
+  dom_get CAPTURING_PHASE { list 1 }
+  dom_get AT_TARGET       { list 2 }
+  dom_get BUBBLING_PHASE  { list 3 }
 
   # Read-only attributes to access the values set by initEvent().
   #
-  dom_get type          { list string "readystatechange" }
-  dom_get bubbles       { list boolean 0 }
-  dom_get cancelable    { list boolean 0 }
+  dom_get type          { list "readystatechange" }
+  dom_get bubbles       { list false }
+  dom_get cancelable    { list false }
 
   # TODO: Timestamp is supposed to return a timestamp in milliseconds
   # from the epoch. But the DOM spec notes that this information is not
   # available on all systems, in which case the property should return 0. 
   #
-  dom_get timestamp  { list number 0 }
+  dom_get timestamp  { list 0 }
 
   dom_call_todo initEvent
 }
@@ -236,14 +236,14 @@ namespace eval ::hv3::DOM {
     # a "readystatechange" event.
     #
     set this  [list ::hv3::DOM::XMLHttpRequest $dom $statevar]
-    set event [list                             \
-      CAPTURING_PHASE {number 1}                \
-      AT_TARGET       {number 2}                \
-      BUBBLING_PHASE  {number 3}                \
-      type            {string readystatechange} \
-      bubbles         {boolean 0}               \
-      cancelable      {boolean 0}               \
-      timestamp       {number 0}                \
+    set event [list                    \
+      CAPTURING_PHASE 1                \
+      AT_TARGET       2                \
+      BUBBLING_PHASE  3                \
+      type            readystatechange \
+      bubbles         0                \
+      cancelable      0                \
+      timestamp       0                \
     ]
 
     set rc [catch {[$dom see] dispatch $this $event} msg]

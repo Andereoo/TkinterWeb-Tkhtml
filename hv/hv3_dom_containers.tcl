@@ -57,7 +57,7 @@ namespace eval hv3 { set {version($Id: hv3_dom_containers.tcl,v 1.11 2008/02/15 
   # HTMLCollection.length
   #
   dom_get length {
-    list number [llength [eval $nodelistcmd]]
+    list [llength [eval $nodelistcmd]]
   }
 
   # HTMLCollection.item()
@@ -166,7 +166,7 @@ namespace eval ::hv3::DOM {
   # HTMLCollection.length
   #
   dom_get length {
-    list number [eval $mySearchCmd -length]
+    list [eval $mySearchCmd -length]
   }
 
   # HTMLCollection.item()
@@ -272,7 +272,7 @@ namespace eval ::hv3::DOM {
   }
 
   dom_get length {
-    list number [llength [eval $myNodelistcmd]]
+    list [llength [eval $myNodelistcmd]]
   }
 
   # Unknown property request. If the property name looks like a number,
@@ -314,7 +314,7 @@ namespace eval ::hv3::DOM {
   }
 
   dom_get length {
-    list number [eval $mySearchCmd -length] 
+    list [eval $mySearchCmd -length] 
   }
 
   # Unknown property request. If the property name looks like a number,
@@ -347,7 +347,7 @@ namespace eval ::hv3::DOM {
 
   -- Return the number of items in this container.
   dom_get length {
-    list number [llength [$myFrame child_frames]]
+    list [llength [$myFrame child_frames]]
   }
 
   dom_get * {
@@ -374,7 +374,7 @@ namespace eval ::hv3::DOM {
   # HTMLCollection.length
   #
   dom_get length {
-    list number [llength [HTMLSelectElement_getOptions $mySelectNode]]
+    list [llength [HTMLSelectElement_getOptions $mySelectNode]]
   }
 
   # HTMLCollection.item()
@@ -401,7 +401,7 @@ namespace eval ::hv3::DOM {
   # The "selectedIndex" property of this collection is an alias for
   # the "selectedIndex" property of the <SELECT> node.
   dom_get selectedIndex {
-    list number [[$mySelectNode replace] dom_selectionIndex]
+    list [[$mySelectNode replace] dom_selectionIndex]
   }
   dom_put -string selectedIndex value {
     [$mySelectNode replace] dom_setSelectionIndex $value

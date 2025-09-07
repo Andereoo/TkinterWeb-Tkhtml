@@ -32,7 +32,7 @@ append InlineStyleDefn {
   variable myNode
 
   method GetStyleProp {prop} {
-      list string [$myNode prop -inline $hv3::dom::CSS_PROPERTY_MAP($prop)]
+      list [$myNode prop -inline $hv3::dom::CSS_PROPERTY_MAP($prop)]
   }
 
   method PutStyleProp {property js_value} {

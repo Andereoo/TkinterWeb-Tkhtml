@@ -39,20 +39,20 @@ namespace eval hv3 { set {version($Id: hv3_dom_core.tcl,v 1.40 2008/02/15 18:23:
 namespace eval ::hv3::dom::code {
   set NODE_PROTOTYPE {
     # Required by XML and HTML applications:
-    dom_get ELEMENT_NODE                {list number 1}
-    dom_get ATTRIBUTE_NODE              {list number 2}
-    dom_get TEXT_NODE                   {list number 3}
-    dom_get COMMENT_NODE                {list number 8}
-    dom_get DOCUMENT_NODE               {list number 9}
-    dom_get DOCUMENT_FRAGMENT_NODE      {list number 11}
+    dom_get ELEMENT_NODE                {list 1}
+    dom_get ATTRIBUTE_NODE              {list 2}
+    dom_get TEXT_NODE                   {list 3}
+    dom_get COMMENT_NODE                {list 8}
+    dom_get DOCUMENT_NODE               {list 9}
+    dom_get DOCUMENT_FRAGMENT_NODE      {list 11}
   
     # Required by XML applications only:
-    dom_get CDATA_SECTION_NODE          {list number 4}
-    dom_get ENTITY_REFERENCE_NODE       {list number 5}
-    dom_get ENTITY_NODE                 {list number 6}
-    dom_get PROCESSING_INSTRUCTION_NODE {list number 7}
-    dom_get DOCUMENT_TYPE_NODE          {list number 10}
-    dom_get NOTATION_NODE               {list number 12}
+    dom_get CDATA_SECTION_NODE          {list 4}
+    dom_get ENTITY_REFERENCE_NODE       {list 5}
+    dom_get ENTITY_NODE                 {list 6}
+    dom_get PROCESSING_INSTRUCTION_NODE {list 7}
+    dom_get DOCUMENT_TYPE_NODE          {list 10}
+    dom_get NOTATION_NODE               {list 12}
   }
   ::hv3::dom2::stateless NodePrototype %NODE_PROTOTYPE%
   set NODE_PROTOTYPE [list Inherit NodePrototype $NODE_PROTOTYPE]
@@ -84,7 +84,7 @@ set ::hv3::dom::code::NODE {
   dom_get nextSibling     {list null}
 
   -- Always null for this object.
-  dom_get parentNode {list cache null}
+  dom_get parentNode {list null}
 
   dom_get firstChild {list null}
   dom_get lastChild  {list null}
@@ -149,10 +149,10 @@ set ::hv3::dom::code::DOCUMENT {
   dom_parameter myHv3
 
   -- Always Node.DOCUMENT_NODE (integer value 9).
-  dom_get nodeType {list number 9}
+  dom_get nodeType {list 9}
 
   -- Always the literal string \"#document\".
-  dom_get nodeName {list string #document}
+  dom_get nodeName {list #document}
 
   -- The Document node always has exactly one child: the &lt\;HTML&gt\; element
   -- of the document tree. This property always contains a [Ref NodeList] 
@@ -361,8 +361,8 @@ set ::hv3::dom::code::ELEMENT {
 
   # Override parts of the Node interface.
   #
-  dom_get nodeType {list number 1}           ;#     Node.ELEMENT_NODE -> 1
-  dom_get nodeName {list string [string toupper [$myNode tag]]}
+  dom_get nodeType {list 1}           ;#     Node.ELEMENT_NODE -> 1
+  dom_get nodeName {list [string toupper [$myNode tag]]}
 
   dom_get childNodes {
     list object [list ::hv3::DOM::NodeListC $myDom [list $myNode children]]
@@ -461,7 +461,7 @@ set ::hv3::dom::code::ELEMENT {
   #     probably be altered to match this.
   #
   dom_get tagName {
-    list string [string toupper [$myNode tag]]
+    list [string toupper [$myNode tag]]
   }
 
   dom_call -string getAttribute {THIS attr} {
@@ -508,7 +508,7 @@ set ::hv3::dom::code::ELEMENT {
 
 namespace eval ::hv3::DOM {
   proc Element_getAttributeString {node name def} {
-    list string [$node attribute -default $def $name]
+    list [$node attribute -default $def $name]
   }
 
   proc Element_putAttributeString {node name val} {
@@ -659,12 +659,12 @@ namespace eval ::hv3::DOM {
 
   # The "data" property is a get/set on the contents of this text node.
   #
-  dom_get data { list string [$myNode text -pre] }
+  dom_get data { list [$myNode text -pre] }
   dom_put -string data newText { $myNode text set $newText }
 
   # Read-only "length" property.
   #
-  dom_get length { list number [string length [$myNode text -pre]] }
+  dom_get length { list [string length [$myNode text -pre]] }
 
   # The 5 functions specified by DOM:
   #
@@ -681,7 +681,7 @@ namespace eval ::hv3::DOM {
     set nOffset [expr {int($offset)}]
     set nCount  [expr {int($count)}]
     set idx2 [expr {$nOffset + $nCount - 1}]
-    list string [string range [$myNode text -pre] $nOffset $idx2]
+    list [string range [$myNode text -pre] $nOffset $idx2]
   }
   dom_call -string appendData {THIS arg} {
     set nChar [string length [$myNode text -pre]]
@@ -699,12 +699,12 @@ namespace eval ::hv3::DOM {
 
   # Override parts of the Node interface.
   #
-  dom_get nodeType  {list number 3}           ;#     Node.TEXT_NODE -> 3
-  dom_get nodeName  {list string #text}
+  dom_get nodeType  {list 3}           ;#     Node.TEXT_NODE -> 3
+  dom_get nodeName  {list #text}
 
   # nodeValue is read/write for a Text node.
   #
-  dom_get nodeValue {list string [$myNode text -pre] }
+  dom_get nodeValue {list [$myNode text -pre] }
   dom_put -string nodeValue newText { $myNode text set $newText }
 
   # End of Node interface overrides.

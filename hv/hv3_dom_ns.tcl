@@ -40,7 +40,7 @@ namespace eval hv3 { set {version($Id: hv3_dom_ns.tcl,v 1.42 2008/02/15 18:23:37
   dom_parameter dummy
 
   -- Fairly obviously, this is an Hv3 specific property.
-  dom_get hv3_version    { list string [::hv3::hv3_version] }
+  dom_get hv3_version    { list [::hv3::hv3_version] }
 
   foreach {property string} {
     appCodeName    "Mozilla"
@@ -54,38 +54,38 @@ namespace eval hv3 { set {version($Id: hv3_dom_ns.tcl,v 1.42 2008/02/15 18:23:37
     securityPolicy ""
   } {
     -- The constant string <code>"${string}"</code>
-    dom_get $property [list list string $string]
+    dom_get $property [list list $string]
   }
 
   -- Boolean value indicating whether or not cookies are enabled. In Hv3
   -- this is always true.
-  dom_get cookieEnabled  { list boolean 1    }
+  dom_get cookieEnabled  { list true }
 
   -- Boolean value indicating whether or not the browser is in {"online"}
   -- mode. In Hv3 this is always true.
-  dom_get onLine         { list boolean 1    }
+  dom_get onLine         { list true }
 
   -- Return the user-agent string sent with HTTP requests. Hv3 normally
   -- sends a lying user-agent string that claims Hv3 uses Gecko.
   dom_get userAgent { 
     # Use the user-agent that the http package is currently configured
     # with so that HTTP requests match the value returned by this property.
-    list string [::http::config -useragent]
+    list [::http::config -useragent]
   }
 
   -- Return something like {"Linux i686".}
   dom_get platform {
-    list string "$::tcl_platform(os) $::tcl_platform(machine)"
+    list "$::tcl_platform(os) $::tcl_platform(machine)"
   }
 
   -- Alias for the <I>platform</I> property.
   dom_get oscpu {
-    list string "$::tcl_platform(os) $::tcl_platform(machine)"
+    list "$::tcl_platform(os) $::tcl_platform(machine)"
   }
 
   -- Return true if java is enabled, false otherwise. Under Hv3 this is 
   -- always false (and always will be).
-  dom_call javaEnabled {THIS} { list boolean false }
+  dom_call javaEnabled {THIS} { list false }
 
   -- I don't even know what this does. All I knows is that if this method
   -- is not implemented wikipedia thinks we are KHTML and serves up a
@@ -97,7 +97,7 @@ namespace eval hv3 { set {version($Id: hv3_dom_ns.tcl,v 1.42 2008/02/15 18:23:37
   --
   -- On the other hand, if I don't know what "taint" is, it's probably
   -- not enabled. No problem.
-  dom_call taintEnabled {THIS} { list boolean false }
+  dom_call taintEnabled {THIS} { list false }
 }
 
 #-------------------------------------------------------------------------
@@ -140,7 +140,7 @@ namespace eval hv3 { set {version($Id: hv3_dom_ns.tcl,v 1.42 2008/02/15 18:23:37
   XX
 
   dom_parameter myHv3
-  dom_default_value { list string [$myHv3 uri get] }
+  dom_default_value { list [$myHv3 uri get] }
 
   #---------------------------------------------------------------------
   # Properties:
@@ -154,7 +154,7 @@ namespace eval hv3 { set {version($Id: hv3_dom_ns.tcl,v 1.42 2008/02/15 18:23:37
     set auth [$myHv3 uri authority]
     set hostname ""
     regexp {^([^:]*)} $auth -> hostname
-    list string $hostname
+    list $hostname
   }
 
   -- The port-number specified as part of the URI authority, or an empty
@@ -163,25 +163,25 @@ namespace eval hv3 { set {version($Id: hv3_dom_ns.tcl,v 1.42 2008/02/15 18:23:37
     set auth [$myHv3 uri authority]
     set port ""
     regexp {:(.*)$} -> port
-    list string $port
+    list $port
   }
 
   -- The URI authority.
-  dom_get host     { list string [$myHv3 uri authority] }
+  dom_get host     { list [$myHv3 uri authority] }
 
   -- The URI path.
-  dom_get pathname { list string [$myHv3 uri path] }
+  dom_get pathname { list [$myHv3 uri path] }
 
   -- The URI scheme, including the colon following the scheme name. For 
   -- example, <code>"http:"</code> or <code>"https:"</code>.
-  dom_get protocol { list string [$myHv3 uri scheme]: }
+  dom_get protocol { list [$myHv3 uri scheme]: }
 
   -- The URI query, including the '?' character.
   dom_get search   { 
     set query [$myHv3 uri query]
     set str ""
     if {$query ne ""} {set str "?$query"}
-    list string $str
+    list $str
   }
 
   -- The URI fragment, including the '#' character.
@@ -189,11 +189,11 @@ namespace eval hv3 { set {version($Id: hv3_dom_ns.tcl,v 1.42 2008/02/15 18:23:37
     set fragment [$myHv3 uri fragment]
     set str ""
     if {$fragment ne ""} {set str "#$fragment"}
-    list string $str
+    list $str
   }
 
   -- The entire URI as a string.
-  dom_get href { list string [$myHv3 uri get] }
+  dom_get href { list [$myHv3 uri get] }
   dom_put -string href value { 
     Location_assign $myHv3 $value 
   }
@@ -256,7 +256,7 @@ namespace eval ::hv3::DOM {
   -- A reference to the [Ref HTMLDocument] object currently associated
   -- with this window.
   dom_get document {
-    list cache object [list ::hv3::DOM::HTMLDocument $myDom $myHv3]
+    list object [list ::hv3::DOM::HTMLDocument $myDom $myHv3]
   }
 
   # The "Image" property object. This is so that scripts can
@@ -373,7 +373,7 @@ namespace eval ::hv3::DOM {
   -- user chooses \"Cancel\", false is returned.
   dom_call -string confirm {THIS msg} {
     set i [tk_dialog .alert "Super Dialog Alert!" $msg "" 0 OK Cancel]
-    list boolean [expr {$i ? 0 : 1}]
+    list [expr {$i ? false : true}]
   }
 
   -- The current height of the browser window in pixels (the area 
@@ -384,7 +384,7 @@ namespace eval ::hv3::DOM {
   -- [Ref http://developer.mozilla.org/en/docs/DOM:window.innerHeight]
   -- [Ref http://tkhtml.tcl.tk/cvstrac/tktview?tn=175]
   -- [Ref http://www.howtocreate.co.uk/tutorials/javascript/browserwindow]
-  dom_get innerHeight { list number [winfo height [$myHv3 win]] }
+  dom_get innerHeight { list [winfo height [$myHv3 win]] }
 
   -- The current width of the browser window in pixels (the area 
   -- available for displaying HTML documents), including the vertical 
@@ -392,7 +392,7 @@ namespace eval ::hv3::DOM {
   --
   -- <P class=refs>
   -- [Ref http://developer.mozilla.org/en/docs/DOM:window.innerWidth]
-  dom_get innerWidth  { list number [winfo width [$myHv3 win]] }
+  dom_get innerWidth { list [winfo width [$myHv3 win]] }
 
   dom_events { list }
 
@@ -449,7 +449,7 @@ if 0 {
 
   dom_parameter myHv3
 
-  dom_get length   { list number 0 }
+  dom_get length   { list 0 }
   dom_call back    {THIS}     { }
   dom_call forward {THIS}     { }
   dom_call go      {THIS arg} { }
@@ -464,17 +464,17 @@ if 0 {
 ::hv3::dom2::stateless Screen {
   dom_parameter myHv3
 
-  dom_get colorDepth  { list number [winfo screendepth  [$myHv3 win]] }
-  dom_get pixelDepth  { list number [winfo screendepth  [$myHv3 win]] }
+  dom_get colorDepth  { list [winfo screendepth  [$myHv3 win]] }
+  dom_get pixelDepth  { list [winfo screendepth  [$myHv3 win]] }
 
-  dom_get width       { list number [winfo screenwidth  [$myHv3 win]] }
-  dom_get height      { list number [winfo screenheight [$myHv3 win]] }
-  dom_get availWidth  { list number [winfo screenwidth  [$myHv3 win]] }
-  dom_get availHeight { list number [winfo screenheight [$myHv3 win]] }
+  dom_get width       { list [winfo screenwidth  [$myHv3 win]] }
+  dom_get height      { list [winfo screenheight [$myHv3 win]] }
+  dom_get availWidth  { list [winfo screenwidth  [$myHv3 win]] }
+  dom_get availHeight { list [winfo screenheight [$myHv3 win]] }
 
-  dom_get availTop    { list number 0}
-  dom_get availLeft   { list number 0}
-  dom_get top         { list number 0}
-  dom_get left        { list number 0}
+  dom_get availTop    { list 0}
+  dom_get availLeft   { list 0}
+  dom_get top         { list 0}
+  dom_get left        { list 0}
 }
 

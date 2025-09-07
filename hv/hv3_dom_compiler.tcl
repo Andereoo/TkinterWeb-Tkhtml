@@ -17,7 +17,7 @@ namespace eval ::hv3::DOM::docs {}
 #
 # Arguments:
 #
-#     $pSee     - Name of SEE interpreter command (returned by [::see::interp])
+#     $pSee     - Name of SEE interpreter command (returned by [::qjs::interp])
 #     $isString - True to convert arguments to strings
 #     $zScript  - Tcl script to invoke if this is a "Call"
 #     $op       - SEE/Tcl op (e.g. "Call", "Get", "Put" etc.)
@@ -167,37 +167,34 @@ namespace eval ::hv3::dom2 {
       ]
     } else {
       namespace eval compiler2 $body
-  
-      if {[info exists compiler2::get_array(*)]} {
-        set zDefaultGet $compiler2::get_array(*)
-        unset compiler2::get_array(*)
-      }
 
-      set DYNAMICGET ""
-      if {[info exists compiler2::get_array(**)]} {
-        set zDynamicGet $compiler2::get_array(**)
-        unset compiler2::get_array(**)
-        set DYNAMICGET "
-            set property \[lindex \$args 0\]
-            set result \[eval {$zDynamicGet} \]
-            if {\$result ne {}} {return \$result}
-            unset result property
-        "
-      }
-
-      set SETSTATEARRAY ""
+      set SetStateArray ""
       if {$compiler2::parameter eq "myStateArray"} {
-        set SETSTATEARRAY {upvar $myStateArray state}
+        set SetStateArray {upvar $myStateArray state}
       }
   
-      set GET [array get compiler2::get_array]
-      set LIST [array names compiler2::get_array]
-  
+      set Get [list]
+	  set putKeys [array names compiler2::put_array]
+      foreach {zProp val} [array get compiler2::get_array] {
+        if {$zProp in $putKeys} {
+			foreach {isString zArg zCode} $compiler2::put_array($zProp) {}
+			lappend Get $zProp [string map [list %ARG% $zArg %CODE% $zCode %VAL% $val] {
+				if {[llength $args] > 1} {
+					set %ARG% [lindex $args 1]
+					%CODE%
+				} else {
+					%VAL%
+				}
+			}]
+		} else {
+			lappend Get $zProp $val
+		}
+      }
       foreach {zProp val} [array get compiler2::call_array] {
         foreach {isString call_args zCode} $val {}
 
         set zCode "
-          $SETSTATEARRAY
+          $SetStateArray
           $zCode
         "
   
@@ -206,116 +203,38 @@ namespace eval ::hv3::dom2 {
         set proccode [list proc $procname $arglist $zCode]
         evalcode $proccode
   
-        if {$isString < 0} {
-          set calltype TclConstructable
-          set isString ""
-        } else {
-          set calltype TclCallableProc
+        lappend Get $zProp [string map \
+			[list %PROCNAME% $procname %PARAM% $compiler2::parameter] \
+			{list transient [list %PROCNAME% $myDom $%PARAM%]} \
+		]
+      }
+
+      set hasproperty [string map \
+		[list %FUNC% ::hv3::DOM::$type_name %PARAM% $compiler2::parameter] \
+        {
+		  expr {[llength [%FUNC% $myDom $%PARAM% Get [lindex $args 0]]]>0}
         }
+	  ]
   
-        lappend GET $zProp [string map [list \
-          %CALLTYPE% $calltype               \
-          %ISSTRING% $isString               \
-          %PROCNAME% $procname               \
-          %PARAM% $compiler2::parameter    \
-        ] {
-          list cache transient [list \
-            ::hv3::dom::%CALLTYPE%   \
-              [$myDom see] %ISSTRING% [list %PROCNAME% $myDom $%PARAM%]
-          ]
-        }]
-      }
-      if {[info exists zDefaultGet]} {
-        lappend GET default [join \
-          [list {set property [lindex $args 0]} $zDefaultGet] "\n"
-        ]
-      }
-  
-      set PUT [list]
-      foreach {zProp val} [array get compiler2::put_array] {
-        foreach {isString zArg zCode} $val {}
-  
-        if {$isString} {
-          set Template {
-            set %ARG% [[$myDom see] tostring [lindex $args 1]]
-            %CODE%
-          }
-        } else {
-          set Template {
-            set %ARG% [lindex $args 1]
-            %CODE%
-          }
-        }
-        lappend PUT $zProp [string map       \
-            [list %ARG% $zArg %CODE% $zCode] \
-            $Template
-        ]
-      }
-      lappend PUT default {return "native"}
-  
-      set hasproperty [string map [list   \
-        %FUNC%  ::hv3::DOM::$type_name    \
-        %PARAM% $compiler2::parameter     \
-      ] {
-        expr {[llength [%FUNC% $myDom $%PARAM% Get [lindex $args 0]]]>0}
-      }]
-  
-      set arglist [list myDom $compiler2::parameter Method args]
+      set List [array names compiler2::get_array]
+
+      set arglist [list myDom $compiler2::parameter args]
       set proccode [list \
         proc ::hv3::DOM::$type_name $arglist [string map [list \
-          %DYNAMICGET% $DYNAMICGET \
-          %GET% $GET %PUT% $PUT \
+          %GET% $Get \
           %DEFAULTVALUE% $compiler2::default_value \
-          %FINALIZE% $compiler2::finalize   \
           %HASPROPERTY% $hasproperty        \
-          %LIST%          $LIST             \
-          %SETSTATEARRAY% $SETSTATEARRAY    \
-          %EVENTS% $compiler2::events       \
-          %SCOPE% $compiler2::scope       \
+          %LIST%          $List             \
+          %SETSTATEARRAY% $SetStateArray    \
         ] {
           %SETSTATEARRAY%
-          switch -exact -- $Method {
-            Get {
-              %DYNAMICGET%
-              switch -exact -- [lindex $args 0] {
-                %GET%
-              }
-            }
-            Put {
-              switch -exact -- [lindex $args 0] { %PUT% }
-            }
-            HasProperty {
-              %HASPROPERTY%
-            }
-            DefaultValue {
-              %DEFAULTVALUE%
-            }
-            Finalize {
-              %FINALIZE%
-            }
-  
-            Events {
-              %EVENTS%
-            }
-  
-            Scope {
-              %SCOPE%
-            }
-  
-            List { list %LIST% }
+          switch -exact -- [lindex $args 0] {
+            %GET%
           }
         }
       ]]
   
       evalcode $proccode
-
-      if {![info exists zDefaultGet] && ![info exists zDynamicGet]} {
-        set property_list [concat \
-            [array names compiler2::get_array] \
-            [array names compiler2::call_array] \
-        ]
-        evalcode [list ::see::class ::hv3::DOM::$type_name $property_list]
-      } 
     }
   }
 

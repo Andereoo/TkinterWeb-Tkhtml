@@ -384,29 +384,29 @@ namespace eval ::hv3::dom {
     #   Gecko compatibility
     #
     Dispatch [$dom see] $js_obj [list                    \
-      CAPTURING_PHASE {number 1}                         \
-      AT_TARGET       {number 2}                         \
-      BUBBLING_PHASE  {number 3}                         \
-      type            [list string $type]                \
-      bubbles         {boolean 1}                        \
-      cancelable      [list boolean $isCancelable]       \
-      timestamp       {number 0}                         \
+      CAPTURING_PHASE {1}                         \
+      AT_TARGET       {2}                         \
+      BUBBLING_PHASE  {3}                         \
+      type            [list $type]                \
+      bubbles         {1}                        \
+      cancelable      [list $isCancelable]       \
+      timestamp       {0}                         \
 \
-      view            undefined                          \
-      detail          undefined                          \
+      view            {}                          \
+      detail          {}                          \
 \
-      altKey          [list boolean 0]                   \
-      button          [list number 0]                    \
-      clientX         [list number $x]                   \
-      clientY         [list number $y]                   \
-      ctrlKey         [list boolean 0]                   \
-      metaKey         [list boolean 0]                   \
-      relatedTarget   undefined                          \
-      screenX         undefined                          \
-      screenY         undefined                          \
-      shiftKey        [list boolean 0]                   \
+      altKey          [list false]                   \
+      button          [list 0]                    \
+      clientX         [list $x]                   \
+      clientY         [list $y]                   \
+      ctrlKey         [list false]                   \
+      metaKey         [list false]                   \
+      relatedTarget   {}                          \
+      screenX         {}                          \
+      screenY         {}                          \
+      shiftKey        [list false]                   \
 \
-      which           [list number 1]                    \
+      which           [list 1]                    \
     ]
   }
     
@@ -427,13 +427,13 @@ namespace eval ::hv3::dom {
     foreach {bubbles isCancelable} $::hv3::dom::HtmlEventType($type) {}
  
     Dispatch [$dom see] $js_obj [list                       \
-      CAPTURING_PHASE {number 1}                            \
-      AT_TARGET       {number 2}                            \
-      BUBBLING_PHASE  {number 3}                            \
-      type            [list string  $type]                  \
-      bubbles         [list boolean $bubbles]               \
-      cancelable      [list boolean $isCancelable]          \
-      timestamp       {number 0}                            \
+      CAPTURING_PHASE 1                            \
+      AT_TARGET       2                            \
+      BUBBLING_PHASE  3                            \
+      type            [list $type]                  \
+      bubbles         [list $bubbles]               \
+      cancelable      [list $isCancelable]          \
+      timestamp       0                            \
     ]
   }
 

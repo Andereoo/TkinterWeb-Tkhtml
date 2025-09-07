@@ -110,7 +110,7 @@ set ::hv3::dom::code::CSS2PROPERTIES {
   # TODO: Setting this to a value that does not parse is supposed to
   # throw a SYNTAX_ERROR exception.
   #
-  dom_get cssText { list string [$myNode attribute -default "" style] }
+  dom_get cssText { list [$myNode attribute -default "" style] }
   dom_put -string cssText val { 
     $myNode attribute style $val
   }
@@ -134,11 +134,11 @@ set ::hv3::dom::code::CSS2PROPERTIES {
   #     DOMString              item(in unsigned long index);
   #
   dom_get length {
-    list number [expr {[llength [$myNode prop -inline]]/2}]
+    list [expr {[llength [$myNode prop -inline]]/2}]
   }
   dom_call -string item {THIS index} {
     set idx [expr {2*int([lindex $index 1])}]
-    list string [lindex [$myNode prop -inline] $idx]
+    list [lindex [$myNode prop -inline] $idx]
   }
 
   # Read-only parentRule property. Always null in hv3.
@@ -149,7 +149,7 @@ set ::hv3::dom::code::CSS2PROPERTIES {
 namespace eval ::hv3::DOM {
   proc CSSStyleDeclaration.getStyleProperty {node css_property} {
     set val [$node property -inline $css_property]
-    list string $val
+    list $val
   }
 
   proc CSSStyleDeclaration.setStyleProperty {node css_property value} {
