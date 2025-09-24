@@ -41,8 +41,12 @@ static const char rcsid[] = "$Id: htmldraw.c,v 1.208 2008/02/14 08:43:49 danielk
 #ifdef WIN32
     #include <cairo/cairo-win32.h>
     #include <tkWinInt.h>
-#else // TODO: Handle MacOS
-    #include <cairo/cairo-xlib.h>
+    int roundingAllowed = 1;
+#elif __APPLE__ // TODO: Handle MacOS
+    int roundingAllowed = 0;
+#else
+   #include <cairo/cairo-xlib.h>
+   int roundingAllowed = 1;
 #endif
 
 /*-------------------------------------------------------------------------
@@ -2158,7 +2162,7 @@ drawBox (
     }
 
     /* Solid background, if required */
-    if (brtl != 0 || brtr != 0 || brbr != 0 || brbl != 0) {
+    if (roundingAllowed && (brtl != 0 || brtr != 0 || brbr != 0 || brbl != 0)) {
         int btype = (0 == (flags & DRAWBOX_NOBORDER));
          
         if (0 == (flags & DRAWBOX_NOBACKGROUND) && pV->cBackgroundColor->xcolor) {
