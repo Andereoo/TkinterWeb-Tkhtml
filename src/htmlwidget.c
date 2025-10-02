@@ -2105,7 +2105,7 @@ ConfigureHtmlWidgetObj(interp, htmlPtr, objc, objv, flags, realign)
                                         * interpreter */
     HtmlWidget *htmlPtr;               /* The Html widget to be configured */
     int objc;                          /* Number of configuration arguments */
-    Tcl_Obj *CONST objv[];             /* Text of configuration arguments */
+    Tcl_Obj *const objv[];             /* Text of configuration arguments */
     int flags;                         /* Configuration flags */
     int realign;                       /* Always do a redraw if set */
 {
@@ -2148,8 +2148,8 @@ ConfigureHtmlWidgetObj(interp, htmlPtr, objc, objv, flags, realign)
     }
 #else
     {
-        CONST char *sargv[20];
-        CONST char **argv;
+        const char *sargv[20];
+        const char **argv;
         if (objc >= 19) {
             argv = calloc(sizeof(char *), objc + 1);
             for (i = 0; i < objc; i++)
@@ -2209,7 +2209,7 @@ HtmlNewWidget(clientData, interp, objc, objv)
     ClientData clientData;             /* Main window */
     Tcl_Interp *interp;                /* Current interpreter. */
     int objc;                          /* Number of arguments. */
-    Tcl_Obj *CONST objv[];             /* Argument strings. */
+    Tcl_Obj *const objv[];             /* Argument strings. */
 {
 
     HtmlWidget *htmlPtr;
@@ -2315,7 +2315,7 @@ HtmlObjCommand(clientData, interp, objc, objv)
     ClientData clientData;             /* Main window */
     Tcl_Interp *interp;                /* Current interpreter. */
     int objc;                          /* Number of arguments. */
-    Tcl_Obj *CONST objv[];             /* Argument strings. */
+    Tcl_Obj *const objv[];             /* Argument strings. */
 {
     int n;
     char *arg1, *zn, zs, *cmd;

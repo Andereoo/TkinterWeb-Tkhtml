@@ -35,7 +35,7 @@ int
 SwprocRt(
     Tcl_Interp *interp,               /* Tcl interpreter */
     int objc,
-    Tcl_Obj *CONST objv[],
+    Tcl_Obj *const objv[],
     SwprocConf *aConf,
     Tcl_Obj **apObj)
 {
@@ -186,7 +186,7 @@ swproc_rtCmd(
     ClientData clientData,             /* The HTML widget data structure */
     Tcl_Interp *interp,                /* Current interpreter. */
     int objc,                          /* Number of arguments. */
-    Tcl_Obj *CONST objv[]              /* Argument strings. */
+    Tcl_Obj *const objv[]              /* Argument strings. */
     )
 {
     SwprocConf aConf[2 + 1] = {

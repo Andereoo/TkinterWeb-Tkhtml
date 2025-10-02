@@ -188,7 +188,7 @@ HtmlMarkupFlags(int markup)
  *
  *---------------------------------------------------------------------------
  */
-CONST char *
+const char *
 HtmlMarkupName(int markup)
 {
     int i = markup-Html_A;

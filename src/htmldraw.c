@@ -1393,7 +1393,7 @@ int HtmlLayoutPrimitives(
     ClientData clientData,             /* The HTML widget data structure */
     Tcl_Interp *interp,                /* Current interpreter. */
     int objc,                          /* Number of arguments. */
-    Tcl_Obj *CONST objv[]              /* Argument strings. */
+    Tcl_Obj *const objv[]              /* Argument strings. */
     )
 {
     HtmlCanvasItem *pItem;
@@ -2511,7 +2511,7 @@ drawText (
     XGCValues gc_values;
     int mask;
 
-    CONST char *z;          /* String to render */
+    const char *z;          /* String to render */
     int n;                  /* Length of string z in (Todo: bytes? chars?) */
 
     HtmlFont *pFont = pT->fFont;
@@ -2569,7 +2569,7 @@ drawText (
         int eContinue = (iSelTo < (pTagged->iTo - pT->iIndex));
     
         if (iSelTo > 0 && iSelFrom <= n && iSelTo >= iSelFrom) {
-            CONST char *zSel = &z[iSelFrom];
+            const char *zSel = &z[iSelFrom];
             int nSel;
             int w;                  /* Pixels of tagged text */
             int xs = x;             /* Pixel offset of tagged text */
@@ -3454,7 +3454,7 @@ int HtmlLayoutImage(
     ClientData clientData,             /* The HTML widget data structure */
     Tcl_Interp *interp,                /* Current interpreter. */
     int objc,                          /* Number of arguments. */
-    Tcl_Obj *CONST objv[]              /* Argument strings. */
+    Tcl_Obj *const objv[]              /* Argument strings. */
     )
 {
     HtmlTree *pTree = (HtmlTree *)clientData;
@@ -3892,7 +3892,7 @@ HtmlLayoutNode(
     ClientData clientData,             /* The HTML widget data structure */
     Tcl_Interp *interp,                /* Current interpreter. */
     int objc,                          /* Number of arguments. */
-    Tcl_Obj *CONST objv[]              /* Argument strings. */
+    Tcl_Obj *const objv[]              /* Argument strings. */
     )
 {
     int x;
@@ -3977,7 +3977,7 @@ HtmlWidgetBboxCmd(
     ClientData clientData,             /* The HTML widget data structure */
     Tcl_Interp *interp,                /* Current interpreter. */
     int objc,                          /* Number of arguments. */
-    Tcl_Obj *CONST objv[]              /* Argument strings. */
+    Tcl_Obj *const objv[]              /* Argument strings. */
     )
 {
     int x = 0, y = 0, x2 = -1, y2 = -1;

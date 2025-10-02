@@ -1,3 +1,6 @@
+### Script to automatically compile Tkhtml
+### Sample usage: python3 compile.py configure -w /usr/local/tcl9/bin/tclsh9.0
+
 import tkinter
 import os, glob, subprocess, re, sys, argparse
 from pathlib import Path
@@ -37,17 +40,29 @@ paths.sort(key=len)
 tclConfig_paths = []
 tkConfig_paths = []
 
+mode_map = {
+    "a": "ask",
+    "c": "configure",
+    "t": "test",
+    "b": "build",
+}
+print(list(mode_map.values()))
 parser = argparse.ArgumentParser(description="Compile Tkhtml")
-parser.add_argument("mode", type=str, nargs="?", default=MODE, choices=["ask", "configure", "test", "build"], help="the default mode")
+parser.add_argument("mode", type=str, nargs="?", default=MODE, choices=list(mode_map.values()), help="the default mode")
 parser.add_argument('-n', '--noprompt', action='store_true', help='disable prompting for user input')
 parser.add_argument('-t', '--notest', action='store_true', help='disable opening a window to test the binary')
 parser.add_argument('-q', '--quiet', action='store_true', help='hide gcc & configure script output')
+parser.add_argument('-w', '--with-tclsh', help='the path to the tclsh interpreter to use hen looking for Tcl/Tk releases') #/usr/local/tcl9
 args = parser.parse_args()
+
+if args.mode in mode_map:
+    args.mode = mode_map[args.mode]
 
 mode = args.mode
 noprompt = args.noprompt
 notest = args.notest
 quiet = args.quiet
+with_tclsh = args.with_tclsh
 
 def test():
     root = tkinter.Tk()
@@ -179,7 +194,12 @@ elif mode == "configure":
 
         print(f"Found {len(valid_tclConfig_paths)} valid Tcl configuration file{'' if len(valid_tclConfig_paths) == 1 else 's'} and {len(valid_tkConfig_paths)} valid Tk configuration file{'' if len(valid_tkConfig_paths) == 1 else 's'}")
 
-    search()
+    if with_tclsh:
+        valid_tclConfig_paths = []
+        valid_tkConfig_paths = []
+    else:
+        search()
+    
 
     def choose_path(config_paths): # If multiple tcl/tkConfig files exist, try to pick one that corresponds to the right version
         chosen_path = list(config_paths)[0]
@@ -191,15 +211,22 @@ elif mode == "configure":
         return chosen_path
     
     if len(valid_tclConfig_paths) == 0 or len(valid_tkConfig_paths) == 0:
-        print("\nError: no valid Tcl/Tk configuration files were found. Trying tclsh...")
+        if with_tclsh:
+            print(f"Using {with_tclsh}.")
+            process = return_command(f"{with_tclsh} {GET_PATHS_PATH}")
+        else:
+            print("\nError: no valid Tcl/Tk configuration files were found. Trying tclsh...")
+            process = return_command(f"tclsh {GET_PATHS_PATH}")
 
-        process = return_command(f"tclsh {GET_PATHS_PATH}")
         out, err = process.communicate()
 
         if err:
             raise RuntimeError
- 
-        paths = paths + out.decode().split()
+
+        if with_tclsh:
+            paths = out.decode().split()
+        else:
+            paths = paths + out.decode().split()
         paths = list(set(paths))
         paths.sort(key=len)
 
@@ -342,6 +369,7 @@ elif mode == "configure":
             make()
         except subprocess.CalledProcessError:
             print("Fatal error encountered. Try changing the configure script flags.\n")
+            if noprompt: exit()
             compile_tkhtml()
 
     print("\nCreating Makefile...")

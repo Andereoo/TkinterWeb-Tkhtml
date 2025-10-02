@@ -146,7 +146,7 @@ HtmlCssSearch(
     ClientData clientData,             /* The HTML widget */
     Tcl_Interp *interp,                /* The interpreter */
     int objc,                          /* Number of arguments */
-    Tcl_Obj *CONST objv[]              /* List of all arguments */
+    Tcl_Obj *const objv[]              /* List of all arguments */
     )
 {
     HtmlTree *pTree = (HtmlTree *)clientData;

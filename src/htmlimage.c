@@ -227,7 +227,7 @@ photoputblock(
     int compRule
     )
 {
-    Tk_PhotoPutBlock(handle, blockPtr, x, y, width, height);
+    Tk_PhotoPutBlock(interp, handle, blockPtr, x, y, width, height, compRule);
 }
 
 static void 
@@ -1426,7 +1426,7 @@ HtmlImageServerReport(
     ClientData clientData,             /* The HTML widget data structure */
     Tcl_Interp *interp,                /* Current interpreter. */
     int objc,                          /* Number of arguments. */
-    Tcl_Obj *CONST objv[]              /* Argument strings. */
+    Tcl_Obj *const objv[]              /* Argument strings. */
     )
 {
     HtmlTree *pTree = (HtmlTree *)clientData;

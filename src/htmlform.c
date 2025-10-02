@@ -312,7 +312,7 @@ HtmlSizeWindow(clientData, interp, argc, argv)
     const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
-    CONST char *zWin = argv[2];
+    const char *zWin = argv[2];
     Tk_Window tkwin = Tk_NameToWindow(htmlPtr->interp, zWin, htmlPtr->clipwin);
     Tk_ManageGeometry(tkwin, &htmlGeomType, 0);
 }
@@ -623,8 +623,8 @@ HtmlAppendStyle(htmlPtr, cmd, pf)
 {
 #ifndef _TCLHTML_
     char buf[BUFSIZ];
-    CONST char *c1;
-    CONST char *c2;
+    const char *c1;
+    const char *c2;
     int bg = pf->base.style.bgcolor;
     int fg = pf->base.style.color;
     XColor *cbg = htmlPtr->apColor[bg];

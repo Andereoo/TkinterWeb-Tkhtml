@@ -135,7 +135,7 @@ HtmlDecode(
     ClientData clientData,             /* The HTML widget data structure */
     Tcl_Interp *interp,                /* Current interpreter. */
     int objc,                          /* Number of arguments. */
-    Tcl_Obj *CONST objv[]              /* Argument strings. */
+    Tcl_Obj *const objv[]              /* Argument strings. */
     )
 {
     unsigned char *zOut;
@@ -212,7 +212,7 @@ HtmlEncode(
     ClientData clientData,             /* The HTML widget data structure */
     Tcl_Interp *interp,                /* Current interpreter. */
     int objc,                          /* Number of arguments. */
-    Tcl_Obj *CONST objv[]              /* Argument strings. */
+    Tcl_Obj *const objv[]              /* Argument strings. */
     )
 {
     int map[128] = { 
@@ -337,7 +337,7 @@ HtmlEscapeUriComponent(
     ClientData clientData,             /* The HTML widget data structure */
     Tcl_Interp *interp,                /* Current interpreter. */
     int objc,                          /* Number of arguments. */
-    Tcl_Obj *CONST objv[]              /* Argument strings. */
+    Tcl_Obj *const objv[]              /* Argument strings. */
     )
 {
     char *zRes;
@@ -645,7 +645,7 @@ uriObjCmd(
     ClientData clientData,             /* The Uri data structure */
     Tcl_Interp *interp,                /* Current interpreter. */
     int objc,                          /* Number of arguments. */
-    Tcl_Obj *CONST objv[]              /* Argument strings. */
+    Tcl_Obj *const objv[]              /* Argument strings. */
     )
 {
     Uri *p;
@@ -789,7 +789,7 @@ HtmlCreateUri(
     ClientData clientData,             /* The HTML widget data structure */
     Tcl_Interp *interp,                /* Current interpreter. */
     int objc,                          /* Number of arguments. */
-    Tcl_Obj *CONST objv[]              /* Argument strings. */
+    Tcl_Obj *const objv[]              /* Argument strings. */
     )
 {
     static int iUriCounter = 1;

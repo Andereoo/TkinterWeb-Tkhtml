@@ -42,6 +42,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <ctype.h>
 
 /* #define ACCEPT_UNITLESS_LENGTHS */
@@ -85,10 +86,10 @@ struct PropertyDef {
 };
 
 #define PROPDEF(a, b, c) {                                   \
-  a, CSS_PROPERTY_ ## b, Tk_Offset(HtmlComputedValues, c), 0 \
+  a, CSS_PROPERTY_ ## b, offsetof(HtmlComputedValues, c), 0 \
 }
 #define PROPDEFM(a, b, c, d) {                              \
-  a, CSS_PROPERTY_ ## b, Tk_Offset(HtmlComputedValues, c),  \
+  a, CSS_PROPERTY_ ## b, offsetof(HtmlComputedValues, c),  \
   PROP_MASK_ ## b, d                                        \
 }
 
@@ -860,7 +861,7 @@ propertyValuesObjVerticalAlign(HtmlComputedValues *p)
 {
     char zBuf[64];
     if (p->eVerticalAlign) {
-        CONST char *zValue = HtmlCssConstantToString(p->eVerticalAlign);
+        const char *zValue = HtmlCssConstantToString(p->eVerticalAlign);
         return Tcl_NewStringObj(zValue, -1);
     }
     sprintf(zBuf, "%dpx", p->iVerticalAlign);
@@ -1040,8 +1041,8 @@ propertyValuesSetFontSize (HtmlComputedValuesCreator *p, CssProperty *pProp)
 static unsigned char *
 getInheritPointer (HtmlComputedValuesCreator *p, unsigned char *pVar)
 {
-    const int values_offset = Tk_Offset(HtmlComputedValuesCreator, values);
-    const int fontkey_offset = Tk_Offset(HtmlComputedValuesCreator, fontKey);
+    const int values_offset = offsetof(HtmlComputedValuesCreator, values);
+    const int fontkey_offset = offsetof(HtmlComputedValuesCreator, fontKey);
     const int values_end = values_offset + sizeof(HtmlComputedValues);
 
 #ifndef NDEBUG
@@ -1186,7 +1187,7 @@ propertyValuesSetColor (HtmlComputedValuesCreator *p, HtmlColor **pCVar, CssProp
 {
     Tcl_HashEntry *pEntry;
     int newEntry = 0;
-    CONST char *zColor;
+    const char *zColor;
     HtmlColor *cVal = 0;
     HtmlTree *pTree = p->pTree;
 
@@ -1536,7 +1537,7 @@ static int
 propertyValuesSetImage (HtmlComputedValuesCreator *p, HtmlImage2 **pImVar, CssProperty *pProp)
 {
     HtmlImage2 *pNew = 0;
-    CONST char *zUrl = 0;
+    const char *zUrl = 0;
 
     switch (pProp->eType) {
         case CSS_CONST_INHERIT: {
@@ -2482,7 +2483,7 @@ HtmlComputedValuesFinish (HtmlComputedValuesCreator *p)
     HtmlComputedValues *pValues = 0;
     HtmlColor *pColor;
 
-#define OFFSET(x) Tk_Offset(HtmlComputedValues, x)
+#define OFFSET(x) offsetof(HtmlComputedValues, x)
     struct EmExMap {
         unsigned int mask;
         int offset;
@@ -2870,7 +2871,7 @@ HtmlComputedValuesRelease (HtmlTree *pTree, HtmlComputedValues *pValues)
         if (pValues->nRef == 0) {
             Tcl_HashEntry *pEntry;
     
-            pEntry = Tcl_FindHashEntry(&pTree->aValues, (CONST char *)pValues);
+            pEntry = Tcl_FindHashEntry(&pTree->aValues, (const char *)pValues);
             assert(pValues == &pTree->pPrototypeCreator->values || pEntry);
     
             HtmlFontRelease(pTree, pValues->fFont);
@@ -3108,9 +3109,9 @@ HtmlComputedValuesFreePrototype (HtmlTree *pTree)
 void 
 HtmlComputedValuesCleanupTables (HtmlTree *pTree)
 {
-    CONST char **pzCursor;
+    const char **pzCursor;
    
-    CONST char *azColor[] = {
+    const char *azColor[] = {
         "silver",
         "gray",
         "white",
@@ -3170,7 +3171,7 @@ getPropertyObj(HtmlComputedValues *pValues, int eProp)
         switch (pDef->eType) {
             case ENUM: {
                 int eValue = (int)*(unsigned char *)(v + pDef->iOffset);
-                CONST char *zValue = HtmlCssConstantToString(eValue);
+                const char *zValue = HtmlCssConstantToString(eValue);
                 pValue = Tcl_NewStringObj(zValue, -1);
                 break;
             }

@@ -629,7 +629,7 @@ HtmlLostSelection(clientData)
     ClientData clientData;             /* Information about table widget. */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
-    CONST char *argv[3];
+    const char *argv[3];
     argv[2] = "";
     if (htmlPtr->exportSelection) {
         HtmlSelectionClearCmd(htmlPtr, 0, 3, argv);

@@ -49,6 +49,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
+#include <stddef.h>
 #include "html.h"
 #include "htmlprop.h"
 
@@ -70,12 +71,12 @@
  */
 static int 
 compareCaseInsensitiveKey(
-    VOID *keyPtr,               /* New key to compare. */
+    void *keyPtr,               /* New key to compare. */
     Tcl_HashEntry *hPtr         /* Existing key to compare. */
     )
 {   
-    CONST char *p1 = (CONST char *) keyPtr;
-    CONST char *p2 = (CONST char *) hPtr->key.string;
+    const char *p1 = (const char *) keyPtr;
+    const char *p2 = (const char *) hPtr->key.string;
 
     return !stricmp(p1, p2);
 }
@@ -99,10 +100,10 @@ compareCaseInsensitiveKey(
 static unsigned int 
 hashCaseInsensitiveKey(
     Tcl_HashTable *tablePtr,    /* Hash table. */
-    VOID *keyPtr                /* Key from which to compute hash value. */
+    void *keyPtr                /* Key from which to compute hash value. */
     )
 {
-    CONST char *string = (CONST char *) keyPtr;
+    const char *string = (const char *) keyPtr;
     unsigned int result;
     int c;
 
@@ -132,10 +133,10 @@ hashCaseInsensitiveKey(
 static Tcl_HashEntry * 
 allocCaseInsensitiveEntry(
     Tcl_HashTable *tablePtr,    /* Hash table. */
-    VOID *keyPtr                /* Key to store in the hash table entry. */
+    void *keyPtr                /* Key to store in the hash table entry. */
     )
 {
-    const char *string = (CONST char *) keyPtr;
+    const char *string = (const char *) keyPtr;
     char *pCsr;
     Tcl_HashEntry *hPtr;
     unsigned int size;
@@ -216,11 +217,11 @@ HtmlCaseInsenstiveHashType()
 static unsigned int 
 hashFontKey(
     Tcl_HashTable *tablePtr,    /* Hash table. */
-    VOID *keyPtr                /* Key from which to compute hash value. */
+    void *keyPtr                /* Key from which to compute hash value. */
     )
 {
     HtmlFontKey *pKey = (HtmlFontKey *) keyPtr;
-    CONST char *zFontFamily = pKey->zFontFamily;
+    const char *zFontFamily = pKey->zFontFamily;
     unsigned int result = 0;
     int c;
 
@@ -252,7 +253,7 @@ hashFontKey(
  */
 static int 
 compareFontKey(
-    VOID *keyPtr,               /* New key to compare. */
+    void *keyPtr,               /* New key to compare. */
     Tcl_HashEntry *hPtr         /* Existing key to compare. */
     )
 {   
@@ -286,7 +287,7 @@ compareFontKey(
 static Tcl_HashEntry * 
 allocFontEntry(
     Tcl_HashTable *tablePtr,    /* Hash table. */
-    VOID *keyPtr                /* Key to store in the hash table entry. */
+    void *keyPtr                /* Key to store in the hash table entry. */
     )
 {
     HtmlFontKey *pKey = (HtmlFontKey *)keyPtr;
@@ -372,7 +373,7 @@ HtmlFontKeyHashType()
 static unsigned int 
 hashValuesKey(
     Tcl_HashTable *tablePtr,    /* Hash table. */
-    VOID *keyPtr                /* Key from which to compute hash value. */
+    void *keyPtr                /* Key from which to compute hash value. */
     )
 {
     HtmlComputedValues *p= (HtmlComputedValues *)keyPtr;
@@ -408,16 +409,16 @@ hashValuesKey(
  */
 static int 
 compareValuesKey(
-    VOID *keyPtr,               /* New key to compare. */
+    void *keyPtr,               /* New key to compare. */
     Tcl_HashEntry *hPtr         /* Existing key to compare. */
     )
 {   
     unsigned char *p1 = (unsigned char *) keyPtr;
     unsigned char *p2 = (unsigned char *) hPtr->key.string;
 
-    static const int N = Tk_Offset(HtmlComputedValues, mask); 
+    static const int N = offsetof(HtmlComputedValues, mask); 
     static const int nBytes = 
-        sizeof(HtmlComputedValues) - Tk_Offset(HtmlComputedValues, mask);
+        sizeof(HtmlComputedValues) - offsetof(HtmlComputedValues, mask);
 
 
     /* Do not compare the first field - nRef */
@@ -452,7 +453,7 @@ freeValuesEntry(Tcl_HashEntry *hPtr)
 static Tcl_HashEntry * 
 allocValuesEntry(
     Tcl_HashTable *tablePtr,    /* Hash table. */
-    VOID *keyPtr                /* Key to store in the hash table entry. */
+    void *keyPtr                /* Key to store in the hash table entry. */
     )
 {
     HtmlComputedValues *pKey = (HtmlComputedValues *)keyPtr;

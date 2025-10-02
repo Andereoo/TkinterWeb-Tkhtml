@@ -436,8 +436,8 @@ struct HtmlOptions {
 #define HTML_PARSEMODE_XHTML   1
 #define HTML_PARSEMODE_XML     2
 
-void HtmlLog(HtmlTree *, CONST char *, CONST char *, ...);
-void HtmlTimer(HtmlTree *, CONST char *, CONST char *, ...);
+void HtmlLog(HtmlTree *, const char *, const char *, ...);
+void HtmlTimer(HtmlTree *, const char *, const char *, ...);
 
 typedef struct HtmlCanvasSnapshot HtmlCanvasSnapshot;
 
@@ -741,10 +741,10 @@ HtmlNode *  HtmlNodeBefore(HtmlNode *);
 HtmlNode *  HtmlNodeAfter(HtmlNode *);
 HtmlNode *  HtmlNodeRightSibling(HtmlNode *);
 HtmlNode *  HtmlNodeLeftSibling(HtmlNode *);
-char CONST *HtmlNodeTagName(HtmlNode *);
-char CONST *HtmlNodeAttr(HtmlNode *, char CONST *);
+char const *HtmlNodeTagName(HtmlNode *);
+char const *HtmlNodeAttr(HtmlNode *, char const *);
 char *      HtmlNodeToString(HtmlNode *);
-HtmlNode *  HtmlNodeGetPointer(HtmlTree *, char CONST *);
+HtmlNode *  HtmlNodeGetPointer(HtmlTree *, char const *);
 int         HtmlNodeIsOrphan(HtmlNode *);
 
 int HtmlNodeAddChild(HtmlElementNode *, int, const char *, HtmlAttributes *);
@@ -799,8 +799,8 @@ int HtmlWidgetNodeTop(HtmlTree *, HtmlNode *);
 void HtmlWidgetOverflowBox(HtmlTree *, HtmlNode *, int *, int *, int *, int *);
 
 HtmlTokenMap *HtmlMarkup(int);
-CONST char * HtmlMarkupName(int);
-char * HtmlMarkupArg(HtmlAttributes *, CONST char *, char *);
+const char * HtmlMarkupName(int);
+char * HtmlMarkupArg(HtmlAttributes *, const char *, char *);
 
 void HtmlFloatListAdd(HtmlFloatList*, int, int, int, int);
 HtmlFloatList *HtmlFloatListNew();
@@ -810,7 +810,7 @@ int HtmlFloatListClear(HtmlFloatList*, int, int);
 int HtmlFloatListClearTop(HtmlFloatList*, int);
 void HtmlFloatListNormalize(HtmlFloatList*, int, int);
 void HtmlFloatListMargins(HtmlFloatList*, int, int, int *, int *);
-void HtmlFloatListLog(HtmlTree *, CONST char *, CONST char *, HtmlFloatList *);
+void HtmlFloatListLog(HtmlTree *, const char *, const char *, HtmlFloatList *);
 int HtmlFloatListIsConstant(HtmlFloatList*, int, int);
 
 HtmlPropertyCache * HtmlNewPropertyCache();
@@ -821,8 +821,8 @@ Tcl_HashKeyType * HtmlCaseInsenstiveHashType();
 Tcl_HashKeyType * HtmlFontKeyHashType();
 Tcl_HashKeyType * HtmlComputedValuesHashType();
 
-CONST char *HtmlDefaultTcl();
-CONST char *HtmlDefaultCss();
+const char *HtmlDefaultTcl();
+const char *HtmlDefaultCss();
 
 /* Functions from htmlimage.c */
 void HtmlImageServerInit(HtmlTree *);
@@ -864,7 +864,7 @@ void HtmlDelStackingInfo(HtmlTree *, HtmlElementNode *);
 #define HTML_TAG_ADD 10
 #define HTML_TAG_REMOVE 11
 #define HTML_TAG_SET 12
-int HtmlTagAddRemoveCmd(ClientData, Tcl_Interp *, int, Tcl_Obj *CONST[], int);
+int HtmlTagAddRemoveCmd(ClientData, Tcl_Interp *, int, Tcl_Obj *const[], int);
 Tcl_ObjCmdProc HtmlTagDeleteCmd;
 Tcl_ObjCmdProc HtmlTagConfigureCmd;
 void HtmlTagCleanupNode(HtmlTextNode *);

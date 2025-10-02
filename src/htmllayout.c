@@ -1611,7 +1611,7 @@ drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
     assert(iWidth != 0);
 
     if (pElem->pReplacement && pElem->pReplacement->win) {
-        CONST char *zReplace = Tcl_GetString(pElem->pReplacement->pReplace);
+        const char *zReplace = Tcl_GetString(pElem->pReplacement->pReplace);
         Tk_Window win = pElem->pReplacement->win;
         if (win) {
             Tcl_Obj *pWin = 0;

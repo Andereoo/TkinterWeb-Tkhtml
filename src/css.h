@@ -121,13 +121,13 @@ struct CssProperty {
  * internally consistent CssProperty objects, regardless of the
  * CssProperty.eType value.
  */
-CONST char *HtmlCssPropertyGetString(CssProperty *pProp);
+const char *HtmlCssPropertyGetString(CssProperty *pProp);
 
 /*
  * Create a property from a value string (i.e. "20ex" or "yellow", 
  * not "h1 {font:large}").
  */
-CssProperty *HtmlCssStringToProperty(CONST char *z, int n);
+CssProperty *HtmlCssStringToProperty(const char *z, int n);
 
 /*
  * This is used to split up a white-space seperated list.
@@ -171,7 +171,7 @@ void HtmlCssStyleGenerateContent(HtmlTree *, HtmlElementNode *, int);
  * Functions to interface with inline style information (in HTML, 
  * the "style" attribute).
  */
-int  HtmlCssInlineParse(HtmlTree *, int, CONST char *, CssPropertySet **);
+int  HtmlCssInlineParse(HtmlTree *, int, const char *, CssPropertySet **);
 void HtmlCssInlineFree(CssPropertySet *);
 int HtmlCssInlineQuery(Tcl_Interp *, CssPropertySet *, Tcl_Obj *);
 

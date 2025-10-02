@@ -15,7 +15,7 @@ struct SwprocConf {
 };
 typedef struct SwprocConf SwprocConf;
 
-int SwprocRt(Tcl_Interp *, int, Tcl_Obj *CONST[], SwprocConf *, Tcl_Obj **);
+int SwprocRt(Tcl_Interp *, int, Tcl_Obj *const[], SwprocConf *, Tcl_Obj **);
 void SwprocCleanup(Tcl_Obj **, int);
 
 int SwprocInit(Tcl_Interp *);

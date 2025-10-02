@@ -217,7 +217,7 @@ if (pContext->pTree->options.logcmd && !pContext->isSizeOnly &&                \
     Tcl_DecrRefCount(pLog);                                                    \
 }
 static void 
-oprintf(Tcl_Obj *pObj, CONST char *zFormat, ...) {
+oprintf(Tcl_Obj *pObj, const char *zFormat, ...) {
     int nBuf = 0;
     char zBuf[1024];
     va_list ap;

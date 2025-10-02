@@ -266,7 +266,7 @@ int
 HtmlSetImageBg(htmlPtr, interp, imgname, p)
     HtmlWidget *htmlPtr;               /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
-    CONST char *imgname;
+    const char *imgname;
     HtmlElement *p;
 {
     Tk_Image bgimg, *nimg;
@@ -309,7 +309,7 @@ HtmlImageBgCmd(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     HtmlElement *p;
@@ -381,7 +381,7 @@ HtmlImagesListCmd(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     HtmlElement *p;
@@ -426,7 +426,7 @@ HtmlPostscriptCmd(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
 #if TKHTML_PS
@@ -452,7 +452,7 @@ HtmlCoordsCmd(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     HtmlElement *p;
@@ -654,7 +654,7 @@ HtmlGetAttrOver(htmlPtr, x, y, attr)
     HtmlElement *pElem;
     int n = 0, vargc, i, j;
     char *z, *az;
-    CONST char **vargv;
+    const char **vargv;
 
     if (Tcl_SplitList(htmlPtr->interp, attr, &vargc, &vargv) || vargc <= 0) {
         Tcl_AppendResult(htmlPtr->interp, "attrover error: ", attr, NULL);
@@ -790,8 +790,8 @@ HtmlFormColors(htmlPtr, fid, n)
     }
     if (pf) {
         char buf[BUFSIZ];
-        CONST char *c1;
-        CONST char *c2;
+        const char *c1;
+        const char *c2;
         int bg = pf->base.style.bgcolor;
         int fg = pf->base.style.color;
         XColor *cbg = htmlPtr->apColor[bg];
@@ -817,7 +817,7 @@ HtmlFormInfo(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     if (argc >= 4)
@@ -1303,7 +1303,7 @@ HtmlDomCmd(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     return HtmlDomIdLookup(htmlPtr, argv[2], argv[3], 0);
@@ -1446,7 +1446,7 @@ HtmlTextTable(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     HtmlElement *p;
@@ -1485,12 +1485,12 @@ HtmlIdToDomCmd(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     Tcl_DString cmd;
     char buf[100];
-    CONST char *a = argv[3];
+    const char *a = argv[3];
     char *z;
     int try[10], ti = 0, en, i = 0, k, j, l, n, iswrite = 0, atend, lvl = 0;
     int sc = 1, nostr = 0;             /* Short-circuit */
@@ -1674,11 +1674,11 @@ HtmlTokenAttrSearch(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     HtmlElement *p;
-    CONST char **vargv;
+    const char **vargv;
     char *z;
     char str[50];
     int vargc, i, j, nocase, cnt = 0;
@@ -1775,7 +1775,7 @@ HtmlTokenOnEvents(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     HtmlElement *p;
@@ -1808,7 +1808,7 @@ HtmlDomName2Index(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     HtmlElement *p;
@@ -1882,7 +1882,7 @@ HtmlDomRadio2Index(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     HtmlElement *p, *form;
@@ -1914,7 +1914,7 @@ HtmlTokenUnique(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     HtmlElement *p;
@@ -1991,7 +1991,7 @@ HtmlDomFormElIndex(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     int i = HtmlDomFormEl(htmlPtr, atoi(argv[3]), argv[4]);
@@ -2007,11 +2007,11 @@ HtmlDomTreeCmd(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     Tcl_DString cmd;
-    CONST char *a = argv[3];
+    const char *a = argv[3];
     char *z;
     HtmlElement *p, *ep;
     int n[10], ni = 0, en, i, k, j, l, iswrite = 0, atend;
@@ -2212,8 +2212,8 @@ _HtmlTokenCmdSub(htmlPtr, interp, argc, argv, flag)
 {
     HtmlElement *pStart, *pEnd = 0;
     int i;
-    CONST char *cb;
-    CONST char *ce;
+    const char *cb;
+    const char *ce;
     if (argc <= 3)
         cb = "begin";
     else
@@ -2247,11 +2247,11 @@ HtmlTokenAttr(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
-    CONST char *name;
-    CONST char *value;
+    const char *name;
+    const char *value;
     char fake[99], **nv;
     HtmlElement *p;
     int i, j, l, tl, ol, c, nc;
@@ -2295,7 +2295,7 @@ HtmlTokenAttr(clientData, interp, argc, argv)
              */
             nv = (char **) HtmlAlloc(sizeof(char **) * (nc + 2));
             for (i = 0; i < c; i++) {
-                CONST char *val = p->markup.argv[i];
+                const char *val = p->markup.argv[i];
                 if (i == (j + 1))
                     val = value;
                 nv[i] = (char *) HtmlAlloc(strlen(val) + 1);
@@ -2350,7 +2350,7 @@ HtmlTokenListCmd(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     return _HtmlTokenCmdSub(htmlPtr, interp, argc, argv, TOKEN_LIST);
@@ -2364,7 +2364,7 @@ HtmlTokenMarkupCmd(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     return _HtmlTokenCmdSub(htmlPtr, interp, argc, argv,
@@ -2379,7 +2379,7 @@ HtmlTokenDomCmd(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     return _HtmlTokenCmdSub(htmlPtr, interp, argc, argv,
@@ -2462,13 +2462,13 @@ HtmlTextHtmlCmd(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     HtmlElement *pStart, *pEnd;
     int i;
-    CONST char *cb;
-    CONST char *ce;
+    const char *cb;
+    const char *ce;
     if (argc <= 3)
         cb = "begin";
     else
@@ -2557,13 +2557,13 @@ HtmlTextAsciiCmd(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     HtmlIndex iStart, iEnd;
     int i;
-    CONST char *cb;
-    CONST char *ce;
+    const char *cb;
+    const char *ce;
     if (argc <= 3)
         cb = "begin";
     else
@@ -2598,7 +2598,7 @@ HtmlTextOffsetCmd(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     HtmlIndex iStart;
@@ -2924,7 +2924,7 @@ HtmlTextFindCmd(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     HtmlIndex iStart, iEnd;
@@ -3142,13 +3142,13 @@ HtmlTextDeleteCmd(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     HtmlElement *pStart, *pEnd, *pn;
     int ib, ie, idx = 0;
-    CONST char *cb;
-    CONST char *ce;
+    const char *cb;
+    const char *ce;
     if (argc <= 3)
         cb = "begin";
     else
@@ -3210,13 +3210,13 @@ HtmlTokenInsertCmd(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     HtmlElement *pStart, *pEnd;
     int idx = 0, i, tlen = strlen(argv[4]);
     char *cp;
-    CONST char *attr = "";
+    const char *attr = "";
     if (argc > 5) {
         attr = argv[5];
         tlen += strlen(attr);
@@ -3253,13 +3253,13 @@ HtmlTokenDeleteCmd(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     HtmlElement *pStart, *pEnd;
     int i, idx = 0;
-    CONST char *cb;
-    CONST char *ce;
+    const char *cb;
+    const char *ce;
     if (argc <= 3)
         cb = "begin";
     else
@@ -3291,7 +3291,7 @@ HtmlTokenGetEnd(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     HtmlElement *pStart = 0;
@@ -3335,13 +3335,13 @@ int HtmlTokenGetCmd(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     HtmlElement *pStart, *pEnd;
     int i;
-    CONST char *cb;
-    CONST char *ce;
+    const char *cb;
+    const char *ce;
     if (argc <= 3)
         cb = "begin";
     else
@@ -3372,7 +3372,7 @@ HtmlTokenFindCmd(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     HtmlWidget *htmlPtr = (HtmlWidget *) clientData;
     HtmlIndex iStart, iEnd;
@@ -3605,7 +3605,7 @@ HtmlBP(clientData, interp, argc, argv)
     ClientData clientData;             /* The HTML widget */
     Tcl_Interp *interp;                /* The interpreter */
     int argc;                          /* Number of arguments */
-    CONST char **argv;                 /* List of all arguments */
+    const char **argv;                 /* List of all arguments */
 {
     return TCL_OK;
 }

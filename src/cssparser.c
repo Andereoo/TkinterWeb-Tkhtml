@@ -1066,7 +1066,7 @@ HtmlCssRunStyleParser (const char *zInput, int nInput, CssParse *pParse)
  *
  *---------------------------------------------------------------------------
  */
-CssTokenType HtmlCssGetToken(CONST char *z, int n, int *pLen)
+CssTokenType HtmlCssGetToken(const char *z, int n, int *pLen)
 {
     CssInput sInput;
     memset(&sInput, 0, sizeof(CssInput));

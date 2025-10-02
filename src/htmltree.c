@@ -1644,7 +1644,7 @@ Html_u8 HtmlNodeTagType(HtmlNode *pNode)
  *
  *---------------------------------------------------------------------------
  */
-CONST char * HtmlNodeTagName(HtmlNode *pNode)
+const char * HtmlNodeTagName(HtmlNode *pNode)
 {
     assert(pNode->zTag || HtmlNodeIsText(pNode));
     if (!pNode->zTag) return "";
@@ -1729,9 +1729,9 @@ HtmlNodeLeftSibling (HtmlNode *pNode)
  *
  *---------------------------------------------------------------------------
  */
-char CONST *HtmlNodeAttr(
+char const *HtmlNodeAttr(
     HtmlNode *pNode, 
-    char CONST *zAttr)
+    char const *zAttr)
 {
     HtmlElementNode *pElem = HtmlNodeAsElement(pNode);
     if (pElem) {
@@ -1782,7 +1782,7 @@ static int
 nodeViewCmd(
     HtmlNode *pNode,
     int isVertical,
-    Tcl_Obj *CONST objv[],
+    Tcl_Obj *const objv[],
     int objc)
 {
     HtmlTree *pTree;
@@ -1875,7 +1875,7 @@ static int
 nodeRemoveCmd(
     HtmlNode *pNode,
     int objc,
-    Tcl_Obj *CONST objv[])
+    Tcl_Obj *const objv[])
 {
     HtmlTree *pTree = pNode->pNodeCmd->pTree;
     int ii;
@@ -1931,7 +1931,7 @@ static int
 nodeDestroyCmd(
     HtmlNode *pNode,
     int objc,
-    Tcl_Obj *CONST objv[])
+    Tcl_Obj *const objv[])
 {
     HtmlTree *pTree = pNode->pNodeCmd->pTree;
 
@@ -1981,7 +1981,7 @@ static int
 nodeInsertCmd(
     HtmlNode *pNode,
     int objc,
-    Tcl_Obj *CONST objv[])
+    Tcl_Obj *const objv[])
 {
     HtmlTree *pTree = pNode->pNodeCmd->pTree;
     Tcl_Interp *interp = pTree->interp;
@@ -2083,7 +2083,7 @@ nodeTextCommand(
     Tcl_Interp *interp,
     HtmlNode *pNode,
     int objc,
-    Tcl_Obj *CONST objv[])
+    Tcl_Obj *const objv[])
 {
     HtmlTree *pTree = pNode->pNodeCmd->pTree;
     Tcl_Obj *pRet = 0;
@@ -2257,7 +2257,7 @@ nodeCommand(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
-    Tcl_Obj *CONST objv[])
+    Tcl_Obj *const objv[])
 {
     HtmlNode *pNode = (HtmlNode *)clientData;
     HtmlTree *pTree = pNode->pNodeCmd->pTree;
@@ -2310,7 +2310,7 @@ nodeCommand(
          * nodeHandle attr ??-default DEFAULT-VALUE? ATTR-NAME? ?NEW-VALUE?
          */
         case NODE_ATTRIBUTE: {
-            char CONST *zAttr = 0;
+            char const *zAttr = 0;
             char *zAttrName = 0;
             char *zAttrVal = 0;
             char *zDefault = 0;
@@ -2448,7 +2448,7 @@ node_attr_usage:
         }
 
         case NODE_TAG: {
-            char CONST *zTag;
+            char const *zTag;
             if (objc!=2) {
                 Tcl_WrongNumArgs(interp, 2, objv, "");
                 return TCL_ERROR;
@@ -2480,7 +2480,7 @@ node_attr_usage:
          */
         case NODE_PROPERTY: {
             int nArg = objc - 2;
-            Tcl_Obj * CONST *aArg = &objv[2];
+            Tcl_Obj * const *aArg = &objv[2];
 
             HtmlComputedValues *pComputed; 
             HtmlNode *p = pNode;
@@ -2993,7 +2993,7 @@ HtmlTreeClear (HtmlTree *pTree)
  *---------------------------------------------------------------------------
  */
 HtmlNode *
-HtmlNodeGetPointer(HtmlTree *pTree, char CONST *zCmd)
+HtmlNodeGetPointer(HtmlTree *pTree, char const *zCmd)
 {
     Tcl_Interp *interp = pTree->interp;
     Tcl_CmdInfo info;
