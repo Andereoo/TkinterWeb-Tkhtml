@@ -6274,7 +6274,7 @@ fi
 
 
 
-    PKG_CFLAGS="$PKG_CFLAGS "
+    PKG_CFLAGS="$PKG_CFLAGS -DTCL_8_API"
 
 
 

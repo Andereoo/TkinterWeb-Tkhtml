@@ -10,14 +10,14 @@ from pathlib import Path
 MODE = "ask"
 
 TEST_STRING = """<body><div>
-    <p style="padding: 15px; 
+    <p style='padding: 15px; 
         display: inline-block; 
         white-space: nowrap; 
         margin:0; 
         border: 1px solid grey; 
         border-color: lightgrey grey grey lightgrey; 
         border-radius: 5px; 
-        background-color: #34ebb7;">
+        background-color: #34ebb7;'>
     If you see this, wohoo!</p>
 </div></body>"""
 
@@ -40,23 +40,14 @@ paths.sort(key=len)
 tclConfig_paths = []
 tkConfig_paths = []
 
-mode_map = {
-    "a": "ask",
-    "c": "configure",
-    "t": "test",
-    "b": "build",
-}
-print(list(mode_map.values()))
+
 parser = argparse.ArgumentParser(description="Compile Tkhtml")
-parser.add_argument("mode", type=str, nargs="?", default=MODE, choices=list(mode_map.values()), help="the default mode")
+parser.add_argument("mode", type=str, nargs="?", default=MODE, choices=["ask", "configure", "test", "build"], help="the default mode")
 parser.add_argument('-n', '--noprompt', action='store_true', help='disable prompting for user input')
 parser.add_argument('-t', '--notest', action='store_true', help='disable opening a window to test the binary')
 parser.add_argument('-q', '--quiet', action='store_true', help='hide gcc & configure script output')
 parser.add_argument('-w', '--with-tclsh', help='the path to the tclsh interpreter to use hen looking for Tcl/Tk releases') #/usr/local/tcl9
 args = parser.parse_args()
-
-if args.mode in mode_map:
-    args.mode = mode_map[args.mode]
 
 mode = args.mode
 noprompt = args.noprompt
@@ -64,28 +55,40 @@ notest = args.notest
 quiet = args.quiet
 with_tclsh = args.with_tclsh
 
-def test():
-    root = tkinter.Tk()
-    root.tk.eval("set auto_path [linsert $auto_path 0 {"+BUILD_PATH+"}]")
-    root.tk.eval("package require Tkhtml")
-    widget = tkinter.Widget(root, "html")
-    widget.tk.call(widget._w, "parse", TEST_STRING)
-    
-    if not notest:
-        widget.pack(expand=True, fill="both")
-        root.mainloop()
 
 def print_error(*args):
     print(args)
 
-def run_command(cmd):
+def run_command(cmd, cmd_input=None):
     if quiet:
-        return subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        return subprocess.run(cmd, input=cmd_input, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
     else:
-        return subprocess.run(cmd, stdout=sys.stdout, stderr=sys.stderr, check=True)
+        return subprocess.run(cmd, input=cmd_input, text=True, stdout=sys.stdout, stderr=sys.stderr, check=True)
 
 def return_command(cmd):
     return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+
+def test():
+    if with_tclsh:
+        script = f"""
+        set auto_path [linsert $auto_path 0 {BUILD_PATH}]
+        package require Tkhtml
+        html .h
+        pack .h
+        .h parse "{TEST_STRING}"
+        """
+
+        run_command([with_tclsh], script)
+    else:
+        root = tkinter.Tk()
+        root.tk.eval("set auto_path [linsert $auto_path 0 {"+BUILD_PATH+"}]")
+        root.tk.eval("package require Tkhtml")
+        widget = tkinter.Widget(root, "html")
+        widget.tk.call(widget._w, "parse", TEST_STRING)
+        
+        if not notest:
+            widget.pack(expand=True, fill="both")
+            root.mainloop()
 
 def make():
     if os.name == "nt":
