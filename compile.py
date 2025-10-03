@@ -61,9 +61,9 @@ def print_error(*args):
 
 def run_command(cmd, cmd_input=None):
     if quiet:
-        return subprocess.run(cmd, input=cmd_input, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        return subprocess.run(cmd, input=cmd_input, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
     else:
-        return subprocess.run(cmd, input=cmd_input, text=True, stdout=sys.stdout, stderr=sys.stderr, check=True)
+        return subprocess.run(cmd, input=cmd_input, universal_newlines=True, stdout=sys.stdout, stderr=sys.stderr, check=True)
 
 def return_command(cmd):
     return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
