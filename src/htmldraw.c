@@ -1751,6 +1751,9 @@ fill_round_rectangle(
             TkWinDCState state;
             HDC hdc = TkWinGetDrawableDC(display, d, &state);
             cairo_surface_t *surface = cairo_win32_surface_create(hdc);
+        #elif __APPLE__
+            cairo_surface_t *surface = NULL;
+            return 0;
         #else // TODO: Handle MacOS
             cairo_surface_t *surface = cairo_xlib_surface_create(display, d,
                 Tk_Visual(win),
