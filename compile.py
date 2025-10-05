@@ -44,8 +44,9 @@ tkConfig_paths = []
 parser = argparse.ArgumentParser(description="Compile Tkhtml")
 parser.add_argument("mode", type=str, nargs="?", default=MODE, choices=["ask", "configure", "test", "build"], help="the default mode")
 parser.add_argument('-n', '--noprompt', action='store_true', help='disable prompting for user input')
-parser.add_argument('-t', '--notest', action='store_true', help='disable opening a window to test the binary')
+parser.add_argument('-t', '--notest', action='store_true', help='disable opening a window to test the binary (the binary will still be quietly tested)')
 parser.add_argument('-q', '--quiet', action='store_true', help='hide gcc & configure script output')
+parser.add_argument('-s', '--silent', action='store_true', help='hide all output')
 parser.add_argument('-w', '--with-tclsh', help='the path to the tclsh interpreter to use hen looking for Tcl/Tk releases') #/usr/local/tcl9
 args = parser.parse_args()
 
@@ -53,7 +54,18 @@ mode = args.mode
 noprompt = args.noprompt
 notest = args.notest
 quiet = args.quiet
+silent = args.silent
 with_tclsh = args.with_tclsh
+
+# Not very 'Pythonic', but works like a charm
+if silent:
+    if not quiet: quiet = True
+    def print(*args, **kwargs):
+        pass
+if noprompt:
+    def input(string):
+        #print(string)
+        return ""
 
 
 def print_error(*args):
@@ -96,8 +108,9 @@ def make():
     else:
         run_command(["make"])
 
+print("Welcome to TkinterWeb's TkHtml3.0 compile script. Note that for this to succeed you will need tcl-dev, tk-dev, cairo, gcc, and make installed on your system.")
+
 if mode == "ask":
-    print("Welcome to TkinterWeb's TkHtml3.0 compile script. Note that for this to succeed you will need tcl-dev, tk-dev, cairo, gcc, and make installed on your system.")
     mode = input("""Please enter an option:
    C: update CSS support, run the configure script to generate a makefile, and build and test your binary
    T: test the binary
@@ -110,15 +123,6 @@ if mode == "ask":
         mode = "test"
     else:
         mode = "build"
-elif mode != "test":
-    print("Welcome to TkinterWeb's TkHtml3.0 compile script. Note that for this to succeed you will need tcl-dev, tk-dev, cairo, gcc, and make installed on your system.")
-
-
-if noprompt:
-    def input(string):
-        print(string)
-        return ""
-
 
 if os.path.exists(BUILD_PATH) and mode == "build":
     os.chdir(BUILD_PATH)
@@ -128,6 +132,7 @@ if os.path.exists(BUILD_PATH) and mode == "build":
             make()
         except subprocess.CalledProcessError:
             print("\nFatal error encountered.")
+            if noprompt: exit()
             override = input("Press N to abort or any other key to try again: ")
             if override.upper() == "N":
                 sys.exit()
