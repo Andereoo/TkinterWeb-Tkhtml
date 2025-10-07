@@ -178,7 +178,7 @@ fixNodeProperties (TableData *pData, HtmlNode *pNode)
         if (!pData->pDefaultProperties) {
             HtmlTree *pTree = pData->pLayout->pTree;
             HtmlComputedValuesCreator sCreator;
-            HtmlComputedValuesInit(pTree, pNode, 0, &sCreator);
+            HtmlComputedValuesInit(pTree, pNode, NULL, &sCreator);
             pData->pDefaultProperties = HtmlComputedValuesFinish(&sCreator);
         }
         pElem->pPropertyValues = pData->pDefaultProperties;
@@ -1290,7 +1290,7 @@ tableIterate (
     rowGroupIterate(pTree, pFooter, &sRowContext);
 
     while (sRowContext.iRow <= sRowContext.iMaxRow && xRowCallback) {
-        xRowCallback(0, sRowContext.iRow, pContext);
+        xRowCallback(NULL, sRowContext.iRow, pContext);
         sRowContext.iRow++;
     }
     HtmlFree(sRowContext.aRowSpan);
@@ -1782,9 +1782,9 @@ HtmlTableLayout (
      * the same amount (plus or minus a pixel to account for integer
      * rounding).
      */
-    tableIterate(pTree, pNode, tableColWidthSingleSpan, 0, &data);
+    tableIterate(pTree, pNode, tableColWidthSingleSpan, NULL, &data);
     memcpy(aReqWidth, aSingleReqWidth, nCol*sizeof(CellReqWidth));
-    tableIterate(pTree, pNode, tableColWidthMultiSpan, 0, &data);
+    tableIterate(pTree, pNode, tableColWidthMultiSpan, NULL, &data);
 
     pBox->width = 0;
     availwidth = (pBox->iContaining - (nCol+1) * data.border_spacing);

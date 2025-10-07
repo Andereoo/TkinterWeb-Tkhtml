@@ -92,7 +92,7 @@ HtmlInstrumentCall2(pClientData, iCall, xFunc, clientData)
     InstCommand *pCaller;       /* Calling frame (if any) */
 
     Tcl_WideInt iClicks;
-    struct timeval tv = {0, 0};
+    struct timeval tv = {NULL, NULL};
     void *pRet;
 
     pCaller = pGlobal->pCaller;
@@ -121,7 +121,7 @@ HtmlInstrumentCall(pClientData, iCall, xFunc, clientData)
     InstCommand *pCaller;       /* Calling frame (if any) */
 
     Tcl_WideInt iClicks;
-    struct timeval tv = {0, 0};
+    struct timeval tv = {NULL, NULL};
 
     pCaller = pGlobal->pCaller;
     pGlobal->pCaller = p;
@@ -150,7 +150,7 @@ execInst(clientData, interp, objc, objv)
 
     int rc;
     Tcl_WideInt iClicks;
-    struct timeval tv = {0, 0};
+    struct timeval tv = {NULL, NULL};
 
     pCaller = pGlobal->pCaller;
     pGlobal->pCaller = p;
@@ -198,7 +198,7 @@ instCommand(clientData, interp, objc, objv)
 
     token = Tcl_GetCommandFromObj(interp, objv[2]);
     if (!token) {
-        Tcl_AppendResult(interp, "no such command: ", Tcl_GetString(objv[2]),0);
+        Tcl_AppendResult(interp, "no such command: ", Tcl_GetString(objv[2]), NULL);
         return TCL_ERROR;
     }
 
@@ -344,7 +344,7 @@ instrument_objcmd(clientData, interp, objc, objv)
         { "command", instCommand }, 
         { "vectors", instVectors }, 
         { "zero",    instZero }, 
-        { 0, 0 }
+        { NULL, 0 }
     };
 
     if (objc < 2) {
@@ -399,7 +399,8 @@ HtmlInstrumentInit(interp)
 
 #else  /* TKHTML_ENABLE_PROFILE */
 void
-HtmlInstrumentInit(Tcl_Interp *interp)
+HtmlInstrumentInit(interp)
+    Tcl_Interp *interp;
 {
     /* No-op */
 }

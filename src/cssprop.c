@@ -31,8 +31,8 @@ Hash(int nString, const char *zString)
     return (result & 0x000000FF);
 }
 
-static int 
-Lookup(int nString, const char *zString, int *aTable, const HashEntry *aHashTable) 
+static int
+Lookup(int nString, const char *zString, int *aTable, HashEntry *aHashTable) 
 {
     int t;
 

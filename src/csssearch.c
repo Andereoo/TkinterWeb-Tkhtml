@@ -151,7 +151,7 @@ HtmlCssSearch(
 {
     HtmlTree *pTree = (HtmlTree *)clientData;
     char *zOrig;
-    int n;
+    Tcl_Size n;
     CssStyleSheet *pStyle = 0;
 
     /* Search only descendants of this node (NULL means search whole tree) */
@@ -171,10 +171,10 @@ HtmlCssSearch(
         int isBoolean;
         Tcl_Obj *pArg;
     } aOption [] = {
-        {"-root",   0, 0}, 
-        {"-length", 1, 0}, 
-        {"-index",  0, 0}, 
-        {0, 0, 0}
+        {"-root",   0, NULL}, 
+        {"-length", 1, NULL}, 
+        {"-index",  0, NULL}, 
+        {NULL, 0, NULL}
     };
 
     if (objc < 3){
@@ -193,7 +193,7 @@ HtmlCssSearch(
             iArg++;
             if (iArg == objc) {
                 const char *z = Tcl_GetString(objv[iArg - 1]);
-                Tcl_AppendResult(interp, "option requires an argument: ", z, 0);
+                Tcl_AppendResult(interp, "option requires an argument: ", z, NULL);
                 return TCL_ERROR;
             }
         } 
@@ -202,7 +202,7 @@ HtmlCssSearch(
 
     if (aOption[1].pArg && aOption[2].pArg) {
         const char z[] = "options -length and -index are mutually exclusive";
-        Tcl_AppendResult(interp, z, 0);
+        Tcl_AppendResult(interp, z, NULL);
         return TCL_ERROR;
     }
 
@@ -238,7 +238,7 @@ HtmlCssSearch(
         sprintf(z, "%s {width:0}", zOrig);
         HtmlCssSelectorParse(pTree, n, z, &pStyle);
         if ( !pStyle || !pStyle->pUniversalRules) {
-            Tcl_AppendResult(interp, "Bad css selector: \"", zOrig, "\"", 0); 
+            Tcl_AppendResult(interp, "Bad css selector: \"", zOrig, "\"", NULL); 
             return TCL_ERROR;
         }
         sSearch.pRuleList = pStyle->pUniversalRules;

@@ -334,10 +334,10 @@ parse_as_token:
                 sInput.nInput = n - i;
 
                 inputNextToken(&sInput);
-                eToken = inputGetToken(&sInput, 0, 0);
+                eToken = inputGetToken(&sInput, NULL, NULL);
                 while (eToken != CT_RRP && eToken != CT_EOF) {
                     inputNextToken(&sInput);
-                    eToken = inputGetToken(&sInput, 0, 0);
+                    eToken = inputGetToken(&sInput, NULL, NULL);
                 }
                 if( eToken!=CT_RRP ) goto bad_token;
                 nToken = sInput.iInput + i;
@@ -380,10 +380,10 @@ static int
 inputNextTokenIgnoreSpace (CssInput *pInput)
 {
     int rc = inputNextToken(pInput);
-    if (rc == 0 && CT_SPACE == inputGetToken(pInput, 0, 0)) {
+    if (rc == 0 && CT_SPACE == inputGetToken(pInput, NULL, NULL)) {
         rc = inputNextToken(pInput);
     }
-    assert(CT_SPACE != inputGetToken(pInput, 0, 0));
+    assert(CT_SPACE != inputGetToken(pInput, NULL, NULL));
     return rc;
 }
 
@@ -432,7 +432,7 @@ parseSyntaxError (
     int iErrorLength = 0;
 
     iErrorStart = pInput->iInput;
-    eToken = inputGetToken(pInput, (const char **)&zToken, &nToken);
+    eToken = inputGetToken(pInput, &zToken, &nToken);
 
     while (
         eToken != CT_EOF && 
@@ -442,14 +442,14 @@ parseSyntaxError (
         if (eToken == CT_LP) iNest++;
         if (eToken == CT_RP) iNest--;
         inputNextToken(pInput);
-        eToken = inputGetToken(pInput, 0, 0);
+        eToken = inputGetToken(pInput, NULL, NULL);
     }
     iErrorLength = pInput->iInput - iErrorStart;
 
     if (pParse->pErrorLog) {
         Tcl_Obj *pError = pParse->pErrorLog;
-        Tcl_ListObjAppendElement(0, pError, Tcl_NewIntObj(iErrorStart));
-        Tcl_ListObjAppendElement(0, pError, Tcl_NewIntObj(iErrorLength));
+        Tcl_ListObjAppendElement(NULL, pError, Tcl_NewIntObj(iErrorStart));
+        Tcl_ListObjAppendElement(NULL, pError, Tcl_NewIntObj(iErrorLength));
     }
 }
 
@@ -482,7 +482,7 @@ parseDeclarationError (CssInput *pInput, CssParse *pParse)
     int iErrorLength = 0;
 
     iErrorStart = pInput->iInput;
-    eToken = inputGetToken(pInput, (const char **)&zToken, &nToken);
+    eToken = inputGetToken(pInput, &zToken, &nToken);
 
     while (
         eToken != CT_EOF && 
@@ -492,15 +492,15 @@ parseDeclarationError (CssInput *pInput, CssParse *pParse)
         if (eToken == CT_LP) iNest++;
         if (eToken == CT_RP) iNest--;
         inputNextToken(pInput);
-        eToken = inputGetToken(pInput, 0, 0);
+        eToken = inputGetToken(pInput, NULL, NULL);
     }
     iErrorLength = pInput->iInput - iErrorStart;
     inputNextToken(pInput);
 
     if (pParse->pErrorLog) {
         Tcl_Obj *pError = pParse->pErrorLog;
-        Tcl_ListObjAppendElement(0, pError, Tcl_NewIntObj(iErrorStart));
-        Tcl_ListObjAppendElement(0, pError, Tcl_NewIntObj(iErrorLength));
+        Tcl_ListObjAppendElement(NULL, pError, Tcl_NewIntObj(iErrorStart));
+        Tcl_ListObjAppendElement(NULL, pError, Tcl_NewIntObj(iErrorLength));
     }
 
     return ((eToken == CT_SEMICOLON) ? 0: 1);
@@ -531,18 +531,18 @@ parseSelector (CssInput *pInput, CssParse *pParse)
 
         eToken = inputGetToken(pInput, &zToken, &nToken);
         inputNextToken(pInput);
-        eNext = inputGetToken(pInput, 0, 0);
+        eNext = inputGetToken(pInput, NULL, NULL);
     
         switch (eToken) {
             case CT_STAR:       /* Universal selector (section 5.3) */
-                HtmlCssSelector(pParse, CSS_SELECTOR_UNIVERSAL, 0, 0);
+                HtmlCssSelector(pParse, CSS_SELECTOR_UNIVERSAL, NULL, NULL);
                 break;
     
             case CT_IDENT: {    /* Type selector (section 5.4) */
                 CssToken tType;
                 tType.z = zToken;
                 tType.n = nToken;
-                HtmlCssSelector(pParse, CSS_SELECTOR_TYPE, 0, &tType);
+                HtmlCssSelector(pParse, CSS_SELECTOR_TYPE, NULL, &tType);
                 break;
             }
     
@@ -563,13 +563,13 @@ parseSelector (CssInput *pInput, CssParse *pParse)
                 if (eNext != CT_PLUS && eNext != CT_GT && 
                     eNext != CT_LP && eNext != CT_COMMA
                 ) {
-                    HtmlCssSelector(pParse, CSS_SELECTORCHAIN_DESCENDANT, 0, 0);
+                    HtmlCssSelector(pParse, CSS_SELECTORCHAIN_DESCENDANT, NULL, NULL);
                 }
                 break;
             }
     
             case CT_GT: {    /* Child selector (section 5.5) */
-                HtmlCssSelector(pParse, CSS_SELECTORCHAIN_CHILD, 0, 0);
+                HtmlCssSelector(pParse, CSS_SELECTORCHAIN_CHILD, NULL, NULL);
                 /* Ignore any white-space that occurs after a '>' */
                 if (eNext == CT_SPACE) inputNextToken(pInput);
                 break;
@@ -594,14 +594,14 @@ parseSelector (CssInput *pInput, CssParse *pParse)
                     {"before",       CSS_PSEUDOELEMENT_BEFORE, 1}, 
                     {"first-line",   CSS_PSEUDOELEMENT_FIRSTLINE, 1}, 
                     {"first-letter", CSS_PSEUDOELEMENT_FIRSTLETTER, 1}, 
-                    {0, 0}
+                    {NULL, 0}
                 };
                 int ii;
                 int twocolons = 0;
                 if (eNext == CT_COLON) {
                     twocolons = 1;
                     inputNextToken(pInput);
-                    eNext = inputGetToken(pInput, 0, 0);
+                    eNext = inputGetToken(pInput, NULL, NULL);
                 }
                 if (eNext != CT_IDENT) goto syntax_error;
                 inputGetToken(pInput, &zToken, &nToken);
@@ -618,14 +618,14 @@ parseSelector (CssInput *pInput, CssParse *pParse)
                     /* TODO: Parse lang(...) */
                     goto syntax_error;
                 } else {
-                    HtmlCssSelector(pParse, aPseudo[ii].eArg, 0, 0);
+                    HtmlCssSelector(pParse, aPseudo[ii].eArg, NULL, NULL);
                 }
                 inputNextToken(pInput);
                 break;
             }
 
             case CT_PLUS: {    /* Child selector (section 5.7) */
-                HtmlCssSelector(pParse, CSS_SELECTORCHAIN_ADJACENT, 0, 0);
+                HtmlCssSelector(pParse, CSS_SELECTORCHAIN_ADJACENT, NULL, NULL);
                 /* Ignore any white-space that occurs after a '+' */
                 if (eNext == CT_SPACE) inputNextToken(pInput);
                 break;
@@ -645,7 +645,7 @@ parseSelector (CssInput *pInput, CssParse *pParse)
                 ) {
                     goto syntax_error;
                 }
-                HtmlCssSelector(pParse, CSS_SELECTOR_CLASS, 0, &t);
+                HtmlCssSelector(pParse, CSS_SELECTOR_CLASS, NULL, &t);
                 inputNextToken(pInput);
                 break;
             }
@@ -664,7 +664,7 @@ parseSelector (CssInput *pInput, CssParse *pParse)
                 ) {
                     goto syntax_error;
                 }
-                HtmlCssSelector(pParse, CSS_SELECTOR_ID, 0, &t);
+                HtmlCssSelector(pParse, CSS_SELECTOR_ID, NULL, &t);
                 inputNextToken(pInput);
                 break;
             }
@@ -678,14 +678,14 @@ parseSelector (CssInput *pInput, CssParse *pParse)
                 if (eToken != CT_IDENT) goto syntax_error;
 
                 inputNextToken(pInput);
-                eToken = inputGetToken(pInput, 0, 0);
+                eToken = inputGetToken(pInput, NULL, NULL);
                 if (eToken == CT_SPACE) {
                     inputNextToken(pInput);
-                    eToken = inputGetToken(pInput, 0, 0);
+                    eToken = inputGetToken(pInput, NULL, NULL);
                 }
 
                 if (eToken == CT_RSP) {
-                    HtmlCssSelector(pParse, CSS_SELECTOR_ATTR, &t1, 0);
+                    HtmlCssSelector(pParse, CSS_SELECTOR_ATTR, &t1, NULL);
                 } else if (
                         eToken == CT_TILDE || 
                         eToken == CT_PIPE || 
@@ -694,11 +694,11 @@ parseSelector (CssInput *pInput, CssParse *pParse)
                     if (eToken == CT_TILDE || eToken == CT_PIPE) {
                          CssTokenType e;
                          inputNextToken(pInput);
-                         e = inputGetToken(pInput, 0, 0);
+                         e = inputGetToken(pInput, NULL, NULL);
                          if (e != CT_EQUALS) goto syntax_error;
                     }
                     inputNextToken(pInput);
-                    if (CT_SPACE == inputGetToken(pInput, 0, 0)) {
+                    if (CT_SPACE == inputGetToken(pInput, NULL, NULL)) {
                         inputNextToken(pInput);
                     }
                     eNext = inputGetToken(pInput, &t2.z, &t2.n);
@@ -707,10 +707,10 @@ parseSelector (CssInput *pInput, CssParse *pParse)
                     }
 
                     inputNextToken(pInput);
-                    if (CT_SPACE == inputGetToken(pInput, 0, 0)) {
+                    if (CT_SPACE == inputGetToken(pInput, NULL, NULL)) {
                         inputNextToken(pInput);
                     }
-                    eNext = inputGetToken(pInput, 0, 0);
+                    eNext = inputGetToken(pInput, NULL, NULL);
                     if (eNext != CT_RSP) goto syntax_error;
 
                     HtmlCssSelector(pParse, (
@@ -762,19 +762,19 @@ static int parseDeclarationBlock(CssInput *pInput, CssParse *pParse){
         int isImportant = 0;
 
         /* Property name */
-        if (inputGetToken(pInput, 0, 0) == CT_SPACE) inputNextToken(pInput);
+        if (inputGetToken(pInput, NULL, NULL) == CT_SPACE) inputNextToken(pInput);
         eToken = inputGetToken(pInput, &tProp.z, &tProp.n);
         if (eToken == CT_RP) return 0;
         if (eToken != CT_IDENT) goto syntax_error;
 
         /* Colon */
         inputNextTokenIgnoreSpace(pInput);
-        eToken = inputGetToken(pInput, 0, 0);
+        eToken = inputGetToken(pInput, NULL, NULL);
         if (eToken != CT_COLON) goto syntax_error;
 
         /* Property value */
         inputNextTokenIgnoreSpace(pInput);
-        eToken = inputGetToken(pInput, &tVal.z, 0);
+        eToken = inputGetToken(pInput, &tVal.z, NULL);
         tVal.n = 0;
         while (
              eToken == CT_IDENT || 
@@ -788,10 +788,10 @@ static int parseDeclarationBlock(CssInput *pInput, CssParse *pParse){
         ) {
             char *z;
             int n;
-            inputGetToken(pInput, (const char **)&z, &n);
+            inputGetToken(pInput, &z, &n);
             tVal.n = (&z[n] - tVal.z);
             inputNextTokenIgnoreSpace(pInput);
-            eToken = inputGetToken(pInput, 0, 0);
+            eToken = inputGetToken(pInput, NULL, NULL);
         }
         if (tVal.n == 0) goto syntax_error;
 
@@ -800,7 +800,7 @@ static int parseDeclarationBlock(CssInput *pInput, CssParse *pParse){
             char *z;
             int n;
             inputNextTokenIgnoreSpace(pInput);
-            eToken = inputGetToken(pInput, (const char **)&z, &n);
+            eToken = inputGetToken(pInput, &z, &n);
             if (n != 9 || 0 != strnicmp("important", z, 9)) {
                 goto syntax_error;
             }
@@ -808,7 +808,7 @@ static int parseDeclarationBlock(CssInput *pInput, CssParse *pParse){
             inputNextTokenIgnoreSpace(pInput);
         }
 
-        eToken = inputGetToken(pInput, 0, 0);
+        eToken = inputGetToken(pInput, NULL, NULL);
         if (eToken != CT_RP && eToken != CT_SEMICOLON && eToken != CT_EOF) {
             goto syntax_error;
         }
@@ -849,7 +849,7 @@ parseMediaList (CssInput *pInput, int *pIsMatch)
         CssTokenType eToken;
         char * zToken;
         int nToken;
-        eToken = inputGetToken(pInput, (const char **)&zToken, &nToken);
+        eToken = inputGetToken(pInput, &zToken, &nToken);
 
         if (eToken != CT_IDENT) return 1;
         if ((nToken == 3 && strnicmp("all", zToken, nToken) == 0) ||
@@ -859,7 +859,7 @@ parseMediaList (CssInput *pInput, int *pIsMatch)
         }
 
         inputNextTokenIgnoreSpace(pInput);
-        if (CT_COMMA != inputGetToken(pInput, 0, 0)) break;
+        if (CT_COMMA != inputGetToken(pInput, NULL, NULL)) break;
 
         inputNextTokenIgnoreSpace(pInput);
     }
@@ -885,7 +885,7 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
     inputNextToken(pInput);
   
     /* According to CSS2.1, white-space after the '@' character is illegal */
-    if (CT_IDENT != inputGetToken(pInput, (const char **)&zWord, &nWord)) return 1;
+    if (CT_IDENT != inputGetToken(pInput, &zWord, &nWord)) return 1;
   
     if (nWord == 6 && strnicmp("import", zWord, nWord) == 0) {
         CssTokenType eToken;
@@ -906,12 +906,12 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
         }
   
         inputNextTokenIgnoreSpace(pInput);
-        eToken = inputGetToken(pInput, 0, 0);
+        eToken = inputGetToken(pInput, NULL, NULL);
         if (eToken != CT_SEMICOLON && eToken != CT_EOF) {
             if (parseMediaList(pInput, &media_ok)) return 1;
         }
   
-        eToken = inputGetToken(pInput, 0, 0);
+        eToken = inputGetToken(pInput, NULL, NULL);
         if (eToken != CT_SEMICOLON && eToken != CT_EOF) return 1;
   
         if (media_ok) {
@@ -924,7 +924,7 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
         pParse->isBody = 1;
         inputNextTokenIgnoreSpace(pInput);
         if (parseMediaList(pInput, &media_ok)) return 1;
-        if (CT_LP != inputGetToken(pInput, 0, 0)) return 1;
+        if (CT_LP != inputGetToken(pInput, NULL, NULL)) return 1;
         inputNextToken(pInput);
         if (!media_ok) {
             /* The media does not match. Skip tokens until the end of
@@ -932,11 +932,11 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
              */
             int iNest = 1;
             while (
-                (inputGetToken(pInput, 0, 0) != CT_EOF) &&
-                (inputGetToken(pInput, 0, 0) != CT_RP || iNest != 1)
+                (inputGetToken(pInput, NULL, NULL) != CT_EOF) &&
+                (inputGetToken(pInput, NULL, NULL) != CT_RP || iNest != 1)
             ) {
-                if (inputGetToken(pInput, 0, 0) == CT_LP) iNest++;
-                if (inputGetToken(pInput, 0, 0) == CT_RP) iNest--;
+                if (inputGetToken(pInput, NULL, NULL) == CT_LP) iNest++;
+                if (inputGetToken(pInput, NULL, NULL) == CT_RP) iNest--;
                 inputNextToken(pInput);
             }
         }
@@ -950,7 +950,7 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
         CssTokenType eNext;
         do {
             inputNextTokenIgnoreSpace(pInput);
-            eNext = inputGetToken(pInput, 0, 0);
+            eNext = inputGetToken(pInput, NULL, NULL);
         } while (eNext != CT_SEMICOLON && eNext != CT_EOF);
     } else {
         pParse->isBody = 1;
@@ -997,7 +997,7 @@ HtmlCssRunParser (const char *zInput, int nInput, CssParse *pParse)
     while (0 == inputNextTokenIgnoreSpace(&sInput)) {
         int isSyntaxError;
 
-        eToken = inputGetToken(&sInput, 0, 0);
+        eToken = inputGetToken(&sInput, NULL, NULL);
 
         if (eToken == CT_SGML_OPEN || eToken == CT_SGML_CLOSE) {
             isSyntaxError = 0;
@@ -1044,7 +1044,7 @@ HtmlCssRunStyleParser (const char *zInput, int nInput, CssParse *pParse)
     sInput.zInput = (char *)zInput;
     sInput.nInput = nInput;
 
-    HtmlCssSelector(pParse, CSS_SELECTOR_UNIVERSAL, 0, 0);
+    HtmlCssSelector(pParse, CSS_SELECTOR_UNIVERSAL, NULL, NULL);
     parseDeclarationBlock(&sInput, pParse);
     HtmlCssRule(pParse, 1);
 }
@@ -1113,7 +1113,7 @@ HtmlCssGetNextListItem (const char *zList, int nList, int *pN)
     sInput.nInput = nList;
 
     inputNextTokenIgnoreSpace(&sInput);
-    eFirst = inputGetToken(&sInput, (const char **)&zRet, &nLen);
+    eFirst = inputGetToken(&sInput, &zRet, &nLen);
     *pN = nLen;
     if (eFirst == CT_EOF) {
         return 0;
@@ -1125,10 +1125,10 @@ HtmlCssGetNextListItem (const char *zList, int nList, int *pN)
     nLen = 0;
     do {
         int n;
-        inputGetToken(&sInput, 0, &n);
+        inputGetToken(&sInput, NULL, &n);
         nLen += n;
         inputNextToken(&sInput);
-        eToken = inputGetToken(&sInput, 0, 0);
+        eToken = inputGetToken(&sInput, NULL, NULL);
     } while (eToken != CT_SPACE && eToken != CT_EOF);
 
     *pN = nLen;
@@ -1172,21 +1172,21 @@ HtmlCssGetNextCommaListItem (const char *zList, int nList, int *pN)
     sInput.nInput = nList;
 
     inputNextTokenIgnoreSpace(&sInput);
-    if (inputGetToken(&sInput, 0, 0) == CT_EOF) {
+    if (inputGetToken(&sInput, NULL, NULL) == CT_EOF) {
         *pN = 0;
         return 0;
     }
-    if (inputGetToken(&sInput, (const char **)&zRet, 0) == CT_COMMA) {
+    if (inputGetToken(&sInput, &zRet, NULL) == CT_COMMA) {
         inputNextTokenIgnoreSpace(&sInput);
-        inputGetToken(&sInput, (const char **)&zRet, 0);
+        inputGetToken(&sInput, &zRet, NULL);
     }
 
     do {
         int n;
-        inputGetToken(&sInput, 0, &n);
+        inputGetToken(&sInput, NULL, &n);
         nLen += n;
         inputNextTokenIgnoreSpace(&sInput);
-        eToken = inputGetToken(&sInput, 0, 0);
+        eToken = inputGetToken(&sInput, NULL, NULL);
     } while (eToken != CT_COMMA && eToken != CT_EOF);
 
     *pN = nLen;

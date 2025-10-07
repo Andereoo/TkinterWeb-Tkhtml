@@ -110,39 +110,39 @@ Html_PostscriptY(double y, TkPostscriptInfo * psinfo)
 
 static Tk_ConfigSpec configSpecs[] = {
     {TK_CONFIG_STRING, "-colormap", (char *) NULL, (char *) NULL,
-     "", Tk_Offset(TkPostscriptInfo, colorVar), 0},
+     "", offsetof(TkPostscriptInfo, colorVar), 0},
     {TK_CONFIG_STRING, "-colormode", (char *) NULL, (char *) NULL,
-     "", Tk_Offset(TkPostscriptInfo, colorMode), 0},
+     "", offsetof(TkPostscriptInfo, colorMode), 0},
     {TK_CONFIG_STRING, "-file", (char *) NULL, (char *) NULL,
-     "", Tk_Offset(TkPostscriptInfo, fileName), 0},
+     "", offsetof(TkPostscriptInfo, fileName), 0},
     {TK_CONFIG_STRING, "-channel", (char *) NULL, (char *) NULL,
-     "", Tk_Offset(TkPostscriptInfo, channelName), 0},
+     "", offsetof(TkPostscriptInfo, channelName), 0},
     {TK_CONFIG_STRING, "-fontmap", (char *) NULL, (char *) NULL,
-     "", Tk_Offset(TkPostscriptInfo, fontVar), 0},
+     "", offsetof(TkPostscriptInfo, fontVar), 0},
     {TK_CONFIG_PIXELS, "-height", (char *) NULL, (char *) NULL,
-     "", Tk_Offset(TkPostscriptInfo, height), 0},
+     "", offsetof(TkPostscriptInfo, height), 0},
     {TK_CONFIG_ANCHOR, "-pageanchor", (char *) NULL, (char *) NULL,
-     "", Tk_Offset(TkPostscriptInfo, pageAnchor), 0},
+     "", offsetof(TkPostscriptInfo, pageAnchor), 0},
     {TK_CONFIG_STRING, "-pageheight", (char *) NULL, (char *) NULL,
-     "", Tk_Offset(TkPostscriptInfo, pageHeightString), 0},
+     "", offsetof(TkPostscriptInfo, pageHeightString), 0},
     {TK_CONFIG_STRING, "-pagewidth", (char *) NULL, (char *) NULL,
-     "", Tk_Offset(TkPostscriptInfo, pageWidthString), 0},
+     "", offsetof(TkPostscriptInfo, pageWidthString), 0},
     {TK_CONFIG_STRING, "-pagex", (char *) NULL, (char *) NULL,
-     "", Tk_Offset(TkPostscriptInfo, pageXString), 0},
+     "", offsetof(TkPostscriptInfo, pageXString), 0},
     {TK_CONFIG_STRING, "-pagey", (char *) NULL, (char *) NULL,
-     "", Tk_Offset(TkPostscriptInfo, pageYString), 0},
+     "", offsetof(TkPostscriptInfo, pageYString), 0},
     {TK_CONFIG_BOOLEAN, "-prolog", (char *) NULL, (char *) NULL,
-     "", Tk_Offset(TkPostscriptInfo, prolog), 0},
+     "", offsetof(TkPostscriptInfo, prolog), 0},
     {TK_CONFIG_BOOLEAN, "-noimages", (char *) NULL, (char *) NULL,
-     "", Tk_Offset(TkPostscriptInfo, noimages), 0},
+     "", offsetof(TkPostscriptInfo, noimages), 0},
     {TK_CONFIG_BOOLEAN, "-rotate", (char *) NULL, (char *) NULL,
-     "", Tk_Offset(TkPostscriptInfo, rotate), 0},
+     "", offsetof(TkPostscriptInfo, rotate), 0},
     {TK_CONFIG_PIXELS, "-width", (char *) NULL, (char *) NULL,
-     "", Tk_Offset(TkPostscriptInfo, width), 0},
+     "", offsetof(TkPostscriptInfo, width), 0},
     {TK_CONFIG_PIXELS, "-x", (char *) NULL, (char *) NULL,
-     "", Tk_Offset(TkPostscriptInfo, x), 0},
+     "", offsetof(TkPostscriptInfo, x), 0},
     {TK_CONFIG_PIXELS, "-y", (char *) NULL, (char *) NULL,
-     "", Tk_Offset(TkPostscriptInfo, y), 0},
+     "", offsetof(TkPostscriptInfo, y), 0},
     {TK_CONFIG_END, (char *) NULL, (char *) NULL, (char *) NULL,
      (char *) NULL, 0, 0}
 };
@@ -485,8 +485,8 @@ systemdict /ISOLatin1Encoding known not {\n\
  * Forward declarations for procedures defined later in this file:
  */
 
-static int GetPostscriptPoints _ANSI_ARGS_((Tcl_Interp * interp,
-                                            char *string, double *doublePtr));
+static int GetPostscriptPoints (Tcl_Interp * interp,
+                                            char *string, double *doublePtr);
 int
  HtmlTk_PostscriptImage(Tk_Image image, Tcl_Interp * interp, Tk_Window tkwin,
                         TkPostscriptInfo * psinfo, int x, int y, int width,
@@ -1098,7 +1098,7 @@ Html_PostscriptFont(Tcl_Interp * interp, TkPostscriptInfo * psInfo,     /* Posts
 
     if (psInfoPtr->fontVar != NULL) {
         char *list, **argv;
-        int argc;
+        Tcl_Size argc;
         double size;
         char *name;
 

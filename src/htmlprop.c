@@ -42,7 +42,6 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stddef.h>
 #include <ctype.h>
 
 /* #define ACCEPT_UNITLESS_LENGTHS */
@@ -123,10 +122,6 @@ static PropertyDef propdefs[] = {
   PROPDEF(ENUM, TEXT_TRANSFORM,        eTextTransform),
   PROPDEF(ENUM, UNICODE_BIDI,          eUnicodeBidi),
   PROPDEF(ENUM, VISIBILITY,            eVisibility),
-  
-  PROPDEF(ENUM, PAGE_BREAK_AFTER,     ePageBreakAfter),
-  PROPDEF(ENUM, PAGE_BREAK_BEFORE,    ePageBreakBefore),
-  PROPDEF(ENUM, PAGE_BREAK_INSIDE,    ePageBreakInside),
 
   /* Note: The CSS2 property 'border-spacing' can be set to
    * either a single or pair of length values. Only a single
@@ -489,7 +484,7 @@ pixelsToPoints (HtmlComputedValuesCreator *p, int pixels)
  *---------------------------------------------------------------------------
  */
 static int 
-physicalToPixels (HtmlComputedValuesCreator *p, double rVal, int type)
+physicalToPixels (HtmlComputedValuesCreator *p, double rVal, char type)
 {
     char zBuf[64];
     int pixels;
@@ -518,12 +513,13 @@ physicalToPixels (HtmlComputedValuesCreator *p, double rVal, int type)
 static int 
 propertyValuesSetFontStyle (HtmlComputedValuesCreator *p, CssProperty *pProp)
 {
-    if (pProp->eType == CSS_CONST_INHERIT) {
+    int eType = pProp->eType;
+    if (eType == CSS_CONST_INHERIT) {
         int i = HtmlNodeComputedValues(p->pParent)->fFont->pKey->isItalic;;
         p->fontKey.isItalic = i;
-    }else if (pProp->eType == CSS_CONST_ITALIC || pProp->eType == CSS_CONST_OBLIQUE) {
+    }else if (eType == CSS_CONST_ITALIC || eType == CSS_CONST_OBLIQUE) {
         p->fontKey.isItalic = 1;
-    } else if (pProp->eType == CSS_CONST_NORMAL) {
+    } else if (eType == CSS_CONST_NORMAL) {
         p->fontKey.isItalic = 0;
     } else {
         return 1;
@@ -554,7 +550,7 @@ contentCounter (HtmlTree *pTree, CssProperty *pProp, char *zOut, int nOut)
         unsigned char *options; 
         options = HtmlCssEnumeratedValues(CSS_PROPERTY_LIST_STYLE_TYPE);
         pStyle = HtmlCssStringToProperty(zStyle, nStyle);
-        if (propertyValuesSetEnum(0, &eStyle, options, pStyle)) {
+        if (propertyValuesSetEnum(NULL, &eStyle, options, pStyle)) {
             /* Unknown style type */
             return 1;
         }
@@ -607,7 +603,7 @@ contentCounters (HtmlTree *pTree, CssProperty *pProp, char *zOut, int nOut)
         unsigned char *options; 
         options = HtmlCssEnumeratedValues(CSS_PROPERTY_LIST_STYLE_TYPE);
         pStyle = HtmlCssStringToProperty(zStyle, nStyle);
-        propertyValuesSetEnum(0, &eStyle, options, pStyle);
+        propertyValuesSetEnum(NULL, &eStyle, options, pStyle);
         HtmlFree(pStyle);
     }
 
@@ -1192,7 +1188,7 @@ propertyValuesSetColor (HtmlComputedValuesCreator *p, HtmlColor **pCVar, CssProp
     HtmlTree *pTree = p->pTree;
 
     if (pProp->eType == CSS_CONST_INHERIT) {
-        HtmlColor **pInherit = (HtmlColor **)getInheritPointer(p, (char *)pCVar);
+        HtmlColor **pInherit = (HtmlColor **)getInheritPointer(p, pCVar);
         assert(pInherit);
         cVal = *pInherit;
         goto setcolor_out;
@@ -1691,7 +1687,7 @@ propertyValuesSetSize (HtmlComputedValuesCreator *p, int *pIVal, unsigned int p_
         case CSS_CONST_INHERIT:
             if (allow_mask & SZ_INHERIT) {
                 HtmlNode *pParent = p->pParent;
-                int *pInherit = (int *)getInheritPointer(p, (char*)pIVal);
+                int *pInherit = (int *)getInheritPointer(p, pIVal);
                 assert(pInherit);
                 assert(pParent);
 
@@ -1753,7 +1749,7 @@ propertyValuesSetSize (HtmlComputedValuesCreator *p, int *pIVal, unsigned int p_
 static int 
 propertyValuesSetPSize (HtmlComputedValuesCreator *p, int *pIVal, unsigned int p_mask, CssProperty *pProp, unsigned int allow_mask)
 {
-    assert(p_mask != 0);
+    //assert(p_mask != 0);
 
     /* Clear the bits in the inherit and percent masks for this property */
     p->values.mask &= ~p_mask;
@@ -2956,7 +2952,7 @@ HtmlComputedValuesSetupTables (HtmlTree *pTree)
     int n;
 
     Tcl_Obj **apFamily;
-    int nFamily;
+    Tcl_Size nFamily;
     int dummy;
 
     pType = HtmlCaseInsenstiveHashType();
@@ -3294,7 +3290,7 @@ HtmlNodeGetProperty(
     HtmlComputedValues *pValues         /* Read value from here */
     )
 {
-    int nProp;
+    Tcl_Size nProp;
     const char *zProp = Tcl_GetStringFromObj(pProp, &nProp);
     int eProp = HtmlCssPropertyLookup(nProp, zProp);
   
@@ -3312,7 +3308,7 @@ HtmlNodeGetProperty(
 
     assert(eProp <= CSS_PROPERTY_MAX_PROPERTY);
     if (eProp < 0) {
-        Tcl_AppendResult(interp, "no such property: ", zProp, 0);
+        Tcl_AppendResult(interp, "no such property: ", zProp, NULL);
         return TCL_ERROR;
     }
 
@@ -3338,8 +3334,8 @@ HtmlNodeProperties(Tcl_Interp *interp, HtmlComputedValues *pValues)
     }
 
     /* Special attribute: font. */
-    Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj("font", -1));
-    Tcl_ListObjAppendElement(0,pRet,Tcl_NewStringObj(pValues->fFont->zFont,-1));
+    Tcl_ListObjAppendElement(NULL, pRet, Tcl_NewStringObj("font", -1));
+    Tcl_ListObjAppendElement(NULL,pRet,Tcl_NewStringObj(pValues->fFont->zFont,-1));
 
     Tcl_SetObjResult(interp, pRet);
     Tcl_DecrRefCount(pRet);

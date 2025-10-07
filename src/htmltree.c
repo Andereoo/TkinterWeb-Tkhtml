@@ -506,7 +506,7 @@ nodeHandlerCallbacks (HtmlTree *pTree, HtmlNode *pNode)
         }
 
         pNodeCmd = HtmlNodeCommand(pTree, pNode);
-        Tcl_ListObjAppendElement(0, pEval, pNodeCmd);
+        Tcl_ListObjAppendElement(NULL, pEval, pNodeCmd);
         rc = Tcl_EvalObjEx(interp, pEval, TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL);
         if (rc != TCL_OK) {
             Tcl_BackgroundError(interp);
@@ -716,7 +716,7 @@ HtmlNodeAddChild (
     );
 
     if (!zTag) {
-        zTag = HtmlTypeToName(0, eTag);
+        zTag = HtmlTypeToName(NULL, eTag);
     }
     assert(zTag);
 
@@ -850,9 +850,9 @@ doAttributeHandler (HtmlTree *pTree, HtmlNode *pNode, const char *zAttr, const c
 
         pScript = Tcl_DuplicateObj(pScript);
         Tcl_IncrRefCount(pScript);
-        Tcl_ListObjAppendElement(0, pScript, HtmlNodeCommand(pTree, pNode));
-        Tcl_ListObjAppendElement(0, pScript, Tcl_NewStringObj(zAttr, -1));
-        Tcl_ListObjAppendElement(0, pScript, Tcl_NewStringObj(zValue, -1));
+        Tcl_ListObjAppendElement(NULL, pScript, HtmlNodeCommand(pTree, pNode));
+        Tcl_ListObjAppendElement(NULL, pScript, Tcl_NewStringObj(zAttr, -1));
+        Tcl_ListObjAppendElement(NULL, pScript, Tcl_NewStringObj(zValue, -1));
         rc = Tcl_EvalObjEx(pTree->interp, pScript, TCL_EVAL_GLOBAL);
         Tcl_DecrRefCount(pScript);
     }
@@ -879,12 +879,12 @@ doParseHandler (HtmlTree *pTree, int eType, HtmlNode *pNode, int iOffset)
         pScript = Tcl_DuplicateObj(pScript);
         Tcl_IncrRefCount(pScript);
         if (pNode) {
-            Tcl_ListObjAppendElement(0, pScript, HtmlNodeCommand(pTree, pNode));
+            Tcl_ListObjAppendElement(NULL, pScript, HtmlNodeCommand(pTree, pNode));
         } else {
-            Tcl_ListObjAppendElement(0, pScript, Tcl_NewStringObj("", -1));
+            Tcl_ListObjAppendElement(NULL, pScript, Tcl_NewStringObj("", -1));
         }
         Tcl_ListObjAppendElement(
-            0, pScript, Tcl_NewIntObj(iOffset + pTree->nParsed)
+            NULL, pScript, Tcl_NewIntObj(iOffset + pTree->nParsed)
         );
 
         rc = Tcl_EvalObjEx(pTree->interp, pScript, TCL_EVAL_GLOBAL);
@@ -940,8 +940,8 @@ HtmlInitTree (HtmlTree *pTree)
         pTree->pRoot = (HtmlNode *)pRoot;
 
 
-        HtmlNodeAddChild(pRoot, Html_HEAD, HtmlTypeToName(pTree, Html_HEAD), 0);
-        HtmlNodeAddChild(pRoot, Html_BODY, HtmlTypeToName(pTree, Html_BODY), 0);
+        HtmlNodeAddChild(pRoot, Html_HEAD, HtmlTypeToName(pTree, Html_HEAD), NULL);
+        HtmlNodeAddChild(pRoot, Html_BODY, HtmlTypeToName(pTree, Html_BODY), NULL);
         HtmlCallbackRestyle(pTree, (HtmlNode *)pRoot);
     }
 
@@ -1002,7 +1002,7 @@ treeAddFosterText (HtmlTree *pTree, HtmlTextNode *pTextNode)
         pFosterParent = findFosterParent(pTree, &pBefore);
            
         nodeInsertChild(pTree,
-            (HtmlElementNode *)pFosterParent, pBefore, 0, (HtmlNode *)pTextNode
+            (HtmlElementNode *)pFosterParent, pBefore, NULL, (HtmlNode *)pTextNode
         );
     }
 }
@@ -1046,10 +1046,10 @@ treeAddFosterElement (
         ((HtmlElementNode *)pNew)->pAttributes = pAttr;
         pNew->eTag = eTag;
         if (!zTag) {
-            zTag = HtmlTypeToName(0, eTag);
+            zTag = HtmlTypeToName(NULL, eTag);
         }
         pNew->zTag = zTag;
-        nodeInsertChild(pTree, (HtmlElementNode *)pFosterParent,pBefore,0,pNew);
+        nodeInsertChild(pTree, (HtmlElementNode *)pFosterParent,pBefore, NULL, pNew);
     }
 
     pNew->iNode = pTree->iNextNode++;
@@ -1135,7 +1135,7 @@ treeAddTableComponent (HtmlTree *pTree, int eTag, HtmlAttributes *pAttr)
         eParentTag == Html_TABLE && 
         (eTag == Html_TR || eTag == Html_TD || eTag == Html_TH)
     ) {
-        int n2 = HtmlNodeAddChild((HtmlElementNode *)pParent, Html_TBODY, 0, 0);
+        int n2 = HtmlNodeAddChild((HtmlElementNode *)pParent, Html_TBODY, NULL, NULL);
         pParent = HtmlNodeChild(pParent, n2);
         pParent->iNode = pTree->iNextNode++;
         eParentTag = Html_TBODY;
@@ -1143,14 +1143,14 @@ treeAddTableComponent (HtmlTree *pTree, int eTag, HtmlAttributes *pAttr)
 
     /* See if we need to add an implicit <TR> node */
     if (eParentTag != Html_TR && (eTag == Html_TD || eTag == Html_TH)) {
-        int n2 = HtmlNodeAddChild((HtmlElementNode *)pParent, Html_TR, 0, 0);
+        int n2 = HtmlNodeAddChild((HtmlElementNode *)pParent, Html_TR, NULL, NULL);
         pParent = HtmlNodeChild(pParent, n2);
         pParent->iNode = pTree->iNextNode++;
         eParentTag = Html_TR;
     }
     
     /* Add the new node to pParent */
-    n = HtmlNodeAddChild((HtmlElementNode *)pParent, eTag, 0, pAttr);
+    n = HtmlNodeAddChild((HtmlElementNode *)pParent, eTag, NULL, pAttr);
     pNew = HtmlNodeChild(pParent, n);
     pNew->iNode = pTree->iNextNode++;
     pTree->state.pCurrent = pNew;
@@ -1242,7 +1242,7 @@ HtmlTreeAddElement (HtmlTree *pTree, int eType, const char *zType, HtmlAttribute
          * section.
          */
         case Html_TITLE: {
-            int n = HtmlNodeAddChild(pHeadElem, eType, 0, pAttr);
+            int n = HtmlNodeAddChild(pHeadElem, eType, NULL, pAttr);
             HtmlNode *p = HtmlNodeChild(pHeadNode, n);
             pTree->state.isCdataInHead = 1;
             p->iNode = pTree->iNextNode++;
@@ -1255,7 +1255,7 @@ HtmlTreeAddElement (HtmlTree *pTree, int eType, const char *zType, HtmlAttribute
         case Html_META:
         case Html_LINK:
         case Html_BASE: {
-            int n = HtmlNodeAddChild(pHeadElem, eType, 0, pAttr);
+            int n = HtmlNodeAddChild(pHeadElem, eType, NULL, pAttr);
             HtmlNode *p = HtmlNodeChild(pHeadNode, n);
             p->iNode = pTree->iNextNode++;
             nodeHandlerCallbacks(pTree, p);
@@ -1418,7 +1418,7 @@ HtmlTreeAddClosingTag (HtmlTree *pTree, int eTag, const char *zTag, int iOffset)
         }
     }
 
-    doParseHandler(pTree, -1 * eTag, 0, iOffset);
+    doParseHandler(pTree, -1 * eTag, NULL, iOffset);
 }
 
 /*
@@ -1852,7 +1852,7 @@ nodeViewCmd(
     if (pTree->cb.flags) {
         pTree->cb.flags |= HTML_NODESCROLL;
     }
-    HtmlWalkTree(pTree, pNode, markWindowAsClipped, 0);
+    HtmlWalkTree(pTree, pNode, markWindowAsClipped, NULL);
     return TCL_OK;
 }
 
@@ -1887,7 +1887,7 @@ nodeRemoveCmd(
 
     for (ii = 2; ii < objc; ii++) {
         Tcl_Obj **apNode;
-        int nNode;
+        Tcl_Size nNode;
         int jj;
         int rc;
 
@@ -2001,7 +2001,7 @@ nodeInsertCmd(
         if (iBefore < 0) {
             Tcl_ResetResult(pTree->interp);
             Tcl_AppendResult(pTree->interp, Tcl_GetString(objv[3]), 
-                " is not a child node of ", Tcl_GetString(objv[0]), 0
+                " is not a child node of ", Tcl_GetString(objv[0]), NULL
             );
             return TCL_ERROR;
         }
@@ -2019,7 +2019,7 @@ nodeInsertCmd(
 
     for (ii = (pBefore ? 4 : 2); ii < objc; ii++) {
         Tcl_Obj **apNode;
-        int nNode;
+        Tcl_Size nNode;
         int jj;
         int rc;
 
@@ -2106,7 +2106,7 @@ nodeTextCommand(
         {"-pre",      NODE_TEXT_PRE, 0},      
         {"set",       NODE_TEXT_SET, 1},
         {"-tokens",   NODE_TEXT_TOKENS, 0},      
-        {0, 0, 0}
+        {NULL, 0, 0}
     };
 
     HtmlTextNode *pTextNode = HtmlNodeAsText(pNode);
@@ -2142,7 +2142,7 @@ nodeTextCommand(
          *     * In the orphan node table, if this is an orphan.
          */
         const char *zNew;
-        int nNew;
+        Tcl_Size nNew;
         HtmlTextNode *pOrig;
 
         pOrig = HtmlNodeAsText(pNode);
@@ -2194,10 +2194,10 @@ nodeTextCommand(
                 }
                 assert(zType);
                 Tcl_ListObjAppendElement(
-                    0, p, Tcl_NewStringObj(zType, -1)
+                    NULL, p, Tcl_NewStringObj(zType, -1)
                 );
-                Tcl_ListObjAppendElement(0, p, pObj);
-                Tcl_ListObjAppendElement(0, pRet, p);
+                Tcl_ListObjAppendElement(NULL, p, pObj);
+                Tcl_ListObjAppendElement(NULL, pRet, p);
             } else {
                 assert(eChoice == NODE_TEXT_GET);
                 if (eType == HTML_TEXT_TOKEN_TEXT) {
@@ -2292,7 +2292,7 @@ nodeCommand(
         {"text",      NODE_TEXT,      0},  
         {"xview",     NODE_XVIEW,     0},
         {"yview",     NODE_YVIEW,     0},
-        {0, 0, 0}
+        {NULL, 0, 0}
     };
 
     if (objc<2) {
@@ -2369,7 +2369,7 @@ nodeCommand(
                 zAttr = HtmlNodeAttr(pNode, zAttrName);
                 zAttr = (zAttr ? zAttr : zDefault);
                 if (zAttr==0) {
-                    Tcl_AppendResult(interp, "No such attr: ", zAttrName, 0);
+                    Tcl_AppendResult(interp, "No such attr: ", zAttrName, NULL);
                     return TCL_ERROR;
                 }
                 Tcl_SetResult(interp, (char *)zAttr, TCL_VOLATILE);
@@ -2395,7 +2395,7 @@ node_attr_usage:
             Tcl_AppendResult(interp, "Usage: ",
                 Tcl_GetString(objv[0]), " ",
                 Tcl_GetString(objv[1]), " ",
-                "? ?-default DEFAULT-VALUE? ATTR-NAME ?NEW-VAL??", 0);
+                "? ?-default DEFAULT-VALUE? ATTR-NAME ?NEW-VAL??", NULL);
             return TCL_ERROR;
         }
 
@@ -2413,7 +2413,7 @@ node_attr_usage:
                 for (i = 0; i < HtmlNodeNumChildren(pNode); i++) {
                     HtmlNode *pChild = HtmlNodeChild(pNode, i);
                     Tcl_Obj *pCmd = HtmlNodeCommand(pTree, pChild);
-                    Tcl_ListObjAppendElement(0, pRes, pCmd);
+                    Tcl_ListObjAppendElement(NULL, pRes, pCmd);
                 }
                 Tcl_SetObjResult(interp, pRes);
             } else {
@@ -2573,7 +2573,7 @@ node_attr_usage:
                     {SWPROC_OPT, "configurecmd", 0, 0},   /* aArgs[1] */
                     {SWPROC_OPT, "deletecmd", 0, 0},      /* aArgs[2] */
                     {SWPROC_OPT, "stylecmd", 0, 0},       /* aArgs[3] */
-                    {SWPROC_END, 0, 0, 0}
+                    {SWPROC_END, NULL, 0, 0}
                 };
                 if (SwprocRt(interp, objc - 2, &objv[2], aArgConf, aArgs)) {
                     return TCL_ERROR;
@@ -2640,7 +2640,7 @@ node_attr_usage:
                 {"hover",   HTML_DYNAMIC_HOVER},
                 {"link",    HTML_DYNAMIC_LINK},
                 {"visited", HTML_DYNAMIC_VISITED},
-                {0, 0}
+                {NULL, 0}
             };
             const char *zArg1 = (objc>2) ? Tcl_GetString(objv[2]) : 0;
             const char *zArg2 = (objc>3) ? Tcl_GetString(objv[3]) : 0;
@@ -2670,7 +2670,7 @@ node_attr_usage:
                 }
                 if (!mask) {
                     Tcl_AppendResult(interp, 
-                        "Unsupported dynamic CSS flag: ", zArg2, 0);
+                        "Unsupported dynamic CSS flag: ", zArg2, NULL);
                     return TCL_ERROR;
                 }
             }
@@ -2705,7 +2705,7 @@ node_attr_usage:
             for (i = 0; flags[i].zName; i++) {
                 if (pElem->flags & flags[i].flag) {
                     Tcl_Obj *pNew = Tcl_NewStringObj(flags[i].zName, -1);
-                    Tcl_ListObjAppendElement(0, pRet, pNew);
+                    Tcl_ListObjAppendElement(NULL, pRet, pNew);
                 }
             }
             Tcl_SetObjResult(interp, pRet);
@@ -2837,7 +2837,7 @@ HtmlNodeCommand(HtmlTree *pTree, HtmlNode *pNode)
 
         pCmd = Tcl_NewStringObj(zBuf, -1);
         Tcl_IncrRefCount(pCmd);
-        Tcl_CreateObjCommand(pTree->interp, zBuf, nodeCommand, pNode, 0);
+        Tcl_CreateObjCommand(pTree->interp, zBuf, nodeCommand, pNode, NULL);
         pNodeCmd = HtmlNew(HtmlNodeCmd);
         pNodeCmd->pCommand = pCmd;
         pNodeCmd->pTree = pTree;
@@ -3001,7 +3001,7 @@ HtmlNodeGetPointer(HtmlTree *pTree, char const *zCmd)
 
     rc = Tcl_GetCommandInfo(interp, zCmd, &info);
     if (rc == 0 || info.objProc != nodeCommand){ 
-        Tcl_AppendResult(interp, "no such node: ", zCmd, 0);
+        Tcl_AppendResult(interp, "no such node: ", zCmd, NULL);
         return 0;
     }
     return (HtmlNode *)info.objClientData;
@@ -3019,7 +3019,7 @@ fragmentOrphan (HtmlTree *pTree)
 
     if (pOrphan) {
         Tcl_Obj *pCmd = HtmlNodeCommand(pTree, pOrphan);
-        Tcl_ListObjAppendElement(0, pFragment->pNodeList, pCmd);
+        Tcl_ListObjAppendElement(NULL, pFragment->pNodeList, pCmd);
         nodeOrphanize(pTree, pOrphan);
         pFragment->pRoot = 0;
         pFragment->pCurrent = 0;
@@ -3039,7 +3039,7 @@ fragmentAddText (HtmlTree *pTree, HtmlTextNode *pTextNode, int iOffset)
         /* If there is a fragment root node, add the new text node
          * as the right-most child of HtmlFragmentContext.pCurrent.
          */
-        nodeInsertChild(pTree, pFragment->pCurrent, 0,0, (HtmlNode *)pTextNode);
+        nodeInsertChild(pTree, pFragment->pCurrent, NULL, NULL, (HtmlNode *)pTextNode);
     } else {
         /* The text node becomes the a sub-tree all on it's own. */
         pFragment->pRoot = (HtmlNode *)pTextNode;
@@ -3091,12 +3091,12 @@ fragmentAddElement (
     pElem->pAttributes = pAttributes;
     pElem->node.eTag = eType;
     if (!zType) {
-        zType = HtmlTypeToName(0, eType);
+        zType = HtmlTypeToName(NULL, eType);
     }
     pElem->node.zTag = zType;
 
     if (pFragment->pCurrent) {
-        nodeInsertChild(pTree, pFragment->pCurrent, 0, 0, (HtmlNode *)pElem);
+        nodeInsertChild(pTree, pFragment->pCurrent, NULL, NULL, (HtmlNode *)pElem);
     } else {
         assert(!pFragment->pRoot);
         pFragment->pRoot = (HtmlNode *)pElem;
@@ -3198,7 +3198,7 @@ HtmlSequenceNodes (HtmlTree *pTree)
 {
     if (!pTree->isSequenceOk) {
         pTree->iNextNode = 0;
-        HtmlWalkTree(pTree, 0, sequenceCb, 0);
+        HtmlWalkTree(pTree, NULL, sequenceCb, NULL);
         pTree->isSequenceOk = 1;
     }
 }

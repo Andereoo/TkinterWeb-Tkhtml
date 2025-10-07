@@ -33,7 +33,6 @@
 static const char rcsid[] = "$Id: htmldraw.c,v 1.208 2008/02/14 08:43:49 danielk1977 Exp $";
 
 #include "html.h"
-#define NDEBUG
 #include <assert.h>
 #include <X11/Xutil.h>
 #include <cairo/cairo.h>
@@ -391,7 +390,7 @@ static int layoutNodeCb(HtmlCanvasItem *, int, int, Overflow *, ClientData);
  * runs a lot and is very expensive.
  */
 #if 0 && !defined(NDEBUG)
-static void 
+static void
 CHECK_CANVAS (HtmlCanvas *pCanvas)
 {
     HtmlCanvasItem *p; 
@@ -472,7 +471,7 @@ struct CanvasItemSorterSlot {
     Overflow *pOverflow;
 };
 
-static void 
+static void
 sorterInsert (CanvasItemSorter *pSorter, HtmlCanvasItem *pItem, int x, int y, Overflow *pOverflow)
 {
     int z = 0;
@@ -574,7 +573,7 @@ sorterIterate(
         }
     }
 }
-static void 
+static void
 sorterReset (CanvasItemSorter *pSorter)
 {
     int ii;
@@ -591,7 +590,7 @@ allocateCanvasItem (void)
 {
     return HtmlNew(HtmlCanvasItem);
 }
-static void 
+static void
 freeCanvasItem (HtmlTree *pTree, HtmlCanvasItem *p)
 {
     p->nRef--;
@@ -637,7 +636,7 @@ charToByteOffset (const unsigned char *z, int iChar)
 }
 #endif
 
-void 
+void
 HtmlDrawCanvasItemRelease (HtmlTree *pTree, HtmlCanvasItem *pItem)
 {
     if (pItem) {
@@ -645,7 +644,7 @@ HtmlDrawCanvasItemRelease (HtmlTree *pTree, HtmlCanvasItem *pItem)
     }
 }
 
-void 
+void
 HtmlDrawCanvasItemReference (HtmlCanvasItem *pItem)
 {
     if (pItem) {
@@ -861,7 +860,7 @@ colorFromNode (HtmlNode *pNode)
  *---------------------------------------------------------------------------
  */
 #if 0
-static int 
+static int
 countPrimitives (HtmlCanvas *pCanvas)
 {
     HtmlCanvasItem *p;
@@ -1284,7 +1283,7 @@ HtmlDrawText (HtmlCanvas *pCanvas, const char *zText, int nText, int x, int y, i
     pCanvas->top = MIN(pCanvas->top, y - pFont->metrics.ascent);
 }
 
-void 
+void
 HtmlDrawTextExtend (HtmlCanvas *pCanvas, int nChar, int nPixel) 
 {
     assert(pCanvas && pCanvas->pLast && pCanvas->pLast->type == CANVAS_TEXT);
@@ -1292,7 +1291,7 @@ HtmlDrawTextExtend (HtmlCanvas *pCanvas, int nChar, int nPixel)
     pCanvas->pLast->x.t.w += nPixel;
 }
 
-int 
+int
 HtmlDrawTextLength (HtmlCanvas *pCanvas)
 {
     assert(pCanvas && pCanvas->pLast && pCanvas->pLast->type == CANVAS_TEXT);
@@ -1303,6 +1302,7 @@ void
 HtmlDrawImage (
     HtmlCanvas *pCanvas,
     HtmlImage2 *pImage,               /* Image name or NULL */
+    //HtmlNode *pNode,
     int x,
     int y,
     int w,                      /* Width of image */
@@ -1531,7 +1531,7 @@ struct GetPixmapQuery {
     Overflow *pOverflowList;
 };
 
-static void 
+static void
 setClippingDrawable (GetPixmapQuery *pQuery, HtmlCanvasItem *pItem, Drawable *pDrawable, int *pX, int *pY)
 {
 #if !USE_XLIB_CLIPPING
@@ -1623,7 +1623,7 @@ printf("%s\n", Tcl_GetString(HtmlNodeCommand(pQuery->pTree, p->pItem->pNode)));
 #endif /* if !USE_XLIB_CLIPPING */
 }
 
-static void 
+static void
 setClippingRegion (GetPixmapQuery *pQuery, Display *pDisplay, GC gc)
 {
 #if USE_XLIB_CLIPPING
@@ -1652,7 +1652,7 @@ setClippingRegion (GetPixmapQuery *pQuery, Display *pDisplay, GC gc)
 #endif /* if USE_XLIB_CLIPPING */
 }
 
-static void 
+static void
 clearClippingRegion (Display *pDisplay, GC gc)
 {
 #if USE_XLIB_CLIPPING
@@ -1929,7 +1929,7 @@ fill_round_rectangle(
  *
  *---------------------------------------------------------------------------
  */
-static void 
+static void
 tileimage (
     GetPixmapQuery *pQuery,   /* Clipping region */
     Drawable drawable,        /* Where to draw */
@@ -2042,7 +2042,7 @@ tileimage (
     }
 }
 
-static void 
+static void
 drawScrollbars (HtmlTree *pTree, HtmlCanvasItem *pItem, int origin_x, int origin_y)
 {
     HtmlElementNode *pElem = (HtmlElementNode *)pItem->x.generic.pNode;
@@ -2184,56 +2184,56 @@ drawBox (
             );
         } 
     } else {
-        if (0 == (flags & DRAWBOX_NOBACKGROUND) && pV->cBackgroundColor->xcolor) {
-            int boxw = pBox->w + MIN((x + pBox->x), 0);
-            int boxh = pBox->h + MIN((y + pBox->y), 0);
+    if (0 == (flags & DRAWBOX_NOBACKGROUND) && pV->cBackgroundColor->xcolor) {
+        int boxw = pBox->w + MIN((x + pBox->x), 0);
+        int boxh = pBox->h + MIN((y + pBox->y), 0);
 
-            fill_rectangle(pTree->tkwin, 
-                drawable, pV->cBackgroundColor->xcolor,
-                MAX(0, x + pBox->x), MAX(0, y + pBox->y),
-                MIN(boxw, w), MIN(boxh, h)
+        fill_rectangle(pTree->tkwin, 
+            drawable, pV->cBackgroundColor->xcolor,
+            MAX(0, x + pBox->x), MAX(0, y + pBox->y),
+            MIN(boxw, w), MIN(boxh, h)
+        );
+    }
+
+    if (0 == (flags & DRAWBOX_NOBORDER)) {
+        /* Top border */
+        if (tw > 0 && tc) {
+            fill_quad(pQuery, pTree->tkwin, drawable, tc,
+                x + pBox->x, y + pBox->y,
+                lw, tw,
+                pBox->w - lw - rw, 0,
+                rw, -1 * tw
             );
-        } 
-
-        if (0 == (flags & DRAWBOX_NOBORDER)) {
-            /* Top border */
-            if (tw > 0 && tc) {
-                fill_quad(pQuery, pTree->tkwin, drawable, tc,
-                    x + pBox->x, y + pBox->y,
-                    lw, tw,
-                    pBox->w - lw - rw, 0,
-                    rw, -1 * tw
-                );
-            }
-        
-            /* Left border, if required */
-            if (lw > 0 && lc) {
-                fill_quad(pQuery, pTree->tkwin, drawable, lc,
-                    x + pBox->x, y + pBox->y,
-                    lw, tw,
-                    0, pBox->h - tw - bw,
-                    -1 * lw, bw
-                );
-            }
-        
-            /* Bottom border, if required */
-            if (bw > 0 && bc) {
-                fill_quad(pQuery, pTree->tkwin, drawable, bc,
-                    x + pBox->x, y + pBox->y + pBox->h,
-                    lw, - 1 * bw,
-                    pBox->w - lw - rw, 0,
-                    rw, bw
-                );
-            }
-        
-            /* Right border, if required */
-            if (rw > 0 && rc) {
-                fill_quad(pQuery, pTree->tkwin, drawable, rc,
-                    x + pBox->x + pBox->w, y + pBox->y,
-                    -1 * rw, tw,
-                    0, pBox->h - tw - bw,
-                    rw, bw
-                );
+        }
+    
+        /* Left border, if required */
+        if (lw > 0 && lc) {
+            fill_quad(pQuery, pTree->tkwin, drawable, lc,
+                x + pBox->x, y + pBox->y,
+                lw, tw,
+                0, pBox->h - tw - bw,
+                -1 * lw, bw
+            );
+        }
+    
+        /* Bottom border, if required */
+        if (bw > 0 && bc) {
+            fill_quad(pQuery, pTree->tkwin, drawable, bc,
+                x + pBox->x, y + pBox->y + pBox->h,
+                lw, - 1 * bw,
+                pBox->w - lw - rw, 0,
+                rw, bw
+            );
+        }
+    
+        /* Right border, if required */
+        if (rw > 0 && rc) {
+            fill_quad(pQuery, pTree->tkwin, drawable, rc,
+                x + pBox->x + pBox->w, y + pBox->y,
+                -1 * rw, tw,
+                0, pBox->h - tw - bw,
+                rw, bw
+            );
             }
         }
     }
@@ -2335,7 +2335,7 @@ drawBox (
                 for ( ; pBgNode; pBgNode = HtmlNodeParent(pBgNode)) {
                     HtmlComputedValues *pV2 = HtmlNodeComputedValues(pBgNode);
                     if (pV2->cBackgroundColor->xcolor) {
-                        fill_quad(0, pTree->tkwin, ipix, 
+                        fill_quad(NULL, pTree->tkwin, ipix, 
                             pV2->cBackgroundColor->xcolor,
                             0, 0, iWidth, 0, 0, iHeight, -1 * iWidth, 0
                         );
@@ -2497,7 +2497,7 @@ drawLine (
  *
  *---------------------------------------------------------------------------
  */
-static void 
+static void
 drawText (
     GetPixmapQuery *pQuery,        /* Pointer to pixmap-query */
     HtmlCanvasItem *pItem,         /* Text item to draw */
@@ -2967,7 +2967,7 @@ HtmlDrawSnapshotZero (HtmlTree *pTree)
     return (HtmlCanvasSnapshot *)HtmlNew(CanvasItemSorter);
 }
 
-void 
+void
 HtmlDrawSnapshotDamage (HtmlTree *pTree, HtmlCanvasSnapshot *pSnapshot, HtmlCanvasSnapshot **ppCurrent)
 {
     CanvasItemSorter *pOld = (CanvasItemSorter *)pSnapshot;
@@ -3062,7 +3062,7 @@ HtmlDrawSnapshotDamage (HtmlTree *pTree, HtmlCanvasSnapshot *pSnapshot, HtmlCanv
     }
 }
 
-void 
+void
 HtmlDrawSnapshotFree (HtmlTree *pTree, HtmlCanvasSnapshot *pSnapshot)
 {
     if (pSnapshot) {
@@ -3075,7 +3075,7 @@ HtmlDrawSnapshotFree (HtmlTree *pTree, HtmlCanvasSnapshot *pSnapshot)
     }
 }
 
-static void 
+static void
 clipRectangle (int *pX, int *pY, int *pW, int *pH, int x2, int y2, int w2, int h2)
 {
     int x1 = *pX;
@@ -3089,7 +3089,7 @@ clipRectangle (int *pX, int *pY, int *pW, int *pH, int x2, int y2, int w2, int h
     *pH = MIN((y1+h1) - *pY, (y2+h2) - *pY);
 }
 
-static void 
+static void
 pixmapQuerySwitchOverflow (GetPixmapQuery *pQuery, Overflow *pOverflow)
 {
     if (pOverflow != pQuery->pCurrentOverflow) {
@@ -3422,10 +3422,10 @@ getPixmap (
         int w1 = pOutline->w;
         int h1 = pOutline->h;
         Outline *pPrev = pOutline;
-        fill_quad(0, pTree->tkwin, pmap, oc, x1,y1, w1,0, 0,ow, -w1,0);
-        fill_quad(0, pTree->tkwin, pmap, oc, x1,y1+h1, w1,0, 0,-ow, -w1,0);
-        fill_quad(0, pTree->tkwin, pmap, oc, x1,y1, 0,h1, ow,0, 0,-h1);
-        fill_quad(0, pTree->tkwin, pmap, oc, x1+w1,y1, 0,h1, -ow,0, 0,-h1);
+        fill_quad(NULL, pTree->tkwin, pmap, oc, x1,y1, w1,0, 0,ow, -w1,0);
+        fill_quad(NULL, pTree->tkwin, pmap, oc, x1,y1+h1, w1,0, 0,-ow, -w1,0);
+        fill_quad(NULL, pTree->tkwin, pmap, oc, x1,y1, 0,h1, ow,0, 0,-h1);
+        fill_quad(NULL, pTree->tkwin, pmap, oc, x1+w1,y1, 0,h1, -ow,0, 0,-h1);
         pOutline = pOutline->pNext;
         HtmlFree(pPrev);
     }
@@ -3643,7 +3643,7 @@ layoutNodeIndexCb(
  *
  *---------------------------------------------------------------------------
  */
-static void 
+static void
 layoutNodeIndexCmd (
     HtmlTree *pTree,        /* Widget tree */
     int x,                  /* Document (not viewport) X coordinate */
@@ -3688,7 +3688,7 @@ layoutNodeIndexCmd (
 
         /* Load the result into the Tcl interpreter */
         pCmd = Tcl_DuplicateObj(HtmlNodeCommand(pTree, pNode));
-        Tcl_ListObjAppendElement(0, pCmd, Tcl_NewIntObj(iIndex));
+        Tcl_ListObjAppendElement(NULL, pCmd, Tcl_NewIntObj(iIndex));
         Tcl_SetObjResult(pTree->interp, pCmd);
     }
 }
@@ -3805,7 +3805,7 @@ layoutNodeCb(
     return 0;
 }
 
-static int 
+static int
 layoutNodeCompare (const void *pVoidLeft, const void *pVoidRight)
 {
     HtmlNode *pLeft = *(HtmlNode **)pVoidLeft;
@@ -3840,7 +3840,7 @@ layoutNodeCompare (const void *pVoidLeft, const void *pVoidRight)
  *
  *---------------------------------------------------------------------------
  */
-static void 
+static void
 layoutNodeCmd (HtmlTree *pTree, int x, int y)
 {
     NodeQuery sQuery;
@@ -3859,7 +3859,7 @@ layoutNodeCmd (HtmlTree *pTree, int x, int y)
         qsort(sQuery.apNode, sQuery.nNode, sizeof(HtmlNode*),layoutNodeCompare);
         for (i = 0; i < sQuery.nNode; i++) {
             Tcl_Obj *pCmd = HtmlNodeCommand(pTree, sQuery.apNode[i]);
-            Tcl_ListObjAppendElement(0, pRet, pCmd);
+            Tcl_ListObjAppendElement(NULL, pRet, pCmd);
         }
         Tcl_SetObjResult(pTree->interp, pRet);
     }
@@ -4020,10 +4020,10 @@ HtmlWidgetBboxCmd(
     }
 
     if (x2 >= x) {
-        Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(x));
-        Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(y));
-        Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(x2));
-        Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(y2));
+        Tcl_ListObjAppendElement(NULL, pRet, Tcl_NewIntObj(x));
+        Tcl_ListObjAppendElement(NULL, pRet, Tcl_NewIntObj(y));
+        Tcl_ListObjAppendElement(NULL, pRet, Tcl_NewIntObj(x2));
+        Tcl_ListObjAppendElement(NULL, pRet, Tcl_NewIntObj(y2));
     }
 
     Tcl_SetObjResult(interp, pRet);
@@ -4155,7 +4155,7 @@ paintNodesSearchCb(
  *
  *---------------------------------------------------------------------------
  */
-void 
+void
 HtmlWidgetDamageText (
     HtmlTree *pTree,         /* Widget tree */
     HtmlNode *pNodeStart,    /* First node to repaint */
@@ -4203,7 +4203,7 @@ HtmlWidgetDamageText (
     HtmlCallbackDamage(pTree, x, y, w, h);
 }
 
-void 
+void
 HtmlWidgetBboxText (
     HtmlTree *pTree,         /* Widget tree */
     HtmlNode *pNodeStart,    /* First node to repaint */
@@ -4329,7 +4329,7 @@ scrollToNodeCb(
  *
  *---------------------------------------------------------------------------
  */
-int 
+int
 HtmlWidgetNodeTop (HtmlTree *pTree, HtmlNode *pNode)
 {
     ScrollToQuery sQuery;
@@ -4618,7 +4618,7 @@ CHECK_CANVAS(pCanvas);
     return pItem;
 }
 
-void 
+void
 HtmlDrawAddLinebox (HtmlCanvas *pCanvas, int x, int y)
 {
     HtmlCanvasItem *pItem; 
@@ -4633,7 +4633,7 @@ CHECK_CANVAS(pCanvas);
     return;
 }
 
-int 
+int
 HtmlDrawFindLinebox (HtmlCanvas *pCanvas, int *pX, int *pY)
 {
     int origin_x = 0;
@@ -4657,7 +4657,7 @@ HtmlDrawFindLinebox (HtmlCanvas *pCanvas, int *pX, int *pY)
     return 0;
 }
 
-int 
+int
 HtmlDrawGetMarker (HtmlCanvas *pCanvas, HtmlCanvasItem *pMarker, int *pX, int *pY)
 {
     int origin_x = 0;
@@ -4683,7 +4683,7 @@ HtmlDrawGetMarker (HtmlCanvas *pCanvas, HtmlCanvasItem *pMarker, int *pX, int *p
             if (pCanvas->pLast == pMarker) {
                 pCanvas->pLast = pPrev ? pPrev : pCanvas->pFirst;
             }
-            freeCanvasItem(0, pMarker);
+            freeCanvasItem(NULL, pMarker);
             CHECK_CANVAS(pCanvas);
             return 0;
         }

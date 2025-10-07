@@ -34,17 +34,15 @@ static char const rcsid[] = "@(#) $Id: htmltcl.c,v 1.207 2008/01/16 06:29:27 dan
 
 #include <ctype.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <assert.h>
-#include <stddef.h>
-#include <stdarg.h>
 #include "html.h"
 #include "restrack.h"
 #include "swproc.h"
-
 
 #include <time.h>
 
@@ -53,7 +51,7 @@ static char const rcsid[] = "@(#) $Id: htmltcl.c,v 1.207 2008/01/16 06:29:27 dan
 #define LOG if (pTree->options.logcmd)
 
 #define SafeCheck(interp,str) if (Tcl_IsSafe(interp)) { \
-    Tcl_AppendResult(interp, str, " invalid in safe interp", 0); \
+    Tcl_AppendResult(interp, str, " invalid in safe interp", NULL); \
     return TCL_ERROR; \
 }
 
@@ -81,7 +79,7 @@ allocCmd(
     Tcl_Obj *const objv[]              /* Argument strings. */ 
     )
 {
-    return Rt_AllocCommand(0, interp, objc, objv);
+    return Rt_AllocCommand(NULL, interp, objc, objv);
 }
 static int 
 heapdebugCmd(
@@ -91,7 +89,7 @@ heapdebugCmd(
     Tcl_Obj *const objv[]              /* Argument strings. */ 
     )
 {
-    return HtmlHeapDebug(0, interp, objc, objv);
+    return HtmlHeapDebug(NULL, interp, objc, objv);
 }
 static int 
 hashstatsCmd(
@@ -188,8 +186,8 @@ logCommon(
 
         pCmd = Tcl_DuplicateObj(pLogCmd);
         Tcl_IncrRefCount(pCmd);
-        Tcl_ListObjAppendElement(0, pCmd, Tcl_NewStringObj(zSubject, -1));
-        Tcl_ListObjAppendElement(0, pCmd, Tcl_NewStringObj(zBuf, nBuf));
+        Tcl_ListObjAppendElement(NULL, pCmd, Tcl_NewStringObj(zSubject, -1));
+        Tcl_ListObjAppendElement(NULL, pCmd, Tcl_NewStringObj(zBuf, nBuf));
 
         if (Tcl_EvalObjEx(pTree->interp, pCmd, TCL_GLOBAL_ONLY)) {
             Tcl_BackgroundError(pTree->interp);
@@ -240,7 +238,7 @@ doLoadDefaultStyle (HtmlTree *pTree)
     Tcl_Obj *pId = Tcl_NewStringObj("agent", 5);
     assert(pObj);
     Tcl_IncrRefCount(pId);
-    HtmlStyleParse(pTree, pObj, pId, 0, 0, 0);
+    HtmlStyleParse(pTree, pObj, pId, NULL, NULL, NULL);
     Tcl_DecrRefCount(pId);
 }
 
@@ -393,7 +391,7 @@ ok_out:
 void
 HtmlCheckRestylePoint(HtmlTree *pTree)
 {
-    HtmlWalkTree(pTree, 0, checkRestylePointCb, 0);
+    HtmlWalkTree(pTree, NULL, checkRestylePointCb, NULL);
 }
 #endif /* #ifndef NDEBUG */
 
@@ -873,7 +871,7 @@ HtmlCallbackDamageNode (HtmlTree *pTree, HtmlNode *pNode)
 {
     if (pTree->cb.pSnapshot) {
         if (pNode->iSnapshot != pTree->iLastSnapshotId){
-            HtmlWalkTree(pTree, pNode, setSnapshotId, 0);
+            HtmlWalkTree(pTree, pNode, setSnapshotId, NULL);
         }
     } else {
         int x, y, w, h;
@@ -1238,7 +1236,7 @@ worldChangedCb(
 void 
 HtmlNodeClearRecursive (HtmlTree *pTree, HtmlNode *pNode)
 {
-    HtmlWalkTree(pTree, pNode, worldChangedCb, 0);
+    HtmlWalkTree(pTree, pNode, worldChangedCb, NULL);
 }
 
 /*
@@ -1380,7 +1378,7 @@ STRING  (timercmd, "timerCmd", "TimerCmd", ""),
         }
     
         if (init || mask & FT_MASK) {
-            int nSize;
+            Tcl_Size nSize;
             Tcl_Obj **apSize;
             int aFontSize[7];
             Tcl_Obj *pFT = pTree->options.fonttable;
@@ -1398,7 +1396,7 @@ STRING  (timercmd, "timerCmd", "TimerCmd", ""),
                 Tcl_ResetResult(interp);
                 Tcl_AppendResult(interp, 
                     "expected list of 7 integers but got ", 
-                    "\"", Tcl_GetString(pFT), "\"", 0
+                    "\"", Tcl_GetString(pFT), "\"", NULL
                 );
                 rc = TCL_ERROR;
             } else {
@@ -1414,7 +1412,7 @@ STRING  (timercmd, "timerCmd", "TimerCmd", ""),
             HtmlDrawSnapshotFree(pTree, pTree->cb.pSnapshot);
             pTree->cb.pSnapshot = 0;
             HtmlCallbackRestyle(pTree, pTree->pRoot);
-            HtmlWalkTree(pTree, pTree->pRoot, worldChangedCb, 0);
+            HtmlWalkTree(pTree, pTree->pRoot, worldChangedCb, NULL);
             HtmlCallbackDamage(pTree, 0, 0, Tk_Width(win), Tk_Height(win));
 
 #ifndef NDEBUG
@@ -1495,7 +1493,7 @@ static int cgetCmd(
         Tcl_SetObjResult(interp, pRet);
     } else {
         char * zOpt = Tcl_GetString(objv[2]);
-        Tcl_AppendResult( interp, "unknown option \"", zOpt, "\"", 0);
+        Tcl_AppendResult( interp, "unknown option \"", zOpt, "\"", NULL);
         return TCL_ERROR;
     }
     return TCL_OK;
@@ -1581,7 +1579,7 @@ relayoutCmd(
 
     if (objc == 2) {
         HtmlCallbackRestyle(pTree, pTree->pRoot);
-        HtmlWalkTree(pTree, pTree->pRoot, relayoutCb, 0);
+        HtmlWalkTree(pTree, pTree->pRoot, relayoutCb, NULL);
     } else {
         char *zArg3 = ((objc >= 3) ? Tcl_GetString(objv[2]) : 0);
         char *zArg4 = ((objc >= 4) ? Tcl_GetString(objv[3]) : 0);
@@ -1597,7 +1595,7 @@ relayoutCmd(
             HtmlCallbackRestyle(pTree, pNode);
         } else {
             Tcl_AppendResult(interp, 
-                "Bad option \"", zArg3, "\": must be -layout or -style", 0
+                "Bad option \"", zArg3, "\": must be -layout or -style", NULL
             );
             return TCL_ERROR;
         }
@@ -1636,7 +1634,7 @@ parseCmd(
 
     int isFinal;
     char *zHtml;
-    int nHtml;
+    Tcl_Size nHtml;
     int eWriteState;
 
     Tcl_Obj *aObj[2];
@@ -1665,7 +1663,7 @@ parseCmd(
         Tcl_ResetResult(interp);
         Tcl_AppendResult(interp, 
             "Cannot call [", zWidget, " parse]" 
-            "until after [", zWidget, "] reset", 0
+            "until after [", zWidget, "] reset", NULL
         );
         return TCL_ERROR;
     }
@@ -1695,7 +1693,7 @@ parseCmd(
         if (nCount==100){
             Tcl_ResetResult(interp);
             Tcl_AppendResult(interp, "infinite loop: "
-                "caused by node-handler calling [reset], [parse].", 0
+                "caused by node-handler calling [reset], [parse].", NULL
             );
             return TCL_ERROR;
         }
@@ -1972,7 +1970,7 @@ writeCmd(
         {"wait", OPT_WAIT, 0, ""}, 
         {"text", OPT_TEXT, 1, "TEXT"}, 
         {"continue", OPT_CONTINUE, 0, ""}, 
-        {0, 0, 0}
+        {NULL, 0, 0}
     };
 
     /* All commands must consist of at least three words - the widget name,
@@ -2057,7 +2055,7 @@ handlerCmd(
         {"node",        HANDLER_NODE},
         {"script",      HANDLER_SCRIPT},
         {"parse",       HANDLER_PARSE},
-        {0, 0}
+        {NULL, 0}
     };
     int iChoice;
 
@@ -2073,9 +2071,9 @@ handlerCmd(
     }
 
     zTag = Tcl_GetString(objv[3]);
-    tag = HtmlNameToType(0, zTag);
+    tag = HtmlNameToType(NULL, zTag);
     if (tag==Html_Unknown) {
-        Tcl_AppendResult(interp, "Unknown tag type: ", zTag, 0);
+        Tcl_AppendResult(interp, "Unknown tag type: ", zTag, NULL);
         return TCL_ERROR;
     }
 
@@ -2094,7 +2092,7 @@ handlerCmd(
             if (0 == zTag[0]) {
                 tag = Html_Text;
             } else if ('/' == zTag[0]) {
-                tag = HtmlNameToType(0, &zTag[1]);
+                tag = HtmlNameToType(NULL, &zTag[1]);
                 if (tag != Html_Unknown) tag = tag * -1;
             }
             break;
@@ -2149,15 +2147,15 @@ styleCmd(
 {
     SwprocConf aConf[5 + 1] = {
         {SWPROC_OPT, "id", "author", 0},      /* -id <style-sheet id> */
-        {SWPROC_OPT, "importcmd", 0, 0},      /* -importcmd <cmd> */
-        {SWPROC_OPT, "urlcmd", 0, 0},         /* -urlcmd <cmd> */
-        {SWPROC_OPT, "errorvar", 0, 0},       /* -errorvar <varname> */
-        {SWPROC_ARG, 0, 0, 0},                /* STYLE-SHEET-TEXT */
-        {SWPROC_END, 0, 0, 0}
+        {SWPROC_OPT, "importcmd", NULL, 0},      /* -importcmd <cmd> */
+        {SWPROC_OPT, "urlcmd", NULL, 0},         /* -urlcmd <cmd> */
+        {SWPROC_OPT, "errorvar", NULL, 0},       /* -errorvar <varname> */
+        {SWPROC_ARG, NULL, NULL, 0},                /* STYLE-SHEET-TEXT */
+        {SWPROC_END, NULL, NULL, 0}
     };
     Tcl_Obj *apObj[5];
     int rc = TCL_OK;
-    int n;
+    Tcl_Size n;
     HtmlTree *pTree = (HtmlTree *)clientData;
 
     /* First assert() that the sizes of the aConf and apObj array match. Then
@@ -2187,7 +2185,7 @@ styleCmd(
          * if one was specified. 
          */
         if (apObj[3]) {
-            Tcl_ObjSetVar2(interp, apObj[3], 0, Tcl_NewObj(), 0);
+            Tcl_ObjSetVar2(interp, apObj[3], NULL, Tcl_NewObj(), 0);
         }
     }
 
@@ -2281,7 +2279,7 @@ tagCmd(
         { "remove"   , tagRemoveCmd }, 
         { "configure", tagCfgCmd }, 
         { "delete"   , tagDeleteCmd }, 
-        { 0, 0 }
+        { NULL, 0 }
     };
     return callSubCmd(aSub, 2, clientData, interp, objc, objv);
 }
@@ -2528,10 +2526,10 @@ bboxCmd(
 
     HtmlWidgetNodeBox(pTree, pNode, &x, &y, &w, &h);
     if (w > 0 && h > 0) {
-        Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(x));
-        Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(y));
-        Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(x + w));
-        Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(y + h));
+        Tcl_ListObjAppendElement(NULL, pRet, Tcl_NewIntObj(x));
+        Tcl_ListObjAppendElement(NULL, pRet, Tcl_NewIntObj(y));
+        Tcl_ListObjAppendElement(NULL, pRet, Tcl_NewIntObj(x + w));
+        Tcl_ListObjAppendElement(NULL, pRet, Tcl_NewIntObj(y + h));
     }
 
     Tcl_SetObjResult(interp, pRet);
@@ -2597,7 +2595,7 @@ int widgetCmd(
 #ifndef NDEBUG
         {"_hashstats",  hashstatsCmd},
 #endif
-        { 0, 0}
+        { NULL, 0}
     };
     return callSubCmd(aSub, 1, clientData, interp, objc, objv);
 }
@@ -2754,7 +2752,7 @@ htmlstyleCmd(
 
     Tcl_SetResult(interp, HTML_DEFAULT_CSS, TCL_STATIC);
     if (objc == 2) {
-        Tcl_AppendResult(interp, HTML_DEFAULT_QUIRKS, 0);
+        Tcl_AppendResult(interp, HTML_DEFAULT_QUIRKS, NULL);
     }
 
     return TCL_OK;
@@ -2937,38 +2935,38 @@ DLL_EXPORT int Tkhtml_Init(Tcl_Interp *interp)
 {
     int rc;
 
-    /* Require stubs libraries version 9.0 or greater. */
+    /* Require stubs libraries version 8.4 or greater. */
 #ifdef USE_TCL_STUBS
-    if (Tcl_InitStubs(interp, "9.0", 0) == 0) {
+    if (Tcl_InitStubs(interp, "8.4-", 0) == 0) {
         return TCL_ERROR;
     }
-    if (Tk_InitStubs(interp, "9.0", 0) == 0) {
+    if (Tk_InitStubs(interp, "8.4-", 0) == 0) {
         return TCL_ERROR;
     }
 #endif
 
-    if (0 == Tcl_PkgRequire(interp, "Tk", "9.0", 0)) {
+    if (0 == Tcl_PkgRequire(interp, "Tk", "8.4-", 0)) {
         return TCL_ERROR;
     }
     Tcl_PkgProvide(interp, "Tkhtml", "3.0");
 
-    Tcl_CreateObjCommand(interp, "html", newWidget, 0, 0);
+    Tcl_CreateObjCommand(interp, "html", newWidget, NULL, NULL);
 
-    Tcl_CreateObjCommand(interp, "::tkhtml::htmlstyle",  htmlstyleCmd, 0, 0);
-    Tcl_CreateObjCommand(interp, "::tkhtml::version",    htmlVersionCmd, 0, 0);
+    Tcl_CreateObjCommand(interp, "::tkhtml::htmlstyle",  htmlstyleCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "::tkhtml::version",    htmlVersionCmd, NULL, NULL);
 
-    Tcl_CreateObjCommand(interp, "::tkhtml::decode",     htmlDecodeCmd, 0, 0);
-    Tcl_CreateObjCommand(interp, "::tkhtml::encode",     htmlEncodeCmd, 0, 0);
-    Tcl_CreateObjCommand(interp, "::tkhtml::escape_uri", htmlEscapeCmd, 0, 0);
+    Tcl_CreateObjCommand(interp, "::tkhtml::decode",     htmlDecodeCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "::tkhtml::encode",     htmlEncodeCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "::tkhtml::escape_uri", htmlEscapeCmd, NULL, NULL);
 
-    Tcl_CreateObjCommand(interp, "::tkhtml::uri", htmlUriCmd, 0, 0);
+    Tcl_CreateObjCommand(interp, "::tkhtml::uri", htmlUriCmd, NULL, NULL);
 
-    Tcl_CreateObjCommand(interp, "::tkhtml::byteoffset", htmlByteOffsetCmd,0,0);
-    Tcl_CreateObjCommand(interp, "::tkhtml::charoffset", htmlCharOffsetCmd,0,0);
+    Tcl_CreateObjCommand(interp, "::tkhtml::byteoffset", htmlByteOffsetCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "::tkhtml::charoffset", htmlCharOffsetCmd, NULL, NULL);
 
 #ifndef NDEBUG
-    Tcl_CreateObjCommand(interp, "::tkhtml::htmlalloc", allocCmd, 0, 0);
-    Tcl_CreateObjCommand(interp, "::tkhtml::heapdebug", heapdebugCmd, 0, 0);
+    Tcl_CreateObjCommand(interp, "::tkhtml::htmlalloc", allocCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "::tkhtml::heapdebug", heapdebugCmd, NULL, NULL);
 #endif
 
     SwprocInit(interp);

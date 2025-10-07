@@ -61,8 +61,22 @@
 #define USE_COMPOSITELESS_PHOTO_PUT_BLOCK
 #include <tk.h>
 
+/* Check, if Tcl version supports Tcl_Size,
+   which was introduced in Tcl 8.7 and 9.
+*/
+#ifndef TCL_SIZE_MAX
+    #include <limits.h>
+    #define TCL_SIZE_MAX INT_MAX
+
+    #ifndef Tcl_Size
+        typedef int Tcl_Size;
+    #endif
+
+    #define TCL_SIZE_MODIFIER ""
+    #define Tcl_GetSizeIntFromObj Tcl_GetIntFromObj
+#endif
+
 #include <string.h>
-#define NDEBUG
 #include <assert.h>
 #include <stdlib.h>
 
@@ -73,7 +87,7 @@
  * Version information for the package mechanism.
  */
 #define HTML_PKGNAME "Tkhtml"
-#define HTML_PKGVERSION "3.0"
+#define HTML_PKGVERSION "3.0.2"
 
 /*
  * Various data types.  This code is designed to run on a modern
@@ -561,7 +575,7 @@ struct HtmlTree {
     int nParsed;                    /* Bytes of pDocument tokenized */
     int nCharParsed;                /* TODO: Characters parsed */
 
-    int iWriteInsert;               /* Byte offset in pDocument for [write] */
+    Tcl_Size iWriteInsert;          /* Byte offset in pDocument for [write] */
     int eWriteState;                /* One of the HTML_WRITE_XXX values */
 
     int isIgnoreNewline;            /* True after an opening tag */

@@ -613,16 +613,16 @@ executeScript(
     for (jj = 0; pAttributes && jj < pAttributes->nAttr; jj++) {
         Tcl_Obj *pArg;
         pArg = Tcl_NewStringObj(pAttributes->a[jj].zName, -1);
-        Tcl_ListObjAppendElement(0, pAttr, pArg);
+        Tcl_ListObjAppendElement(NULL, pAttr, pArg);
         pArg = Tcl_NewStringObj(pAttributes->a[jj].zValue, -1);
-        Tcl_ListObjAppendElement(0, pAttr, pArg);
+        Tcl_ListObjAppendElement(NULL, pAttr, pArg);
     }
 
     /* Execute the script */
     pEval = Tcl_DuplicateObj(pCallback);
     Tcl_IncrRefCount(pEval);
-    Tcl_ListObjAppendElement(0, pEval, pAttr);
-    Tcl_ListObjAppendElement(0,pEval,Tcl_NewStringObj(zScript,nScript));
+    Tcl_ListObjAppendElement(NULL, pEval, pAttr);
+    Tcl_ListObjAppendElement(NULL,pEval,Tcl_NewStringObj(zScript,nScript));
     rc = Tcl_EvalObjEx(pTree->interp, pEval, TCL_EVAL_GLOBAL);
     Tcl_DecrRefCount(pEval);
 
@@ -940,10 +940,10 @@ HtmlTokenize (
              * HtmlHashLookup(). It would be easy enough to fix 
              * HtmlHashLookup() to understand a length argument.
              */
-            HtmlHashInit(0, 0);
+            HtmlHashInit(NULL, 0);
             c = argv[0][arglen[0]];
             argv[0][arglen[0]] = 0;
-            pMap = HtmlHashLookup(0, argv[0]);
+            pMap = HtmlHashLookup(NULL, argv[0]);
             if (pMap == 0) {
                 Tcl_HashEntry *pEntry;
                 int dummy;
@@ -1088,7 +1088,7 @@ tokenizeWrapper (
 
     HtmlCallbackRestyle(pTree, pCurrent ? pCurrent : pTree->pRoot);
     HtmlCallbackLayout(pTree, pCurrent);
-    rc = HtmlTokenize(pTree, 0, isFin, xAddText, xAddElement, xAddClosing);
+    rc = HtmlTokenize(pTree, NULL, isFin, xAddText, xAddElement, xAddClosing);
     if (pTree->isParseFinished && pTree->eWriteState==HTML_WRITE_NONE) {
         HtmlFinishNodeHandlers(pTree);
     }
@@ -1233,7 +1233,7 @@ HtmlWriteWait (HtmlTree *pTree)
 int 
 HtmlWriteText(HtmlTree *pTree, Tcl_Obj *pText)
 {
-    int iInsert = pTree->iWriteInsert;
+    Tcl_Size iInsert = pTree->iWriteInsert;
   
     Tcl_Obj *pDocument = pTree->pDocument;
     Tcl_Obj *pHead;

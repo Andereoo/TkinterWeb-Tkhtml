@@ -243,7 +243,7 @@ oprintf(Tcl_Obj *pObj, const char *zFormat, ...) {
  *
  *---------------------------------------------------------------------------
  */
-static void 
+static void
 inlineBoxMetrics (
     InlineContext *pContext,
     HtmlNode *pNode,
@@ -311,7 +311,7 @@ inlineBoxMetrics (
  *
  *---------------------------------------------------------------------------
  */
-static HtmlCanvas *
+static HtmlCanvas * 
 inlineContextAddInlineCanvas (
     InlineContext *p,
     int eType,        /* One of the INLINE_xxx constants */
@@ -349,7 +349,7 @@ inlineContextAddInlineCanvas (
     return &pBox->canvas;
 }
 
-static void 
+static void
 inlineContextAddSpacer (InlineContext *p, int eWhitespace)
 {
     InlineBox *pBox;
@@ -719,7 +719,7 @@ inlineContextAddNewLine (InlineContext *p, int nHeight, int isLast)
  *
  *---------------------------------------------------------------------------
  */
-static void 
+static void
 inlineContextDrawBorder (
     LayoutContext *pLayout,
     HtmlCanvas *pCanvas,
@@ -819,7 +819,7 @@ inlineContextDrawBorder (
     }
 }
 
-static void 
+static void
 calculateLineBoxHeight (
     InlineContext *pContext,
     int nBox,
@@ -940,7 +940,7 @@ calculateLineBoxHeight (
     END_LOG("calculateLineBoxHeight");
 }
 
-static int 
+static int
 calculateLineBoxWidth (
     InlineContext *p,        /* Inline context */
     int flags,               /* As for HtmlInlineContextGetLineBox() */

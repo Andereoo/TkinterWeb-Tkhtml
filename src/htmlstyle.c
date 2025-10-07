@@ -36,14 +36,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-static const char rcsid[] = "$Id: htmlstyle.c,v 1.61 2007/12/12 04:50:29 danielk1977 Exp $";
 
 #include "html.h"
 #include <assert.h>
 #include <string.h>
 
-void 
-HtmlDelScrollbars (HtmlTree *pTree, HtmlNode *pNode)
+void
+HtmlDelScrollbars(pTree, pNode)
+    HtmlTree *pTree;
+    HtmlNode *pNode;
 {
     HtmlElementNode *pElem = (HtmlElementNode *)pNode;
 
@@ -86,8 +87,10 @@ HtmlDelScrollbars (HtmlTree *pTree, HtmlNode *pNode)
     }
 }
 
-void 
-HtmlDelStackingInfo (HtmlTree *pTree, HtmlElementNode *pElem)
+void
+HtmlDelStackingInfo(pTree, pElem)
+    HtmlTree *pTree;
+    HtmlElementNode *pElem;
 {
     HtmlNodeStack *pStack = pElem->pStack;
     if (pStack && pStack->pElem == pElem){
@@ -113,7 +116,8 @@ HtmlDelStackingInfo (HtmlTree *pTree, HtmlElementNode *pElem)
 #define STACK_AUTO      2
 #define STACK_CONTEXT   3
 static int 
-stackType (HtmlNode *p)
+stackType(p) 
+    HtmlNode *p;
 {
     HtmlComputedValues *pV = HtmlNodeComputedValues(p);
 
@@ -140,8 +144,10 @@ stackType (HtmlNode *p)
     return STACK_NONE;
 }
 
-static void 
-addStackingInfo (HtmlTree *pTree, HtmlElementNode *pElem)
+static void
+addStackingInfo(pTree, pElem)
+    HtmlTree *pTree;
+    HtmlElementNode *pElem;
 {
     HtmlNode *pNode = (HtmlNode *)pElem;
     int eStack = stackType(pNode);
@@ -198,8 +204,11 @@ struct StackCompare {
  *
  *---------------------------------------------------------------------------
  */
-static int 
-scoreStack (HtmlNodeStack *pParentStack, HtmlNodeStack *pStack, int eStack)
+static int
+scoreStack(pParentStack, pStack, eStack)
+    HtmlNodeStack *pParentStack;
+    HtmlNodeStack *pStack;
+    int eStack;
 {
     int z;
     if (pStack == pParentStack) {
@@ -219,8 +228,9 @@ scoreStack (HtmlNodeStack *pParentStack, HtmlNodeStack *pStack, int eStack)
          x == x->pStack->pElem && x->pStack->eType == STACK_CONTEXT \
 )
 
-static void 
-setStackingContext (HtmlElementNode *p, HtmlNodeStack **ppOut)
+static void setStackingContext(p, ppOut)
+    HtmlElementNode *p;
+    HtmlNodeStack **ppOut;
 {
     if (p == p->pStack->pElem) {
         HtmlNodeStack *pS = p->pStack;
@@ -231,8 +241,10 @@ setStackingContext (HtmlElementNode *p, HtmlNodeStack **ppOut)
 }
 
 
-static int 
-stackCompare (const void *pVoidLeft, const void *pVoidRight)
+static int
+stackCompare(pVoidLeft, pVoidRight)
+    const void *pVoidLeft;
+    const void *pVoidRight;
 {
     StackCompare *pLeft = (StackCompare *)pVoidLeft;
     StackCompare *pRight = (StackCompare *)pVoidRight;
@@ -362,10 +374,10 @@ stackCompare (const void *pVoidLeft, const void *pVoidRight)
   #define checkStackSort(a,b,c)
 #else
 static void 
-checkStackSort(
-    HtmlTree *pTree,
-    StackCompare *aStack,
-    int nStack)
+checkStackSort(pTree, aStack, nStack)
+    HtmlTree *pTree;
+    StackCompare *aStack;
+    int nStack;
 {
 #if 0
     int ii;
@@ -400,8 +412,9 @@ checkStackSort(
  *
  *---------------------------------------------------------------------------
  */
-void 
-HtmlRestackNodes (HtmlTree *pTree)
+void
+HtmlRestackNodes(pTree)
+    HtmlTree *pTree;
 {
     HtmlNodeStack *pStack;
     StackCompare *apTmp;
@@ -463,11 +476,10 @@ printf("Stack %d: %s %s\n", iTmp,
  *---------------------------------------------------------------------------
  */
 static int 
-styleNode(
-    HtmlTree *pTree,
-    HtmlNode *pNode,
-    ClientData clientData
-    )
+styleNode(pTree, pNode, clientData)
+    HtmlTree *pTree;
+    HtmlNode *pNode;
+    ClientData clientData;
 {
     const char *zStyle;      /* Value of "style" attribute for node */
     int trashDynamics = (int)((size_t) clientData);
@@ -554,7 +566,10 @@ struct StyleApply {
 typedef struct StyleApply StyleApply;
 
 static void 
-styleApply (HtmlTree *pTree, HtmlNode *pNode, StyleApply *p)
+styleApply(pTree, pNode, p)
+    HtmlTree *pTree;
+    HtmlNode *pNode;
+    StyleApply *p;
 {
     int i;
     int doStyle;
@@ -668,8 +683,10 @@ styleApply (HtmlTree *pTree, HtmlNode *pNode, StyleApply *p)
     }
 }
 
-static void 
-addCounterEntry (StyleApply *p, const char *zName, int iValue)
+static void addCounterEntry(p, zName, iValue)
+    StyleApply *p;
+    const char *zName;
+    int iValue;
 {
     StyleCounter *pCounter;
 
@@ -692,8 +709,10 @@ addCounterEntry (StyleApply *p, const char *zName, int iValue)
     p->nCounter++;
 }
 
-void 
-HtmlStyleHandleCounters (HtmlTree *pTree, HtmlComputedValues *pComputed)
+void
+HtmlStyleHandleCounters(pTree, pComputed)
+    HtmlTree *pTree;
+    HtmlComputedValues *pComputed;
 {
     StyleApply *p = (StyleApply *)pTree->pStyleApply;
 
@@ -748,8 +767,11 @@ HtmlStyleHandleCounters (HtmlTree *pTree, HtmlComputedValues *pComputed)
     }
 }
 
-int 
-HtmlStyleCounters (HtmlTree *pTree, const char *zName, int *aValue, int nValue)
+int HtmlStyleCounters(pTree, zName, aValue, nValue)
+    HtmlTree *pTree;
+    const char *zName;
+    int *aValue;
+    int nValue;
 {
     int ii;
     StyleApply *p = (StyleApply *)(pTree->pStyleApply);
@@ -771,8 +793,9 @@ HtmlStyleCounters (HtmlTree *pTree, const char *zName, int *aValue, int nValue)
     return n;
 }
 
-int 
-HtmlStyleCounter (HtmlTree *pTree, const char *zName)
+int HtmlStyleCounter(pTree, zName)
+    HtmlTree *pTree;
+    const char *zName;
 {
     int ii;
     StyleApply *p = (StyleApply *)(pTree->pStyleApply);
@@ -800,7 +823,9 @@ HtmlStyleCounter (HtmlTree *pTree, const char *zName)
  *---------------------------------------------------------------------------
  */
 int 
-HtmlStyleApply (HtmlTree *pTree, HtmlNode *pNode)
+HtmlStyleApply(pTree, pNode)
+    HtmlTree *pTree;
+    HtmlNode *pNode;
 {
     StyleApply sApply;
     int isRoot = ((pNode == pTree->pRoot) ? 1 : 0);
@@ -833,12 +858,11 @@ HtmlStyleApply (HtmlTree *pTree, HtmlNode *pNode)
  *---------------------------------------------------------------------------
  */
 int 
-HtmlStyleSyntaxErrs(
-    ClientData clientData,             /* The HTML widget */
-    Tcl_Interp *interp,                /* The interpreter */
-    int objc,                          /* Number of arguments */
-    Tcl_Obj *const objv[]              /* List of all arguments */
-    )
+HtmlStyleSyntaxErrs(clientData, interp, objc, objv)
+    ClientData clientData;             /* The HTML widget */
+    Tcl_Interp *interp;                /* The interpreter */
+    int objc;                          /* Number of arguments */
+    Tcl_Obj *const objv[];             /* List of all arguments */
 {
     HtmlTree *pTree = (HtmlTree *)clientData;
     int nSyntaxErrs = 0;

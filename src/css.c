@@ -325,7 +325,7 @@ static char *tokenToString(CssToken *pToken){
  *---------------------------------------------------------------------------
  */
 static int 
-tokenToReal (const CssToken *pToken, int *pLen, double *pVal)
+tokenToReal (CssToken *pToken, int *pLen, double *pVal)
 {
     char zBuf[100];
     char *zEnd;
@@ -372,7 +372,7 @@ tokenToReal (const CssToken *pToken, int *pLen, double *pVal)
  *
  *---------------------------------------------------------------------------
  */
-static int 
+static int
 propertyIsLength (CssParse *pParse, CssProperty *pProp)
 {
     switch (pProp->eType) {
@@ -503,7 +503,7 @@ doUrlCmd(CssParse *pParse, const char *zArg, int nArg)
     pCopy = Tcl_NewStringObj(zCopy, -1);
 
     Tcl_IncrRefCount(pScript);
-    Tcl_ListObjAppendElement(0, pScript, pCopy);
+    Tcl_ListObjAppendElement(NULL, pScript, pCopy);
     Tcl_EvalObjEx(pParse->interp, pScript, eval_flags);
     Tcl_DecrRefCount(pScript);
 
@@ -526,7 +526,7 @@ doUrlCmd(CssParse *pParse, const char *zArg, int nArg)
  *---------------------------------------------------------------------------
  */
 static CssProperty *
-tokenToProperty (CssParse *pParse, const CssToken *pToken)
+tokenToProperty (CssParse *pParse, CssToken *pToken)
 {
     struct LengthFormat {
         int type;
@@ -737,7 +737,7 @@ CssProperty *HtmlCssStringToProperty(const char *z, int n)
     }
     sToken.z = z;
     sToken.n = n;
-    return tokenToProperty(0, &sToken);
+    return tokenToProperty(NULL, &sToken);
 }
 
 /*
@@ -1028,7 +1028,7 @@ propertySetAddShortcutBorder (
 
             token.z = z;
             token.n = n;
-            pProp = tokenToProperty(0, &token);
+            pProp = tokenToProperty(NULL, &token);
             eType = pProp->eType;
 
             if (propertyIsLength(pParse, pProp) || eType == CSS_CONST_THIN || 
@@ -1117,7 +1117,7 @@ propertySetAddShortcutBorder (
  *
  *---------------------------------------------------------------------------
  */
-static void 
+static void
 propertyTransformBgPosition (CssProperty *pProp)
 {
     if (pProp) {
@@ -1324,7 +1324,7 @@ error_out:
  *
  *---------------------------------------------------------------------------
  */
-static void 
+static void
 shortcutListStyle (
     CssParse *pParse,
     CssPropertySet *p,         /* Property set */
@@ -1403,7 +1403,7 @@ bad_parse:
     if (pType) HtmlFree(pType);
 }
 
-static void 
+static void
 propertySetAddList (
     CssParse *pParse,
     int eProp,
@@ -1533,7 +1533,7 @@ textToFontFamilyProperty (
         zFamily = 0;
     }
 
-    return textToProperty(0, (zFamily ? zFamily : "Helvetica"), -1);
+    return textToProperty(NULL, (zFamily ? zFamily : "Helvetica"), -1);
 }
 
 /*
@@ -1551,7 +1551,7 @@ textToFontFamilyProperty (
  *
  *---------------------------------------------------------------------------
  */
-static void 
+static void
 propertySetAddFontFamily (
     CssParse *pParse,          /* Parse context */
     CssPropertySet *p,         /* Property set */
@@ -1594,7 +1594,7 @@ propertySetAddFontFamily (
  *
  *---------------------------------------------------------------------------
  */
-static void 
+static void
 propertySetAddShortcutFont (
     CssParse *pParse,
     CssPropertySet *p,         /* Property set */
@@ -1618,7 +1618,7 @@ propertySetAddShortcutFont (
         int n;
         z = HtmlCssGetNextListItem(z, zEnd-z, &n);
         if (z) {
-            pProp = textToProperty(0, z, n);
+            pProp = textToProperty(NULL, z, n);
             switch (pProp->eType) {
                 case CSS_CONST_INHERIT:
                     if (pStyle || pVariant || pWeight || 
@@ -1668,7 +1668,7 @@ propertySetAddShortcutFont (
                         if (j == n) goto bad_parse;
                         HtmlFree(pProp);
                         n = j;
-                        pProp = textToProperty(0, z, j);
+                        pProp = textToProperty(NULL, z, j);
                     } 
                     pSize = pProp;
                     pProp = 0;
@@ -1680,7 +1680,7 @@ propertySetAddShortcutFont (
     
                     if (hasLineHeight) {
                         z = HtmlCssGetNextListItem(z, zEnd-z, &n);
-                        pLineHeight = textToProperty(0, z, n);
+                        pLineHeight = textToProperty(NULL, z, n);
                         z += n;
                     } 
                     z = HtmlCssGetNextListItem(z, zEnd-z, &n);
@@ -1737,7 +1737,7 @@ bad_parse:
  *
  *---------------------------------------------------------------------------
  */
-static int 
+static int
 tokenToPropertyList (CssToken *pToken, CssProperty **apProp, int nMax)
 {
     const char *z= pToken->z;
@@ -1756,7 +1756,7 @@ tokenToPropertyList (CssToken *pToken, CssProperty **apProp, int nMax)
             }
             token.z = z;
             token.n = nBytes;
-            apProp[nProp++] = tokenToProperty(0, &token);
+            apProp[nProp++] = tokenToProperty(NULL, &token);
             z += nBytes;
         }
     }
@@ -1899,7 +1899,7 @@ propertySetAddShortcutBorderColor (
             CssToken token;
             token.z = z;
             token.n = n;
-            apProp[i] = tokenToProperty(0, &token);
+            apProp[i] = tokenToProperty(NULL, &token);
             i++;
             assert(n>0);
             z += n;
@@ -2161,7 +2161,7 @@ cssParse(
     sParse.pStyleId = pStyleId;
     sParse.pImportCmd = pImportCmd;
     sParse.pUrlCmd = pUrlCmd;
-    sParse.interp = (pTree ? pTree->interp : 0);
+    sParse.interp = (pTree ? pTree->interp : NULL);
     sParse.pTree = pTree;
     if (pErrorVar) {
         sParse.pErrorLog = Tcl_NewObj();
@@ -2219,7 +2219,7 @@ cssParse(
     propertySetFree(sParse.pImportant);
 
     if (pErrorVar) {
-        Tcl_ObjSetVar2(pTree->interp, pErrorVar, 0, sParse.pErrorLog, 0);
+        Tcl_ObjSetVar2(pTree->interp, pErrorVar, NULL, sParse.pErrorLog, 0);
         Tcl_DecrRefCount(sParse.pErrorLog);
     }
 
@@ -2229,7 +2229,7 @@ cssParse(
 int 
 HtmlCssSelectorParse (HtmlTree *pTree, int n, const char *z, CssStyleSheet **ppStyle)
 {
-    return cssParse(pTree, n, z, 0, 0, 0, 0, 0, 0, ppStyle);
+    return cssParse(pTree, n, z, 0, 0, NULL, NULL, NULL, NULL, ppStyle);
 }
 
 /*
@@ -2261,7 +2261,7 @@ HtmlStyleParse(
     Tcl_Obj *pStyleId = 0;
     const char *zId;
     const char *zStyleText;
-    int nStyleText;
+    Tcl_Size nStyleText;
 
     /* Parse up the stylesheet id. It must begin with one of the strings
      * "agent", "user" or "author". After that it may contain any text.
@@ -2280,7 +2280,7 @@ HtmlStyleParse(
         pStyleId = Tcl_NewStringObj(&zId[6], -1);
     }
     if (!pStyleId) {
-        Tcl_AppendResult(pTree->interp, "Bad style-sheet-id: ", zId, 0);
+        Tcl_AppendResult(pTree->interp, "Bad style-sheet-id: ", zId, NULL);
         return TCL_ERROR;
     }
     Tcl_IncrRefCount(pStyleId);
@@ -2333,7 +2333,7 @@ HtmlCssInlineParse(
 ){
     CssStyleSheet *pStyle = 0;
     assert(ppPropertySet && !(*ppPropertySet));
-    cssParse(pTree, n, z, 1, 0, 0, 0, 0, 0, &pStyle);
+    cssParse(pTree, n, z, 1, 0, NULL, NULL, NULL, NULL, &pStyle);
 
     if (pStyle) {
         if (pStyle->pUniversalRules) {
@@ -2376,7 +2376,7 @@ ruleFree (CssRule *pRule)
     }
 }
 
-static void 
+static void
 freeRulesList (CssRule **ppList)
 {
     CssRule *pRule = *ppList;
@@ -2469,7 +2469,7 @@ int HtmlCssStyleSheetSyntaxErrs(CssStyleSheet *pStyle){
  *
  *--------------------------------------------------------------------------
  */
-void 
+void
 HtmlCssDeclaration (
     CssParse *pParse,
     CssToken *pProp,
@@ -2493,7 +2493,7 @@ HtmlCssDeclaration (
     );
 #endif
 
-    if (pParse->pStyleId == 0) {
+    if (pParse->pStyleId == NULL) {
         isImportant = 0;
     }
 
@@ -2691,7 +2691,7 @@ ruleCompare(CssRule *pLeft, CssRule *pRight) {
     return res;
 }
 
-static void 
+static void
 insertRule (CssRule **ppList, CssRule *pRule)
 {
     if (!*ppList || ruleCompare(*ppList, pRule) <= 0) {
@@ -2989,7 +2989,7 @@ HtmlCssRule (CssParse *pParse, int success)
  *--------------------------------------------------------------------------
  */
 static int 
-attrTest (int eType, const char *zString, const char *zAttr)
+attrTest (u8 eType, const char *zString, const char *zAttr)
 {
     if (!zAttr) {
         return 0;
@@ -3303,16 +3303,16 @@ overrideToPropertyValues(
     )
 {
     Tcl_Obj **apObj = 0;
-    int nObj = 0;
+    Tcl_Size nObj = 0;
     int ii;
 
     if (!pOverride) return;
-    Tcl_ListObjGetElements(0, pOverride, &nObj, &apObj);
+    Tcl_ListObjGetElements(NULL, pOverride, &nObj, &apObj);
 
     for (ii = 0; ii < (nObj - 1); ii += 2) { 
         int eProp;
         const char *zProp;
-        int nProp;
+        Tcl_Size nProp;
 
         zProp = Tcl_GetStringFromObj(apObj[ii], &nProp);
         eProp = HtmlCssPropertyLookup(nProp, zProp);
@@ -3516,7 +3516,7 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
     
 
     /* Initialise aPropDone and sCreator */
-    HtmlComputedValuesInit(pTree, pNode, 0, &sCreator);
+    HtmlComputedValuesInit(pTree, pNode, NULL, &sCreator);
     memset(aPropDone, 0, sizeof(aPropDone));
     assert(sizeof(aPropDone) == sizeof(int) * (CSS_PROPERTY_MAX_PROPERTY+1));
 
@@ -3558,7 +3558,7 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
 
         /* If the selector is a match for our node, apply the rule properties */
         nSelectorMatch += 
-                applyRule(pTree, pNode, pRule, aPropDone, (char **)0, &sCreator);
+                applyRule(pTree, pNode, pRule, aPropDone, NULL, &sCreator);
 
         if (
             pSelector->isDynamic &&
@@ -4195,7 +4195,7 @@ HtmlCssStyleConfigDump(
 
         p = Tcl_NewObj();
         HtmlCssSelectorToString(pRule->pSelector, p);
-        Tcl_ListObjAppendElement(0, pList, p);
+        Tcl_ListObjAppendElement(NULL, pList, p);
         
         p = Tcl_NewObj();
         for (ii = 0; ii < pRule->pPropertySet->n; ii++) {
@@ -4215,7 +4215,7 @@ HtmlCssStyleConfigDump(
                 if (zFree) HtmlFree(zFree);
             }
         }
-        Tcl_ListObjAppendElement(0, pList, p);
+        Tcl_ListObjAppendElement(NULL, pList, p);
 
         snprintf(zBuf, 255, "%s%s%s", 
             (pPri->origin == CSS_ORIGIN_AUTHOR) ? "author" :
@@ -4225,9 +4225,9 @@ HtmlCssStyleConfigDump(
             pPri->important ? " (!important)" : ""
         );
         zBuf[255] = '\0';
-        Tcl_ListObjAppendElement(0, pList, Tcl_NewStringObj(zBuf, -1));
+        Tcl_ListObjAppendElement(NULL, pList, Tcl_NewStringObj(zBuf, -1));
 
-        Tcl_ListObjAppendElement(0, pRet, pList);
+        Tcl_ListObjAppendElement(NULL, pRet, pList);
     }
  
     Tcl_SetObjResult(interp, pRet);
@@ -4263,13 +4263,13 @@ HtmlCssInlineQuery(Tcl_Interp *interp, CssPropertySet *pPropertySet, Tcl_Obj *pA
       
         if (pArg) {
             char *zArg;
-            int nArg;
+            Tcl_Size nArg;
             int eProp;
     
             zArg = Tcl_GetStringFromObj(pArg, &nArg);
             eProp = HtmlCssPropertyLookup(nArg, zArg);
             if (eProp < 0) {
-                Tcl_AppendResult(interp, "No such property: ", zArg, 0);
+                Tcl_AppendResult(interp, "No such property: ", zArg, NULL);
                 return TCL_ERROR;
             }
 
@@ -4290,10 +4290,10 @@ HtmlCssInlineQuery(Tcl_Interp *interp, CssPropertySet *pPropertySet, Tcl_Obj *pA
                 char *zProp = HtmlPropertyToString(
                     pPropertySet->a[ii].pProp, &zFree
                 );
-                Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj(
+                Tcl_ListObjAppendElement(NULL, pRet, Tcl_NewStringObj(
                     HtmlCssPropertyToString(pPropertySet->a[ii].eProp), -1
                 ));
-                Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj(zProp, -1));
+                Tcl_ListObjAppendElement(NULL, pRet, Tcl_NewStringObj(zProp, -1));
                 HtmlFree(zFree);
             }
             Tcl_SetObjResult(interp, pRet);

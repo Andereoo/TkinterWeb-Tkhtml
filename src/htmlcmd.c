@@ -227,7 +227,7 @@ int HtmlParseCmd(clientData, interp, objc, objv)
     int objc;                          /* Number of arguments */
     Tcl_Obj *const *objv;              /* List of all arguments */
 {
-    int i;
+    Tcl_Size i;
     char *arg1, *arg2;
     HtmlIndex iStart;
     HtmlElement *savePtr;
@@ -632,7 +632,7 @@ HtmlLostSelection(clientData)
     const char *argv[3];
     argv[2] = "";
     if (htmlPtr->exportSelection) {
-        HtmlSelectionClearCmd(htmlPtr, 0, 3, argv);
+        HtmlSelectionClearCmd(htmlPtr, NULL, 3, argv);
     }
 }
 
@@ -819,7 +819,7 @@ HtmlInsertCmd(clientData, interp, argc, argv)
         if (HtmlGetIndex(htmlPtr, argv[2], &ins.p, &ins.i)) {
             if (!HtmlUnlock(htmlPtr)) {
                 Tcl_AppendResult(interp, "malformed index: \"", argv[1], "\"",
-                                 0);
+                                 NULL);
             }
             return TCL_ERROR;
         }

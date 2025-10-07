@@ -17,7 +17,7 @@ static char const rcsid[] =
 #include <stdarg.h>
 #include "html.h"
 
-static void EmptyInput _ANSI_ARGS_((HtmlElement * pElem));
+static void EmptyInput (HtmlElement * pElem);
 
 /*
 ** Create the window name for a child widget.  Space to hold the name

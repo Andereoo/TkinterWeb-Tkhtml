@@ -1298,6 +1298,7 @@ markerBoxLayout (
     LayoutContext *pLayout,       /* IN: Layout context */
     BoxContext *pBox,             /* OUT: Generated box */
     HtmlNode *pNode,              /* IN: Node with "display:list-item" */
+    //BoxContext *pBox;
     int *pVerticalOffset         /* OUT: Ascent of generated box */
 )
 {
@@ -2406,7 +2407,7 @@ normalFlowLayoutTableComponent (LayoutContext *pLayout, BoxContext *pBox, HtmlNo
         CssProperty sProp;
         sProp.eType = CSS_CONST_TABLE;
         sProp.v.zVal = "table";
-        HtmlComputedValuesInit(pLayout->pTree, &sTable.node, 0, &sCreator);
+        HtmlComputedValuesInit(pLayout->pTree, &sTable.node, NULL, &sCreator);
         HtmlComputedValuesSet(&sCreator, CSS_PROPERTY_DISPLAY, &sProp);
         pLayout->pImplicitTableProperties = HtmlComputedValuesFinish(&sCreator);
     }
@@ -3580,7 +3581,7 @@ blockMinMaxWidth (LayoutContext *pLayout, HtmlNode *pNode, int *pMin, int *pMax)
             pLayout->minmaxTest = MINMAX_TEST_MIN;
             memset(&sBox, 0, sizeof(BoxContext));
             HtmlLayoutNodeContent(pLayout, &sBox, pNode);
-            HtmlDrawCleanup(0, &sBox.vc);
+            HtmlDrawCleanup(NULL, &sBox.vc);
             pCache->iMinWidth = sBox.width;
             pCache->flags |= CACHED_MINWIDTH_OK;
         }
@@ -3598,7 +3599,7 @@ blockMinMaxWidth (LayoutContext *pLayout, HtmlNode *pNode, int *pMin, int *pMax)
             memset(&sBox, 0, sizeof(BoxContext));
             sBox.iContaining = 10000;
             HtmlLayoutNodeContent(pLayout, &sBox, pNode);
-            HtmlDrawCleanup(0, &sBox.vc);
+            HtmlDrawCleanup(NULL, &sBox.vc);
             pCache->iMaxWidth = sBox.width;
             pCache->flags |= CACHED_MAXWIDTH_OK;
         }
@@ -3752,7 +3753,7 @@ doConfigureCmd (HtmlTree *pTree, HtmlElementNode *pElem, int iContaining)
 
         pRes = Tcl_GetObjResult(interp);
         pElem->pReplacement->iOffset = 0;
-        Tcl_GetIntFromObj(0, pRes, &pElem->pReplacement->iOffset);
+        Tcl_GetIntFromObj(NULL, pRes, &pElem->pReplacement->iOffset);
     }
 }
 
@@ -3839,7 +3840,7 @@ HtmlLayout (HtmlTree *pTree)
 
         if (pTree->options.shrink) {
             int iMaxWidth = 0;
-            blockMinMaxWidth(&sLayout, pBody, 0, &iMaxWidth);
+            blockMinMaxWidth(&sLayout, pBody, NULL, &iMaxWidth);
             nWidth = MIN(iMaxWidth, nWidth);
         }
 
@@ -3854,7 +3855,7 @@ HtmlLayout (HtmlTree *pTree)
         /* Layout content */
         sBox.iContaining =  nWidth;
         sBox.iContainingHeight = nHeight;
-        normalFlowLayoutBlock(&sLayout, &sBox, pBody, &y, 0, &sNormal);
+        normalFlowLayoutBlock(&sLayout, &sBox, pBody, &y, NULL, &sNormal);
         normalFlowMarginCollapse(&sLayout, pBody, &sNormal, &sBox.height);
 
         /* Copy the content into the tree-canvas (the thing htmldraw.c 

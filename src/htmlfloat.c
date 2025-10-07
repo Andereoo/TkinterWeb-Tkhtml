@@ -402,7 +402,7 @@ HtmlFloatListAdd (
  *
  *---------------------------------------------------------------------------
  */
-int 
+int
 HtmlFloatListClearTop (HtmlFloatList *pList, int y)
 {
     FloatListEntry *pEntry;
@@ -760,7 +760,7 @@ HtmlFloatListLog(
     Tcl_DecrRefCount(pLog);
 }
 
-int 
+int
 HtmlFloatListIsConstant (HtmlFloatList *pList, int y, int iHeight)
 {
     int y1 = y - pList->yorigin;

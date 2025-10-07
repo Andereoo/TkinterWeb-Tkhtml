@@ -52,7 +52,7 @@ int (*HtmlPostscriptPtr) (HtmlWidget * htmlPtr, /* The HTML widget */
 
 #ifndef _TCLHTML_
 
-static int HtmlRadioCount _ANSI_ARGS_((HtmlWidget *, HtmlElement *));
+static int HtmlRadioCount (HtmlWidget *, HtmlElement *);
 
 void
 BgImageChangeProc(clientData, x, y, w, h, newWidth, newHeight)
@@ -513,7 +513,7 @@ HtmlLostSelection(ClientData clientData)
     char *argv[3];
     argv[2] = "";
     if (htmlPtr->exportSelection) {
-        HtmlSelectionClearCmd(htmlPtr, 0, 3, argv);
+        HtmlSelectionClearCmd(htmlPtr, NULL, 3, argv);
     }
 }
 #endif
@@ -652,7 +652,8 @@ HtmlGetAttrOver(htmlPtr, x, y, attr)
 {
     HtmlBlock *pBlock;
     HtmlElement *pElem;
-    int n = 0, vargc, i, j;
+    int n = 0, i, j;
+    Tcl_Size vargc;
     char *z, *az;
     const char **vargv;
 
@@ -869,7 +870,7 @@ static char *TagAliases[] = {
     "element", "input",
     "elements", "input",
     "options", "option",
-    0, 0
+    NULL, NULL
 };
 
 static int
@@ -1157,7 +1158,7 @@ HtmlDomIdLookup(htmlPtr, cname, dname, pp)
 
     Tcl_Interp *interp = htmlPtr->interp;
     char tok[DOMMAXTOK], *a, *z;
-    HtmlElement *p, *ep, *tp = 0, *tlim = 0;
+    HtmlElement *p, *ep, *tp = NULL, *tlim = 0;
     int n = 0, ni = 0, en, i, iswrite = 0, aflag;
     int isvalue = !strcmp(cname, "value");
     a = (char *) dname;
@@ -1188,7 +1189,7 @@ HtmlDomIdLookup(htmlPtr, cname, dname, pp)
         }
         if ((n = HtmlDomSubEl(htmlPtr, tok, &en)) == Html_Unknown) {
             /*
-             * Tcl_AppendResult(interp, "Unknown DOM markup: ", a, NULL); return 
+             * Tcl_AppendResult(interp, "Unknown DOM markup: ", a, 0); return 
              * TCL_ERROR; 
              */
             return TCL_OK;
@@ -1494,7 +1495,7 @@ HtmlIdToDomCmd(clientData, interp, argc, argv)
     char *z;
     int try[10], ti = 0, en, i = 0, k, j, l, n, iswrite = 0, atend, lvl = 0;
     int sc = 1, nostr = 0;             /* Short-circuit */
-    HtmlElement *p, *tp = 0, *fp = 0;
+    HtmlElement *p, *tp = NULL, *fp = NULL;
     HtmlElement *pStart = 0;
     Tcl_DStringInit(&cmd);
     try[i++] = Html_FORM;
@@ -1534,23 +1535,23 @@ HtmlIdToDomCmd(clientData, interp, argc, argv)
             case Html_UL:
                 if (HtmlDOMFmtSubIndex
                     (htmlPtr, &tp, &cmd, Html_UL, Html_EndUL, "ul",
-                     Html_Unknown, 0, nostr)) {
+                     Html_Unknown, NULL, nostr)) {
                     if (sc && tp->base.type == Html_UL)
                         goto domfmtdone;
                     if (HtmlDOMFmtSubIndex
                         (htmlPtr, &tp, &cmd, Html_LI, Html_EndLI, "li", Html_UL,
-                         0, nostr)) {
+                         NULL, nostr)) {
                     }
                     goto domfmtdone;
                 }
                 else if (HtmlDOMFmtSubIndex
                          (htmlPtr, &tp, &cmd, Html_OL, Html_EndOL, "ol",
-                          Html_Unknown, 0, nostr)) {
+                          Html_Unknown, NULL, nostr)) {
                     if (sc && tp->base.type == Html_OL)
                         goto domfmtdone;
                     if (HtmlDOMFmtSubIndex
                         (htmlPtr, &tp, &cmd, Html_LI, Html_EndLI, "li", Html_UL,
-                         0, nostr)) {
+                         NULL, nostr)) {
                     }
                     goto domfmtdone;
                 }
@@ -1558,7 +1559,7 @@ HtmlIdToDomCmd(clientData, interp, argc, argv)
             case Html_FORM:
                 if (HtmlDOMFmtSubIndex
                     (htmlPtr, &tp, &cmd, Html_FORM, Html_EndFORM, "forms",
-                     Html_Unknown, 0, nostr)) {
+                     Html_Unknown, NULL, nostr)) {
                     if (sc && tp->base.type == Html_FORM)
                         goto domfmtdone;
                     if (tp->base.type == Html_INPUT &&
@@ -1570,13 +1571,13 @@ HtmlIdToDomCmd(clientData, interp, argc, argv)
                     }
                     else if (HtmlDOMFmtSubIndex
                              (htmlPtr, &tp, &cmd, Html_SELECT, Html_EndSELECT,
-                              "elements", Html_FORM, 0, nostr)) {
+                              "elements", Html_FORM, NULL, nostr)) {
                         if (sc && tp->base.type == Html_SELECT)
                             goto domfmtdone;
                     }
                     else if (HtmlDOMFmtSubIndex
                              (htmlPtr, &tp, &cmd, Html_TEXTAREA,
-                              Html_EndTEXTAREA, "elements", Html_FORM, 0,
+                              Html_EndTEXTAREA, "elements", Html_FORM, NULL,
                               nostr)) {
                         if (sc && tp->base.type == Html_TEXTAREA)
                             goto domfmtdone;
@@ -1587,29 +1588,29 @@ HtmlIdToDomCmd(clientData, interp, argc, argv)
             case Html_TABLE:
                 if (HtmlDOMFmtSubIndex
                     (htmlPtr, &tp, &cmd, Html_TABLE, Html_EndTABLE, "tables",
-                     Html_Unknown, 0, nostr)) {
+                     Html_Unknown, NULL, nostr)) {
                     if (sc && tp->base.type == Html_TABLE)
                         goto domfmtdone;
                     if (HtmlDOMFmtSubIndex
                         (htmlPtr, &tp, &cmd, Html_TR, Html_EndTR, "rows",
-                         Html_TABLE, 0, nostr)) {
+                         Html_TABLE, NULL, nostr)) {
                         if (sc && tp->base.type == Html_TR)
                             goto domfmtdone;
                         if (HtmlDOMFmtSubIndex
                             (htmlPtr, &tp, &cmd, Html_TD, Html_EndTD, "columns",
-                             Html_TR, 0, nostr)) {
+                             Html_TR, NULL, nostr)) {
                             if (sc && tp->base.type == Html_TD)
                                 goto domfmtdone;
                         }
                     }
                     else if (HtmlDOMFmtSubIndex
                              (htmlPtr, &tp, &cmd, Html_TH, Html_EndTH, "rows",
-                              Html_TABLE, 0, nostr)) {
+                              Html_TABLE, NULL, nostr)) {
                         if (sc && tp->base.type == Html_TH)
                             goto domfmtdone;
                         if (HtmlDOMFmtSubIndex
                             (htmlPtr, &tp, &cmd, Html_TD, Html_EndTD, "columns",
-                             Html_TH, 0, nostr)) {
+                             Html_TH, NULL, nostr)) {
                             if (sc && tp->base.type == Html_TD)
                                 goto domfmtdone;
                         }
@@ -1681,7 +1682,8 @@ HtmlTokenAttrSearch(clientData, interp, argc, argv)
     const char **vargv;
     char *z;
     char str[50];
-    int vargc, i, j, nocase, cnt = 0;
+    int i, j, nocase, cnt = 0;
+    Tcl_Size vargc;
     HtmlIndex be[2];
     if (TCL_OK != HtmlBeginEnd(htmlPtr, be, argc - 4, argv + 4))
         return TCL_ERROR;
@@ -2232,7 +2234,7 @@ _HtmlTokenCmdSub(htmlPtr, interp, argc, argv, flag)
         return TCL_ERROR;
     }
     if (pStart) {
-        HtmlTclizeList(htmlPtr, interp, pStart, pEnd ? pEnd->base.pNext : 0,
+        HtmlTclizeList(htmlPtr, interp, pStart, pEnd ? pEnd->base.pNext : NULL,
                        flag);
     }
     return TCL_OK;
@@ -2606,7 +2608,7 @@ HtmlTextOffsetCmd(clientData, interp, argc, argv)
     int h, i1, i2, i = 0, j, k, n, m = 0, fnd = 0, sfnd = 0;
     int si1, si2, mpos = 0, ii[2];
     char zLine[256];
-    HtmlElement *p1 = 0, *p2 = 0, *p;
+    HtmlElement *p1 = NULL, *p2 = NULL, *p;
     if (argc != 6) {
         Tcl_AppendResult(interp, argv[0], " text offset START NUM1 NUM2", NULL);
         return TCL_ERROR;
@@ -2750,7 +2752,7 @@ HtmlTclizeFindText(interp, pat, ip, iEnd, nocase, after)
     int h, i1, i2, i = 0, j, k, l = strlen(pat), n, m = 0, fnd = 0, sfnd = 0;
     int si1, si2, mpos = 0;
     char zLine[256];
-    HtmlElement *p1 = 0, *p2 = 0, *sp1, *sp2, *p = ip->p, *pEnd = iEnd->p;
+    HtmlElement *p1 = NULL, *p2 = NULL, *sp1, *sp2, *p = ip->p, *pEnd = iEnd->p;
     if (nocase)
         for (k = 0; k < l; k++)
             pat[k] = tolower(pat[k]);

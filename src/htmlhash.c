@@ -49,7 +49,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
-#include <stddef.h>
 #include "html.h"
 #include "htmlprop.h"
 

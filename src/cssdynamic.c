@@ -22,7 +22,7 @@ struct CssDynamic {
     CssDynamic *pNext;
 };
 
-void 
+void
 HtmlCssAddDynamic (HtmlElementNode *pElem, CssSelector *pSelector, int isSet)
 {
     CssDynamic *pNew;
@@ -38,7 +38,7 @@ HtmlCssAddDynamic (HtmlElementNode *pElem, CssSelector *pSelector, int isSet)
     pElem->pDynamic = pNew;
 }
 
-void 
+void
 HtmlCssFreeDynamics (HtmlElementNode *pElem)
 {
     CssDynamic *p = pElem->pDynamic;
@@ -68,7 +68,7 @@ checkDynamicCb(HtmlTree *pTree, HtmlNode *pNode, ClientData clientData)
     return HTML_WALK_DESCEND;
 }
 
-void 
+void
 HtmlCssCheckDynamic (HtmlTree *pTree)
 {
     if (pTree->cb.pDynamic) {
@@ -78,10 +78,10 @@ HtmlCssCheckDynamic (HtmlTree *pTree)
             int nChild = HtmlNodeNumChildren(pParent);
             for (i = 0; HtmlNodeChild(pParent, i) != pTree->cb.pDynamic; i++);
             for ( ; i < nChild; i++) {
-                HtmlWalkTree(pTree,HtmlNodeChild(pParent,i),checkDynamicCb,0);
+                HtmlWalkTree(pTree,HtmlNodeChild(pParent,i),checkDynamicCb,NULL);
             }
         } else {
-            HtmlWalkTree(pTree, pTree->cb.pDynamic, checkDynamicCb, 0);
+            HtmlWalkTree(pTree, pTree->cb.pDynamic, checkDynamicCb, NULL);
         }
         pTree->cb.pDynamic = 0;
     }
@@ -97,7 +97,7 @@ HtmlCssTclNodeDynamics(Tcl_Interp *interp, HtmlNode *pNode)
         for (p = pElem->pDynamic; p ; p = p->pNext) {
             Tcl_Obj *pOther = Tcl_NewObj();
             HtmlCssSelectorToString(p->pSelector, pOther);
-            Tcl_ListObjAppendElement(0, pRet, pOther);
+            Tcl_ListObjAppendElement(NULL, pRet, pOther);
         }
     }
     Tcl_SetObjResult(interp, pRet);

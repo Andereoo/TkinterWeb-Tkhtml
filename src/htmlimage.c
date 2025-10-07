@@ -155,7 +155,7 @@ struct HtmlImage2 {
  *
  *---------------------------------------------------------------------------
  */
-void 
+void
 HtmlImageServerInit (HtmlTree *pTree)
 {
     HtmlImageServer *p;
@@ -227,10 +227,14 @@ photoputblock(
     int compRule
     )
 {
+#if TK_MAJOR_VERSION >= 9
     Tk_PhotoPutBlock(interp, handle, blockPtr, x, y, width, height, compRule);
+#else
+    Tk_PhotoPutBlock(handle, blockPtr, x, y, width, height);
+#endif
 }
 
-static void 
+static void
 freeTile (HtmlImage2 *pImage)
 {
     HtmlTree *pTree = pImage->pImageServer->pTree;
@@ -239,7 +243,7 @@ freeTile (HtmlImage2 *pImage)
     if (pImage->pTileName) {
         pScript = Tcl_NewStringObj("image delete", -1);
         Tcl_IncrRefCount(pScript);
-        Tcl_ListObjAppendElement(0, pScript, pImage->pTileName);
+        Tcl_ListObjAppendElement(NULL, pScript, pImage->pTileName);
         Tcl_EvalObjEx(pTree->interp, pScript, flags);
         Tcl_DecrRefCount(pScript);
     
@@ -305,7 +309,7 @@ getImageCompressed(HtmlImage2 *pImage)
         Tcl_IncrRefCount(apObj[1]);
         Tcl_IncrRefCount(apObj[2]);
         if (TCL_OK == Tcl_EvalObjv(interp, 3, apObj, TCL_EVAL_GLOBAL)) {
-	    int nData;
+	    Tcl_Size nData;
 	    Tcl_Obj *pData = Tcl_GetObjResult(interp);
 	    Tcl_GetByteArrayFromObj(pData, &nData);
 	    if (nData>0){
@@ -320,7 +324,7 @@ getImageCompressed(HtmlImage2 *pImage)
     return pImage->pCompressed;
 }
 
-static void 
+static void
 freeImageCompressed (HtmlImage2 *pImage)
 {
     if (pImage->pCompressed) {
@@ -378,7 +382,7 @@ imageChanged(
         if (imgWidth!=pImage->width || imgHeight!=pImage->height) {
             pImage->width = imgWidth;
             pImage->height = imgHeight;
-            HtmlWalkTree(pTree, 0, imageChangedCb, (ClientData)pImage);
+            HtmlWalkTree(pTree, NULL, imageChangedCb, (ClientData)pImage);
         }
 
         Tcl_DoWhenIdle(asyncPixmapify, (ClientData)pImage);
@@ -433,7 +437,7 @@ HtmlImageServerGet (HtmlImageServer *p, const char *zUrl)
             Tcl_Obj *pEval;
             Tcl_Obj *pResult;
             int rc;
-            int nObj;
+            Tcl_Size nObj;
             Tcl_Obj **apObj = 0;
             Tk_Image img;
            
@@ -474,7 +478,7 @@ HtmlImageServerGet (HtmlImageServer *p, const char *zUrl)
             }
             if ((nObj != 1 && nObj != 2) || !img) {
                 Tcl_ResetResult(interp);
-                Tcl_AppendResult(interp,  "-imagecmd returned bad value", 0);
+                Tcl_AppendResult(interp,  "-imagecmd returned bad value", NULL);
                 HtmlFree(pImage);
                 pImage = 0;
                 goto image_get_out;
@@ -537,7 +541,7 @@ Tcl_Obj *HtmlImageUnscaledName(HtmlImage2 *pImage)
     return pRet;
 }
 
-void 
+void
 HtmlImageSize (
     HtmlImage2 *pImage,    /* Image object */
     int *pWidth,           /* OUT: Image width */
@@ -939,10 +943,10 @@ printf("Pixmapifying - nData = %d\n", nData);
 
         pGetData = Tcl_NewObj();
         Tcl_IncrRefCount(pGetData);
-        Tcl_ListObjAppendElement(0, pGetData, Tcl_NewStringObj("image",-1));
-        Tcl_ListObjAppendElement(0, pGetData, Tcl_NewStringObj("create",-1));
-        Tcl_ListObjAppendElement(0, pGetData, Tcl_NewStringObj("photo",-1));
-        Tcl_ListObjAppendElement(0, pGetData, pImage->pImageName);
+        Tcl_ListObjAppendElement(NULL, pGetData, Tcl_NewStringObj("image",-1));
+        Tcl_ListObjAppendElement(NULL, pGetData, Tcl_NewStringObj("create",-1));
+        Tcl_ListObjAppendElement(NULL, pGetData, Tcl_NewStringObj("photo",-1));
+        Tcl_ListObjAppendElement(NULL, pGetData, pImage->pImageName);
         pImage->nIgnoreChange++;
         rc = Tcl_EvalObjEx(interp, pGetData, TCL_EVAL_GLOBAL|TCL_EVAL_DIRECT);
         pImage->nIgnoreChange--;
@@ -1072,7 +1076,7 @@ HtmlImageAlphaChannel (HtmlImage2 *pImage)
 
         Tcl_Obj *pCompressed = getImageCompressed(pImage);
         unsigned char *zCompressed;
-        int nCompressed;
+        Tcl_Size nCompressed;
         int i;
         assert(pCompressed);
 

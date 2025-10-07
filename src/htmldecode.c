@@ -142,7 +142,7 @@ HtmlDecode(
     int jj;
 
     Tcl_Obj *pData;
-    int nData;
+    Tcl_Size nData;
     unsigned char *zData;
     int is64 = 0;
 
@@ -232,11 +232,11 @@ HtmlEncode(
         '8', '9', 'A', 'B', 'C', 'D', 'E', 'F',
     };
 
-    unsigned char *zOut;
-    int iOut;
+    char *zOut;
+    Tcl_Size iOut;
 
     int iIn;
-    int nData;
+    Tcl_Size nData;
     char *zData;
 
     if (objc != 2) {
@@ -245,7 +245,7 @@ HtmlEncode(
     }
     zData = Tcl_GetStringFromObj(objv[1], &nData);
 
-    zOut = (unsigned char *)HtmlAlloc("temp", nData*3);
+    zOut = (char *)HtmlAlloc("temp", nData*3);
     iOut = 0;
     for(iIn = 0; iIn < nData; iIn++){
         char c = zData[iIn];
@@ -258,11 +258,11 @@ HtmlEncode(
         }
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewStringObj((const char *)zOut, iOut));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(zOut, iOut));
     return TCL_OK;
 }
 
-static char *
+static char * 
 allocEscapedComponent (const char *zInput, int nInput, int isQuery)
 {
     int map[128] = { 
@@ -341,8 +341,8 @@ HtmlEscapeUriComponent(
     )
 {
     char *zRes;
-    char *zCsr;
-    int nIn;
+    unsigned char *zCsr;
+    Tcl_Size nIn;
 
     Tcl_Obj *pData;
     int isQuery;
@@ -354,8 +354,8 @@ HtmlEscapeUriComponent(
     pData = objv[objc - 1];
     isQuery = (objc == 3);
 
-    zCsr = (char *)Tcl_GetStringFromObj(pData, &nIn);
-    zRes = allocEscapedComponent((const char *)zCsr, nIn, isQuery);
+    zCsr = (unsigned char *)Tcl_GetStringFromObj(pData, &nIn);
+    zRes = allocEscapedComponent(zCsr, nIn, isQuery);
 
     Tcl_SetResult(interp, (char *)zRes, TCL_VOLATILE);
     HtmlFree(zRes);
@@ -386,7 +386,7 @@ struct Uri {
 static Uri *
 objToUri(Tcl_Obj *pObj)
 {
-    int nInput;
+    Tcl_Size nInput;
     char *zInput;
     char *zOut;
     Uri *p;
@@ -501,7 +501,7 @@ combinePath (const char *zOne, const char *zTwo)
     return zRet;
 }
 
-static void 
+static void
 cleanPath (char *zPath)
 {
     int nPath = strlen(zPath);
@@ -680,7 +680,7 @@ uriObjCmd(
         {"query",     URI_QUERY,     0, ""},      
         {"fragment",  URI_FRAGMENT,  0, ""},      
         {"destroy",   URI_DESTROY,   0, ""},      
-        {0, 0, 0}
+        {NULL, 0, 0}
     };
     p = (Uri *)clientData;
 

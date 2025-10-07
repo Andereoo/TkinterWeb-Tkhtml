@@ -34,7 +34,6 @@
 #include <ctype.h>
 #include <assert.h>
 #include <stdlib.h>
-#include <stddef.h>
 #include "html.h"
 
 #define ISNEWLINE(x) ((x) == '\n' || (x) == '\r')
@@ -1091,11 +1090,11 @@ HtmlTagAddRemoveCmd(
 
     /* If either node is an orphan node, throw a Tcl exception. */
     if (HtmlNodeIsOrphan(sData.pFrom)) {
-        Tcl_AppendResult(interp, Tcl_GetString(objv[4]), " is an orphan", 0);
+        Tcl_AppendResult(interp, Tcl_GetString(objv[4]), " is an orphan", NULL);
         return TCL_ERROR;
     }
     if (HtmlNodeIsOrphan(sData.pTo)) {
-        Tcl_AppendResult(interp, Tcl_GetString(objv[6]), " is an orphan", 0);
+        Tcl_AppendResult(interp, Tcl_GetString(objv[6]), " is an orphan", NULL);
         return TCL_ERROR;
     }
 
@@ -1185,7 +1184,7 @@ HtmlTagDeleteCmd(
     const char *zTag;
     Tcl_HashEntry *pEntry;
     HtmlTree *pTree = (HtmlTree *)clientData;
-    TagDeleteContext context = {0, 0};
+    TagDeleteContext context = {NULL, 0};
 
     if (objc != 4) {
         Tcl_WrongNumArgs(interp, 3, objv, "TAGNAME");
@@ -1197,7 +1196,7 @@ HtmlTagDeleteCmd(
     if (pEntry) {
         HtmlWidgetTag *pTag = (HtmlWidgetTag *)Tcl_GetHashValue(pEntry);
         context.pTag = pTag;
-        HtmlWalkTree(pTree, 0, tagDeleteCallback, (ClientData)&context);
+        HtmlWalkTree(pTree, NULL, tagDeleteCallback, (ClientData)&context);
         HtmlFree(pTag);
         Tcl_DeleteHashEntry(pEntry);
     }
@@ -1502,7 +1501,7 @@ HtmlTextIndexCmd(
 
                 apObj[0] = HtmlNodeCommand(pTree, &pMap->pTextNode->node);
                 apObj[1] = Tcl_NewIntObj(iNodeIdx);
-                Tcl_ListObjReplace(0, p, 0, 0, 2, apObj);
+                Tcl_ListObjReplace(NULL, p, 0, 0, 2, apObj);
                 break;
             }
         }
@@ -1566,7 +1565,7 @@ HtmlTextOffsetCmd(
     }
     if (!(pTextNode = HtmlNodeAsText(pNode))) {
         const char *zNode = Tcl_GetString(objv[3]);
-        Tcl_AppendResult(interp, zNode, " is not a text node", 0);
+        Tcl_AppendResult(interp, zNode, " is not a text node", NULL);
         return TCL_ERROR;
     }
 
@@ -1638,10 +1637,10 @@ HtmlTextBboxCmd(
     );
     if (iTop < iBottom && iLeft < iRight) {
         Tcl_Obj *pRes = Tcl_NewObj();
-        Tcl_ListObjAppendElement(0, pRes, Tcl_NewIntObj(iLeft));
-        Tcl_ListObjAppendElement(0, pRes, Tcl_NewIntObj(iTop));
-        Tcl_ListObjAppendElement(0, pRes, Tcl_NewIntObj(iRight));
-        Tcl_ListObjAppendElement(0, pRes, Tcl_NewIntObj(iBottom));
+        Tcl_ListObjAppendElement(NULL, pRes, Tcl_NewIntObj(iLeft));
+        Tcl_ListObjAppendElement(NULL, pRes, Tcl_NewIntObj(iTop));
+        Tcl_ListObjAppendElement(NULL, pRes, Tcl_NewIntObj(iRight));
+        Tcl_ListObjAppendElement(NULL, pRes, Tcl_NewIntObj(iBottom));
         Tcl_SetObjResult(interp, pRes);
     }
 
@@ -2002,7 +2001,7 @@ HtmlTextSet (HtmlTextNode *pText, int n, const char *z, int isTrimEnd, int isTri
     HtmlTranslateEscapes(z2);
 
     /* Figure out how much space is required for this HtmlTextNode. */
-    populateTextNode(strlen(z2), z2, 0, &nToken, &nText);
+    populateTextNode(strlen(z2), z2, NULL, &nToken, &nText);
     assert(nText >= 0 && nToken > 0);
 
     /* Allocate space for HtmlTextNode.aToken and HtmlTextNode.zText */
@@ -2016,7 +2015,7 @@ HtmlTextSet (HtmlTextNode *pText, int n, const char *z, int isTrimEnd, int isTri
     }
 
     /* Populate the HtmlTextNode.aToken and zText arrays. */
-    populateTextNode(strlen(z2), z2, pText, 0, 0);
+    populateTextNode(strlen(z2), z2, pText, NULL, NULL);
     HtmlFree(z2);
 
     assert(pText->aToken[nToken-1].eType == HTML_TEXT_TOKEN_END);

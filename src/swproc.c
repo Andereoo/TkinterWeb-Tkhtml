@@ -6,6 +6,21 @@
 
 static const char rcsid[] = "$Id: swproc.c,v 1.6 2006/06/10 12:38:38 danielk1977 Exp $";
 
+/* Check, if Tcl version supports Tcl_Size,
+   which was introduced in Tcl 8.7 and 9.
+*/
+#ifndef TCL_SIZE_MAX
+    #include <limits.h>
+    #define TCL_SIZE_MAX INT_MAX
+
+    #ifndef Tcl_Size
+        typedef int Tcl_Size;
+    #endif
+
+    #define TCL_SIZE_MODIFIER ""
+    #define Tcl_GetSizeIntFromObj Tcl_GetIntFromObj
+#endif
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -120,15 +135,15 @@ SwprocRt(
     return TCL_OK;
 
 error_insufficient_args:
-    Tcl_AppendResult(interp, "Insufficient args", 0);
+    Tcl_AppendResult(interp, "Insufficient args", NULL);
     goto error_out;
 
 error_no_such_option:
-    Tcl_AppendResult(interp, "No such option: ", zSwitch, 0);
+    Tcl_AppendResult(interp, "No such option: ", zSwitch, NULL);
     goto error_out;
 
 error_option_requires_arg:
-    Tcl_AppendResult(interp, "Option \"", zSwitch, "\"requires an argument", 0);
+    Tcl_AppendResult(interp, "Option \"", zSwitch, "\"requires an argument", NULL);
     goto error_out;
 
 error_out:
@@ -192,7 +207,7 @@ swproc_rtCmd(
     SwprocConf aConf[2 + 1] = {
         {SWPROC_ARG, "conf", 0, 0},         /* CONFIGURATION */
         {SWPROC_ARG, "args", 0, 0},         /* ARGUMENTS */
-        {SWPROC_END, 0, 0, 0}
+        {SWPROC_END, NULL, 0, 0}
     };
     Tcl_Obj *apObj[2];
     int rc;
@@ -202,7 +217,7 @@ swproc_rtCmd(
     rc = SwprocRt(interp, objc - 1, &objv[1], aConf, apObj);
     if (rc == TCL_OK) {
         Tcl_Obj **apConf;
-        int nConf;
+        Tcl_Size nConf;
 
         rc = Tcl_ListObjGetElements(interp, apObj[0], &nConf, &apConf);
         if (rc == TCL_OK) {
@@ -217,7 +232,7 @@ swproc_rtCmd(
             for (ii = 0; ii < nConf && rc == TCL_OK; ii++) {
                 SwprocConf *pConf = &aScriptConf[ii];
                 Tcl_Obj **apParams;
-                int nP;
+                Tcl_Size nP;
 
                 rc = Tcl_ListObjGetElements(interp, apConf[ii], &nP, &apParams);
                 if (rc == TCL_OK) {
@@ -247,7 +262,7 @@ swproc_rtCmd(
 
             if (rc == TCL_OK) {
                 Tcl_Obj **apArgs;
-                int nArgs;
+                Tcl_Size nArgs;
                 rc = Tcl_ListObjGetElements(interp, apObj[1], &nArgs, &apArgs);
                 if (rc == TCL_OK) {
                     rc = SwprocRt(interp, nArgs, apArgs, aScriptConf, apVars);
@@ -324,7 +339,7 @@ swproc_rtCmd(
  */
 int SwprocInit(Tcl_Interp *interp)
 {
-    Tcl_CreateObjCommand(interp, "::tkhtml::swproc_rt", swproc_rtCmd, 0, 0);
+    Tcl_CreateObjCommand(interp, "::tkhtml::swproc_rt", swproc_rtCmd, NULL, NULL);
     Tcl_Eval(interp,
         "proc swproc {procname arguments script} {\n"
         "  uplevel [subst {\n"
