@@ -248,6 +248,13 @@ case "$SYSTEM" in
     ;;
 esac
 
+case "$host_os" in
+  darwin*)
+    AC_MSG_NOTICE([Detected macOS system])
+    TEA_ADD_LIBS([-framework CoreGraphics])
+    ;;
+esac
+
 AC_ARG_WITH([shlib-ld],
   [AS_HELP_STRING([--with-shlib-ld=FLAGS], [Specify custom flags for SHLIB_LD])],
   [SHLIB_LD=$withval]

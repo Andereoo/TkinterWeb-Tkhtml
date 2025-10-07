@@ -18,7 +18,7 @@ TEST_STRING = """<body><div>
         border-color: lightgrey grey grey lightgrey; 
         border-radius: 5px; 
         background-color: #34ebb7;'>
-    If you see this, wohoo!</p>
+    If you see this, woohoo!</p>
 </div></body>"""
 
 ### You probably won't need to change these

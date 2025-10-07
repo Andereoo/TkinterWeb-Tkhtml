@@ -37,12 +37,14 @@ static const char rcsid[] = "$Id: htmldraw.c,v 1.208 2008/02/14 08:43:49 danielk
 #include <X11/Xutil.h>
 #include <cairo/cairo.h>
 
-#ifdef WIN32
+#if defined(WIN32)
     #include <cairo/cairo-win32.h>
     #include <tkWinInt.h>
     int roundingAllowed = 1;
-#elif __APPLE__ // TODO: Handle MacOS
-    int roundingAllowed = 0;
+#elif defined(MAC_OSX_TK)
+    #include <cairo/cairo-quartz.h>
+    #include <tkMacOSX.h>
+    int roundingAllowed = 1;
 #else
    #include <cairo/cairo-xlib.h>
    int roundingAllowed = 1;
@@ -1747,14 +1749,18 @@ fill_round_rectangle(
     if (width > 0 && height > 0){
         Display *display = Tk_Display(win);
 
-        #ifdef WIN32
+        #if defined(WIN32)
             TkWinDCState state;
             HDC hdc = TkWinGetDrawableDC(display, d, &state);
             cairo_surface_t *surface = cairo_win32_surface_create(hdc);
-        #elif __APPLE__
-            cairo_surface_t *surface = NULL;
-            return 0;
-        #else // TODO: Handle MacOS
+        #elif defined(MAC_OSX_TK)
+            CGContextRef cgContext = (CGContextRef)Tk_MacOSXGetCGContextForDrawable(d);
+            CGContextSaveGState(cgContext);
+            CGContextTranslateCTM(cgContext, 0.0, CGBitmapContextGetHeight(cgContext));
+            CGContextScaleCTM(cgContext, 1.0, -1.0);
+            cairo_surface_t *surface = cairo_quartz_surface_create_for_cg_context(cgContext,
+                CGBitmapContextGetWidth(cgContext), CGBitmapContextGetHeight(cgContext));
+        #else
             cairo_surface_t *surface = cairo_xlib_surface_create(display, d,
                 Tk_Visual(win),
                 x + width, y + height);
@@ -1908,8 +1914,10 @@ fill_round_rectangle(
         cairo_destroy(cr);
         cairo_surface_destroy(surface);
 
-        #ifdef WIN32
+        #if defined(WIN32)
             TkWinReleaseDrawableDC(d, hdc, &state);
+        #elif defined(MAC_OSX_TK)
+            CGContextRestoreGState(cgContext);
         #endif
     }
 

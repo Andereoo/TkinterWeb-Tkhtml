@@ -9525,6 +9525,24 @@ printf "%s\n" "$as_me: Detected Unix system" >&6;}
     ;;
 esac
 
+case "$host_os" in
+  darwin*)
+    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Detected macOS system" >&5
+printf "%s\n" "$as_me: Detected macOS system" >&6;}
+
+    vars="-framework CoreGraphics"
+    for i in $vars; do
+	if test "${TEA_PLATFORM}" = "windows" -a "$GCC" = "yes" ; then
+	    # Convert foo.lib to -lfoo for GCC.  No-op if not *.lib
+	    i=`echo "$i" | sed -e 's/^\([^-].*\)\.lib$/-l\1/i'`
+	fi
+	PKG_LIBS="$PKG_LIBS $i"
+    done
+
+
+    ;;
+esac
+
 
 # Check whether --with-shlib-ld was given.
 if test ${with_shlib_ld+y}
