@@ -252,7 +252,7 @@ snit::type ::hv3::dom {
       set hv3 [[winfo parent [$iframe html]] hv3 me]
 
       set js_obj [::hv3::dom::wrapWidgetNode [$hv3 dom] $iframe]
-      $hv3 dom DispatchHtmlEvent load $js_obj
+      [$hv3 dom] DispatchHtmlEvent load $js_obj
       return
     }
 
