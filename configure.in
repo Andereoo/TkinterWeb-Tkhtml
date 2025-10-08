@@ -241,17 +241,14 @@ case "$SYSTEM" in
     ;;
   unix)
     AC_MSG_NOTICE([Detected Unix system])
-    # Perform Unix-specific setup here if needed
+    osname = `uname`
+    if test "$osname" = "Darwin"; then
+      AC_MSG_NOTICE([Detected macOS system])
+      TEA_ADD_LIBS([-framework CoreGraphics])
+    fi
     ;;
   *)
     AC_MSG_ERROR([Invalid system type: $SYSTEM. Valid options are: windows, unix])
-    ;;
-esac
-
-case "$host_os" in
-  darwin*)
-    AC_MSG_NOTICE([Detected macOS system])
-    TEA_ADD_LIBS([-framework CoreGraphics])
     ;;
 esac
 

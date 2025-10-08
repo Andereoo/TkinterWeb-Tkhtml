@@ -9518,16 +9518,9 @@ printf "%s\n" "$as_me: Adding cairo to SHLIB_LD_LIBS" >&6;}
   unix)
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Detected Unix system" >&5
 printf "%s\n" "$as_me: Detected Unix system" >&6;}
-    # Perform Unix-specific setup here if needed
-    ;;
-  *)
-    as_fn_error $? "Invalid system type: $SYSTEM. Valid options are: windows, unix" "$LINENO" 5
-    ;;
-esac
-
-case "$host_os" in
-  darwin*)
-    { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Detected macOS system" >&5
+    osname = `uname`
+    if test "$osname" = "Darwin"; then
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Detected macOS system" >&5
 printf "%s\n" "$as_me: Detected macOS system" >&6;}
 
     vars="-framework CoreGraphics"
@@ -9540,6 +9533,10 @@ printf "%s\n" "$as_me: Detected macOS system" >&6;}
     done
 
 
+    fi
+    ;;
+  *)
+    as_fn_error $? "Invalid system type: $SYSTEM. Valid options are: windows, unix" "$LINENO" 5
     ;;
 esac
 
