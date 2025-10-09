@@ -860,7 +860,7 @@ HtmlCallbackLayout (HtmlTree *pTree, HtmlNode *pNode)
 }
 
 static int 
-setSnapshotId (HtmlTree *pTree, HtmlNode *pNode)
+setSnapshotId (HtmlTree *pTree, HtmlNode *pNode, ClientData clientData)
 {
     pNode->iSnapshot = pTree->iLastSnapshotId;
     return HTML_WALK_DESCEND;

@@ -52,6 +52,10 @@
 #include "html.h"
 #include "htmlprop.h"
 
+#ifndef TCL_HASH_TYPE
+#define TCL_HASH_TYPE unsigned int
+#endif
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -103,7 +107,7 @@ hashCaseInsensitiveKey(
     )
 {
     const char *string = (const char *) keyPtr;
-    unsigned int result;
+    TCL_HASH_TYPE result;
     int c;
 
     result = 0;
@@ -221,7 +225,7 @@ hashFontKey(
 {
     HtmlFontKey *pKey = (HtmlFontKey *) keyPtr;
     const char *zFontFamily = pKey->zFontFamily;
-    unsigned int result = 0;
+    TCL_HASH_TYPE result = 0;
     int c;
 
     for (c=*zFontFamily++ ; c ; c=*zFontFamily++) {
@@ -376,7 +380,7 @@ hashValuesKey(
     )
 {
     HtmlComputedValues *p= (HtmlComputedValues *)keyPtr;
-    unsigned int result = 0;
+    TCL_HASH_TYPE result = 0;
 
     /* Do not include the first two fields - nRef and imZoomedBackgroundImage */
     unsigned char *pInt = (unsigned char *)(&p->mask);
