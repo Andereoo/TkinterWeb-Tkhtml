@@ -40,14 +40,12 @@ static const char rcsid[] = "$Id: htmldraw.c,v 1.208 2008/02/14 08:43:49 danielk
 #if defined(WIN32)
     #include <cairo/cairo-win32.h>
     #include <tkWinInt.h>
-    int roundingAllowed = 1;
 #elif defined(MAC_OSX_TK)
     #include <cairo/cairo-quartz.h>
     #include <tkMacOSX.h>
-    int roundingAllowed = 1;
+    minRoundingMacVersion = "9.0.3"
 #else
    #include <cairo/cairo-xlib.h>
-   int roundingAllowed = 1;
 #endif
 
 /*-------------------------------------------------------------------------
@@ -2171,6 +2169,17 @@ drawBox (
     if (pBox->flags & CANVAS_BOX_OPEN_RIGHT) {
         rw = 0;
     }
+
+    static int roundingAllowed = -1;
+
+    #ifdef MAC_OSX_TK // Skip rounding in releases where it would segfault (exact version T.B.D.)
+        const char *ver = Tcl_GetVar2(pTree->interp, "tcl_patchLevel", NULL, TCL_GLOBAL_ONLY);
+        if (ver && strcmp(ver, minRoundingMacVersion) >= 0) {
+            roundingAllowed = 1;
+        } else {
+            roundingAllowed = 0
+        }
+    #endif
 
     /* Solid background, if required */
     if (roundingAllowed && (brtl != 0 || brtr != 0 || brbr != 0 || brbl != 0)) {

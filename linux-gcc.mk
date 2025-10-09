@@ -102,7 +102,7 @@ WISH = $(TCL)/bin/wish$(TCLVERSION)
 
 ##### Installation directories used by the 'install' target.
 #
-INSTALLDIR = $(TCL)/lib/Tkhtml3.0
+INSTALLDIR = $(TCL)/lib/Tkhtml3.1
 MANINSTALLDIR = $(TCL)/man/mann
 
 #

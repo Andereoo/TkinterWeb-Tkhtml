@@ -49,7 +49,7 @@ compile_announce:
 binaries: compile_announce $(BINARIES)
 
 pkgIndex.tcl: $(SHARED_LIB)
-	echo 'package ifneeded Tkhtml 3.0 [list load [file join $$dir $(SHARED_LIB)]]' > pkgIndex.tcl
+	echo 'package ifneeded Tkhtml 3.1 [list load [file join $$dir $(SHARED_LIB)]]' > pkgIndex.tcl
 
 $(SHARED_LIB): $(OBJS)
 	$(MKSHLIB) $(OBJS) $(TCLSTUBSLIB) -o $@

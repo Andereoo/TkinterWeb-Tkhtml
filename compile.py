@@ -108,7 +108,7 @@ def make():
     else:
         run_command(["make"])
 
-print("Welcome to TkinterWeb's TkHtml3.0 compile script. Note that for this to succeed you will need tcl-dev, tk-dev, cairo, gcc, and make installed on your system.")
+print("Welcome to TkinterWeb's TkHtml3.1 compile script. Note that for this to succeed you will need tcl-dev, tk-dev, cairo, gcc, and make installed on your system.")
 
 if mode == "ask":
     mode = input("""Please enter an option:

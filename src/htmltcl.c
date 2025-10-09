@@ -2948,7 +2948,7 @@ DLL_EXPORT int Tkhtml_Init(Tcl_Interp *interp)
     if (0 == Tcl_PkgRequire(interp, "Tk", "8.4-", 0)) {
         return TCL_ERROR;
     }
-    Tcl_PkgProvide(interp, "Tkhtml", "3.0");
+    Tcl_PkgProvide(interp, "Tkhtml", "3.1");
 
     Tcl_CreateObjCommand(interp, "html", newWidget, NULL, NULL);
 
