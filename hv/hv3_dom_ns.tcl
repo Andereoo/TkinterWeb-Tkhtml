@@ -268,10 +268,10 @@ namespace eval ::hv3::DOM {
     set w ""
     set h ""
     if {[llength $args] > 0} {
-      set w " width=[lindex $args 0 1]"
+      set w " width=[lindex $args 0]"
     }
     if {[llength $args] > 1} {
-      set h " height=[lindex $args 0 1]"
+      set h " height=[lindex $args 1]"
     }
     set node [$myHv3 html fragment "<img${w}${h}>"]
     list object [::hv3::dom::wrapWidgetNode $myDom $node]

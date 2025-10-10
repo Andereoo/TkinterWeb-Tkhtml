@@ -328,7 +328,7 @@ set ::hv3::dom::code::DOCUMENTEVENT {
   }
   set ::hv3::DOM::EventGroup(HTMLEvents)     ::hv3::DOM::Event
   set ::hv3::DOM::EventGroup(Events)         ::hv3::DOM::Event
-  set ::hv3::DOM::EventGroup(MouseEvent)     ::hv3::DOM::MouseEvent
+  set ::hv3::DOM::EventGroup(MouseEvents)    ::hv3::DOM::MouseEvent
   set ::hv3::DOM::EventGroup(UIEvents)       ::hv3::DOM::UIEvent
   set ::hv3::DOM::EventGroup(MutationEvents) ::hv3::DOM::MutationEvent
 }
@@ -383,30 +383,30 @@ namespace eval ::hv3::dom {
     #   DOM MouseEvent
     #   Gecko compatibility
     #
-    Dispatch [$dom see] $js_obj [list                    \
-      CAPTURING_PHASE {1}                         \
-      AT_TARGET       {2}                         \
-      BUBBLING_PHASE  {3}                         \
-      type            [list $type]                \
-      bubbles         {1}                        \
-      cancelable      [list $isCancelable]       \
-      timestamp       {0}                         \
+    Dispatch [$dom see] $js_obj [list      \
+      CAPTURING_PHASE {1}                  \
+      AT_TARGET       {2}                  \
+      BUBBLING_PHASE  {3}                  \
+      type            [list $type]         \
+      bubbles         {1}                  \
+      cancelable      [list $isCancelable] \
+      timestamp       {0}                  \
 \
-      view            {}                          \
-      detail          {}                          \
+      view            {}                   \
+      detail          {}                   \
 \
-      altKey          [list false]                   \
-      button          [list 0]                    \
-      clientX         [list $x]                   \
-      clientY         [list $y]                   \
-      ctrlKey         [list false]                   \
-      metaKey         [list false]                   \
-      relatedTarget   {}                          \
-      screenX         {}                          \
-      screenY         {}                          \
-      shiftKey        [list false]                   \
+      altKey          [list false]         \
+      button          [list 0]             \
+      clientX         [list $x]            \
+      clientY         [list $y]            \
+      ctrlKey         [list false]         \
+      metaKey         [list false]         \
+      relatedTarget   {}                   \
+      screenX         {}                   \
+      screenY         {}                   \
+      shiftKey        [list false]         \
 \
-      which           [list 1]                    \
+      which           [list 1]             \
     ]
   }
     
@@ -426,14 +426,14 @@ namespace eval ::hv3::dom {
   proc ::hv3::dom::dispatchHtmlEvent {dom type js_obj} {
     foreach {bubbles isCancelable} $::hv3::dom::HtmlEventType($type) {}
  
-    Dispatch [$dom see] $js_obj [list                       \
-      CAPTURING_PHASE 1                            \
-      AT_TARGET       2                            \
-      BUBBLING_PHASE  3                            \
-      type            [list $type]                  \
-      bubbles         [list $bubbles]               \
-      cancelable      [list $isCancelable]          \
-      timestamp       0                            \
+    Dispatch [$dom see] $js_obj [list      \
+      CAPTURING_PHASE 1                    \
+      AT_TARGET       2                    \
+      BUBBLING_PHASE  3                    \
+      type            [list $type]         \
+      bubbles         [list $bubbles]      \
+      cancelable      [list $isCancelable] \
+      timestamp       0                    \
     ]
   }
 
