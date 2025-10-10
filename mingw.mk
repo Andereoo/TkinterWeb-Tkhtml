@@ -30,8 +30,8 @@ CFLAGS += -DUSE_TCL_STUBS=1 -DUSE_TK_STUBS=1
 
 ##### The name of the shared library file to build.
 #
-SHARED_LIB_DEBUG = Tkhtml30g.dll
-SHARED_LIB_RELEASE = Tkhtml30.dll
+SHARED_LIB_DEBUG = libTkhtml3g.dll
+SHARED_LIB_RELEASE = libTkhtml3.dll
 SHARED_LIB = $(SHARED_LIB_$(BUILD))
 
 ##### Command to build a shared library from a set of object files. The
@@ -58,13 +58,12 @@ STRIP = $(STRIP_$(BUILD))
 STARKITRT = /home/billa/work/tclkitsh-win32.upx.exe
 MKSTARKIT = $(STARKITRT) /home/billa/sdx.kit wrap
 
-##### Javascript libaries - libgc.a and libsee.a
+##### Javascript libaries - libgc.a and libquickjs.a
 #
 JS_SHARED_LIB = libTclsee.dll
 
-JSLIB   = /home/billa/SEE-mirror/libsee/.libs/libsee.a
-JSLIB  += /mingw64/lib/libgc.a
-JSFLAGS = -I/home/billa/SEE-mirror/include
+JSLIB   = /home/billa/quickjs/libquickjs.a
+JSFLAGS = -I/home/billa/quickjs
 
 #
 # End of configuration section.

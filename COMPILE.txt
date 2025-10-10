@@ -79,28 +79,27 @@ This file has two sections:
   * Tls
   * Img
   * Sqlite3
-  * tclsee (requires: SEE and optionally GC)
+  * tclsee (requires: QuickJS and optionally GC)
 
   Compiling Tclsee (javascript support)
   -------------------------------------
 
     When Hv3 is run, it tries to load package "Tclsee". If successful,
     javascript support will be enabled. Tclsee is an extension developed
-    as part of Hv3 to provide access to the "Simple ECMAScript Engine" 
-    (SEE) library from Tcl scripts.
+    as part of Hv3 to provide access to the "QuickJS Javascript Engine" 
+    library from Tcl scripts.
 
-    The SEE library depends on the Boehm garbage-collector libary. To build
+    The QuickJS library depends on the Boehm garbage-collector libary. To build
     "Tclsee", the following third-party components are required:
   
-      SEE:      https://adaptive-enterprises.com/~d/software/see/
+      QuickJS:  https://bellard.org/quickjs/
       Boehm GC: http://www.hpl.hp.com/personal/Hans_Boehm/gc/
   
-    Libraries need to be built from these two packages (files libsee.a 
+    Libraries need to be built from these two packages (files libquickjs.a 
     and libgc.a). Refer to the respective package documentation for 
-    details on how to do that. The SEE library should be configured
-    to use Boehm GC routines by default.
+    details on how to do that.
   
-    Then, file "hv/hv3see.c" from the source distribution should be compiled
+    Then, file "hv/hv3qjs.c" from the source distribution should be compiled
     into a shared object linked with the two libraries above. The shared
     object will contain the binary extension "Tclsee" (C init function
     Tclsee_Init). 
@@ -109,27 +108,6 @@ This file has two sections:
     "tclsee" to build this package, complete with pkgIndex.tcl file. This
     target requires configuration of makefile variables JSLIB, JSFLAGS and
     JS_SHARED_LIB.
-
-  Hints for compiling SEE:
-
-    If Boehm GC is not in the various paths, need to set CFLAGS, LDFLAGS and
-    LD_LIBRARY_PATH before running configure:
-
-      INSTALL_PATH=/home/dan/work/tkhtml/js/
-      export CFLAGS="-I${INSTALL_PATH}/include/ -O2 -DNDEBUG"
-      export LDFLAGS=-L${INSTALL_PATH}/lib/
-      export LD_LIBRARY_PATH=${INSTALL_PATH}/lib/
-
-    Then supply an installation path to configure:
-
-      ../see-2.1.1206_snapshot/configure --prefix=${INSTALL_PATH}/
-
-    This worked on a stock Suse 10.1.
-
-    Part of the target - "ssp" fails on linux. Run [make -k install] and
-    you get both the shell and libary, so no problem... UPDATE: As of 
-    SEE version 2.1.1206, it looks like ssp is not built by default.
-
   
   
   Compiling hv3_polipo
@@ -148,26 +126,5 @@ This file has two sections:
 
     Note: If anyone reading this knows how to cross-compile from linux
     for mac, please tell me! (danielk1977@gmail.com)
-
-    Both SEE and GC can be cross-compiled with a command like:
-
-      ../<path>/configure --host=i386-mingw32 --prefix=<install-path>
-      make
-      make install
-
-    Details:
-
-    1. In version 2.1.1206 of SEE, do the following to the configure script
-       (pattern occurs twice):
-
-           s/ac_cv_func_memcmp_working=no/ac_cv_func_memcmp_working=yes/
-
-    2. I can't compile a working libgc for mingw. Same problem is reported
-       by these folk (kaya scripting language):
-
-           http://kayalang.org/download/compiling/windows
-
-       For the starkits, I took their advice and downloaded a binary 
-       package.
 
 
