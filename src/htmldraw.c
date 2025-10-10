@@ -43,7 +43,7 @@ static const char rcsid[] = "$Id: htmldraw.c,v 1.208 2008/02/14 08:43:49 danielk
 #elif defined(MAC_OSX_TK)
     #include <cairo/cairo-quartz.h>
     #include <tkMacOSX.h>
-    minRoundingMacVersion = "9.0.3"
+    minRoundingMacVersion = "9.0.3";
 #else
    #include <cairo/cairo-xlib.h>
 #endif
@@ -2177,7 +2177,7 @@ drawBox (
         if (ver && strcmp(ver, minRoundingMacVersion) >= 0) {
             roundingAllowed = 1;
         } else {
-            roundingAllowed = 0
+            roundingAllowed = 0;
         }
     #endif
 
