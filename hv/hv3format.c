@@ -1,6 +1,5 @@
-
 /*
- * This file contains the implementation of the [::tclsee::format] 
+ * This file contains the implementation of the [::tclqjs::format] 
  * command, used to beautify javascript code. 
  *
  * The reason for including this in Hv3 is that a lot of the most interesting
@@ -8,7 +7,6 @@
  * white-space removed. This makes it too hard to read. If Hv3 reformats
  * the javascript before processing it, it is much easier to debug.
  */
-
 #define JSTOKEN_OPEN_BRACKET    1
 #define JSTOKEN_CLOSE_BRACKET   2
 #define JSTOKEN_OPEN_BRACE      3
@@ -35,13 +33,11 @@ struct JsBlob {
    * a copy of JsBlob.zCsr.
    */
   const char *zPrevWord;
-  int nPrevWord;
+  unsigned int nPrevWord;
 
   Tcl_Obj *pOut;                   /* Tcl list of output lines */
   Tcl_Obj *pLine;                  /* Current output line */
 };
-
-
 
 static void formatLinefeed(JsBlob *);
 static void formatSpace(JsBlob *);
@@ -64,18 +60,15 @@ static void formatComma(JsBlob *);
 static void formatAlphanumeric(JsBlob *);
 static void formatSymbol(JsBlob *);
 
-static void
-backupEmptyLine(JsBlob *pBlob){}
+static void backupEmptyLine(JsBlob *pBlob){}
 
-static void
-writeOut(JsBlob *pBlob, const char *z, int n)
+static void writeOut(JsBlob *pBlob, const char *z, int n)
 {
     if (!pBlob->pLine) {
-        int i;
         pBlob->pLine = Tcl_NewObj();
         Tcl_IncrRefCount(pBlob->pLine);
-        for(i=0; i<pBlob->iLevel; i++){
-            Tcl_AppendToObj(pBlob->pLine, "    ", -1);
+        for (int i = 0; i < pBlob->iLevel; i++) {
+            Tcl_AppendToObj(pBlob->pLine, "    ", 4);
         }
     }
     Tcl_AppendToObj(pBlob->pLine, z, n);
@@ -89,7 +82,7 @@ writeLine(JsBlob *pBlob)
         Tcl_DecrRefCount(pBlob->pLine);
         pBlob->pLine = 0;
     } else {
-        Tcl_ListObjAppendElement(0, pBlob->pOut, Tcl_NewStringObj("", -1));
+        Tcl_ListObjAppendElement(0, pBlob->pOut, Tcl_NewStringObj("", 0));
     }
 }
 
@@ -108,28 +101,23 @@ prevWasKeyword(JsBlob *pBlob)
 		"void",         "while",       "with",       "yield",
 		0
 	};
-
-    if( pBlob->nPrevWord>0 ){
-        int i;
-        for (i=0; aKeyword[i]; i++) {
+    if (pBlob->nPrevWord > 0) {
+        for (int i=0; aKeyword[i]; i++) {
             if( 
                 strlen(aKeyword[i]) == pBlob->nPrevWord &&
                 strncmp(aKeyword[i], pBlob->zPrevWord, pBlob->nPrevWord) == 0
             ) return 1;
         }
     }
-
     return 0;
 }
 
-static void 
-formatLinefeed(JsBlob *pBlob)
+static void formatLinefeed(JsBlob *pBlob) 
 {
     if (pBlob->pLine) writeLine(pBlob);
 }
 
-static void 
-formatSpace(JsBlob *pBlob)
+static void formatSpace(JsBlob *pBlob)
 {
     const char *zNext = &pBlob->zCsr[1];
     if (
@@ -137,85 +125,77 @@ formatSpace(JsBlob *pBlob)
         (0 == strncmp("in", zNext, 2)) || 
         (0 == strncmp("new", zNext, 3))
     ) {
-        writeOut(pBlob, " ", -1);
+        writeOut(pBlob, " ", 1);
         pBlob->zPrevWord = 0;
         pBlob->nPrevWord = 0;
     } 
 }
 
-static void 
-formatColon(JsBlob *pBlob)
+static void formatColon(JsBlob *pBlob)
 {
     if( 
         pBlob->pLine && 
         Tcl_RegExpMatch(0, Tcl_GetString(pBlob->pLine), "^ *case *")
     ) {
-        writeOut(pBlob, ":", -1);
+        writeOut(pBlob, ":", 1);
         writeLine(pBlob);
     } else {
         formatSymbol(pBlob);
     }
 }
 
-static void 
-formatSemicolon(JsBlob *pBlob)
+static void formatSemicolon(JsBlob *pBlob)
 {
     backupEmptyLine(pBlob);
-    writeOut(pBlob, ";", -1);
+    writeOut(pBlob, ";", 1);
     if( 
         pBlob->pLine && 
         Tcl_RegExpMatch(0, Tcl_GetString(pBlob->pLine), "^ *for *")
     ) {
-        writeOut(pBlob, " ", -1);
+        writeOut(pBlob, " ", 1);
     } else {
         writeLine(pBlob);
     }
 }
 
-static void 
-formatBracketOpen(JsBlob *pBlob)
+static void formatBracketOpen(JsBlob *pBlob)
 {
     char prev = 0;
     if (pBlob->zCsr>pBlob->zIn) {
         prev = pBlob->zCsr[-1];
     }
     if (prevWasKeyword(pBlob) && prev != ' ' && prev != '\t') {
-        writeOut(pBlob, " ", -1);
+        writeOut(pBlob, " ", 1);
     }
-    writeOut(pBlob, "(", -1);
+    writeOut(pBlob, "(", 1);
 }
-static void 
-formatBracketClose(JsBlob *pBlob)
+static void formatBracketClose(JsBlob *pBlob)
 {
-    writeOut(pBlob, ")", -1);
+    writeOut(pBlob, ")", 1);
 }
 
-static void 
-formatSquareOpen(JsBlob *pBlob)
+static void formatSquareOpen(JsBlob *pBlob)
 {
-    writeOut(pBlob, "[", -1);
+    writeOut(pBlob, "[", 1);
 }
-static void 
-formatSquareClose(JsBlob *pBlob)
+static void formatSquareClose(JsBlob *pBlob)
 {
-    writeOut(pBlob, "]", -1);
+    writeOut(pBlob, "]", 1);
 }
 
-static void 
-formatBlockOpen(JsBlob *pBlob)
+static void formatBlockOpen(JsBlob *pBlob)
 {
     if( 
         pBlob->pLine && 
         Tcl_RegExpMatch(0, Tcl_GetString(pBlob->pLine), " $")
     ) {
-        writeOut(pBlob, " ", -1);
+        writeOut(pBlob, " ", 1);
     }
-    writeOut(pBlob, " {", -1);
+    writeOut(pBlob, " {", 2);
     writeLine(pBlob);
     pBlob->iLevel++;
 }
-static void 
-formatBlockClose(JsBlob *pBlob)
+static void formatBlockClose(JsBlob *pBlob)
 {
 /*
     if( 
@@ -227,12 +207,11 @@ formatBlockClose(JsBlob *pBlob)
     if (pBlob->pLine) writeLine(pBlob);
 
     pBlob->iLevel--;
-    writeOut(pBlob, "}", -1);
+    writeOut(pBlob, "}", 1);
     writeLine(pBlob);
 }
 
-static void 
-formatQuotedstring(JsBlob *pBlob)
+static void formatQuotedstring(JsBlob *pBlob)
 {
     int isEscaped = 0;
     const char *z = pBlob->zCsr;
@@ -249,8 +228,7 @@ formatQuotedstring(JsBlob *pBlob)
     pBlob->zCsr = &z[-1];
 }
 
-static void 
-formatSlash(JsBlob *pBlob)
+static void formatSlash(JsBlob *pBlob)
 {
     char next = pBlob->zCsr[1];
     char prev = 0;
@@ -278,11 +256,11 @@ formatSlash(JsBlob *pBlob)
     }
 
     else if (prev == '*') {
-        writeOut(pBlob, "/ ", -1);
+        writeOut(pBlob, "/ ", 2);
     }
 
     else if (prev == ')') {
-        writeOut(pBlob, " / ", -1);
+        writeOut(pBlob, " / ", 3);
     }
 
     else {                                      /* Regular expression */
@@ -300,20 +278,17 @@ formatSlash(JsBlob *pBlob)
     }
 }
 
-static void 
-formatDot(JsBlob *pBlob)
+static void formatDot(JsBlob *pBlob)
 {
-    writeOut(pBlob, ".", -1);
+    writeOut(pBlob, ".", 1);
 }
 
-static void 
-formatComma(JsBlob *pBlob)
+static void formatComma(JsBlob *pBlob)
 {
-    writeOut(pBlob, ", ", -1);
+    writeOut(pBlob, ", ", 2);
 }
 
-static void 
-formatAlphanumeric(JsBlob *pBlob)
+static void formatAlphanumeric(JsBlob *pBlob)
 {
     if (!pBlob->zPrevWord) {
         pBlob->zPrevWord = pBlob->zCsr;
@@ -323,8 +298,7 @@ formatAlphanumeric(JsBlob *pBlob)
     writeOut(pBlob, pBlob->zCsr, 1);
 }
 
-static void 
-formatSymbol(JsBlob *pBlob)
+static void formatSymbol(JsBlob *pBlob)
 {
     char zSpecial[] = "-+*%<=>?:&|/!";
 
@@ -336,7 +310,7 @@ formatSymbol(JsBlob *pBlob)
     }
 
     if (c == '!' && next != '='){
-        writeOut(pBlob, "!", -1);
+        writeOut(pBlob, "!", 1);
     }
 
     else if (c == '~' || c == '^') {
@@ -360,8 +334,7 @@ formatSymbol(JsBlob *pBlob)
     }
 }
 
-static void
-formatLessthan(JsBlob *pBlob)
+static void formatLessthan(JsBlob *pBlob)
 {
     if (0==strncmp("<!--", pBlob->zCsr, 4)) {
         const char *z = pBlob->zCsr;
@@ -379,7 +352,7 @@ formatLessthan(JsBlob *pBlob)
  *
  * tclSeeFormat --
  *
- *         ::see::format JAVASCRIPT-CODE
+ *         ::qjs::format JAVASCRIPT-CODE
  *
  *     Used to beautify javascript code. The theory is that this will
  *     make it easier to debug scripts running in Hv3.
@@ -392,8 +365,7 @@ formatLessthan(JsBlob *pBlob)
  *
  *---------------------------------------------------------------------------
  */
-static int 
-tclSeeFormat(
+static int tclSeeFormat(
     ClientData clientData,             /* Not used */
     Tcl_Interp *interp,                /* Current interpreter. */
     int objc,                          /* Number of arguments. */
@@ -461,9 +433,9 @@ tclSeeFormat(
 
     /* Hand the result to the interpreter. */
     pScript = Tcl_NewObj();
-    Tcl_ListObjAppendElement(0, pScript, Tcl_NewStringObj("join", -1));
+    Tcl_ListObjAppendElement(0, pScript, Tcl_NewStringObj("join", 4));
     Tcl_ListObjAppendElement(0, pScript, blob.pOut);
-    Tcl_ListObjAppendElement(0, pScript, Tcl_NewStringObj("\n", -1));
+    Tcl_ListObjAppendElement(0, pScript, Tcl_NewStringObj("\n", 1));
     Tcl_DecrRefCount(blob.pOut);
     return Tcl_EvalObjEx(interp, pScript, TCL_GLOBAL_ONLY);
 }
