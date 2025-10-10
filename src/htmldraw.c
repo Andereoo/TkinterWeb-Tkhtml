@@ -43,7 +43,7 @@ static const char rcsid[] = "$Id: htmldraw.c,v 1.208 2008/02/14 08:43:49 danielk
 #elif defined(MAC_OSX_TK)
     #include <cairo/cairo-quartz.h>
     #include <tkMacOSX.h>
-    minRoundingMacVersion = "9.0.3";
+    const char minRoundingMacVersion = "9.0.3";
 #else
    #include <cairo/cairo-xlib.h>
 #endif
@@ -2174,7 +2174,15 @@ drawBox (
 
     #ifdef MAC_OSX_TK // Skip rounding in releases where it would segfault (exact version T.B.D.)
         const char *ver = Tcl_GetVar2(pTree->interp, "tcl_patchLevel", NULL, TCL_GLOBAL_ONLY);
-        if (ver && strcmp(ver, minRoundingMacVersion) >= 0) {
+        int major = 0, minor = 0, patch = 0;
+        int minMajor = 0, minMinor = 0, minPatch = 0;
+        if (ver) {
+            sscanf(ver, "%d.%d.%d", &major, &minor, &patch);
+        }
+        sscanf(minRoundingMacVersion, "%d.%d.%d", &minMajor, &minMinor, &minPatch);
+        if (major > minMajor ||
+            (major == minMajor && (minor > minMinor ||
+            (minor == minMinor && patch >= minPatch)))) {
             roundingAllowed = 1;
         } else {
             roundingAllowed = 0;
