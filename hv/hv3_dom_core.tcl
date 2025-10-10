@@ -95,7 +95,7 @@ set ::hv3::dom::code::NODE {
   dom_get childNodes {
     list object [list ::hv3::DOM::NodeListC $myDom list]
   }
-  dom_call hasChildNodes {THIS} {list boolean false}
+  dom_call hasChildNodes {THIS} {list false}
 
   dom_todo ownerDocument
 
@@ -134,9 +134,9 @@ set ::hv3::dom::code::NODE {
     array set f $FeatureList
 
     if {[info exists f($feature)]} {
-      list boolean true
+      list true
     } else {
-      list boolean false
+      list false
     }
   }
 }
@@ -176,12 +176,56 @@ set ::hv3::dom::code::DOCUMENT {
 
   -- The document node always has exactly one child node. So this property
   -- is always set to true.
-  dom_call hasChildNodes {THIS} {list boolean true}
+  dom_call hasChildNodes {THIS} {list true}
 
-  dom_call_todo insertBefore
-  dom_call_todo replaceChild
-  dom_call_todo removeChild 
-  dom_call_todo appendChild  
+  dom_call insertBefore {THIS newChild refChild}  {
+    # TODO: Arg checking and correct error messages (excptions).
+    set new [GetNodeFromObj $newChild]
+
+    if {$refChild ne ""} {
+      [$myHv3 node] insert -before [GetNodeFromObj $refChild] $new
+    } else {
+      [$myHv3 node] insert $new
+    }
+    # Return value is a reference to the object just inserted as a new child node.
+    set newChild
+  }
+
+  dom_call appendChild {THIS newChild} {
+    # TODO: Arg checking and correct error messages (excptions).
+
+    [$myHv3 node] insert [GetNodeFromObj $newChild]
+
+    # Return value is a reference to the object just inserted 
+    # as a new child node.
+    set newChild
+  }
+
+  dom_call removeChild {THIS oldChild} {
+    # TODO: Arg checking and correct error messages (excptions).
+
+    [$myHv3 node] remove [GetNodeFromObj $oldChild]
+
+    # Return value is a reference to the node just removed. 
+    #
+    # TODO: At the Tkhtml widget level, the node is now an 
+    # orphan. What we should be doing is telling the javascript 
+    # interpreter that the object is now eligible for finalization.
+    # The finalizer can safely delete the orphaned node object. 
+    #
+    set oldChild
+  }
+
+  dom_call replaceChild {THIS newChild oldChild} {
+    # TODO: Arg checking and correct error messages (excptions).
+
+    set old [GetNodeFromObj $oldChild]
+    [$myHv3 node] insert -before $old [GetNodeFromObj $newChild]
+    [$myHv3 node] remove $old
+
+    # TODO: Same memory management problem as removeChild().
+    set oldChild
+  }
 
   -- For a Document node, the ownerDocument is null.
   dom_get ownerDocument {list null}
@@ -244,8 +288,7 @@ set ::hv3::dom::code::DOCUMENT {
     #
     set html $myHv3
     catch {set html [$myHv3 html]}
-    set nl [list ::hv3::DOM::NodeListS $myDom [list $html search $tag]]
-    list transient $nl
+    list object [list ::hv3::DOM::HTMLCollectionC $myDom [list $html search $tag]]
   }
 }
 
@@ -370,30 +413,21 @@ set ::hv3::dom::code::ELEMENT {
 
   dom_call insertBefore {THIS newChild refChild}  {
     # TODO: Arg checking and correct error messages (excptions).
-
     set new [GetNodeFromObj [lindex $newChild 1]]
 
-    set ref ""
-    if {[lindex $refChild 0] eq "object"} {
-      set ref [GetNodeFromObj [lindex $refChild 1]]
-    }
-
-    if {$ref ne ""} {
-      $myNode insert -before $ref $new
+    if {$refChild ne ""} {
+      $myNode insert -before [GetNodeFromObj $refChild] $new
     } else {
       $myNode insert $new
     }
-
-    # Return value is a reference to the object just inserted 
-    # as a new child node.
+    # Return value is a reference to the object just inserted as a new child node.
     set newChild
   }
 
   dom_call appendChild {THIS newChild} {
     # TODO: Arg checking and correct error messages (excptions).
 
-    set new [GetNodeFromObj [lindex $newChild 1]]
-    $myNode insert $new
+    $myNode insert [GetNodeFromObj [lindex $newChild 1]]
 
     # Return value is a reference to the object just inserted 
     # as a new child node.
@@ -403,8 +437,7 @@ set ::hv3::dom::code::ELEMENT {
   dom_call removeChild {THIS oldChild} {
     # TODO: Arg checking and correct error messages (excptions).
 
-    set old [GetNodeFromObj [lindex $oldChild 1]]
-    $myNode remove $old
+    $myNode remove [GetNodeFromObj [lindex $oldChild 1]]
 
     # Return value is a reference to the node just removed. 
     #
@@ -419,10 +452,8 @@ set ::hv3::dom::code::ELEMENT {
   dom_call replaceChild {THIS newChild oldChild} {
     # TODO: Arg checking and correct error messages (excptions).
 
-    set new [GetNodeFromObj [lindex $newChild 1]]
     set old [GetNodeFromObj [lindex $oldChild 1]]
-
-    $myNode insert -before $old $new
+    $myNode insert -before $old [GetNodeFromObj [lindex $newChild 1]]
     $myNode remove $old
 
     # TODO: Same memory management problem as removeChild().
@@ -480,11 +511,7 @@ set ::hv3::dom::code::ELEMENT {
   dom_call_todo removeAttributeNode
 
   dom_call -string getElementsByTagName {THIS tagname} {
-    set htmlwidget [$myNode html]
-    set nl [list ::hv3::DOM::NodeListS $myDom [
-      list $htmlwidget search $tagname -root $myNode
-    ]]
-    list transient $nl
+    list object [list ::hv3::DOM::HTMLCollectionC $myDom [list [$myNode html] search $tagname -root $myNode]]
   }
 
   # normalize()
@@ -502,7 +529,7 @@ set ::hv3::dom::code::ELEMENT {
   #
   dom_call -string hasAttribute {THIS attr} {
     set rc [catch {$myNode attribute $attr}]
-    list boolean [expr {$rc ? 0 : 1}]
+    list [expr {$rc ? 0 : 1}]
   }
 }
 

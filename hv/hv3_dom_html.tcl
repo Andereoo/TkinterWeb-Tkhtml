@@ -127,9 +127,7 @@ set BaseList {DocumentEvent}
   dom_call -string getElementsByName {THIS elementName} {
     set name [string map [list "\x22" "\x5C\x22"] $elementName]
     set selector [subst -nocommands {[name="$name"]}]
-    set nl [list ::hv3::DOM::NodeListS $myDom [
-      list [$myHv3 html] search $selector
-    ]]
+    set nl [list ::hv3::DOM::NodeListS $myDom [list [$myHv3 html] search $selector]]
     list transient $nl
   }
 

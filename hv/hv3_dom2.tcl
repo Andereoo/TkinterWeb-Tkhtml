@@ -307,7 +307,7 @@ namespace eval ::hv3::dom {
     method GetBooleanAttribute {prop} {
       set bool [$myNode attribute -default 0 $prop]
       if {![catch {expr $bool}]} {
-        return [list boolean [expr {$bool ? 1 : 0}]]
+        return [list [expr {$bool ? 1 : 0}]]
       } else {
         return [list true]
       }
