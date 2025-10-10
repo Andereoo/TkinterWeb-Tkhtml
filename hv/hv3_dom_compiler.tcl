@@ -12,82 +12,6 @@ namespace eval hv3 { set {version($Id: hv3_dom_compiler.tcl,v 1.38 2007/11/25 18
 namespace eval ::hv3::dom::code {}
 namespace eval ::hv3::DOM::docs {}
 
-# This proc is used in place of a full [dom_object] for callable
-# functions. i.e. the object returned by a Get on "document.write".
-#
-# Arguments:
-#
-#     $pSee     - Name of SEE interpreter command (returned by [::qjs::interp])
-#     $isString - True to convert arguments to strings
-#     $zScript  - Tcl script to invoke if this is a "Call"
-#     $op       - SEE/Tcl op (e.g. "Call", "Get", "Put" etc.)
-#     $args     - Args to SEE/Tcl op.
-#
-proc ::hv3::dom::TclCallableProc {pSee isString zScript op args} {
-  switch -- $op {
-    Get { return "" }
-
-    Put { return "native" }
-
-    Call {
-      set THIS [lindex $args 0]
-      if {$isString} {
-        set A [list]
-        foreach js_value [lrange $args 1 end] { 
-          lappend A [$pSee tostring $js_value] 
-        }
-      } else {
-        set A [lrange $args 1 end]
-      }
-      return [eval $zScript [list $THIS] $A]
-    }
-
-    Construct {
-      error "Cannot call this as a constructor"
-    }
-
-    Finalize {
-      # A no-op. There is no state data.
-      return
-    }
-
-    Events { return }
-    Scope  { return }
-  }
-
-  error "Unknown method: $op"
-}
-
-# This proc is used in place of a full [dom_object] for callable
-# functions. i.e. the object returned by a Get on the "window.Image"
-# property requested by the javascript "new Image()".
-#
-proc ::hv3::dom::TclConstructable {pSee zScript op args} {
-  switch -- $op {
-    Get { return "" }
-
-    Put { return "native" }
-
-    Construct {
-      return [eval $zScript $args]
-    }
-
-    Call {
-      error "Cannot call this object"
-    }
-
-    Finalize {
-      # A no-op. There is no state data.
-      return
-    }
-
-    Events { return }
-  }
-
-  error "Unknown method: $op"
-}
-
-
 #--------------------------------------------------------------------------
 # Stateless DOM objects are defined using the following command:
 #
@@ -179,7 +103,7 @@ namespace eval ::hv3::dom2 {
         if {$zProp in $putKeys} {
 			foreach {isString zArg zCode} $compiler2::put_array($zProp) {}
 			lappend Get $zProp [string map [list %ARG% $zArg %CODE% $zCode %VAL% $val] {
-				if {[llength $args] > 1} {
+				if {[llength $args] == 2} {
 					set %ARG% [lindex $args 1]
 					%CODE%
 				} else {
@@ -205,16 +129,10 @@ namespace eval ::hv3::dom2 {
   
         lappend Get $zProp [string map \
 			[list %PROCNAME% $procname %PARAM% $compiler2::parameter] \
-			{list transient [list %PROCNAME% $myDom $%PARAM%]} \
+			{list method [list %PROCNAME% $myDom $%PARAM%]} \
 		]
       }
-
-      set hasproperty [string map \
-		[list %FUNC% ::hv3::DOM::$type_name %PARAM% $compiler2::parameter] \
-        {
-		  expr {[llength [%FUNC% $myDom $%PARAM% Get [lindex $args 0]]]>0}
-        }
-	  ]
+	  lappend Get default {if {[llength $args]>1} {return NATIVE}}
   
       set List [array names compiler2::get_array]
 
@@ -223,12 +141,12 @@ namespace eval ::hv3::dom2 {
         proc ::hv3::DOM::$type_name $arglist [string map [list \
           %GET% $Get \
           %DEFAULTVALUE% $compiler2::default_value \
-          %HASPROPERTY% $hasproperty        \
           %LIST%          $List             \
           %SETSTATEARRAY% $SetStateArray    \
         ] {
           %SETSTATEARRAY%
           switch -exact -- [lindex $args 0] {
+			Enumerator { list %LIST% }
             %GET%
           }
         }

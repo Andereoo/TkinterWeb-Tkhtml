@@ -1,4 +1,3 @@
-
 /*----------------------------------------------------------------------- 
  * DOM Level 2 Events for Hv3.
  *
@@ -19,328 +18,149 @@
  */
 
 /*
- * By defining STOP_PROPAGATION as "cancelBubble", we can also
- * support the mozilla extension Event.cancelBubble. Setting it to true
- * "cancels bubbling", just like calling stopPropagation().
- *
- * At time of writing google toolkits use this.
+ * By defining STOP_PROPAGATION as "cancelBubble", we can also support the mozilla extension Event.
+ * cancelBubble. Setting it to true "cancels bubbling", just like calling stopPropagation().
  */
 #define STOP_PROPAGATION        "cancelBubble"
 #define PREVENT_DEFAULT         "hv3__see__preventDefault"
 #define CALLED_LISTENER         "hv3__see__calledListener"
 
+#define CFUNCTION(ctx, o, name, func, len) JS_SetPropertyStr(ctx, o, name, JS_NewCFunction(ctx, func, name, len))
 
 typedef struct EventTarget EventTarget;
 typedef struct ListenerContainer ListenerContainer;
 
-struct EventTarget {
-  SeeInterp *pTclSeeInterp;
-  EventType *pTypeList;
+struct EventTarget {  // Alas, you are now a relic from a bygone age
+	QjsInterp *pQjs;
+	EventType *pTypeList;
 };
 
 struct EventType {
-  struct SEE_string *zType;
-  ListenerContainer *pListenerList;
-  EventType *pNext;
+	JSValue zType;
+	ListenerContainer *pListenerList;
+	EventType *pNext;
 };
 
 struct ListenerContainer {
-  int isCapture;                  /* True if a capturing event */
-  struct SEE_object *pListener;   /* Listener function */
-  ListenerContainer *pNext;       /* Next listener on this event type */
+	uint8_t isCapture;         /* True if a capturing event */
+	JSValue listener;          /* Listener function */
+	ListenerContainer *pNext;  /* Next listener on this event type */
 };
 
-/*
- *---------------------------------------------------------------------------
- *
- * valueToBoolean --
- *
- * Results: 
- *     None.
- *
- * Side effects:
- *     None.
- *
- *---------------------------------------------------------------------------
- */
-static int
-valueToBoolean(pSee, pValue, eDef)
-    struct SEE_interpreter *pSee;
-    struct SEE_value *pValue;
-    int eDef;
+static inline uint8_t valueToBoolean(JSContext *ctx, JSValue val, uint8_t eDef)
 {
-    switch (SEE_VALUE_GET_TYPE(pValue)) {
-        case SEE_BOOLEAN:
-            return pValue->u.boolean;
-
-        case SEE_NUMBER:
-            return (pValue->u.number != 0.0);
-
-        default:
-            break;
+    switch (JS_VALUE_GET_TAG(val)) {
+        case JS_TAG_INT:
+        case JS_TAG_BOOL:
+        case JS_TAG_FLOAT64:
+            return JS_ToBool(ctx, val);
     }
-
     return eDef;
 }
 
-/*
- *---------------------------------------------------------------------------
- *
- * setBooleanFlag --
- *
- * Results: 
- *     None.
- *
- * Side effects:
- *     None.
- *
- *---------------------------------------------------------------------------
- */
-static void
-setBooleanFlag(pSee, pObj, zName, v)
-    struct SEE_interpreter *pSee;
-    struct SEE_object *pObj;
-    const char *zName;
-    int v;
+/* Helper function to convert value to boolean */
+static inline void setBooleanFlag(JSContext *ctx, JSValue obj, const char *z, int v)
 {
-    struct SEE_value yes;
-    SEE_SET_BOOLEAN(&yes, v);
-    SEE_OBJECT_PUTA(pSee, pObj, zName, &yes, 0);
+	JS_SetPropertyStr(ctx, obj, z, JS_NewBool(ctx, v));
 }
 
-/*
- *---------------------------------------------------------------------------
- *
- * getBooleanFlag --
- *
- * Results: 
- *     None.
- *
- * Side effects:
- *     None.
- *
- *---------------------------------------------------------------------------
- */
-static int
-getBooleanFlag(pSee, pObj, zName)
-    struct SEE_interpreter *pSee;
-    struct SEE_object *pObj;
-    const char *zName;
+/* Helper function to set boolean flag */
+static inline int getBooleanFlag(JSContext *ctx, JSValue obj, const char *z)
 {
-    struct SEE_value val;
-    SEE_OBJECT_GETA(pSee, pObj, zName, &val);
-    return valueToBoolean(pSee, &val, 0);
+    return valueToBoolean(ctx, JS_GetPropertyStr(ctx, obj, z), 0);
 }
 
-/*
- *---------------------------------------------------------------------------
- *
- * getEventList --
- *
- * Results: 
- *     None.
- *
- * Side effects:
- *     None.
- *
- *---------------------------------------------------------------------------
- */
-static EventType **
-getEventList(pSee, pObj)
-    struct SEE_interpreter *pSee;
-    struct SEE_object *pObj;
-{
-    if (pObj->objectclass == getVtbl()) {
-        return &((SeeTclObject *)pObj)->pTypeList;
+static EventType **getEventList(JSValue obj) {
+    JSClassID id = JS_GetClassID(obj);
+	if (id == QjsTclClassId || id == QjsTclCallClassId) {
+        return &((QjsTclObject*)JS_GetOpaque(obj, id))->pTypeList;
     }
-    return 0;
+    return NULL;
 }
 
-static void
-objectCall(pInterp, pObj, pThis, argc, argv, pRes)
-    struct SEE_interpreter *pInterp;
-    struct SEE_object *pObj;
-    struct SEE_object *pThis;
-    int argc;
-    struct SEE_value **argv;
-    struct SEE_value *pRes;
-{
-#if 1
-    SEE_OBJECT_CALL(pInterp, pObj, pThis, argc, argv, pRes);
-#else
-    SEE_try_context_t try_ctxt;
-    SEE_TRY(pInterp, try_ctxt) {
-        SEE_OBJECT_CALL(pInterp, pObj, pThis, argc, argv, pRes);
-    }
-    if (SEE_CAUGHT(try_ctxt)) {
-        struct SEE_value str;
-        SEE_ToString(pInterp, SEE_CAUGHT(try_ctxt), &str);
-        printf("Error in event-handler: ");
-        SEE_PrintValue(pInterp, &str, stdout);
-        printf("\n");
-    } 
-#endif
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * runEvent --
- *
- * Results: 
- *     None.
- *
- * Side effects:
- *     None.
- *
- *---------------------------------------------------------------------------
- */
-static int
-runEvent(pSee, pTarget, pEvent, zType, isCapture)
-        struct SEE_interpreter *pSee;
-        struct SEE_object *pTarget;
-        struct SEE_value *pEvent;
-        struct SEE_string *zType;
-        SEE_boolean_t isCapture;
+/* Run event handler */
+static uint8_t
+runEvent(JSContext *ctx, JSValue target, JSValue event, JSValue zType, uint8_t isCapture)
 {
     int rc = 1;
-    EventType *pET = 0;
-    EventType **ppET;
-    ListenerContainer *pL = 0;
-    struct SEE_value target;
+    EventType *pET, **apET;
+	ListenerContainer *pL;
+	
+    assert(JS_IsObject(event));
 
-    /* If *pTarget is a tcl-based object, then set this pointer to pTarget. 
-     * Otherwise leave it as null.
-     */
-    SeeTclObject *pTclObject = 0;
+    /* Assert that zType is a string and isCapture is boolean */
+    if (!JS_IsString(zType) || isCapture > 1) {
+        JS_ThrowTypeError(ctx, "Invalid zType or isCapture");
+        return 0;
+    }
+    /* Set event.currentTarget = target */
+    JS_SetPropertyStr(ctx, event, "currentTarget", JS_DupValue(ctx, target));
 
-    assert(zType->flags & SEE_STRING_FLAG_INTERNED);
-    assert(isCapture == 1 || isCapture == 0);
-    assert(SEE_VALUE_GET_TYPE(pEvent) == SEE_OBJECT);
-
-    SEE_SET_OBJECT(&target, pTarget);
-    SEE_OBJECT_PUTA(pSee, pEvent->u.object, "currentTarget", &target, 0);
-
-    /* Check if stopPropagation() has been called. */
-    if (getBooleanFlag(pSee, pEvent->u.object, STOP_PROPAGATION)) {
+    /* Check if stopPropagation() has been called */
+    if (getBooleanFlag(ctx, event, STOP_PROPAGATION)) {
         return 0;
     }
 
-    if (pTarget->objectclass == getVtbl()) {
-        pTclObject = (SeeTclObject *)pTarget;
-    }
-
+	apET = getEventList(target);
     /* If this is a Tcl based object, run any registered DOM event handlers */
-    if (pTclObject) {
-        ppET = &pTclObject->pTypeList;
-        for (pET = *ppET; pET && pET->zType != zType; pET = pET->pNext);
-        for (pL = (pET ? pET->pListenerList: 0); rc && pL; pL = pL->pNext) {
-            if (pL->isCapture == isCapture) {
-                struct SEE_value r;
-                objectCall(pSee, pL->pListener, pTarget, 1, &pEvent, &r);
-                setBooleanFlag(pSee, pEvent->u.object, CALLED_LISTENER, 1);
-            }
-        }
+    if (apET) {
+        for (pET = *apET; pET && !JS_StrictEq(ctx, pET->zType, zType); pET = pET->pNext);
+		if (pET) {
+			for (pL = pET->pListenerList; rc && pL; pL = pL->pNext) {
+				if (pL->isCapture == isCapture) {
+					JS_Call(ctx, pL->listener, target, 1, &event);
+					setBooleanFlag(ctx, event, CALLED_LISTENER, 1);
+				}
+				
+			}
+		}
     }
-
     /* If this is not the "capturing" phase, run the legacy event-handler. */
     if (!isCapture) {
-        struct SEE_value val;
-        struct SEE_string *e = SEE_string_new(pSee, 128);
-        struct SEE_object *pLookup = (pTclObject ?
-            ((struct SEE_object *)pTclObject->pNative) : pTarget
-        );
+		JSValue e = JS_ConcatString(ctx, JS_NewString(ctx, "on"), JS_DupValue(ctx, zType));
+		JSAtom a = JS_ValueToAtom(ctx, e);
 
-        SEE_string_append_ascii(e, "on");
-        SEE_string_append(e, zType);
-        e = SEE_intern(pSee, e);
+		JSValue res = JS_Invoke(ctx, target, a, 1, &event);
+        setBooleanFlag(ctx, event, CALLED_LISTENER, 1);
+        rc = valueToBoolean(ctx, res, 1);
+		JS_FreeValue(ctx, e);
+		JS_FreeAtom(ctx, a);
 
-        SEE_OBJECT_GET(pSee, pLookup, e, &val);
-        if (SEE_VALUE_GET_TYPE(&val) == SEE_OBJECT) {
-            struct SEE_object *pE = pEvent->u.object;
-            struct SEE_value res;
-            objectCall(pSee, val.u.object, pTarget, 1, &pEvent, &res);
-            setBooleanFlag(pSee, pE, CALLED_LISTENER, 1);
-            rc = valueToBoolean(pSee, &res, 1);
-            if (!rc) {
-                setBooleanFlag(pSee, pE, PREVENT_DEFAULT, 1);
-                setBooleanFlag(pSee, pE, STOP_PROPAGATION, 1);
-            }
+        if (rc < 1) {
+            setBooleanFlag(ctx, event, PREVENT_DEFAULT, 1);
+            setBooleanFlag(ctx, event, STOP_PROPAGATION, 1);
         }
+		JS_FreeValue(ctx, res);
     }
-
     return rc;
 }
 
-/*
- *---------------------------------------------------------------------------
- *
- * preventDefaultFunc --
- *
- * Results: 
- *     None.
- *
- * Side effects:
- *     None.
- *
- *---------------------------------------------------------------------------
- */
-static void
-preventDefaultFunc(pSee, self, thisobj, argc, argv, res)
-    struct SEE_interpreter *pSee;
-    struct SEE_object *self, *thisobj;
-    int argc;
-    struct SEE_value **argv, *res;
+/* preventDefault function */
+static JSValue preventDefaultFunc(JSContext *ctx, JSValueConst this, int c, JSValueConst *v)
 {
-    setBooleanFlag(pSee, thisobj, PREVENT_DEFAULT, 1);
+    setBooleanFlag(ctx, this, PREVENT_DEFAULT, 1);
 }
 
-/*
- *---------------------------------------------------------------------------
- *
- * stopPropagationFunc --
- *
- * Results: 
- *     None.
- *
- * Side effects:
- *     None.
- *
- *---------------------------------------------------------------------------
- */
-static void
-stopPropagationFunc(pSee, self, thisobj, argc, argv, res)
-    struct SEE_interpreter *pSee;
-    struct SEE_object *self, *thisobj;
-    int argc;
-    struct SEE_value **argv, *res;
+/* stopPropagation function */
+static JSValue stopPropagationFunc(JSContext *ctx, JSValueConst this, int c, JSValueConst *v)
 {
-    setBooleanFlag(pSee, thisobj, STOP_PROPAGATION, 1);
+    setBooleanFlag(ctx, this, STOP_PROPAGATION, 1);
 }
 
-static struct SEE_object *
-getParentNode(pSee, p)
-    struct SEE_interpreter *pSee;
-    struct SEE_object *p;
+static JSValue getParentNode(JSContext *ctx, JSValue o)
 {
-    struct SEE_value val;
-
-    if (p->objectclass == getVtbl()){
-        NodeHack *pNode = ((SeeTclObject *)p)->nodehandle;
-        if (pNode && pNode->pParent && pNode->pParent->pObj) {
-            return (struct SEE_object *)pNode->pParent->pObj;
-        }
-        if (pNode && pNode->pParent == 0 && pNode->iNode < 0){
-            return 0;
+	JSClassID id;
+	QjsTclObject *p = JS_GetAnyOpaque(o, &id);
+    if (id == QjsTclClassId || id == QjsTclCallClassId) {
+        NodeHack *pNode = p->nodehandle;
+        if (pNode && pNode->pParent && pNode->pParent->pNodeObj){
+            return JS_DupValue(ctx, *pNode->pParent->pNodeObj);
         }
         if (pNode && pNode->pParent == 0) {
             /* Return document... */
         }
     }
-
-    SEE_OBJECT_GETA(pSee, p, "parentNode", &val);
-    if (SEE_VALUE_GET_TYPE(&val) != SEE_OBJECT) return 0;
-    return val.u.object;
+    return JS_NULL;
 }
 
 /*
@@ -373,115 +193,78 @@ getParentNode(pSee, p)
  *
  *---------------------------------------------------------------------------
  */
-static void
-dispatchEventFunc(pSee, self, thisobj, argc, argv, res)
-    struct SEE_interpreter *pSee;
-    struct SEE_object *self, *thisobj;
-    int argc;
-    struct SEE_value **argv, *res;
+static JSValue dispatchEventFunc(JSContext *ctx, JSValueConst this, int argc, JSValueConst *argv)
 {
-    int isBubbler = 0;
-    struct SEE_value val;
-    struct SEE_value val2;
-    int nObj = 0;
-    int nObjAlloc = 0;
-    struct SEE_object **apObj = 0;
-    int ii;
-
-    int isRun = 1;
-
-    struct SEE_value target;
-    struct SEE_value eventPhase;
-
-    struct SEE_string *zType = 0;
-    struct SEE_object *pEvent = 0;
+    unsigned int nNodesAlloc = 0, nNodes = 0;
+	int8_t isRun = 1;
+    JSValue zType, event, *apNodes = NULL;
 
     /* Check the number of function arguments. */
     if (argc != 1) {
-        const char *zErr = "Function requires exactly 1 parameter";
-        SEE_error_throw(pSee, pSee->Error, zErr);
+        return JS_ThrowTypeError(ctx, "Function requires exactly 1 parameter");
     }
 
-    if (SEE_VALUE_GET_TYPE(argv[0]) != SEE_OBJECT) {
-        return;
-    }
-    pEvent = argv[0]->u.object;
-    assert(pEvent);
+    if (!JS_IsObject(argv[0]) || JS_GetClassID(argv[0])>1+JS_INVALID_CLASS_ID) 
+		return JS_ThrowTypeError(ctx, "Function parameter must be 'native' object");
+    event = argv[0];
 
-    SEE_CFUNCTION_PUTA(pSee,pEvent,"stopPropagation",stopPropagationFunc,0,0);
-    SEE_CFUNCTION_PUTA(pSee,pEvent,"preventDefault",preventDefaultFunc,0,0);
+	CFUNCTION(ctx, event, "stopPropagation", stopPropagationFunc, 0);
+	CFUNCTION(ctx, event, "preventDefault", preventDefaultFunc, 0);
 
-    SEE_SET_OBJECT(&target, thisobj);
-    SEE_OBJECT_PUTA(pSee, pEvent, "target", &target, 0);
+	JS_SetPropertyStr(ctx, event, "target", this); // Equivalent to SEE_OBJECT_PUTA
 
-    setBooleanFlag(pSee, pEvent, STOP_PROPAGATION, 0);
-    setBooleanFlag(pSee, pEvent, PREVENT_DEFAULT, 0);
-    setBooleanFlag(pSee, pEvent, CALLED_LISTENER, 0);
+    setBooleanFlag(ctx, event, STOP_PROPAGATION, 0);
+    setBooleanFlag(ctx, event, PREVENT_DEFAULT, 0);
+    setBooleanFlag(ctx, event, CALLED_LISTENER, 0);
 
     /* Get the event type */
-    SEE_OBJECT_GETA(pSee, pEvent, "type", &val);
-    SEE_ToString(pSee, &val, &val2);
-    if (SEE_VALUE_GET_TYPE(&val2) != SEE_STRING) {
+	zType = JS_GetPropertyStr(ctx, event, "type");
+    if (!JS_IsString(zType)) {
         /* Event without a type - matches no listeners */
-        /* TODO: DOM Level 3 says to throw "UNSPECIFIED_EVENT_TYPE_ERR" */
-        return;
+        return JS_ThrowTypeError(ctx, "UNSPECIFIED_EVENT_TYPE_ERR");
     }
-    zType = SEE_intern(pSee, val2.u.string);
 
     /* Check if the event "bubbles". */
-    SEE_OBJECT_GETA(pSee, pEvent, "bubbles", &val);
-    isBubbler = valueToBoolean(pSee, &val, 0);
+    int8_t isBubbler = valueToBoolean(ctx, JS_GetPropertyStr(ctx, event, "bubbles"), 0);
 
     /* If this is a bubbling event, create a list of the nodes ancestry
      * to deliver it to now. This is because any callbacks that modify
      * the document tree are not supposed to affect the delivery of
-     * this event.
-     */
-    if (isBubbler) {
-        struct SEE_object *p = thisobj;
-        while (1) {
-            struct SEE_object *pObj = getParentNode(pSee, p);
-            if (!pObj) break;
-            if (nObj == nObjAlloc) {
-                int nNew;
-                struct SEE_object **aNew;
-                int nCopy = (sizeof(struct SEE_object *) * (nObjAlloc));
-                nObjAlloc += 10;
-                nNew = (sizeof(struct SEE_object *) * (nObjAlloc));
-                aNew = SEE_malloc(pSee, nNew);
-                if (nObj > 0){
-                    memcpy(aNew, apObj, nCopy);
-                }
-                apObj = aNew;
+     * this event. */
+	if (isBubbler) {
+        JSValue node = this;
+        do {
+            JSValue parentNode = getParentNode(ctx, node);
+            if (nNodes == nNodesAlloc) {
+                nNodesAlloc++;
+                apNodes = js_realloc(ctx, apNodes, sizeof(JSValue) * nNodesAlloc);
             }
-            apObj[nObj++] = pObj;
-            p = pObj;
-        }
+            apNodes[nNodes++] = JS_DupValue(ctx, parentNode);
+            node = parentNode;
+        } while (!JS_IsNull(node));
     }
 
     /* Deliver the "capturing" phase of the event. */
-    SEE_SET_NUMBER(&eventPhase, 1);
-    SEE_OBJECT_PUTA(pSee, pEvent, "eventPhase", &eventPhase, 0);
-    for (ii = nObj - 1; isRun && ii >= 0; ii--) {
-        isRun = runEvent(pSee, apObj[ii], argv[0], zType, 1);
+    JS_SetPropertyStr(ctx, event, "eventPhase", JS_NewInt32(ctx, 1));
+    for (int i = nNodes - 1; isRun && i >= 0; i--) {
+        isRun = runEvent(ctx, apNodes[i], argv[0], zType, 1);
     }
 
     /* Deliver the "target" phase of the event. */
-    SEE_SET_NUMBER(&eventPhase, 2);
-    SEE_OBJECT_PUTA(pSee, pEvent, "eventPhase", &eventPhase, 0);
-    if (isRun) {
-        isRun = runEvent(pSee, thisobj, argv[0], zType, 0);
-    }
+    JS_SetPropertyStr(ctx, event, "eventPhase", JS_NewInt32(ctx, 2));
+    if (isRun) isRun = runEvent(ctx, this, argv[0], zType, 0);
 
     /* Deliver the "bubbling" phase of the event. */
-    SEE_SET_NUMBER(&eventPhase, 3);
-    SEE_OBJECT_PUTA(pSee, pEvent, "eventPhase", &eventPhase, 0);
-    for (ii = 0; isRun && ii < nObj; ii++) {
-        isRun = runEvent(pSee, apObj[ii], argv[0], zType, 0);
+    JS_SetPropertyStr(ctx, event, "eventPhase", JS_NewInt32(ctx, 3));
+    for (int i = 0; isRun && i < nNodes; i++) {
+        isRun = runEvent(ctx, apNodes[i], argv[0], zType, 0);
     }
 
+	JS_FreeValue(ctx, zType);
+	if (apNodes && nNodesAlloc) js_free(ctx, apNodes);
+
     /* Set the return value. */
-    SEE_SET_BOOLEAN(res, getBooleanFlag(pSee, pEvent, PREVENT_DEFAULT));
+    return JS_NewBool(ctx, getBooleanFlag(ctx, event, PREVENT_DEFAULT));
 }
 
 /*
@@ -500,47 +283,35 @@ dispatchEventFunc(pSee, self, thisobj, argc, argv, res)
  *---------------------------------------------------------------------------
  */
 static int
-eventDispatchCmd(clientData, interp, objc, objv)
-    ClientData clientData;
-    Tcl_Interp *interp;
-    int objc;
-    Tcl_Obj *CONST objv[];             /* Argument strings. */
+eventDispatchCmd(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
-    SeeInterp *pTclSeeInterp = (SeeInterp *)clientData;
-    struct SEE_interpreter *p = &pTclSeeInterp->interp;
-    struct SEE_object *pTarget;
-    struct SEE_object *pEvent;
-    struct SEE_value event;
-    struct SEE_value disp;
-
-    SEE_try_context_t try_ctxt;
+	QjsInterp *qjs = (QjsInterp *)cd;
+    JSValue target, event, ret, glb;
     int rc = TCL_OK;
 
-    pTarget = findOrCreateObject(pTclSeeInterp, objv[2], 0);
-    // pEvent = createTransient(pTclSeeInterp, objv[3]);
-    pEvent = createNative(pTclSeeInterp, objv[3]);
-    assert(Tcl_IsShared(objv[3]));
+    target = findOrCreateObject(qjs, objv[2]);
+    event = createNative(qjs, objv[3]);
 
-    SEE_TRY (p, try_ctxt) {
-        SEE_SET_OBJECT(&event, pEvent);
-        SEE_OBJECT_GETA(p, pTarget, "dispatchEvent", &disp);
-        if (SEE_VALUE_GET_TYPE(&disp) == SEE_OBJECT) {
-            struct SEE_value *ptr = &event;
-            struct SEE_value res;
-            SEE_OBJECT_CALL(p, disp.u.object, pTarget, 1, &ptr, &res);
-        }
-    }
-    if (SEE_CAUGHT(try_ctxt)) {
-        rc = handleJavascriptError(pTclSeeInterp, &try_ctxt);
+    assert(Tcl_IsShared(objv[3]));
+	
+	glb = JS_GetGlobalObject(qjs->ctx);
+	if (!JS_StrictEq(qjs->ctx, target, glb)) JS_FreeValue(qjs->ctx, glb);
+
+    ret = dispatchEventFunc(qjs->ctx, target, 1, &event);
+
+    if (JS_IsException(ret)) {
+        rc = handleJavascriptError(qjs, ret);
     } else {
-        int isHandled = getBooleanFlag(p, pEvent, CALLED_LISTENER);
-        int isPrevent = getBooleanFlag(p, pEvent, PREVENT_DEFAULT);
+        int isHandled = getBooleanFlag(qjs->ctx, event, CALLED_LISTENER);
+        int isPrevent = getBooleanFlag(qjs->ctx, event, PREVENT_DEFAULT);
         Tcl_Obj *pRet = Tcl_NewObj();
         Tcl_ListObjAppendElement(interp, pRet, Tcl_NewBooleanObj(isHandled));
         Tcl_ListObjAppendElement(interp, pRet, Tcl_NewBooleanObj(isPrevent));
         Tcl_SetObjResult(interp, pRet);
     }
-
+	JS_FreeValue(qjs->ctx, target);
+	JS_FreeValue(qjs->ctx, event);
+	JS_FreeValue(qjs->ctx, ret);
     return rc;
 }
 
@@ -565,60 +336,31 @@ eventDispatchCmd(clientData, interp, objc, objv)
  *
  *---------------------------------------------------------------------------
  */
-static void
-addEventListenerFunc(pSee, self, thisobj, argc, argv, res)
-    struct SEE_interpreter *pSee;
-    struct SEE_object *self, *thisobj;
-    int argc;
-    struct SEE_value **argv, *res;
+static JSValue
+addEventListenerFunc(JSContext *ctx, JSValueConst this, int argc, JSValueConst *argv)
 {
-    EventType *pET;
-    EventType **ppET;
+    EventType *pET, **apET;
     ListenerContainer *pL;
-
     /* Parameters passed to javascript function */
-    int useCapture = 0;
-    struct SEE_string *zType = 0;
-    struct SEE_object *pListener = 0;
+    uint8_t useCapture = 0;
 
     /* Check the number of function arguments. */
-    if (argc != 3) {
-        const char *zErr = "Function requires exactly 3 parameters";
-        SEE_error_throw(pSee, pSee->Error, zErr);
+    if (argc != 2 && argc != 3) {
+        return JS_ThrowTypeError(ctx, "1-2 arguments required, but non present.");
     }
 
-    /* Check that thisobj is a Tcl based object */
-    ppET = getEventList(pSee, thisobj);
-    assert(thisobj != pSee->Global || ppET);
-    if (!ppET) {
-        const char *zErr = "Bad type for thisobj";
-        SEE_error_throw(pSee, pSee->Error, zErr);
-        return;
-    }
+    /* Check that 'this' is a Tcl based object */
+    apET = getEventList(this);
+    if (!apET) return JS_ThrowTypeError(ctx, "Bad type for 'this'");
 
-    /* Parse the arguments */
-    /* TODO: Something wrong with the first call to SEE_parse_args() here. 
-     * Need to figure out what it is and report to see-dev.
-     */
-#if 0
-    SEE_parse_args(pSee, argc, argv, "s|o|b|",&zType,&pListener,&useCapture);
-#else
-    assert(argc == 3);
-    SEE_parse_args(pSee, 1, argv, "s",&zType);
-    SEE_parse_args(pSee, 1, &argv[1], "o",&pListener);
-    SEE_parse_args(pSee, 1, &argv[2], "b",&useCapture);
-#endif
+	if (argc > 2) useCapture = JS_ToBool(ctx, argv[2]);  /* Parse the arguments */
 
-    zType = SEE_intern(pSee, zType);
-    useCapture = (useCapture ? 1 : 0);
-
-    for (pET = *ppET; pET && pET->zType != zType; pET = pET->pNext);
+    for (pET = *apET; pET && !JS_StrictEq(ctx, pET->zType, argv[0]); pET = pET->pNext);
     if (!pET) {
-        pET = SEE_NEW(pSee, EventType);
-        pET->pListenerList = 0;
-        pET->zType = zType;
-        pET->pNext = *ppET;
-        *ppET = pET;
+        pET = js_mallocz(ctx, sizeof(*pET));
+        pET->zType = JS_DupValue(ctx, argv[0]);
+        pET->pNext = *apET;
+        *apET = pET;
     }
 
     /* Check that this is not an attempt to insert a duplicate 
@@ -630,21 +372,18 @@ addEventListenerFunc(pSee, self, thisobj, argc, argv, res)
      */
     for (
         pL = pET->pListenerList; 
-        pL && (pL->isCapture != useCapture || pL->pListener != pListener); 
+        pL && (pL->isCapture != useCapture || !JS_StrictEq(ctx, pL->listener, argv[1])); 
         pL = pL->pNext
     );
-    if (pL) {
-        return;
-    }
+    if (pL) return JS_UNDEFINED;
 
-    pL = SEE_NEW(pSee, ListenerContainer);
+    pL = js_mallocz(ctx, sizeof(*pL));
     pL->pNext = pET->pListenerList;
     pET->pListenerList = pL;
     pL->isCapture = useCapture;
-    pL->pListener = pListener;
-
+    pL->listener = argv[1];
     /* DOM says return value is "void" */
-    SEE_SET_UNDEFINED(res);
+    return JS_UNDEFINED;
 }
 
 /*
@@ -667,60 +406,37 @@ addEventListenerFunc(pSee, self, thisobj, argc, argv, res)
  *
  *---------------------------------------------------------------------------
  */
-static void
-removeEventListenerFunc(pSee, self, thisobj, argc, argv, res)
-        struct SEE_interpreter *pSee;
-        struct SEE_object *self, *thisobj;
-        int argc;
-        struct SEE_value **argv, *res;
+static JSValue
+removeEventListenerFunc(JSContext *ctx, JSValueConst this, int argc, JSValueConst *argv)
 {
-    EventType *pET;
-    EventType **ppET;
-
-    /* Parameters passed to javascript function */
-    SEE_boolean_t useCapture = 0;
-    struct SEE_string *zType = 0;
-    struct SEE_object *pListener = 0;
+    EventType *pET, **apET;
+    uint8_t useCapture = 0;
 
     /* Check the number of function arguments. */
-    if (argc != 3) {
-        const char *zErr = "Function requires exactly 3 parameters";
-        SEE_error_throw(pSee, pSee->Error, zErr);
+    if (argc != 2 && argc != 3) {
+		return JS_ThrowTypeError(ctx, "2-3 arguments required, but non present.");
     }
-
-    /* Check that thisobj is a Tcl based object. */
-    ppET = getEventList(pSee, thisobj);
-    if (!ppET) {
-        const char *zErr = "Bad type for thisobj";
-        SEE_error_throw(pSee, pSee->Error, zErr);
-        return;
+    /* Check that this is a Tcl based object. */
+    apET = getEventList(this);
+    if (!apET) {
+        return JS_ThrowTypeError(ctx, "Bad type for 'this'");
     }
+    if (argc > 2) useCapture = valueToBoolean(ctx, argv[2], 0);  /* Parse the arguments */
 
-    /* Parse the arguments */
-#if 0
-    SEE_parse_args(pSee, argc, argv, "s|o|b|",&zType,&pListener,&useCapture);
-#endif
-    SEE_parse_args(pSee, 1, argv, "s",&zType);
-    SEE_parse_args(pSee, 1, &argv[1], "o",&pListener);
-    SEE_parse_args(pSee, 1, &argv[2], "b",&useCapture);
-    zType = SEE_intern(pSee, zType);
-    useCapture = (useCapture ? 1 : 0);
-
-    for (pET = *ppET; pET && pET->zType != zType; pET = pET->pNext);
+    for (pET = *apET; pET && !JS_StrictEq(ctx, pET->zType, argv[0]); pET = pET->pNext);
     if (pET) {
-        ListenerContainer **ppL = &pET->pListenerList;
-        ListenerContainer *pL;
-        for (pL = *ppL; pL; pL = pL->pNext) {
-            if (pL->isCapture == useCapture && pL->pListener == pListener) {
-                *ppL = pL->pNext;
+        ListenerContainer *pL, **apL = &pET->pListenerList;
+        for (pL = *apL; pL; pL = pL->pNext) {
+            if (pL->isCapture == useCapture && JS_StrictEq(ctx, pL->listener, argv[1])) {
+                pL->isCapture |= 2;//*apL = pL->pNext;
+				break;
             } else {
-                ppL = &pL->pNext;
+                apL = &pL->pNext;
             }
         }
     }
-
     /* DOM says return value is "void" */
-    SEE_SET_UNDEFINED(res);
+    return JS_UNDEFINED;
 }
 
 /*
@@ -728,29 +444,9 @@ removeEventListenerFunc(pSee, self, thisobj, argc, argv, res)
  *
  * eventTargetInit --
  *
- *     This function initialises the events sub-system for the
- *     SeeTclObject passed as an argument. In practice, this means
- *     it evaluates the Tcl script:
+ *     This function initialises the events sub-system for the TclTclObject passed as an argument.
  *
- *         eval $obj Events
- *
- *     where $obj is the Tcl command implementing the object. The
- *     return value is expected to be a list of alternating attribute 
- *     names and values. Each value is compiled to a javascript function
- *     and inserted into SeeTclObject.pNative using the supplied attribute
- *     name. For example, if the [Events] script returns:
- *
- *         onclick {alert("click!"} ondblclick {alert("dblclick!")}
- *  
- *     The "onclick" and "ondblclick" properties of SeeTclObject.pNative
- *
- *     are set to the following objects, respectively:
- *
- *         function (event) { alert("click!") }
- *         function (event) { alert("dblclick!") }
- *
- *     Also, add entries to SeeTclObject.pNative for the following 
- *     built-in object methods (DOM Interface EventTarget):
+ *     Add entries to JSObject for the following built-in object methods (DOM Interface EventTarget):
  *
  *         dispatchEvent()
  *         addEventListener()
@@ -764,122 +460,57 @@ removeEventListenerFunc(pSee, self, thisobj, argc, argv, res)
  *
  *---------------------------------------------------------------------------
  */
-static void
-eventTargetInit(pTclSeeInterp, p)
-    SeeInterp *pTclSeeInterp;
-    SeeTclObject *p;
+static void eventTargetInit(QjsInterp *qjs, JSValue obj)
 {
-    struct SEE_interpreter *pSee = (struct SEE_interpreter *)pTclSeeInterp;
-    Tcl_Interp *interp = pTclSeeInterp->pTclInterp;
-    Tcl_Obj *pList;
-    Tcl_Obj **apWord;
-    int nWord;
-    int ii;
+	static const JSCFunctionListEntry funcs[] = {
+		JS_CFUNC_DEF("dispatchEvent",       1, dispatchEventFunc),
+		JS_CFUNC_DEF("removeEventListener", 3, removeEventListenerFunc),
+		JS_CFUNC_DEF("addEventListener",    3, addEventListenerFunc),
+	};
+    JS_SetPropertyFunctionList(qjs->ctx, obj, funcs, 3);
+}
 
-    struct SEE_scope *pScope = 0;
-
-    int rc;
-    rc = callSeeTclMethod(interp, 0, p, "Events", NULL, NULL);
-    if (rc != TCL_OK) {
-        Tcl_BackgroundError(interp);
-        return;
-    }
-
-    pList = Tcl_GetObjResult(interp);
-    rc = Tcl_ListObjGetElements(interp, pList, &nWord, &apWord);
-    if (rc != TCL_OK) {
-        Tcl_BackgroundError(interp);
-        return;
-    }
-    Tcl_IncrRefCount(pList);
-
-    if (nWord > 0) {
-        int nS;
-        Tcl_Obj **apS;
-        Tcl_Obj *pScopeList;
-
-        rc = callSeeTclMethod(interp, 0, p, "Scope", 0, 0);
-        if (rc != TCL_OK) {
-            Tcl_BackgroundError(interp);
-            return;
+static void freeEventTargetData(JSRuntime *rt, QjsTclObject *pTclObject)
+{
+    EventType *pET, *pETNext;
+    ListenerContainer *pL, *pLNext;
+    /* Start with the EventType list */
+    for (pET = pTclObject->pTypeList; pET; pET = pETNext) {
+        /* Save the next EventType pointer before freeing */
+        pETNext = pET->pNext;
+        /* Free the ListenerContainer list for this EventType */
+        for (pL = pET->pListenerList; pL; pL = pLNext) {
+            pLNext = pL->pNext;  /* Save the next ListenerContainer pointer before freeing */
+            js_free_rt(rt, pL);  /* Free the ListenerContainer structure */
         }
-
-        pScopeList = Tcl_GetObjResult(interp);
-        rc = Tcl_ListObjGetElements(interp, pScopeList, &nS, &apS);
-        if (rc != TCL_OK) {
-            Tcl_DecrRefCount(pList);
-            Tcl_BackgroundError(interp);
-            return;
-        }
-        Tcl_IncrRefCount(pScopeList);
-
-        pScope = (struct SEE_scope *)SEE_malloc(pSee, sizeof(*pScope) * (nS+1));
-        for (ii = 0; ii < nS; ii++){
-            pScope[ii].obj = findOrCreateObject(pTclSeeInterp, apS[ii], 0);
-            pScope[ii].next = &pScope[ii+1];
-        }
-        pScope[nS].obj = pSee->Global;
-        pScope[nS].next = 0;
+        /* Free the JSValue for the event type */
+        JS_FreeValueRT(rt, pET->zType);
+        /* Free the EventType structure */
+        js_free_rt(rt, pET);
     }
+    pTclObject->pTypeList = NULL;  /* Clear the pTypeList pointer */
+}
 
-    for (ii = 0; ii < (nWord-1); ii += 2){
-        Tcl_Obj *pJ;
-        struct SEE_input *pInputCode;
-        struct SEE_interpreter *pSee = &pTclSeeInterp->interp;
-        SEE_try_context_t try_ctxt;
-
-        struct SEE_object *pNative = (struct SEE_object *)p->pNative;
-        const char *zAttr   = Tcl_GetString(apWord[ii]);
-        const char *zScript = Tcl_GetString(apWord[ii+1]);
-
-        /* Construct a string like this:
-         *
-         *   this.$zAttr = function (event) { $zScript }
-         *
-         * We then evaluate the script with the "this" object set to the
-         * object we are trying to attach the legacy event handler to.
-         */
-        pJ = Tcl_NewStringObj("this.", -1);
-        Tcl_IncrRefCount(pJ);
-        Tcl_AppendToObj(pJ, zAttr, -1);
-        Tcl_AppendToObj(pJ, " = function (event) { ", -1);
-        Tcl_AppendToObj(pJ, zScript, -1);
-        Tcl_AppendToObj(pJ, " } ", -1);
-        /* printf("%s\n", Tcl_GetString(pJ)); */
-
-        pInputCode = SEE_input_utf8(&pTclSeeInterp->interp, Tcl_GetString(pJ));
-
-        SEE_TRY(pSee, try_ctxt) {
-          SEE_eval(pSee, pInputCode, pNative, pNative, pScope, 0);
-        }
-        /* Not a lot we can do with an error here... */
-
-        SEE_INPUT_CLOSE(pInputCode);
-        Tcl_DecrRefCount(pJ);
+static JSValue EventFunc(JSContext *ctx, JSValueConst this, int argc, JSValueConst *argv)
+{
+	/* Check the number of function arguments. */
+    if (argc > 2) {
+		return JS_ThrowTypeError(ctx, "1-2 arguments required, but non present.");
     }
-    Tcl_DecrRefCount(pList);
-    Tcl_ResetResult(interp);
-
-    if (!pTclSeeInterp->pEventPrototype) {
-        struct SEE_object *pP = SEE_native_new(pSee);
-        struct EventFunc {
-            const char *zName;
-            SEE_call_fn_t xFunc;
-            int nLength;
-        } functions [] = {
-            {"dispatchEvent",       dispatchEventFunc,       1},
-            {"removeEventListener", removeEventListenerFunc, 3},
-            {"addEventListener",    addEventListenerFunc,    3},
-            {0, 0, 0}
-        };
-        for (ii = 0; functions[ii].zName; ii++) {
-            struct EventFunc *f = &functions[ii];
-            SEE_CFUNCTION_PUTA(pSee, pP, f->zName, f->xFunc, f->nLength, 0);
-        }
-        pTclSeeInterp->pEventPrototype = pP;
-    }
-
-    p->pNative->object.Prototype = pTclSeeInterp->pEventPrototype;
+	JSValue opt, event = JS_NewObject(ctx);
+	JS_SetPropertyStr(ctx, event, "type", argv[0]);
+	if (argc > 1) {
+		opt = JS_GetPropertyStr(ctx, argv[1], "bubbles");
+		if (!JS_IsUndefined(opt)) JS_SetPropertyStr(ctx, event, "bubbles", opt);
+		opt = JS_GetPropertyStr(ctx, argv[1], "cancelable");
+		if (!JS_IsUndefined(opt)) JS_SetPropertyStr(ctx, event, "cancelable", opt);
+	}
+	return event;
+}
+static void eventInit(JSContext *ctx) {  
+    JSValue glb = JS_GetGlobalObject(ctx);
+    CFUNCTION(ctx, glb, "Event", EventFunc, 2);  
+    JS_FreeValue(ctx, glb);  
 }
 
 /*
@@ -895,17 +526,9 @@ eventTargetInit(pTclSeeInterp, p)
  *
  *---------------------------------------------------------------------------
  */
-static Tcl_Obj *
-listenerToString(pSeeInterp, pListener)
-    struct SEE_interpreter *pSeeInterp;
-    struct SEE_object *pListener;
+static inline Tcl_Obj *listenerToString(JSContext *ctx, JSValue listener)
 {
-    struct SEE_value val;
-    struct SEE_value res;
-
-    SEE_OBJECT_DEFAULTVALUE(pSeeInterp, pListener, 0, &val);
-    SEE_ToString(pSeeInterp, &val, &res);
-    return stringToObj(res.u.string);
+    return stringToObj(ctx, listener);
 }
 
 /*
@@ -935,68 +558,52 @@ listenerToString(pSeeInterp, pListener)
  *---------------------------------------------------------------------------
  */
 static int
-eventDumpCmd(clientData, interp, objc, objv)
-    ClientData clientData;
-    Tcl_Interp *interp;
-    int objc;
-    Tcl_Obj *CONST objv[];             /* Argument strings. */
+eventDumpCmd(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 {
-    SeeTclObject *p;
-    SeeInterp *pTclSeeInterp = (SeeInterp *)clientData;
-    struct SEE_interpreter *pInterp = &pTclSeeInterp->interp;
+    QjsInterp *qjs = (QjsInterp*)cd;
+    struct JSContext *ctx = qjs->ctx;
     EventType *pType;
-    Tcl_Obj *apRow[3];
-    Tcl_Obj *pRet;
+    Tcl_Obj *apRow[3], *pRet;
 
-    struct SEE_enum *pEnum;
-    struct SEE_string *pProp;
-
+    uint32_t l, i;
+    JSPropertyEnum *pEnum;
+    JSValue prop;
 
     assert(objc == 3);
-    p = (SeeTclObject *)findOrCreateObject(pTclSeeInterp, objv[2], 0);
+    JSValue obj = findOrCreateObject(qjs, objv[2]);
 
     pRet = Tcl_NewObj();
     Tcl_IncrRefCount(pRet);
 
-    for (pType = p->pTypeList; pType; pType = pType->pNext) {
+    for (pType = *getEventList(obj); pType; pType = pType->pNext) {
         ListenerContainer *pL;
-
-        Tcl_Obj *pEventType = Tcl_NewUnicodeObj(
-                pType->zType->data, pType->zType->length
-        );
-        Tcl_IncrRefCount(pEventType);
-        apRow[0] = pEventType;
+        apRow[0] = stringToObj(ctx, pType->zType);
 
         for (pL = pType->pListenerList; pL; pL = pL->pNext) {
-            const char *zType = (pL->isCapture?"capturing":"non-capturing");
-            apRow[1] = Tcl_NewStringObj(zType, -1);
-            apRow[2] = listenerToString(pInterp, pL->pListener);
+            const char *z = (pL->isCapture ? "capturing" : "non-capturing");
+            apRow[1] = Tcl_NewStringObj(z, -1);
+            apRow[2] = listenerToString(ctx, pL->listener);
             Tcl_ListObjAppendElement(interp, pRet, Tcl_NewListObj(3, apRow));
         }
-
-        Tcl_DecrRefCount(pEventType);
     }
 
-    pEnum = SEE_OBJECT_ENUMERATOR(pInterp, (struct SEE_object *)p);
-    while ((pProp = SEE_ENUM_NEXT(pInterp, pEnum, 0))) {
-        int nProp = SEE_string_utf8_size(pInterp, pProp);
-        char *zProp = SEE_malloc_string(pInterp, nProp+1);
-        SEE_string_toutf8(pInterp, zProp, nProp+1, pProp);
-        if (zProp[0] == 'o' && zProp[1] == 'n') {
-            struct SEE_value val;
-            SEE_OBJECT_GETA(pInterp, (struct SEE_object *)p, zProp, &val);
-            if (SEE_VALUE_GET_TYPE(&val) == SEE_OBJECT) {
+	JS_GetOwnPropertyNames(ctx, &pEnum, &l, obj, JS_GPN_STRING_MASK|JS_GPN_ENUM_ONLY);
+	
+	for (i = 0; i < l; i++) {
+		size_t nProp;
+		const char *zProp = JS_ToCStringLen(ctx, &nProp, prop);
+        if (strncmp(zProp, "on", 2) == 0) {
+            JSValue val = JS_GetPropertyStr(ctx, obj, zProp);
+            if (JS_IsObject(val)) {
                 apRow[0] = Tcl_NewStringObj(&zProp[2], -1);
-                apRow[1] = Tcl_NewStringObj("legacy", -1);
-                apRow[2] = listenerToString(pInterp, val.u.object);
+                apRow[1] = Tcl_NewStringObj("legacy", 6);
+                apRow[2] = listenerToString(ctx, val);
                 Tcl_ListObjAppendElement(interp, pRet, Tcl_NewListObj(3, apRow));
             }
         }
-    }
-
+	}
     Tcl_SetObjResult(interp, pRet);
     Tcl_DecrRefCount(pRet);
 
     return TCL_OK;
 }
-

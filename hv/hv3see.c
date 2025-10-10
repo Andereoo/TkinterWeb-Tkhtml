@@ -890,7 +890,7 @@ newSeeTclObject(pTclSeeInterp, pTclCommand)
  *     If so, evaluate the objects Tcl [Finalize] method.
  *
  *     TODO: This is going to be a problem if Hv3 ever uses multiple
- *     interpreters. But it doesn't right now...
+ *     interpreters. But it doesn't right now... [P.S. LMAO, it does now]
  *
  * Results:
  *     None.
@@ -1327,8 +1327,7 @@ objToValue(pInterp, pObj, pValue, pIsCacheable)
                 }
 
                 case TRANSIENT: {
-                    struct SEE_object *pObject = 
-                        createTransient(pInterp, apElem[1]);
+                    struct SEE_object *pObject = createTransient(pInterp, apElem[1]);
                     SEE_SET_OBJECT(pValue, pObject);
                     break;
                 }
