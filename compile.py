@@ -2,7 +2,7 @@
 ### Sample usage: python3 compile.py configure -w /usr/local/tcl9/bin/tclsh9.0
 
 import tkinter
-import os, glob, subprocess, re, sys, argparse, shutil
+import os, glob, subprocess, re, sys, argparse, shutil, platform
 from pathlib import Path
 
 ### May be "ask", "configure", "test", "build"
@@ -352,10 +352,14 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
 
     def compile_tkhtml():
         flags = f"--with-tcl={tclConfig_folder} --with-tk={tkConfig_folder} --with-tclinclude={tcl_path} --with-tkinclude={tk_path}"
-        if os.name == "nt":
+        system = platform.system()
+        if system == "Windows":
             flags += " --with-system=windows"
             if sys.maxsize > 2**32:
                 flags += " --with-shlib-ld='gcc -static-libgcc -pipe -shared'"
+        elif system == "Darwin":
+            flags += " --with-system=darwin"
+
         if disable_cairo:
             flags += " --disable-cairo"
 

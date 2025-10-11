@@ -231,7 +231,7 @@ TEA_PROG_WISH
 
 
 AC_ARG_WITH([system],
-  [AS_HELP_STRING([--with-system=SYSTEM], [Specify the system type (windows, unix)])],
+  [AS_HELP_STRING([--with-system=SYSTEM], [Specify the system type (windows, darwin, unix)])],
   [SYSTEM=$withval],
   [SYSTEM="unix"]
 )
@@ -239,25 +239,32 @@ AC_ARG_WITH([system],
 case "$SYSTEM" in
   windows)
     AC_MSG_NOTICE([Detected Windows system])
-    AC_MSG_NOTICE([Adding private Tk headers from: ${TK_SRC_DIR}/win])
-    TEA_ADD_INCLUDES([-I"${TK_SRC_DIR}/win"])
 
-    AC_MSG_NOTICE([Adding cairo to SHLIB_LD_LIBS])
-    SHLIB_LD_LIBS="$SHLIB_LD_LIBS -lcairo"
-    AC_SUBST([SHLIB_LD_LIBS])
+    if test "x$enable_cairo" = "xyes"; then
+      AC_MSG_NOTICE([Adding private Tk headers from: ${TK_SRC_DIR}/win])
+      TEA_ADD_INCLUDES([-I"${TK_SRC_DIR}/win"])
+      AC_MSG_NOTICE([Adding cairo to SHLIB_LD_LIBS])
+      SHLIB_LD_LIBS="$SHLIB_LD_LIBS -lcairo"
+      AC_SUBST([SHLIB_LD_LIBS])
+    fi
+
+    AC_MSG_NOTICE([Ignoring incompatible pointer types])
+    TEA_ADD_CFLAGS([-Wno-incompatible-pointer-types])
 
     TCLSH_PROG="tclsh"
     AC_SUBST([TCLSH_PROG])
     WISH_PROG="wish"
     AC_SUBST([WISH_PROG])
     ;;
-  unix)
-    AC_MSG_NOTICE([Detected Unix system])
-    osname=`uname`
-    if test "$osname" = "Darwin"; then
-      AC_MSG_NOTICE([Detected macOS system])
+  darwin)
+    AC_MSG_NOTICE([Detected macOS system])
+    if test "x$enable_cairo" = "xyes" ; then
+      AC_MSG_NOTICE([Adding CoreGraphics support])
       TEA_ADD_LIBS([-framework CoreGraphics])
     fi
+    ;;
+  unix)
+    AC_MSG_NOTICE([Detected Unix system])
     ;;
   *)
     AC_MSG_ERROR([Invalid system type: $SYSTEM. Valid options are: windows, unix])
