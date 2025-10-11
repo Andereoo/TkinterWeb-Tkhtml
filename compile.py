@@ -2,7 +2,7 @@
 ### Sample usage: python3 compile.py configure -w /usr/local/tcl9/bin/tclsh9.0
 
 import tkinter
-import os, glob, subprocess, re, sys, argparse
+import os, glob, subprocess, re, sys, argparse, shutil
 from pathlib import Path
 
 ### May be "ask", "configure", "test", "build"
@@ -30,6 +30,7 @@ SRC_PATH = os.path.join(BASE_PATH, 'src')
 CSSPROP_PATH = os.path.join(BASE_PATH, 'src', 'cssprop.tcl')
 MAKE_PATH = os.path.join(BASE_PATH, 'build', 'Makefile')
 GET_PATHS_PATH = os.path.join(BASE_PATH, 'get_paths.tcl')
+PKG_INDEX_PATH = os.path.join(BUILD_PATH, 'pkgIndex.tcl')
 
 root = tkinter.Tcl()
 paths = root.exprstring('$auto_path').split()
@@ -47,7 +48,9 @@ parser.add_argument('-n', '--noprompt', action='store_true', help='disable promp
 parser.add_argument('-t', '--notest', action='store_true', help='disable opening a window to test the binary (the binary will still be quietly tested)')
 parser.add_argument('-q', '--quiet', action='store_true', help='hide gcc & configure script output')
 parser.add_argument('-s', '--silent', action='store_true', help='hide all output')
-parser.add_argument('-w', '--with-tclsh', help='the path to the tclsh interpreter to use hen looking for Tcl/Tk releases') #/usr/local/tcl9
+parser.add_argument('-i', '--install', action='store_true', help='install to the tkinterweb-tkhtml package')
+parser.add_argument('-c', '--disable-cairo', action='store_true', help='disable Cairo graphics support')
+parser.add_argument('-w', '--with-tclsh', help='the path to the tclsh interpreter to use when looking for Tcl/Tk releases')
 args = parser.parse_args()
 
 mode = args.mode
@@ -55,6 +58,8 @@ noprompt = args.noprompt
 notest = args.notest
 quiet = args.quiet
 silent = args.silent
+install = args.install
+disable_cairo = args.disable_cairo
 with_tclsh = args.with_tclsh
 
 # Not very 'Pythonic', but works like a charm
@@ -89,6 +94,8 @@ def test():
         pack .h
         .h parse "{TEST_STRING}"
         """
+        if notest:
+            script += "\ndestroy ."
 
         run_command([with_tclsh], script)
     else:
@@ -98,9 +105,12 @@ def test():
         widget = tkinter.Widget(root, "html")
         widget.tk.call(widget._w, "parse", TEST_STRING)
         
-        if not notest:
+        if notest:
+            root.destroy()
+        else:
             widget.pack(expand=True, fill="both")
             root.mainloop()
+        
 
 def make():
     if os.name == "nt":
@@ -142,7 +152,7 @@ if os.path.exists(BUILD_PATH) and mode == "build":
 
     print("\nTesting result...")
 
-elif mode == "configure":
+elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure":
     print("\nCreating build directory...")
     if os.path.exists(BUILD_PATH):
         if len(os.listdir(BUILD_PATH)) == 0:
@@ -346,6 +356,8 @@ elif mode == "configure":
             flags += " --with-system=windows"
             if sys.maxsize > 2**32:
                 flags += " --with-shlib-ld='gcc -static-libgcc -pipe -shared'"
+        if disable_cairo:
+            flags += " --disable-cairo"
 
         print(f"Running configure script with the flags {flags}")
         override = input("Press N to add more flags or any other key to continue: ")
@@ -386,3 +398,26 @@ elif mode == "configure":
     print("\nTesting result...")
 
 test()
+
+if install:
+    import tkinterweb_tkhtml
+    
+    print("\nInstalling...")
+    with open(PKG_INDEX_PATH, "r") as handle:
+        content = handle.read()
+    match = re.search(r'file\s+join\s+\$dir\s+([^\]\s]+)', content)
+    binary = os.path.join(BUILD_PATH, match.group(1))
+    destination = os.path.join(tkinterweb_tkhtml.TKHTML_ROOT_DIR, match.group(1))
+    print(f"Copying {binary} to {tkinterweb_tkhtml.TKHTML_ROOT_DIR}")
+
+    if os.path.exists(destination):
+        print("Warning: destination file already exists")
+        override = input("Press N to abort or any other key to continue: ")
+        if override.upper() == "N":
+            print("No action done")
+        else:
+            shutil.copy2(binary, destination) 
+            print("Successfully overwritten")
+    else:
+        shutil.copy2(binary, destination)
+        print("Successfully copied")

@@ -784,6 +784,7 @@ enable_wince
 with_celib
 enable_load
 enable_symbols
+enable_cairo
 with_system
 with_shlib_ld
 '
@@ -1427,6 +1428,8 @@ Optional Features:
   --disable-load          disallow dynamic loading and "load" command
                           (default: enabled)
   --enable-symbols        build with debugging symbols (default: off)
+  --disable-cairo         disable Cairo graphics support
+
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -6263,7 +6266,7 @@ fi
 
 
 
-    vars="-lcairo"
+    vars=""
     for i in $vars; do
 	if test "${TEA_PLATFORM}" = "windows" -a "$GCC" = "yes" ; then
 	    # Convert foo.lib to -lfoo for GCC.  No-op if not *.lib
@@ -9298,7 +9301,19 @@ printf "%s\n" "enabled $tcl_ok debugging" >&6; }
 # Check for cairo.
 #--------------------------------------------------------------------
 
-       for ac_header in cairo/cairo.h
+# Check whether --enable-cairo was given.
+if test ${enable_cairo+y}
+then :
+  enableval=$enable_cairo; enable_cairo=$enableval
+else $as_nop
+  enable_cairo=yes
+fi
+
+
+if test "x$enable_cairo" = "xyes"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Cairo support enabled" >&5
+printf "%s\n" "$as_me: Cairo support enabled" >&6;}
+         for ac_header in cairo/cairo.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "cairo/cairo.h" "ac_cv_header_cairo_cairo_h" "$ac_includes_default"
 if test "x$ac_cv_header_cairo_cairo_h" = xyes
@@ -9310,6 +9325,24 @@ else $as_nop
 fi
 
 done
+
+    vars="-lcairo"
+    for i in $vars; do
+	if test "${TEA_PLATFORM}" = "windows" -a "$GCC" = "yes" ; then
+	    # Convert foo.lib to -lfoo for GCC.  No-op if not *.lib
+	    i=`echo "$i" | sed -e 's/^\([^-].*\)\.lib$/-l\1/i'`
+	fi
+	PKG_LIBS="$PKG_LIBS $i"
+    done
+
+
+
+printf "%s\n" "#define CAIRO_ENABLED 1" >>confdefs.h
+
+else
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Cairo support disabled" >&5
+printf "%s\n" "$as_me: Cairo support disabled" >&6;}
+fi
 
 #--------------------------------------------------------------------
 # Everyone should be linking against the Tcl stub library.  If you
