@@ -97,12 +97,12 @@ namespace eval ::hv3::dom2 {
         set SetStateArray {upvar $myStateArray state}
       }
   
-      set Get [list]
+      set GetSet [list]
 	  set putKeys [array names compiler2::put_array]
       foreach {zProp val} [array get compiler2::get_array] {
         if {$zProp in $putKeys} {
 			foreach {isString zArg zCode} $compiler2::put_array($zProp) {}
-			lappend Get $zProp [string map [list %ARG% $zArg %CODE% $zCode %VAL% $val] {
+			lappend GetSet $zProp [string map [list %ARG% $zArg %CODE% $zCode %VAL% $val] {
 				if {[llength $args] == 2} {
 					set %ARG% [lindex $args 1]
 					%CODE%
@@ -111,7 +111,7 @@ namespace eval ::hv3::dom2 {
 				}
 			}]
 		} else {
-			lappend Get $zProp $val
+			lappend GetSet $zProp $val
 		}
       }
       foreach {zProp val} [array get compiler2::call_array] {
@@ -127,27 +127,26 @@ namespace eval ::hv3::dom2 {
         set proccode [list proc $procname $arglist $zCode]
         evalcode $proccode
   
-        lappend Get $zProp [string map \
+        lappend GetSet $zProp [string map \
 			[list %PROCNAME% $procname %PARAM% $compiler2::parameter] \
 			{list method [list %PROCNAME% $myDom $%PARAM%]} \
 		]
       }
-	  lappend Get default {if {[llength $args]>1} {return NATIVE}}
+	  lappend GetSet default {if {[llength $args]>1} {return NATIVE}}
   
       set List [array names compiler2::get_array]
 
       set arglist [list myDom $compiler2::parameter args]
       set proccode [list \
         proc ::hv3::DOM::$type_name $arglist [string map [list \
-          %GET% $Get \
-          %DEFAULTVALUE% $compiler2::default_value \
+          %GETSET% $GetSet \
           %LIST%          $List             \
           %SETSTATEARRAY% $SetStateArray    \
         ] {
           %SETSTATEARRAY%
           switch -exact -- [lindex $args 0] {
 			Enumerator { list %LIST% }
-            %GET%
+            %GETSET%
           }
         }
       ]]

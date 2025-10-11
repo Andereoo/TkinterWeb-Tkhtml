@@ -72,7 +72,6 @@
  * This is used to make stuff in the debugger more readable, it is not essential (and adds a fair overhead too).
  */
 #include "hv3format.c"
-#define ALLOW_EVENTS 1
 
 typedef struct QjsTimeout QjsTimeout;
 typedef struct QjsJsObject QjsJsObject;
@@ -89,7 +88,7 @@ typedef struct EventType EventType;
 typedef struct ContextOpaque {
     Tcl_Interp *interp;
 	Tcl_Obj *pLog;
-    int iNextTimeout;  /* Start of a linked list of QjsTimeout structures. See included file hv3timeout.c for details. */
+    uint32_t iNextTimeout;  /* Start of a linked list of QjsTimeout structures. See included file hv3timeout.c for details. */
     QjsTimeout *pTimeout;  /* Used by the timer sub-system (hv3timeout.c). */
 } ContextOpaque;
 
@@ -106,7 +105,6 @@ typedef struct QjsInterp {
 	uint16_t iKeyNext;
     QjsJsObject *pJsObject;
 	JSValue global;
-    // TODO: Store global object wrappers, timer/event state, etc.
 } QjsInterp;
 static unsigned int numQjsInterp = 0;
 static unsigned int numFreeInterp = 0;
@@ -292,7 +290,7 @@ static void removeTransientRefs(QjsInterp *qjs, int n)
 }
 
 static int evalObjv(Tcl_Interp *interp, int nWord, Tcl_Obj **apWord){
-#if 1
+#if 0
 	printf("%d. ", nWord);
     for (int i=0; i<nWord;) printf("%d: %s. ", i++, Tcl_GetString(apWord[i]));
     printf("\n");
@@ -421,9 +419,7 @@ static void finalizeObject(JSRuntime *rt, JSValue val)
 			qjsTclObj->pEntry = NULL;
 			ckfree(pV);
 		}
-	#if ALLOW_EVENTS
 		freeEventTargetData(rt, qjsTclObj);
-	#endif
         js_free_rt(rt, qjsTclObj);
     }
 //	printf("-%p\n", JS_VALUE_GET_PTR(val));
@@ -489,9 +485,7 @@ static JSValue findOrCreateObject(QjsInterp *qjs, Tcl_Obj *pTclCmd)
 		p->pEntry = pEntry;
 
         /* Initialize the object's event subsystem */
-	#if ALLOW_EVENTS
         eventTargetInit(qjs, pObject->v);
-	#endif
     }
     /* Existing entry found */
     pObject = (JSValueEntry *)Tcl_GetHashValue(pEntry);
@@ -680,7 +674,7 @@ static void delInterpCmd(ClientData cd) {
 
 typedef struct {
   const char *zName;
-  int isBoolean;
+  uint8_t isBoolean;
   Tcl_Obj *pVal;
 } TclCmdArg;
 
@@ -760,7 +754,7 @@ static int interpEval(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
     return rc;
 }
 
-static JSValue 
+static JSValue // The following 4 functions are based on ones from dbohdan/tcl-duktape
 tclLambda(JSContext *ctx, JSValueConst this, int argc, JSValueConst *argv, int m, JSValue *o)
 {
 	int i, rc;
@@ -811,11 +805,7 @@ static int interpCall(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
 	JSValue glb = JS_GetGlobalObject(qjs->ctx);
 	JSValue function = JS_GetPropertyStr(qjs->ctx, glb, name);
 	JS_FreeValue(qjs->ctx, glb);
-	
-	/*if (!JS_IsFunction(qjs->ctx, function)) { // JS_Call can tell if is a function already
-		Tcl_AppendResult(qjs->interp, "Function does not exist: ", name, 0);
-		return TCL_ERROR;
-	}*/
+
 	JSValue result = JS_Call(qjs->ctx, function, function, n, args);
 	for (i=0; i < n; i++) JS_FreeValue(qjs->ctx, args[i]);
 	JS_FreeValue(qjs->ctx, function);
@@ -985,7 +975,7 @@ static int interpCmd(
 		{"debug",    INTERP_DEBUG,    1, 1, "SUB-COMMAND"},
 		{"log",      INTERP_LOG,      1, 1, "TCL-COMMAND"},
 		{"events",   INTERP_EVENTS,   1, 1, "TCL-COMMAND"},
-        {0, 0, 0, 0}
+        {NULL, 0, 0, 0}
     };
     if (objc < 2) {
         Tcl_WrongNumArgs(interp, 1, objv, "SUBCOMMAND ...");
@@ -1030,9 +1020,7 @@ static int interpCmd(
             break;
         }
         case INTERP_DISPATCH: { // $interp dispatch
-		#if ALLOW_EVENTS
             rc = eventDispatchCmd(clientData, interp, objc, objv);
-		#endif
 			break;
         }
         case INTERP_DEBUG: { // interp debug SUB-COMMAND
@@ -1040,9 +1028,7 @@ static int interpCmd(
             break;
         }
         case INTERP_EVENTS: {
-		#if ALLOW_EVENTS
             rc = eventDumpCmd(clientData, interp, objc, objv);
-		#endif
 			break;
         }
 		case INTERP_LOG: {
@@ -1106,9 +1092,7 @@ static int tclQjsInterp(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *co
 	
 	JS_SetGlobalObject(qjs->ctx, findOrCreateObject(qjs, objv[1]), 1);
 	interpTimeoutInit(qjs->ctx);
-#if ALLOW_EVENTS
 	eventInit(qjs->ctx);
-#endif
 
     snprintf(zCmd, sizeof(zCmd), "::qjs::interp_%d", numQjsInterp++);
     Tcl_CreateObjCommand(interp, zCmd, interpCmd, qjs, delInterpCmd);
@@ -1232,7 +1216,7 @@ static JSClassDef QjsTclClass = {
 };
 
 static JSValue 
-tcl_call(JSContext *ctx, JSValueConst obj, JSValueConst this, int argc, JSValueConst *argv, int f)
+tclCallOrConstruct(JSContext *ctx, JSValueConst obj, JSValueConst this, int argc, JSValueConst *argv, int f)
 {
 	int rc, i, nObj = 0, nWI;
     QjsTclObject *p = JS_GetOpaque(obj, QjsTclCallClassId);
@@ -1271,7 +1255,7 @@ static JSClassDef QjsTclCallClass = {
     "Object",
     .finalizer = finalizeObject,
 	.exotic = &tclExoticMethods,  // Link to exotic methods
-	.call = tcl_call,
+	.call = tclCallOrConstruct,
 };
 static void getExoticObj(JSRuntime *rt) {
     JS_NewClass(rt, QjsTclClassId, &QjsTclClass);
@@ -1295,6 +1279,4 @@ int Tclsee_Init(Tcl_Interp *interp) {
     // TODO: Add more commands (e.g., ::qjs::class, ::qjs::gc, etc.)
     return TCL_OK;
 }
-#if ALLOW_EVENTS
-	#include "hv3events.c"
-#endif
+#include "hv3events.c"

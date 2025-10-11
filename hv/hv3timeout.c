@@ -24,7 +24,7 @@ struct QjsTimeout {
 	int nArg;
 	JSValue *apArg;
 	int interval;  /* Number of milliseconds for setInterval(). Or -1 for setTimeout(). */
-	int id;  /* Linked list pointers and id number. */
+	uint32_t id;  /* Linked list pointers and id number. */
 	QjsTimeout *pNext, **ppThis;
 };
 
