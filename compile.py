@@ -1,6 +1,6 @@
 ### Script to automatically compile Tkhtml
 ### Sample usage: python3 compile.py configure -w /usr/local/tcl9/bin/tclsh9.0
-### Copyright (c) 2025 Andereoo
+### Copyright (c) 2025 Andrew Clarke
 
 import tkinter
 import os, glob, subprocess, re, sys, argparse, shutil, platform
