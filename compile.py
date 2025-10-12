@@ -25,12 +25,15 @@ TEST_STRING = """<body><div>
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 BUILD_PATH = os.path.join(BASE_PATH, 'build')
 CONFIGURE_PATH = os.path.join(BASE_PATH, 'configure')
-#CONFIGUREIN_PATH = os.path.join(BASE_PATH, 'configure.in')
 SRC_PATH = os.path.join(BASE_PATH, 'src')
 CSSPROP_PATH = os.path.join(BASE_PATH, 'src', 'cssprop.tcl')
 MAKE_PATH = os.path.join(BASE_PATH, 'build', 'Makefile')
 GET_PATHS_PATH = os.path.join(BASE_PATH, 'get_paths.tcl')
-PKG_INDEX_PATH = os.path.join(BUILD_PATH, 'pkgIndex.tcl')
+
+SYSTEM = platform.system()
+
+tkhtml_version = None
+tkhtml_file = None
 
 root = tkinter.Tcl()
 paths = root.exprstring('$auto_path').split()
@@ -76,40 +79,54 @@ if noprompt:
 def print_error(*args):
     print(args)
 
-def run_command(cmd, cmd_input=None):
-    if quiet:
-        return subprocess.run(cmd, input=cmd_input, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-    else:
-        return subprocess.run(cmd, input=cmd_input, universal_newlines=True, stdout=sys.stdout, stderr=sys.stderr, check=True)
+def run_command(cmd, cmd_input=None, capture_output=False):
+    if quiet: capture_output = True
+    return subprocess.run(cmd, input=cmd_input, capture_output=capture_output, universal_newlines=True, check=True)
 
 def return_command(cmd):
     return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
 def test():
+    global tkhtml_version, tkhtml_file
+    print("\nTesting result...")
     if with_tclsh:
         script = f"""
         set auto_path [linsert $auto_path 0 {BUILD_PATH}]
-        package require Tkhtml
+        puts [package require Tkhtml]
+        puts [info loaded]
         html .h
         pack .h
         .h parse "{TEST_STRING}"
         """
         if notest:
             script += "\ndestroy ."
+        out = run_command([with_tclsh], script, True).stdout.strip().splitlines()
+        tkhtml_version = out[0].strip()
 
-        run_command([with_tclsh], script)
+        for i in " ".join(out[1:]).replace("{", "").split("}"):
+            o = i.split()
+            if o[1] == "Tkhtml":
+                tkhtml_file = o[0]
+                break
+
     else:
         root = tkinter.Tk()
         root.tk.eval("set auto_path [linsert $auto_path 0 {"+BUILD_PATH+"}]")
-        root.tk.eval("package require Tkhtml")
+        tkhtml_version = root.tk.eval("package require Tkhtml")
         widget = tkinter.Widget(root, "html")
         widget.tk.call(widget._w, "parse", TEST_STRING)
+        for i in root.tk.call("info", "loaded"):
+            if i[1] == "Tkhtml":
+                tkhtml_file = i[0]
+                break
         
         if notest:
             root.destroy()
         else:
             widget.pack(expand=True, fill="both")
             root.mainloop()
+    
+    print("Success!")
         
 
 def make():
@@ -306,13 +323,6 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
     elif abort:
         sys.exit()
 
-    # Moved to configure.in
-    # tk_win_path = None
-    # if os.name == "nt":
-    #     valid_tkWinConfig_paths = check_config_files(tkConfig_paths, "TK", "tkWinInt.h")
-    #     if tkConfig_path in valid_tkWinConfig_paths:
-    #         tk_win_path = valid_tkWinConfig_paths[tkConfig_path][1]
-
     tclConfig_folder = os.path.dirname(tclConfig_path)
     try:
         tcl_path = valid_tclConfig_paths[tclConfig_path][1]
@@ -352,12 +362,11 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
 
     def compile_tkhtml():
         flags = f"--with-tcl={tclConfig_folder} --with-tk={tkConfig_folder} --with-tclinclude={tcl_path} --with-tkinclude={tk_path}"
-        system = platform.system()
-        if system == "Windows":
+        if SYSTEM == "Windows":
             flags += " --with-system=windows"
             if sys.maxsize > 2**32:
                 flags += " --with-shlib-ld='gcc -static-libgcc -pipe -shared'"
-        elif system == "Darwin":
+        elif SYSTEM == "Darwin":
             flags += " --with-system=darwin"
 
         if disable_cairo:
@@ -374,21 +383,6 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
 
         try:
             run_command(["bash", "../configure"] + flags.split())
-
-            # Moved to configure.in
-            # if os.name == "nt":
-            #     bit = sys.maxsize > 2**32
-            #     print(f"\nEditing Makefile with the following recommended changes for {'64' if bit else '32'}-bit Windows:")
-            #     ###
-            #     override = input("Press N to skip or any other key to continue: ")
-            #     if override.upper() != "N":
-            #         with open(MAKE_PATH, "r+") as handle:
-            #             contents = contents = handle.read()
-            #             ###
-            #             handle.seek(0)
-            #             handle.write(contents)
-            #             handle.truncate()
-
             print("\nCompiling...")
             make()
         except subprocess.CalledProcessError:
@@ -399,19 +393,23 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
     print("\nCreating Makefile...")
     compile_tkhtml()
 
-    print("\nTesting result...")
-
 test()
 
 if install:
     import tkinterweb_tkhtml
     
     print("\nInstalling...")
-    with open(PKG_INDEX_PATH, "r") as handle:
-        content = handle.read()
-    match = re.search(r'file\s+join\s+\$dir\s+([^\]\s]+)', content)
-    binary = os.path.join(BUILD_PATH, match.group(1))
-    destination = os.path.join(tkinterweb_tkhtml.TKHTML_ROOT_DIR, match.group(1))
+
+    binary = f"libTkhtml{tkhtml_version}"
+    if tkinter.TclVersion >= 9:
+        binary += "-TclTk9"
+    if SYSTEM == "Windows": binary += ".dll"
+    elif SYSTEM == "Darwin": binary += ".dylib"
+    else: binary += ".so"
+
+    source = os.path.join(BUILD_PATH, tkhtml_file)
+    destination = os.path.join(tkinterweb_tkhtml.TKHTML_ROOT_DIR, binary)
+
     print(f"Copying {binary} to {tkinterweb_tkhtml.TKHTML_ROOT_DIR}")
 
     if os.path.exists(destination):
@@ -420,8 +418,11 @@ if install:
         if override.upper() == "N":
             print("No action done")
         else:
-            shutil.copy2(binary, destination) 
+            shutil.copy2(source, destination) 
             print("Successfully overwritten")
     else:
-        shutil.copy2(binary, destination)
+        shutil.copy2(source, destination)
         print("Successfully copied")
+
+    with_tclsh = None
+    test()
