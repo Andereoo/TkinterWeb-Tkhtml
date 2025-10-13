@@ -812,7 +812,7 @@ propertySetGet (
 )
 {
     int j;
-    assert( i<128 && i>=0 );
+    assert( i<135 && i>=0 );
 
     for (j = 0; j < p->n; j++) {
         if (i == p->a[j].eProp) {
@@ -846,7 +846,7 @@ propertySetAdd (
 {
     int nBytes;
 
-    assert( i<128 && i>=0 );
+    assert( i<135 && i>=0 );
     assert(!p->a || p->n > 0);
 
     /* Note: We used to avoid inserting duplicate properties into a
