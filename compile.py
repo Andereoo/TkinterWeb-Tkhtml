@@ -1,4 +1,5 @@
 ### Script to automatically compile Tkhtml
+### Sample usage: python3 compile.py configure -n -q -t
 ### Sample usage: python3 compile.py configure -w /usr/local/tcl9/bin/tclsh9.0
 ### Copyright (c) 2025 Andrew Clarke
 
@@ -174,9 +175,10 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
     print("\nCreating build directory...")
     if os.path.exists(BUILD_PATH):
         if len(os.listdir(BUILD_PATH)) == 0:
-            print('Directory "build" already exists and is empty. Skipping.')
+            print('Build directory already exists and is empty. Skipping.')
         else:
-            print('Directory "build" already exists. Erase contents?')
+            suffix = " and will be erased" if noprompt else ". Erase contents?"
+            print(f'Build directory already exists{suffix}')
             override = input(f"Press N to skip or any other key to empty {BUILD_PATH}: ")
             if override.upper() != "N":
                 files = glob.glob(BUILD_PATH+os.sep+'*')
@@ -427,3 +429,5 @@ if install:
 
     with_tclsh = None
     test()
+else:
+    print(f"\nThe output of this operation is located in {BUILD_PATH}")
