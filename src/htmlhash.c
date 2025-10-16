@@ -100,7 +100,7 @@ compareCaseInsensitiveKey(
  *
  *---------------------------------------------------------------------------
  */
-static unsigned int 
+static TCL_HASH_TYPE
 hashCaseInsensitiveKey(
     Tcl_HashTable *tablePtr,    /* Hash table. */
     void *keyPtr                /* Key from which to compute hash value. */
@@ -217,7 +217,7 @@ HtmlCaseInsenstiveHashType()
  *
  *---------------------------------------------------------------------------
  */
-static unsigned int 
+static TCL_HASH_TYPE
 hashFontKey(
     Tcl_HashTable *tablePtr,    /* Hash table. */
     void *keyPtr                /* Key from which to compute hash value. */
@@ -373,7 +373,7 @@ HtmlFontKeyHashType()
  *
  *---------------------------------------------------------------------------
  */
-static unsigned int 
+static TCL_HASH_TYPE
 hashValuesKey(
     Tcl_HashTable *tablePtr,    /* Hash table. */
     void *keyPtr                /* Key from which to compute hash value. */
