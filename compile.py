@@ -1,5 +1,5 @@
 ### Script to automatically compile Tkhtml
-### Sample usage: python3 compile.py configure -n -q -t
+### Sample usage: python3 compile.py configure -n -t -i
 ### Sample usage: python3 compile.py configure -w /usr/local/tcl9/bin/tclsh9.0
 ### Copyright (c) 2025 Andrew Clarke
 
@@ -87,9 +87,6 @@ def run_command(cmd, cmd_input=None, capture_output=False):
     else:
         return subprocess.run(cmd, input=cmd_input, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, universal_newlines=True, check=True)
 
-def return_command(cmd):
-    return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-
 def test():
     global tkhtml_version, tkhtml_file
     print("\nTesting result...")
@@ -161,14 +158,17 @@ if os.path.exists(BUILD_PATH) and mode == "build":
         try:
             print("\nCompiling...")
             make()
-        except subprocess.CalledProcessError:
-            print("\nFatal error encountered.")
-            if noprompt: exit()
-            override = input("Press N to abort or any other key to try again: ")
-            if override.upper() == "N":
-                sys.exit()
-            else:
-                compile_tkhtml()
+        except subprocess.CalledProcessError as error:
+            print("\nFatal error encountered")
+            if error.stderr:
+                print(error.stderr, file=sys.stderr)
+            sys.exit()
+            #if noprompt: exit()
+            #override = input("Press N to abort or any other key to try again: ")
+            #if override.upper() == "N":
+            #    sys.exit()
+            #else:
+            #    compile_tkhtml()
     compile_tkhtml()
 
 
@@ -248,24 +248,25 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
                     chosen_path = path
                     break
         return chosen_path
-    
+
     if len(valid_tclConfig_paths) == 0 or len(valid_tkConfig_paths) == 0:
+        try:
+            if with_tclsh:
+                print(f"Using {with_tclsh}.")
+                out = run_command([with_tclsh, GET_PATHS_PATH], capture_output=True)
+            else:
+                print("\nError: no valid Tcl/Tk configuration files were found. Trying tclsh...")
+                out = run_command(["tclsh", GET_PATHS_PATH], capture_output=True)
+        except subprocess.CalledProcessError as error:
+            print("Fatal error encountered")
+            if error.stderr:
+                print(error.stderr, file=sys.stderr)
+            sys.exit()
+
         if with_tclsh:
-            print(f"Using {with_tclsh}.")
-            process = return_command(f"{with_tclsh} {GET_PATHS_PATH}")
+            paths = out.stdout.split()
         else:
-            print("\nError: no valid Tcl/Tk configuration files were found. Trying tclsh...")
-            process = return_command(f"tclsh {GET_PATHS_PATH}")
-
-        out, err = process.communicate()
-
-        if err:
-            raise RuntimeError(err)
-
-        if with_tclsh:
-            paths = out.decode().split()
-        else:
-            paths = paths + out.decode().split()
+            paths = paths + out.stdout.split()
         paths = list(set(paths))
         paths.sort(key=len)
 
@@ -391,11 +392,11 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
             make()
         except subprocess.CalledProcessError as error:
             print("Fatal error encountered. Try changing the configure script flags.")
-            #if noprompt: exit()
-            #compile_tkhtml()
             if error.stderr:
                 print(error.stderr, file=sys.stderr)
-            exit()
+            sys.exit()
+            #if noprompt: sys.exit()
+            #compile_tkhtml()
 
     print("\nCreating Makefile...")
     compile_tkhtml()
