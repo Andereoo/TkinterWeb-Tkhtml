@@ -51,7 +51,7 @@ parser = argparse.ArgumentParser(description="Compile Tkhtml")
 parser.add_argument("mode", type=str, nargs="?", default=MODE, choices=["ask", "configure", "test", "build"], help="the default mode")
 parser.add_argument('-n', '--noprompt', action='store_true', help='disable prompting for user input')
 parser.add_argument('-t', '--notest', action='store_true', help='disable opening a window to test the binary (the binary will still be quietly tested)')
-parser.add_argument('-q', '--quiet', action='store_true', help='hide gcc & configure script output')
+parser.add_argument('-v', '--verbose', action='store_true', help='show all gcc & configure script output')
 parser.add_argument('-s', '--silent', action='store_true', help='hide all output')
 parser.add_argument('-i', '--install', action='store_true', help='install to the tkinterweb-tkhtml package')
 parser.add_argument('-c', '--disable-cairo', action='store_true', help='disable Cairo graphics support')
@@ -61,7 +61,7 @@ args = parser.parse_args()
 mode = args.mode
 noprompt = args.noprompt
 notest = args.notest
-quiet = args.quiet
+verbose = args.verbose
 silent = args.silent
 install = args.install
 disable_cairo = args.disable_cairo
@@ -69,9 +69,9 @@ with_tclsh = args.with_tclsh
 
 # Not very 'Pythonic', but works like a charm
 if silent:
-    if not quiet: quiet = True
     def print(*args, **kwargs):
         pass
+    
 if noprompt:
     def input(string):
         #print(string)
@@ -82,8 +82,10 @@ def print_error(*args):
     print(args)
 
 def run_command(cmd, cmd_input=None, capture_output=False):
-    if quiet: capture_output = True
-    return subprocess.run(cmd, input=cmd_input, capture_output=capture_output, universal_newlines=True, check=True)
+    if verbose or capture_output: 
+        return subprocess.run(cmd, input=cmd_input, capture_output=capture_output, universal_newlines=True, check=True)
+    else:
+        return subprocess.run(cmd, input=cmd_input, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, universal_newlines=True, check=True)
 
 def return_command(cmd):
     return subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -169,7 +171,6 @@ if os.path.exists(BUILD_PATH) and mode == "build":
                 compile_tkhtml()
     compile_tkhtml()
 
-    print("\nTesting result...")
 
 elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure":
     print("\nCreating build directory...")
@@ -259,7 +260,7 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
         out, err = process.communicate()
 
         if err:
-            raise RuntimeError
+            raise RuntimeError(err)
 
         if with_tclsh:
             paths = out.decode().split()
@@ -385,13 +386,16 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
             print(f"Running configure script with the flags {flags}")
 
         try:
-            run_command(["bash", "../configure"] + flags.split())
+            result = run_command(["bash", "../configure"] + flags.split())
             print("\nCompiling...")
             make()
-        except subprocess.CalledProcessError:
-            print("Fatal error encountered. Try changing the configure script flags.\n")
-            if noprompt: exit()
-            compile_tkhtml()
+        except subprocess.CalledProcessError as error:
+            print("Fatal error encountered. Try changing the configure script flags.")
+            #if noprompt: exit()
+            #compile_tkhtml()
+            if error.stderr:
+                print(error.stderr, file=sys.stderr)
+            exit()
 
     print("\nCreating Makefile...")
     compile_tkhtml()
