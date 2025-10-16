@@ -159,7 +159,7 @@ if os.path.exists(BUILD_PATH) and mode == "build":
             print("\nCompiling...")
             make()
         except subprocess.CalledProcessError as error:
-            print("\nFatal error encountered")
+            print("Fatal error encountered")
             if error.stderr:
                 print(error.stderr, file=sys.stderr)
             sys.exit()
