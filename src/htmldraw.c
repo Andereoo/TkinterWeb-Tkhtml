@@ -44,7 +44,7 @@ static const char rcsid[] = "$Id: htmldraw.c,v 1.208 2008/02/14 08:43:49 danielk
     #elif defined(MAC_OSX_TK)
         #include <cairo/cairo-quartz.h>
         #include <tkMacOSX.h>
-        const char *minRoundingMacVersion = "9.0.0"; // Skip rounding in releases where it would segfault (exact version T.B.D.)
+        #define MIN_ROUNDING_MAC_VERSION "9.0.0" // Skip rounding in releases where it would segfault (exact version T.B.D.)
     #else
     #include <cairo/cairo-xlib.h>
     #endif
@@ -2179,19 +2179,15 @@ drawBox (
             static int roundingAllowed = -1;
 
             if (roundingAllowed == -1) {
-                const char *ver = Tcl_GetVar2(pTree->interp, "tcl_patchLevel", NULL, TCL_GLOBAL_ONLY);
-                int major = 0, minor = 0, patch = 0;
-                int minMajor = 0, minMinor = 0, minPatch = 0;
-                if (ver) {
-                    sscanf(ver, "%d.%d.%d", &major, &minor, &patch);
-                }
-                sscanf(minRoundingMacVersion, "%d.%d.%d", &minMajor, &minMinor, &minPatch);
-                if (major > minMajor ||
-                    (major == minMajor && (minor > minMinor ||
-                    (minor == minMinor && patch >= minPatch)))) {
-                    roundingAllowed = 1;
-                } else {
-                    roundingAllowed = 0;
+                roundingAllowed = 0;
+                int rc = Tcl_EvalEx(pTree->interp, "expr {-1 != [package vcompare $tk_patchLevel " MIN_ROUNDING_MAC_VERSION "]}", -1, TCL_EVAL_GLOBAL);
+                if (rc == TCL_OK) {
+                    Tcl_Obj *result = Tcl_GetObjResult(pTree->interp);
+                    int boolResult;
+                    rc = Tcl_GetBooleanFromObj(NULL, result, &boolResult);
+                    if (rc == TCL_OK) {
+                        roundingAllowed = boolResult;
+                    }
                 }
             }
         #else
