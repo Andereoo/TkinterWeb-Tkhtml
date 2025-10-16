@@ -252,7 +252,7 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
     if len(valid_tclConfig_paths) == 0 or len(valid_tkConfig_paths) == 0:
         try:
             if with_tclsh:
-                print(f"Using {with_tclsh}.")
+                print(f"Using {with_tclsh}")
                 out = run_command([with_tclsh, GET_PATHS_PATH], capture_output=True)
             else:
                 print("\nError: no valid Tcl/Tk configuration files were found. Trying tclsh...")
