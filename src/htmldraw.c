@@ -2803,13 +2803,11 @@ pixmapQueryCb(
             drawText(pQuery, pItem, drawable, x, y);
             break;
         }
-
         case CANVAS_IMAGE: {
             setClippingDrawable(pQuery, pItem, &drawable, &x, &y);
             drawImage(pQuery, &pItem->c.image, drawable, x, y, w, h);
             break;
         }
-
         case CANVAS_BOX: {
             Outline *p;
             int xv = pQuery->x - pQuery->pTree->iScrollX;
@@ -2826,7 +2824,6 @@ pixmapQueryCb(
             }
             break;
         }
-
         case CANVAS_LINE: {
             drawLine(pQuery, pItem, drawable, x, y, w, h);
             break;

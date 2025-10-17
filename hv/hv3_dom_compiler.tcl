@@ -132,7 +132,7 @@ namespace eval ::hv3::dom2 {
 			{list method [list %PROCNAME% $myDom $%PARAM%]} \
 		]
       }
-	  lappend GetSet default {if {[llength $args]>1} {return NATIVE}}
+	  lappend GetSet default {if {[llength $args] > 1} {return NATIVE}}
   
       set List [array names compiler2::get_array]
 

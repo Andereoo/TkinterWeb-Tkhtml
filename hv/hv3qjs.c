@@ -98,7 +98,6 @@ typedef struct QjsInterp {
     JSRuntime *rt;
     JSContext *ctx;
 	ClientData instrumentData;
-    JSValue eventPrototype;  /* Objects used by the events subsystem. See hv3events.c for details */
 	Tcl_HashTable objects;  /* Hash table containing the objects created by the Tcl interpreter that are currently in "persistent" state. */
     /* Linked list of SeeJsObject structures that will be removed from the aJsObject[] table next time removeTransientRefs() is called.
      * Variable iNextJsObject is used to assign unique integer ids (SeeJsObject.iKey) to SeeJsObject instances as they are created. */
@@ -135,7 +134,6 @@ static Tcl_ObjCmdProc eventDispatchCmd;
 static Tcl_ObjCmdProc eventDumpCmd;
 static void eventTargetInit(QjsInterp*, JSValue);
 static void freeEventTargetData(JSRuntime*, QjsTclObject*);
-static void eventInit(JSContext*);
 
 static JSClassID QjsTclClassId, QjsTclCallClassId;
 static void getExoticObj(JSRuntime*);
@@ -380,7 +378,7 @@ static JSValue newQjsTclObject(QjsInterp *qjs, JSClassID id, Tcl_Obj *pTclCmd, Q
     QjsTclObject *qjsTclObj;
 
     JSValue obj = JS_NewObjectClass(qjs->ctx, id);
-//	printf("%p #%d\n", JS_VALUE_GET_PTR(obj), numQjsTclObject);
+//	printf("%p %s #%d\n", JS_VALUE_GET_PTR(obj), Tcl_GetString(pTclCmd), numQjsTclObject);
     if (JS_IsException(obj)) return obj;
 	
     qjsTclObj = js_mallocz(qjs->ctx, sizeof(*qjsTclObj));
@@ -416,7 +414,6 @@ static void finalizeObject(JSRuntime *rt, JSValue val)
 		if (qjsTclObj->pEntry) {
 			JSValueEntry *pV = (JSValueEntry*)Tcl_GetHashValue(qjsTclObj->pEntry);
 			Tcl_DeleteHashEntry(qjsTclObj->pEntry);
-			qjsTclObj->pEntry = NULL;
 			ckfree(pV);
 		}
 		freeEventTargetData(rt, qjsTclObj);
@@ -483,9 +480,6 @@ static JSValue findOrCreateObject(QjsInterp *qjs, Tcl_Obj *pTclCmd)
         /* Store in hash table */
         Tcl_SetHashValue(pEntry, pObject);
 		p->pEntry = pEntry;
-
-        /* Initialize the object's event subsystem */
-        eventTargetInit(qjs, pObject->v);
     }
     /* Existing entry found */
     pObject = (JSValueEntry *)Tcl_GetHashValue(pEntry);
@@ -521,7 +515,7 @@ static JSValue createBridge(QjsInterp *qjs, Tcl_Obj *pTclCmd)
     if(!t) return JS_NULL;
     Tcl_GetCommandInfoFromToken(t, &info);
     foreignQjs = info.objClientData;
-	JSValue global = JS_GetGlobalObject(foreignQjs->ctx);
+	JSValue global = foreignQjs->global;
     assert(JS_GetClassID(global) == QjsTclClassId);
     return global;
 }
@@ -646,9 +640,11 @@ static void delInterpCmd(ClientData cd) {
     if (qjs) {
 		if (qjs->pLog) {
 			Tcl_DecrRefCount(qjs->pLog);
-			qjs->pLog = 0;
+			qjs->pLog = NULL;
 		}
 		
+		JS_FreeValue(qjs->ctx, qjs->global);
+
 		Tcl_HashSearch search;
 		Tcl_HashEntry* pEntry = Tcl_FirstHashEntry(&qjs->objects, &search);
 		while (pEntry) {
@@ -731,7 +727,7 @@ static int interpEval(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
     TclCmdArg aOptions[] = {
         {"-file",     0, 0},
         {"-noresult", 1, 0},
-        {0, 0, 0}
+        {NULL, 0, 0}
     };
 	const char *file; /* Value passed to -file option */
     int noR;          /* True if -noresult */
@@ -851,17 +847,15 @@ static int interpProc(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
 
 static int interpGlobalSet(QjsInterp *qjs, Tcl_Obj *pProp, Tcl_Obj *pVal)
 {
-    JSValue glb = JS_GetGlobalObject(qjs->ctx);
 	if (pProp == NULL) {
-		QjsTclObject *w = JS_GetOpaque(glb, QjsTclClassId);
+		QjsTclObject *w = JS_GetOpaque(qjs->global, QjsTclClassId);
 		Tcl_SetObjResult(qjs->interp, w->pObj);
 	} else if (pVal == NULL) {
-		JSValue prop = JS_GetPropertyStr(qjs->ctx, glb, Tcl_GetString(pProp));
+		JSValue prop = JS_GetPropertyStr(qjs->ctx, qjs->global, Tcl_GetString(pProp));
 		Tcl_SetObjResult(qjs->interp, qjsValueToTcl(qjs->ctx, prop));
 	} else {
-	    JS_SetPropertyStr(qjs->ctx, glb, Tcl_GetString(pProp), objToValue(qjs->ctx, pVal));
+	    JS_SetPropertyStr(qjs->ctx, qjs->global, Tcl_GetString(pProp), objToValue(qjs->ctx, pVal));
 	}
-	JS_FreeValue(qjs->ctx, glb);
     return TCL_OK;
 }
 
@@ -896,8 +890,8 @@ static int interpDebug(QjsInterp *qjs, int objc, Tcl_Obj *const objv[]) {
 		
 		const char *azNames[15] = {
 			"QjsTclObject structures allocated", "memory allocated", "memory used", "atoms", "strings",
-			"objects", "  properties", "  shapes", "bytecode functions", "  bytecode",
-			"  pc2line", "C functions", "arrays", "  elements", "binary objects",
+			"objects", "+properties", "+shapes", "bytecode functions", "+bytecode",
+			"+pc2line", "C functions", "arrays", "+elements", "binary objects",
 		};
 		int counts[15] = {
 			numQjsTclObject, s.malloc_count, s.memory_used_count, s.atom_count, s.str_count,
@@ -1034,7 +1028,7 @@ static int interpCmd(
 		case INTERP_LOG: {
             if (qjs->pLog) {
                 Tcl_DecrRefCount(qjs->pLog);
-                qjs->pLog = 0;
+                qjs->pLog = NULL;
             }
             if (Tcl_GetCharLength(objv[2])) {
                 qjs->pLog = objv[2];
@@ -1083,16 +1077,20 @@ static int tclQjsInterp(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *co
 	}
     qjs = js_mallocz_rt(runtime, sizeof(QjsInterp));
     qjs->rt = runtime;
-    qjs->ctx = JS_NewContextRaw(qjs->rt);
+    qjs->ctx = JS_NewContext(runtime);
     qjs->interp = interp;
 	
 	Tcl_InitHashTable(&qjs->objects, TCL_STRING_KEYS);
 
 	JS_SetContextOpaque(qjs->ctx, (ContextOpaque*)qjs);
 	
-	JS_SetGlobalObject(qjs->ctx, findOrCreateObject(qjs, objv[1]), 1);
+	JSValue Global = JS_GetGlobalObject(qjs->ctx);
+	qjs->global = findOrCreateObject(qjs, objv[1]);
+	assert(1 == JS_SetPrototype(qjs->ctx, Global, qjs->global));
+	eventTargetInit(qjs, Global);
+	JS_FreeValue(qjs->ctx, Global);
+    /* Initialize the object's event subsystem */
 	interpTimeoutInit(qjs->ctx);
-	eventInit(qjs->ctx);
 
     snprintf(zCmd, sizeof(zCmd), "::qjs::interp_%d", numQjsInterp++);
     Tcl_CreateObjCommand(interp, zCmd, interpCmd, qjs, delInterpCmd);
@@ -1113,13 +1111,14 @@ QjsTcl_Get(JSContext *ctx, JSValue obj, JSAtom prop, JSValueConst rec)
 {
     JSPropertyDescriptor desc;  // First, check if the property exists normally
 	int rc = JS_GetOwnProperty(ctx, &desc, rec, prop);
-	
 	if (rc > 0) return desc.value;
 	
 	JSValue proto = JS_GetPrototype(ctx, rec);
 	if (JS_IsObject(proto) && JS_HasProperty(ctx, proto, prop)) {
+		JS_FreeValue(ctx, proto);
 		return JS_GetProperty(ctx, proto, prop);
 	}
+	JS_FreeValue(ctx, proto);
 
 	ContextOpaque *p = JS_GetContextOpaque(ctx);
 	if (!p) return JS_ThrowTypeError(ctx, "Tcl interpreter not available");
@@ -1134,15 +1133,16 @@ QjsTcl_Set(JSContext *ctx, JSValueConst obj, JSAtom prop, JSValueConst val, JSVa
 {
     JSPropertyDescriptor desc;
     int nObj, rc = JS_GetOwnProperty(ctx, &desc, rec, prop);
-
-    if (rc > 0 || JS_IsFunction(ctx, val)) {
-        return JS_DefinePropertyValue(ctx, rec, prop, JS_DupValue(ctx, val), f);
-    }
+    if (rc > 0 || JS_IsFunction(ctx, val)) 
+		return JS_DefinePropertyValue(ctx, rec, prop, JS_DupValue(ctx, val), f);
 	
 	JSValue proto = JS_GetPrototype(ctx, rec);
 	if (JS_IsObject(proto) && JS_HasProperty(ctx, proto, prop)) {
-		return JS_SetProperty(ctx, proto, prop, val);
+		rc = JS_DefinePropertyValue(ctx, proto, prop, val, f);
+		JS_FreeValue(ctx, proto);
+		return rc;
 	}
+	JS_FreeValue(ctx, proto);
 	
 	ContextOpaque *p = JS_GetContextOpaque(ctx);
 	if (!p) {
@@ -1210,7 +1210,7 @@ static JSClassExoticMethods tclExoticMethods = {
 	.get_own_property_names = QjsTcl_Enumerator,
 };
 static JSClassDef QjsTclClass = {
-    "Object",
+    "Tcl Object",
     .finalizer = finalizeObject,
 	.exotic = &tclExoticMethods,  // Link to exotic methods
 };
@@ -1226,14 +1226,10 @@ tclCallOrConstruct(JSContext *ctx, JSValueConst obj, JSValueConst this, int argc
 	allocWordArray(qjs, p, argc+1);
 	
 	/* Set and reference-count "this" argument */
-	if (JS_IsUndefined(this)) {
-		interpGlobalSet(qjs, NULL, NULL);
-		p->apWord[p->nWord] = Tcl_GetObjResult(qjs->interp);
-	} else {
-		JSClassID id = f & JS_CALL_FLAG_CONSTRUCTOR ? QjsTclCallClassId : QjsTclClassId;
-		QjsTclObject *pTh = JS_GetOpaque(this, id);
-		p->apWord[p->nWord] = pTh->pObj;
-	}
+	if (JS_IsUndefined(this)) this = qjs->global;
+	JSClassID id = f & JS_CALL_FLAG_CONSTRUCTOR ? QjsTclCallClassId : QjsTclClassId;
+	QjsTclObject *pTh = JS_GetOpaque(this, id);
+	p->apWord[p->nWord] = pTh->pObj;
 	Tcl_IncrRefCount(p->apWord[p->nWord]);
 	
 	/* Convert arguments and increment reference counts in one loop */
@@ -1252,7 +1248,7 @@ tclCallOrConstruct(JSContext *ctx, JSValueConst obj, JSValueConst this, int argc
 }
 
 static JSClassDef QjsTclCallClass = {
-    "Object",
+    "Tcl Method",
     .finalizer = finalizeObject,
 	.exotic = &tclExoticMethods,  // Link to exotic methods
 	.call = tclCallOrConstruct,

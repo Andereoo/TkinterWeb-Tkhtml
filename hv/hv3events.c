@@ -208,7 +208,7 @@ static JSValue dispatchEventFunc(JSContext *ctx, JSValueConst this, int argc, JS
         return JS_ThrowTypeError(ctx, "Function requires exactly 1 parameter");
     }
 
-    if (!JS_IsObject(argv[0]) || JS_GetClassID(argv[0])>1+JS_INVALID_CLASS_ID) 
+    if (!JS_IsObject(argv[0]) || JS_GetClassID(argv[0])>=QjsTclClassId) 
 		return JS_ThrowTypeError(ctx, "Function parameter must be 'native' object");
     event = argv[0];
 
@@ -264,6 +264,8 @@ static JSValue dispatchEventFunc(JSContext *ctx, JSValueConst this, int argc, JS
         isRun = runEvent(ctx, apNodes[i], argv[0], zType, 0);
     }
 
+	while (nNodes--) JS_FreeValue(ctx, apNodes[nNodes]);
+
 	JS_FreeValue(ctx, zType);
 	if (apNodes && nNodesAlloc) js_free(ctx, apNodes);
 
@@ -290,7 +292,7 @@ static int
 eventDispatchCmd(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
 	QjsInterp *qjs = (QjsInterp *)cd;
-    JSValue target, event, ret, glb;
+    JSValue target, event, ret;
     int rc = TCL_OK;
 
     target = findOrCreateObject(qjs, objv[2]);
@@ -298,8 +300,7 @@ eventDispatchCmd(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *const obj
 
     assert(Tcl_IsShared(objv[3]));
 	
-	glb = JS_GetGlobalObject(qjs->ctx);
-	if (!JS_StrictEq(qjs->ctx, target, glb)) JS_FreeValue(qjs->ctx, glb);
+	if (JS_StrictEq(qjs->ctx, target, qjs->global)) JS_DupValue(qjs->ctx, qjs->global);
 
     ret = dispatchEventFunc(qjs->ctx, target, 1, &event);
 
@@ -449,12 +450,29 @@ removeEventListenerFunc(JSContext *ctx, JSValueConst this, int argc, JSValueCons
     return JS_UNDEFINED;
 }
 
+static JSValue EventFunc(JSContext *ctx, JSValueConst this, int argc, JSValueConst *argv)
+{
+	/* Check the number of function arguments. */
+    if (argc > 2) {
+		return JS_ThrowTypeError(ctx, "1-2 arguments required, but non present.");
+    }
+	JSValue opt, event = JS_NewObject(ctx);
+	JS_SetPropertyStr(ctx, event, "type", argv[0]);
+	if (argc > 1) {
+		opt = JS_GetPropertyStr(ctx, argv[1], "bubbles");
+		if (!JS_IsUndefined(opt)) JS_SetPropertyStr(ctx, event, "bubbles", opt);
+		opt = JS_GetPropertyStr(ctx, argv[1], "cancelable");
+		if (!JS_IsUndefined(opt)) JS_SetPropertyStr(ctx, event, "cancelable", opt);
+	}
+	return event;
+}
+
 /*
  *---------------------------------------------------------------------------
  *
  * eventTargetInit --
  *
- *     This function initialises the events sub-system for the TclTclObject passed as an argument.
+ *     This function initialises the events sub-system for the TclObject passed as an argument.
  *
  *     Add entries to JSObject for the following built-in object methods (DOM Interface EventTarget):
  *
@@ -470,14 +488,18 @@ removeEventListenerFunc(JSContext *ctx, JSValueConst this, int argc, JSValueCons
  *
  *---------------------------------------------------------------------------
  */
-static void eventTargetInit(QjsInterp *qjs, JSValue obj)
+static void eventTargetInit(QjsInterp *qjs, JSValue g)
 {
+    JSValue proto = JS_NewObject(qjs->ctx);
 	static const JSCFunctionListEntry funcs[] = {
 		JS_CFUNC_DEF("dispatchEvent",       1, dispatchEventFunc),
 		JS_CFUNC_DEF("removeEventListener", 3, removeEventListenerFunc),
 		JS_CFUNC_DEF("addEventListener",    3, addEventListenerFunc),
 	};
-    JS_SetPropertyFunctionList(qjs->ctx, obj, funcs, 3);
+    JS_SetPropertyFunctionList(qjs->ctx, proto, funcs, 3);
+	JS_SetClassProto(qjs->ctx, QjsTclClassId, proto);
+	JS_SetClassProto(qjs->ctx, QjsTclCallClassId, JS_DupValue(qjs->ctx, proto));
+	JS_SetPropertyStr(qjs->ctx, g, "Event", JS_NewCFunction2(qjs->ctx, EventFunc, "Event", 2, JS_CFUNC_constructor, 0));
 }
 
 static void freeEventTargetData(JSRuntime *rt, QjsTclObject *pTclObject)
@@ -499,28 +521,6 @@ static void freeEventTargetData(JSRuntime *rt, QjsTclObject *pTclObject)
         js_free_rt(rt, pET);
     }
     pTclObject->pTypeList = NULL;  /* Clear the pTypeList pointer */
-}
-
-static JSValue EventFunc(JSContext *ctx, JSValueConst this, int argc, JSValueConst *argv)
-{
-	/* Check the number of function arguments. */
-    if (argc > 2) {
-		return JS_ThrowTypeError(ctx, "1-2 arguments required, but non present.");
-    }
-	JSValue opt, event = JS_NewObject(ctx);
-	JS_SetPropertyStr(ctx, event, "type", argv[0]);
-	if (argc > 1) {
-		opt = JS_GetPropertyStr(ctx, argv[1], "bubbles");
-		if (!JS_IsUndefined(opt)) JS_SetPropertyStr(ctx, event, "bubbles", opt);
-		opt = JS_GetPropertyStr(ctx, argv[1], "cancelable");
-		if (!JS_IsUndefined(opt)) JS_SetPropertyStr(ctx, event, "cancelable", opt);
-	}
-	return event;
-}
-static void eventInit(JSContext *ctx) {  
-    JSValue glb = JS_GetGlobalObject(ctx);
-    CFUNCTION(ctx, glb, "Event", EventFunc, 2);  
-    JS_FreeValue(ctx, glb);  
 }
 
 /*

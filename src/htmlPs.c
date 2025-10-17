@@ -1457,7 +1457,7 @@ int WinItemToPostscript(HtmlTree *pTree, int x, int y, Tk_Window win, int prepas
     #endif
     Tcl_Obj *cmdObj, *psObj;
 
-    if (prepass || win == NULL) { return TCL_OK; }
+    if (prepass || win == NULL) return TCL_OK;
 
     w = Tk_Width(win);
     h = Tk_Height(win);
