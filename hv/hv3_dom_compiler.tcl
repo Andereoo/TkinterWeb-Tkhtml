@@ -66,7 +66,7 @@ namespace eval ::hv3::dom2 {
     eval $code
   }
 
-  proc stateless {type_name args} {
+proc stateless {type_name args} {
     set compiler2::parameter dummy
     set compiler2::default_value error
     set compiler2::finalize ""
@@ -97,89 +97,89 @@ namespace eval ::hv3::dom2 {
          proc ::hv3::DOM::docs::${type_name} {} [list return $documentation]
       ]
     } else {
-      namespace eval compiler2 $body
+		namespace eval compiler2 $body
 
-      set SetStateArray ""
-      if {$compiler2::parameter eq "myStateArray"} {
-        set SetStateArray {upvar $myStateArray state}
-      }
-  
-      set GetSet [list]
-	  set putKeys [array names compiler2::put_array]
-      foreach {zProp val} [array get compiler2::get_array] {
-        if {$zProp in $putKeys} {
-			foreach {isString zArg zCode} $compiler2::put_array($zProp) {}
-			if {$isString} {
-				lappend GetSet $zProp [string map [list %ARG% $zArg %CODE% $zCode %VAL% $val] {
-					if {[llength $args] == 2} {
-						set %ARG% [[$myDom see] tostring [lindex $args 1]]
-						%CODE%
-					} else {
-						%VAL%
-					}
-				}]
-			} else {
-				lappend GetSet $zProp [string map [list %ARG% $zArg %CODE% $zCode %VAL% $val] {
-					if {[llength $args] == 2} {
-						set %ARG% [lindex $args 1]
-						%CODE%
-					} else {
-						%VAL%
-					}
-				}]
+		set SetStateArray ""
+				if {$compiler2::parameter eq "myStateArray"} {
+				set SetStateArray {upvar $myStateArray state}
 			}
-		} else {
-			lappend GetSet $zProp $val
+  
+		set GetSet [list]
+		set putKeys [array names compiler2::put_array]
+		foreach {zProp val} [array get compiler2::get_array] {
+			if {$zProp in $putKeys} {
+				foreach {isString zArg zCode} $compiler2::put_array($zProp) {}
+				if {$isString} {
+				lappend GetSet $zProp [string map [list %ARG% $zArg %CODE% $zCode %VAL% $val] {
+						if {[llength $args] == 2} {
+							set %ARG% [[$myDom see] tostring [lindex $args 1]]
+							%CODE%
+						} else {
+							%VAL%
+						}
+					}]
+				} else {
+					lappend GetSet $zProp [string map [list %ARG% $zArg %CODE% $zCode %VAL% $val] {
+						if {[llength $args] == 2} {
+							set %ARG% [lindex $args 1]
+							%CODE%
+						} else {
+							%VAL%
+						}
+					}]
+				}
+			} else {
+				lappend GetSet $zProp $val
+			}
 		}
-      }
-      foreach {zProp val} [array get compiler2::call_array] {
-        foreach {isString call_args zCode} $val {}
+		foreach {zProp val} [array get compiler2::call_array] {
+			foreach {isString call_args zCode} $val {}
 
-        set zCode "
-          $SetStateArray
-          $zCode
-        "
+			set zCode "
+				$SetStateArray
+				$zCode
+			"
   
-        set procname ::hv3::DOM::${type_name}.${zProp}
-        set arglist [concat myDom $compiler2::parameter $call_args]
-        set proccode [list proc $procname $arglist $zCode]
-        evalcode $proccode
+			set procname ::hv3::DOM::${type_name}.${zProp}
+			set arglist [concat myDom $compiler2::parameter $call_args]
+			set proccode [list proc $procname $arglist $zCode]
+			evalcode $proccode
 
-		if {$isString} {
-			lappend GetSet $zProp [string map \
-				[list %PN% $procname %PM% $compiler2::parameter] \
-				{list method [list ::hv3::dom::TclCallableStr [$myDom see] [list %PN% $myDom $%PM%]]}
-			]
-		} else {
-			lappend GetSet $zProp [string map \
-				[list %PN% $procname %PM% $compiler2::parameter] {list method [list %PN% $myDom $%PM%]}
-			]
+			if {$isString} {
+				lappend GetSet $zProp [string map \
+					[list %PN% $procname %PM% $compiler2::parameter] \
+					{list method [list ::hv3::dom::TclCallableStr [$myDom see] [list %PN% $myDom $%PM%]]}
+				]
+			} else {
+				lappend GetSet $zProp [string map \
+					[list %PN% $procname %PM% $compiler2::parameter] {list method [list %PN% $myDom $%PM%]}
+				]
+			}
 		}
-      }
-	  lappend GetSet default {if {[llength $args] > 1} {return NATIVE}}
+		lappend GetSet default {if {[llength $args] > 1} {return NATIVE}}
   
-      set List [array names compiler2::get_array]
+		set List [array names compiler2::get_array]
 
-      set arglist [list myDom $compiler2::parameter args]
-      set proccode [list \
-        proc ::hv3::DOM::$type_name $arglist [string map [list \
-          %GETSET% $GetSet \
-          %LIST%          $List             \
-          %SETSTATEARRAY% $SetStateArray    \
-        ] {
-          %SETSTATEARRAY%
-          switch -exact -- [lindex $args 0] {
-			Enumerator { list %LIST% }
-            %GETSET%
-          }
-        }
-      ]]
+		set arglist [list myDom $compiler2::parameter args]
+		set proccode [list \
+			proc ::hv3::DOM::$type_name $arglist [string map [list \
+				%GETSET% $GetSet \
+				%LIST%          $List             \
+				%SETSTATEARRAY% $SetStateArray    \
+			] {
+				%SETSTATEARRAY%
+				switch -exact -- [lindex $args 0] {
+					Enumerator { list %LIST% }
+					%GETSET%
+				}
+			}
+		]]
   
-      evalcode $proccode
+		evalcode $proccode
     }
-  }
+}
 
-  namespace eval compiler2 {
+namespace eval compiler2 {
 
     variable parameter
     variable default_value
@@ -192,86 +192,77 @@ namespace eval ::hv3::dom2 {
     variable call_array
 
     proc dom_parameter {zParam} {
-      variable parameter
-      set parameter $zParam
+		variable parameter
+		set parameter $zParam
     }
-
     proc dom_default_value {zDefault} {
-      variable default_value
-      set default_value $zDefault
+		variable default_value
+		set default_value $zDefault
     }
-
     proc dom_finalize {zScript} {
-      variable finalize
-      set finalize $zScript
+		variable finalize
+		set finalize $zScript
     }
-
     proc check_for_is_string {isStringVar argsVar} {
-      upvar $isStringVar isString
-      upvar $argsVar args
+		upvar $isStringVar isString
+		upvar $argsVar args
 
-      set isString 0
-      if {[lindex $args 0] eq "-string"} {
-        set isString 1
-        set args [lrange $args 1 end]
-      }
+		set isString 0
+		if {[lindex $args 0] eq "-string"} {
+			set isString 1
+			set args [lrange $args 1 end]
+		}
     }
-
     # dom_call ?-string? PROPERTY ARG-LIST CODE
     #
     proc dom_call {args} {
-      variable call_array
-      check_for_is_string isString args
-      if {[llength $args] != 3} {
-        set shouldbe "\"dom_call ?-string? PROPERTY ARG-NAME CODE\""
-        error "Invalid arguments to dom_call - should be: $shouldbe" 
-      }
-      foreach {zMethod zArgs zCode} $args {}
-      set call_array($zMethod) [list $isString $zArgs $zCode]
+		variable call_array
+		check_for_is_string isString args
+		if {[llength $args] != 3} {
+			set shouldbe "\"dom_call ?-string? PROPERTY ARG-NAME CODE\""
+			error "Invalid arguments to dom_call - should be: $shouldbe" 
+		}
+		foreach {zMethod zArgs zCode} $args {}
+		set call_array($zMethod) [list $isString $zArgs $zCode]
     }
-
     proc dom_call_todo {zProc} {}
     proc dom_todo {zAttr} {}
-
     # dom_construct PROPERTY ARG-LIST CODE
     #
     proc dom_construct {args} {
-      variable call_array
-      if {[llength $args] != 3} {
-        set shouldbe "\"dom_construct ?-string? PROPERTY ARG-NAME CODE\""
-        error "Invalid arguments to dom_construct - should be: $shouldbe" 
-      }
-      foreach {zMethod zArgs zCode} $args {}
-      set call_array($zMethod) [list -1 $zArgs $zCode]
+		variable call_array
+		if {[llength $args] != 3} {
+			set shouldbe "\"dom_construct ?-string? PROPERTY ARG-NAME CODE\""
+			error "Invalid arguments to dom_construct - should be: $shouldbe" 
+		}
+		foreach {zMethod zArgs zCode} $args {}
+		set call_array($zMethod) [list -1 $zArgs $zCode]
     }
-
     # dom_get PROPERTY CODE
     #
     proc dom_get {zProperty zScript} {
-      variable get_array
-      set get_array($zProperty) $zScript
+		variable get_array
+		set get_array($zProperty) $zScript
     }
-
     # dom_put ?-string? PROPERTY ARG-NAME CODE
     #
     proc dom_put {args} {
-      variable put_array
-      check_for_is_string isString args
-      if {[llength $args] != 3} {
-        set shouldbe "\"dom_put ?-string? PROPERTY ARG-NAME CODE\""
-        error "Invalid arguments to dom_put - should be: $shouldbe" 
-      }
-      foreach {zProperty zArg zCode} $args {}
-      set put_array($zProperty) [list $isString $zArg $zCode]
+		variable put_array
+		check_for_is_string isString args
+		if {[llength $args] != 3} {
+			set shouldbe "\"dom_put ?-string? PROPERTY ARG-NAME CODE\""
+			error "Invalid arguments to dom_put - should be: $shouldbe" 
+		}
+		foreach {zProperty zArg zCode} $args {}
+		set put_array($zProperty) [list $isString $zArg $zCode]
     }
-
     proc dom_events {zCode} {
       variable events
       set events $zCode
     }
     proc dom_scope {zCode} {
-      variable scope
-      set scope $zCode
+		variable scope
+		set scope $zCode
     }
 
     proc -- {args} {}
@@ -279,12 +270,11 @@ namespace eval ::hv3::dom2 {
     proc Ref {args} {}
 
     proc Inherit {superclass code} {
-      eval $code
+		eval $code
     }
-  }
+}
 
-
-  namespace eval doccompiler {
+namespace eval doccompiler {
 
     variable get_array
     variable put_array
@@ -305,155 +295,151 @@ namespace eval ::hv3::dom2 {
     proc dom_scope {args} {}
 
     proc Inherit {super code} {
-      variable superclass
-      set superclass $super
+		variable superclass
+		set superclass $super
     }
 
     proc dom_get  {zProperty args} {
-      variable get_array
-      variable docbuffer
+		variable get_array
+		variable docbuffer
 
-      set get_array($zProperty) $docbuffer
-      set docbuffer ""
+		set get_array($zProperty) $docbuffer
+		set docbuffer ""
     }
     proc dom_put  {args} {
-      variable put_array
-      if {[lindex $args 0] eq "-string"} {
-        set put_array([lindex $args 1]) 1
-      } else {
-        set put_array([lindex $args 0]) 1
-      }
+		variable put_array
+		if {[lindex $args 0] eq "-string"} {
+			set put_array([lindex $args 1]) 1
+		} else {
+			set put_array([lindex $args 0]) 1
+		}
     }
 
     # dom_call -string method args ...
     proc dom_call {args} {
-      variable call_array
-      variable docbuffer
+		variable call_array
+		variable docbuffer
 
-      if {[lindex $args 0] eq "-string"} {
-        set args [lrange $args 1 end]
-      }
-      set method  [lindex $args 0]
-      set arglist [lindex $args 1]
+		if {[lindex $args 0] eq "-string"} {
+			set args [lrange $args 1 end]
+		}
+		set method  [lindex $args 0]
+		set arglist [lindex $args 1]
 
-      set call_array($method) [list $docbuffer [lrange $arglist 1 end]]
-      set docbuffer ""
+		set call_array($method) [list $docbuffer [lrange $arglist 1 end]]
+		set docbuffer ""
     }
 
     proc -- {args} {
-      variable docbuffer
-      if {[llength $args] == 0} {
-        append docbuffer <p>
-      } else {
-        if {$docbuffer eq ""} {append docbuffer <p>}
-        append docbuffer [join $args " "]
-        append docbuffer "\n"
-      }
-      return ""
+		variable docbuffer
+		if {[llength $args] == 0} {
+			append docbuffer <p>
+		} else {
+			if {$docbuffer eq ""} {append docbuffer <p>}
+			append docbuffer [join $args " "]
+			append docbuffer "\n"
+		}
+		return ""
     }
     proc XX {args} {
-      variable current_xx
-      variable xx_array
-      variable docbuffer
+		variable current_xx
+		variable xx_array
+		variable docbuffer
 
-      if {[llength $args] != 0} {
-        set current_xx [join $args " "]
-      }
-      set xx_array($current_xx) $docbuffer
-      set docbuffer ""
+		if {[llength $args] != 0} {
+			set current_xx [join $args " "]
+		}
+		set xx_array($current_xx) $docbuffer
+		set docbuffer ""
     }
     proc Ref {ref {text ""}} {
-      if {$text eq ""} {set text $ref}
-      subst {<A href="${ref}">${text}</A>}
+		if {$text eq ""} {set text $ref}
+		subst {<A href="${ref}">${text}</A>}
     }
 
     proc clean {} {
-      variable get_array
-      variable put_array
-      variable call_array
-      variable docbuffer
-      variable superclass
-      variable current_xx
-      variable xx_array
+		variable get_array
+		variable put_array
+		variable call_array
+		variable docbuffer
+		variable superclass
+		variable current_xx
+		variable xx_array
 
-      set superclass ""
-      set docbuffer ""
-      set current_xx ""
-      array unset get_array
-      array unset put_array
-      array unset call_array
-      array unset xx_array
-      array set xx_array [list "" "<I>TODO: Class documentation</I>"]
+		set superclass ""
+		set docbuffer ""
+		set current_xx ""
+		array unset get_array
+		array unset put_array
+		array unset call_array
+		array unset xx_array
+		array set xx_array [list "" "<I>TODO: Class documentation</I>"]
     }
 
     proc make {classname} {
-      variable get_array
-      variable put_array
-      variable call_array
-      variable xx_array
-      variable superclass
+		variable get_array
+		variable put_array
+		variable call_array
+		variable xx_array
+		variable superclass
 
-      set properties "<TR><TD colspan=3><H2>Properties</H2>"
-      set iStripe 0
-      foreach {zProp} [lsort [array names get_array]] {
-        set docs $get_array($zProp)
-        set readwrite ""
-        if {[info exists put_array($zProp)]} {
-          set readwrite "<I>r/w</I>"
-        }
-        append properties "<TR class=stripe${iStripe}>
-          <TD class=spacer> 
-          <TD class=\"property\"><B>$zProp</B>
-          <TD>$readwrite
-          <TD width=100%>$docs
-        "
-        set iStripe [expr {($iStripe+1)%2}]
-      }
-
-      set methods "<TR><TD colspan=3><H2>Methods</H2>"
-      set iStripe 0
-      foreach {zProp} [lsort [array names call_array]] {
-        set data $call_array($zProp)
-        foreach {docs arglist} $data {break}
-        set zArglist [join $arglist ", "]
-        append methods "<TR class=stripe${iStripe}>
-          <TD class=spacer> 
-          <TD class=\"method\" colspan=2><B>${zProp}</B>(${zArglist})
-          <TD width=100%>$docs
-        "
-        set iStripe [expr {($iStripe+1)%2}]
-      }
-
-      set super ""
-      if {$superclass ne ""} {
-        set super [string map [list %SUPER% $superclass] {
-          <P class=superclass>
-            This object type inherits from <A href="%SUPER%">%SUPER%</A>.
-            In addition to the properties and methods shown below, it has
-            all the properties and methods of the %SUPER% object.
-          </P>
-        }]
-      }
-
-      set Docs [string map [list       \
-          %CLASSNAME%  $classname      \
-          %OVERVIEW%   $xx_array()     \
-          %PROPERTIES% $properties     \
-          %METHODS%    $methods        \
-          %SUPERCLASS% $super          \
-      ] {
-        <LINK rel="stylesheet" href="home://dom/style.css">
-        <TITLE>Class %CLASSNAME%</TITLE>
-        <H1>DOM Class %CLASSNAME%</H1>
-        <DIV class=overview> %OVERVIEW% </DIV>
-        %SUPERCLASS%
-        <TABLE>
-          %PROPERTIES%
-          %METHODS%
-        </TABLE>
-      }]
-
-      return $Docs
+		set properties "<TR><TD colspan=3><H2>Properties</H2>"
+		set iStripe 0
+		foreach {zProp} [lsort [array names get_array]] {
+			set docs $get_array($zProp)
+			set readwrite ""
+			if {[info exists put_array($zProp)]} {
+				set readwrite "<I>r/w</I>"
+			}
+			append properties "<TR class=stripe${iStripe}>
+				<TD class=spacer> 
+				<TD class=\"property\"><B>$zProp</B>
+				<TD>$readwrite
+				<TD width=100%>$docs
+			"
+			set iStripe [expr {($iStripe+1)%2}]
+		}
+		set methods "<TR><TD colspan=3><H2>Methods</H2>"
+		set iStripe 0
+		foreach {zProp} [lsort [array names call_array]] {
+			set data $call_array($zProp)
+			foreach {docs arglist} $data {break}
+			set zArglist [join $arglist ", "]
+			append methods "<TR class=stripe${iStripe}>
+				<TD class=spacer> 
+				<TD class=\"method\" colspan=2><B>${zProp}</B>(${zArglist})
+				<TD width=100%>$docs
+			"
+			set iStripe [expr {($iStripe+1)%2}]
+		}
+		set super ""
+		if {$superclass ne ""} {
+			set super [string map [list %SUPER% $superclass] {
+				<P class=superclass>
+					This object type inherits from <A href="%SUPER%">%SUPER%</A>.
+					In addition to the properties and methods shown below, it has
+					all the properties and methods of the %SUPER% object.
+				</P>
+			}]
+		}
+		set Docs [string map [list       \
+			%CLASSNAME%  $classname      \
+			%OVERVIEW%   $xx_array()     \
+			%PROPERTIES% $properties     \
+			%METHODS%    $methods        \
+			%SUPERCLASS% $super          \
+		] {
+			<LINK rel="stylesheet" href="home://dom/style.css">
+			<TITLE>Class %CLASSNAME%</TITLE>
+			<H1>DOM Class %CLASSNAME%</H1>
+			<DIV class=overview> %OVERVIEW% </DIV>
+			%SUPERCLASS%
+			<TABLE>
+				%PROPERTIES%
+				%METHODS%
+			</TABLE>
+		}]
+		return $Docs
     }
   }
 }
