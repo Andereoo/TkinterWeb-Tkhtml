@@ -12,6 +12,13 @@ namespace eval hv3 { set {version($Id: hv3_dom_compiler.tcl,v 1.38 2007/11/25 18
 namespace eval ::hv3::dom::code {}
 namespace eval ::hv3::DOM::docs {}
 
+proc ::hv3::dom::TclCallableStr {qjs zScript args} {
+	set this [lindex $args 0]
+	set x [list]
+	foreach v [lrange $args 1 end] { lappend x [$qjs tostring $v] }
+    return [eval $zScript [list $this] $x]
+}
+
 #--------------------------------------------------------------------------
 # Stateless DOM objects are defined using the following command:
 #
@@ -102,14 +109,25 @@ namespace eval ::hv3::dom2 {
       foreach {zProp val} [array get compiler2::get_array] {
         if {$zProp in $putKeys} {
 			foreach {isString zArg zCode} $compiler2::put_array($zProp) {}
-			lappend GetSet $zProp [string map [list %ARG% $zArg %CODE% $zCode %VAL% $val] {
-				if {[llength $args] == 2} {
-					set %ARG% [lindex $args 1]
-					%CODE%
-				} else {
-					%VAL%
-				}
-			}]
+			if {$isString} {
+				lappend GetSet $zProp [string map [list %ARG% $zArg %CODE% $zCode %VAL% $val] {
+					if {[llength $args] == 2} {
+						set %ARG% [[$myDom see] tostring [lindex $args 1]]
+						%CODE%
+					} else {
+						%VAL%
+					}
+				}]
+			} else {
+				lappend GetSet $zProp [string map [list %ARG% $zArg %CODE% $zCode %VAL% $val] {
+					if {[llength $args] == 2} {
+						set %ARG% [lindex $args 1]
+						%CODE%
+					} else {
+						%VAL%
+					}
+				}]
+			}
 		} else {
 			lappend GetSet $zProp $val
 		}
@@ -126,11 +144,17 @@ namespace eval ::hv3::dom2 {
         set arglist [concat myDom $compiler2::parameter $call_args]
         set proccode [list proc $procname $arglist $zCode]
         evalcode $proccode
-  
-        lappend GetSet $zProp [string map \
-			[list %PROCNAME% $procname %PARAM% $compiler2::parameter] \
-			{list method [list %PROCNAME% $myDom $%PARAM%]} \
-		]
+
+		if {$isString} {
+			lappend GetSet $zProp [string map \
+				[list %PN% $procname %PM% $compiler2::parameter] \
+				{list method [list ::hv3::dom::TclCallableStr [$myDom see] [list %PN% $myDom $%PM%]]}
+			]
+		} else {
+			lappend GetSet $zProp [string map \
+				[list %PN% $procname %PM% $compiler2::parameter] {list method [list %PN% $myDom $%PM%]}
+			]
+		}
       }
 	  lappend GetSet default {if {[llength $args] > 1} {return NATIVE}}
   

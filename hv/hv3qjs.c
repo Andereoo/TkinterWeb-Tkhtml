@@ -153,6 +153,14 @@ static void interpTimeoutInit(JSContext *);
 static void interpTimeoutCleanup(QjsInterp *);
 #include "hv3timeout.c"
 
+enum {
+    __JS_ATOM_NULL = JS_ATOM_NULL,
+#define DEF(name, str) JS_ATOM_ ## name,
+#include "quickjs-atom.h"
+#undef DEF
+    JS_ATOM_END,
+};
+
 static int allocWordArray(QjsInterp *qjs, QjsTclObject *w, int nExtra)
 {
     if ((!w->nWord) || ((w->nAllocWord - w->nWord) < nExtra))
@@ -391,6 +399,9 @@ static JSValue newQjsTclObject(QjsInterp *qjs, JSClassID id, Tcl_Obj *pTclCmd, Q
 		Tcl_DecrRefCount(qjsTclObj->pObj);
         goto error;
 	}
+	JSAtom a = JS_NewAtom(qjs->ctx, strrchr(Tcl_GetString(qjsTclObj->apWord[0]), ':')+1);
+    JS_DefinePropertyValue(qjs->ctx, obj, JS_ATOM_Symbol_toStringTag, JS_AtomToString(qjs->ctx, a), 0);
+	JS_FreeAtom(qjs->ctx, a);
     numQjsTclObject++;
 	if (p != NULL) *p = qjsTclObj;
     return obj;
@@ -939,6 +950,7 @@ static int interpCmd(
     enum INTERP_enum {
         INTERP_DESTROY,               /* Destroy the interpreter */
         INTERP_EVAL,                  /* Evaluate some javascript */
+        INTERP_TOSTRING,              /* Convert js value to a string */
         INTERP_FUNC,
         INTERP_PROC,
         INTERP_CALL,
@@ -959,6 +971,7 @@ static int interpCmd(
     } aSubCommand[] = {
         {"destroy",  INTERP_DESTROY,  0, 0, ""},
         {"eval",     INTERP_EVAL,     0, 5, "?-file FILENAME? ?-noresult BOOL? JAVASCRIPT"},
+        {"tostring", INTERP_TOSTRING, 1, 1, "JAVASCRIPT-VALUE"},
         {"function", INTERP_FUNC,     3, 3, "NAME ARGUMENTS BODY"},
         {"proc",     INTERP_PROC,     3, 3, "NAME ARGUMENTS BODY"},
         {"call",     INTERP_CALL,     2, 2, "NAME ARGUMENTS"},
@@ -1007,6 +1020,12 @@ static int interpCmd(
         }
         case INTERP_GLOBAL: { // qjs global PROPERTY JAVASCRIPT-VALUE
 			rc = interpGlobalSet(qjs, objc>2?objv[2]:NULL, objc>3?objv[3]:NULL);
+            break;
+        }
+        case INTERP_TOSTRING: {  /* $interp tostring VALUE */
+            JSValue val = objToValue(qjs->ctx, objv[2]);
+            Tcl_SetObjResult(interp, stringToObj(qjs->ctx, val));
+			JS_FreeValue(qjs->ctx, val);
             break;
         }
 		case INTERP_GC: {
@@ -1180,7 +1199,7 @@ QjsTcl_Enumerator(JSContext *ctx, JSPropertyEnum **pTab, uint32_t *pLen, JSValue
     int rc, nRet;            /* size of apString */
     JSPropertyEnum *pEnum;
 
-    rc = callQjsTclMethod(interp, ctxOp->pLog, obj, Tcl_NewStringObj("Enumerator", -1), NULL);
+    rc = callQjsTclMethod(interp, ctxOp->pLog, obj, Tcl_NewStringObj("Enumerator", 10), NULL);
     if (rc != TCL_OK) goto error;
 
     pRet = Tcl_GetObjResult(interp);
