@@ -214,46 +214,46 @@ static inline Tcl_Obj *stringToObj(JSContext *ctx, JSValue str){
 /* Utility: Convert QuickJS JSValue to a Tcl_Obj* */
 static Tcl_Obj *qjsValueToTcl(JSContext *ctx, JSValue val) {
     Tcl_Obj *result;
-    if (JS_IsNull(val) || JS_IsUndefined(val)) {
-        result = Tcl_NewObj();  // In Tcl, the closest equivalent to null is typically an empty string
-    } else if (JS_IsBool(val)) {
-        result = Tcl_NewBooleanObj(JS_ToBool(ctx, val));
-    } else if (JS_IsNumber(val)) {
-		if (JS_VALUE_GET_TAG(val) == JS_TAG_INT) {
-			int i;
+	uint32_t i, len;
+    switch (JS_VALUE_GET_TAG(val)) {
+        case JS_TAG_UNDEFINED: case JS_TAG_NULL:
+            result = Tcl_NewObj();  // In Tcl, the closest equivalent to null is typically an empty string
+            break;
+        case JS_TAG_BOOL:
+            result = Tcl_NewBooleanObj(JS_ToBool(ctx, val));
+            break;
+        case JS_TAG_INT:
 			JS_ToInt32(ctx, &i, val);
 			result = Tcl_NewIntObj(i);
-		} else {
+            break;
+		case JS_TAG_FLOAT64:
 			double d;
 			JS_ToFloat64(ctx, &d, val);
 			result = Tcl_NewDoubleObj(d);
-		}
-    } else if (JS_IsString(val)) {
-		result = stringToObj(ctx, val);
-    } else if (JS_IsObject(val)) {
-		if (JS_IsArray(ctx, val)) {
-			uint32_t i, len;
-			JS_ToUint32(ctx, &len, JS_GetPropertyStr(ctx, val, "length"));  // Get array length
-			result = Tcl_NewListObj(len, NULL);
-			for (i = 0; i < len; i++) {  // Iterate through each element
-				JSValue e = JS_GetPropertyUint32(ctx, val, i);
-				Tcl_ListObjAppendElement(NULL, result, qjsValueToTcl(ctx, e));
+			break;
+        case JS_TAG_STRING: case JS_TAG_STRING_ROPE:
+            result = stringToObj(ctx, val);
+            break;
+        case JS_TAG_OBJECT: {
+            if (JS_IsArray(ctx, val)) {
+				JS_ToUint32(ctx, &len, JS_GetPropertyStr(ctx, val, "length"));  // Get array length
+				result = Tcl_NewListObj(len, NULL);
+				for (i = 0; i < len; i++) {  // Iterate through each element
+					JSValue e = JS_GetPropertyUint32(ctx, val, i);
+					Tcl_ListObjAppendElement(NULL, result, qjsValueToTcl(ctx, e));
+				}
+			} else {  // Errors are handled here
+				JSClassID id = JS_GetClassID(val);
+				if (id == QjsTclClassId || id == QjsTclCallClassId) {
+					result = ((QjsTclObject*)JS_GetOpaque(val, id))->pObj;
+				} else {
+					result = stringToObj(ctx, val);
+				}
 			}
-		} else {  // Errors are handled here
-	        // For objects/functions, may want to wrap/bridge them
-			JSClassID id = JS_GetClassID(val);
-			if (id == QjsTclClassId || id == QjsTclCallClassId) {
-				result = ((QjsTclObject*)JS_GetOpaque(val, id))->pObj;
-			} else {
-				result = stringToObj(ctx, val);
-			}
-		}
-    } else if (JS_IsException(val)) {
-		JSValue exc = JS_GetException(ctx);
-		result = stringToObj(ctx, exc);
-		JS_FreeValue(ctx, exc);
-	} else {
-        result = Tcl_ObjPrintf("[TCL-JS UNKNOWN %d]", JS_VALUE_GET_TAG(val));
+            break;
+        }
+        default:
+	        result = Tcl_ObjPrintf("[TCL-JS UNKNOWN %d]", JS_VALUE_GET_TAG(val));
     }
     JS_FreeValue(ctx, val);
     return result;
