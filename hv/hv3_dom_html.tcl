@@ -610,8 +610,6 @@ namespace eval ::hv3::DOM {
   dom_call focus  {THIS} { [$myNode replace] dom_focus }
   dom_call select {THIS} { [$myNode replace] dom_select }
   dom_call click  {THIS} { [$myNode replace] dom_click }
-
-  dom_scope { HTMLElement_control_scope $myDom $myNode }
 }
 # </HTMLInputElement>
 #-------------------------------------------------------------------------
@@ -706,8 +704,6 @@ namespace eval ::hv3::DOM {
     set obj [lindex [HTMLSelectElement $myDom $myNode Get options] 1]
     eval $obj Get $property
   }
-
-  dom_scope { HTMLElement_control_scope $myDom $myNode }
 }
 namespace eval ::hv3::DOM {
   proc HTMLSelectElement_getOptions {node} {
@@ -788,8 +784,6 @@ namespace eval ::hv3::DOM {
   dom_call -string setSelectionRange {THIS start end} {
     HTMLTextAreaElement_setSelectionRange $myNode $start $end
   }
-
-  dom_scope { HTMLElement_control_scope $myDom $myNode }
 }
 namespace eval ::hv3::DOM {
 
@@ -848,8 +842,6 @@ namespace eval ::hv3::DOM {
   element_attr type;
 
   dom_todo value;
-
-  dom_scope { HTMLElement_control_scope $myDom $myNode }
 }
 # </HTMLButtonElement>
 #-------------------------------------------------------------------------

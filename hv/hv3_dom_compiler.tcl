@@ -78,56 +78,48 @@ proc stateless {type_name args} {
 
     set mappings [list]
     foreach v [info vars ::hv3::dom::code::*] {
-      set name [string range $v [expr [string last : $v]+1] end]
-      lappend mappings %${name}% [set $v]
+		set name [string range $v [expr [string last : $v]+1] end]
+		lappend mappings %${name}% [set $v]
     }
     set body ""
     foreach a $args {
-      append body "\n"
-      append body [string map $mappings $a]
+		append body "\n"
+		append body [string map $mappings $a]
     }
 
     # Compile the documentation for this object. This step is optional.
     if {$::hv3::dom::CREATE_DOM_DOCS} {
-      doccompiler::clean
-      namespace eval doccompiler $body
-      unset -nocomplain doccompiler::get_array(*)
-      set documentation [doccompiler::make $type_name]
-      evalcode [list \
-         proc ::hv3::DOM::docs::${type_name} {} [list return $documentation]
-      ]
+		doccompiler::clean
+		namespace eval doccompiler $body
+		unset -nocomplain doccompiler::get_array(*)
+		set documentation [doccompiler::make $type_name]
+		evalcode [list \
+			proc ::hv3::DOM::docs::${type_name} {} [list return $documentation]
+		]
     } else {
 		namespace eval compiler2 $body
 
 		set SetStateArray ""
-				if {$compiler2::parameter eq "myStateArray"} {
-				set SetStateArray {upvar $myStateArray state}
-			}
+		if {$compiler2::parameter eq "myStateArray"} {
+			set SetStateArray {upvar $myStateArray state}
+		}
   
 		set GetSet [list]
 		set putKeys [array names compiler2::put_array]
 		foreach {zProp val} [array get compiler2::get_array] {
 			if {$zProp in $putKeys} {
 				foreach {isString zArg zCode} $compiler2::put_array($zProp) {}
-				if {$isString} {
-				lappend GetSet $zProp [string map [list %ARG% $zArg %CODE% $zCode %VAL% $val] {
-						if {[llength $args] == 2} {
-							set %ARG% [[$myDom see] tostring [lindex $args 1]]
-							%CODE%
-						} else {
-							%VAL%
-						}
-					}]
-				} else {
-					lappend GetSet $zProp [string map [list %ARG% $zArg %CODE% $zCode %VAL% $val] {
-						if {[llength $args] == 2} {
-							set %ARG% [lindex $args 1]
-							%CODE%
-						} else {
-							%VAL%
-						}
-					}]
-				}
+
+				set argVal [expr {$isString ? {[[$myDom see] tostring [lindex $args 1]]} : {[lindex $args 1]}}]
+
+				lappend GetSet $zProp [string map [list %ARG% $zArg %CODE% $zCode %VAL% $val %AV% $argVal] {
+					if {[llength $args] == 2} {
+						set %ARG% %AV%
+						%CODE%
+					} else {
+						%VAL%
+					}
+				}]
 			} else {
 				lappend GetSet $zProp $val
 			}
@@ -163,12 +155,14 @@ proc stateless {type_name args} {
 		set arglist [list myDom $compiler2::parameter args]
 		set proccode [list \
 			proc ::hv3::DOM::$type_name $arglist [string map [list \
-				%GETSET% $GetSet \
-				%LIST%          $List             \
-				%SETSTATEARRAY% $SetStateArray    \
+				%GETSET%        $GetSet         \
+				%EVENTS% $compiler2::events     \
+				%LIST%          $List           \
+				%SETSTATEARRAY% $SetStateArray  \
 			] {
 				%SETSTATEARRAY%
 				switch -exact -- [lindex $args 0] {
+					Events { %EVENTS% }
 					Enumerator { list %LIST% }
 					%GETSET%
 				}
@@ -260,10 +254,6 @@ namespace eval compiler2 {
       variable events
       set events $zCode
     }
-    proc dom_scope {zCode} {
-		variable scope
-		set scope $zCode
-    }
 
     proc -- {args} {}
     proc XX {args} {}
@@ -292,7 +282,6 @@ namespace eval doccompiler {
     proc dom_todo         {zAttr} {}
     proc dom_construct    {args} {}
     proc dom_events    {args} {}
-    proc dom_scope {args} {}
 
     proc Inherit {super code} {
 		variable superclass

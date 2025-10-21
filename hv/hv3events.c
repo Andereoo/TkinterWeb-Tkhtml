@@ -210,6 +210,7 @@ static JSValue dispatchEventFunc(JSContext *ctx, JSValueConst this, int argc, JS
 
     if (!JS_IsObject(argv[0]) || JS_GetClassID(argv[0])>=QjsTclClassId) 
 		return JS_ThrowTypeError(ctx, "Function parameter must be 'native' object");
+
     event = argv[0];
 
 	CFUNCTION(ctx, event, "stopPropagation", stopPropagationFunc, 0);
@@ -246,22 +247,22 @@ static JSValue dispatchEventFunc(JSContext *ctx, JSValueConst this, int argc, JS
             apNodes[nNodes++] = JS_DupValue(ctx, parentNode);
             node = parentNode;
         } while (!JS_IsNull(node));
-    }
+    } else JS_DupValue(ctx, this);  // Make sure objects that aren't nodes aren't freed, this prevents crashing
 
     /* Deliver the "capturing" phase of the event. */
     JS_SetPropertyStr(ctx, event, "eventPhase", JS_NewInt32(ctx, 1));
     for (int i = nNodes - 1; isRun && i >= 0; i--) {
-        isRun = runEvent(ctx, apNodes[i], argv[0], zType, 1);
+        isRun = runEvent(ctx, apNodes[i], event, zType, 1);
     }
 
     /* Deliver the "target" phase of the event. */
     JS_SetPropertyStr(ctx, event, "eventPhase", JS_NewInt32(ctx, 2));
-    if (isRun) isRun = runEvent(ctx, this, argv[0], zType, 0);
+    if (isRun) isRun = runEvent(ctx, this, event, zType, 0);
 
     /* Deliver the "bubbling" phase of the event. */
     JS_SetPropertyStr(ctx, event, "eventPhase", JS_NewInt32(ctx, 3));
     for (int i = 0; isRun && i < nNodes; i++) {
-        isRun = runEvent(ctx, apNodes[i], argv[0], zType, 0);
+        isRun = runEvent(ctx, apNodes[i], event, zType, 0);
     }
 
 	while (nNodes--) JS_FreeValue(ctx, apNodes[nNodes]);
@@ -299,8 +300,6 @@ eventDispatchCmd(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *const obj
     event = createNative(qjs, objv[3]);
 
     assert(Tcl_IsShared(objv[3]));
-	
-	if (JS_StrictEq(qjs->ctx, target, qjs->global)) JS_DupValue(qjs->ctx, qjs->global);
 
     ret = dispatchEventFunc(qjs->ctx, target, 1, &event);
 
@@ -472,6 +471,80 @@ static JSValue EventFunc(JSContext *ctx, JSValueConst this, int argc, JSValueCon
  *
  * eventTargetInit --
  *
+ *     This function initialises the events sub-system for the
+ *     SeeTclObject passed as an argument. In practice, this means
+ *     it evaluates the Tcl script:
+ *
+ *         eval $obj Events
+ *
+ *     where $obj is the Tcl command implementing the object. The
+ *     return value is expected to be a list of alternating attribute 
+ *     names and values. Each value is compiled to a javascript function
+ *     and inserted into SeeTclObject.pNative using the supplied attribute
+ *     name. For example, if the [Events] script returns:
+ *
+ *         onclick {alert("click!"} ondblclick {alert("dblclick!")}
+ *  
+ *     The "onclick" and "ondblclick" properties of SeeTclObject.pNative
+ *
+ *     are set to the following objects, respectively:
+ *
+ *         function (event) { alert("click!") }
+ *         function (event) { alert("dblclick!") }
+ *
+ * Results: 
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ *---------------------------------------------------------------------------
+ */
+static void eventTargetInit(QjsInterp *qjs, JSValue o)
+{
+    Tcl_Interp *pTcl = qjs->interp;
+    Tcl_Obj *pList, **apWord;
+    int nWord, rc, i, l;
+
+    rc = callQjsTclMethod(pTcl, NULL, o, Tcl_NewStringObj("Events", 6), NULL);
+    if (rc != TCL_OK) {
+        Tcl_BackgroundError(pTcl);
+        return;
+    }
+    pList = Tcl_GetObjResult(pTcl);
+    rc = Tcl_ListObjGetElements(pTcl, pList, &nWord, &apWord);
+    if (rc != TCL_OK) {
+        Tcl_BackgroundError(pTcl);
+        return;
+    }
+    for (i = 0; i < nWord-1; i += 2){
+        Tcl_Obj *pJ;
+        /* Construct a string like this:
+         *
+         *   this.$zAttr = function (event) { $zScript }
+         *
+         * We then evaluate the script with the "this" object set to the
+         * object we are trying to attach the legacy event handler to.
+         */
+        pJ = Tcl_NewStringObj("this.", 5);
+        Tcl_IncrRefCount(pJ);
+        Tcl_AppendObjToObj(pJ, apWord[i]);
+        Tcl_AppendToObj(pJ, " = function (event)", -1);
+        Tcl_ListObjAppendElement(pTcl, pJ, apWord[i+1]);
+        /* printf("%s\n", Tcl_GetString(pJ)); */
+
+        JS_EvalThis(qjs->ctx, o, Tcl_GetStringFromObj(pJ, &l), l, "<event>", JS_EVAL_TYPE_GLOBAL);
+        /* Not a lot we can do with an error here... */
+        Tcl_DecrRefCount(pJ);
+    }
+    Tcl_ResetResult(pTcl);
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * eventTargetGlobalInit --
+ *
  *     This function initialises the events sub-system for the TclObject passed as an argument.
  *
  *     Add entries to JSObject for the following built-in object methods (DOM Interface EventTarget):
@@ -488,7 +561,7 @@ static JSValue EventFunc(JSContext *ctx, JSValueConst this, int argc, JSValueCon
  *
  *---------------------------------------------------------------------------
  */
-static void eventTargetInit(QjsInterp *qjs, JSValue g)
+static void eventTargetGlobalInit(QjsInterp *qjs, JSValue g)
 {
     JSValue proto = JS_NewObject(qjs->ctx);
 	static const JSCFunctionListEntry funcs[] = {

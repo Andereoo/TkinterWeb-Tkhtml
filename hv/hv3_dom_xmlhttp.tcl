@@ -72,13 +72,7 @@ namespace eval hv3 { set {version($Id: hv3_dom_xmlhttp.tcl,v 1.18 2008/02/15 18:
   dom_get status       {list $state(status)}
   dom_get statusText   {list $state(statusText)}
 
-  dom_call open {THIS 
-    method 
-    uri 
-    {async    {boolean false}}
-    {user     null}
-    {password null}
-  } {
+  dom_call open {THIS method uri {async false} {user null} {password null}} {
 
     # If there was already a download-handle, destroy it.
     if {$state(downloadHandle) ne ""} {
@@ -95,17 +89,17 @@ namespace eval hv3 { set {version($Id: hv3_dom_xmlhttp.tcl,v 1.18 2008/02/15 18:
     # Check the $method argument. Hv3 only supports GET and POST.
     # Anything that is not a POST is sent as a GET.
     set state(method) GET
-    if {[string equal -nocase [lindex $method 1] POST]} {
+    if {[string equal -nocase $method POST]} {
       set state(method) POST
     }
 
     # Configure the download-handle with the URI to access.
-    set rel [lindex $uri 1]
+    set rel $uri
     set fulluri [$state(hv3) resolve_uri $rel]
     $state(downloadHandle) configure -uri $fulluri
 
     # Set the asynchronous flag.
-    set state(async) [lindex $async 1]
+    set state(async) $async
     if {$state(async) eq "" || ![string is boolean $state(async)]} {
       set state(async) false
     }

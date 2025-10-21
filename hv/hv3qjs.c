@@ -57,7 +57,8 @@
  *         {transient Tcl-COMMAND}
  *
  *     Both forms create the same kinds of javascript object, but the first initialises the object in "persistent" state the second in "transient" state. 
- *     Objects in "transient" state are eligible for garbage collection once the SEE interpreter state contains no more references to it. Objects in "persistent" state are not garbage collected until the interpreter is deleted.
+ *     Objects in "transient" state are eligible for garbage collection once the SEE interpreter state contains no more references to it. 
+ *     Objects in "persistent" state are not garbage collected until the interpreter is deleted.
  */
  
 #include <tcl.h>
@@ -133,6 +134,7 @@ struct QjsJsObject {
 static Tcl_ObjCmdProc eventDispatchCmd;
 static Tcl_ObjCmdProc eventDumpCmd;
 static void eventTargetInit(QjsInterp*, JSValue);
+static void eventTargetGlobalInit(QjsInterp*, JSValue);
 static void freeEventTargetData(JSRuntime*, QjsTclObject*);
 
 static JSClassID QjsTclClassId, QjsTclCallClassId;
@@ -381,11 +383,11 @@ static int callQjsTclMethod(
  *
  *---------------------------------------------------------------------------
  */
-static JSValue newQjsTclObject(QjsInterp *qjs, JSClassID id, Tcl_Obj *pTclCmd, QjsTclObject **p)
+static JSValue newQjsTclObject(QjsInterp *qjs, int8_t isCall, Tcl_Obj *pTclCmd, QjsTclObject **p)
 {
     QjsTclObject *qjsTclObj;
 
-    JSValue obj = JS_NewObjectClass(qjs->ctx, id);
+    JSValue obj = JS_NewObjectClass(qjs->ctx, isCall ? QjsTclCallClassId : QjsTclClassId);
 //	printf("%p %s #%d\n", JS_VALUE_GET_PTR(obj), Tcl_GetString(pTclCmd), numQjsTclObject);
     if (JS_IsException(obj)) return obj;
 	
@@ -436,7 +438,7 @@ static void finalizeObject(JSRuntime *rt, JSValue val)
 
 static JSValue createTransient(QjsInterp *qjs, Tcl_Obj *pTclCmd)
 {
-	JSValue func_obj = newQjsTclObject(qjs, QjsTclCallClassId, pTclCmd, 0);
+	JSValue func_obj = newQjsTclObject(qjs, 1, pTclCmd, 0);
 	JS_SetConstructorBit(qjs->ctx, func_obj, 1);
     return func_obj;
 }
@@ -463,9 +465,7 @@ static JSValue findOrCreateObject(QjsInterp *qjs, Tcl_Obj *pTclCmd)
     Tcl_HashEntry *pEntry;
 	int isNew;
 	
-    /* See if this is a javascript object reference. It is assumed to
-     * be a javascript reference if the first character is a digit.
-     */
+    /* See if this is a javascript object reference. It is assumed to be a javascript reference if the first character is a digit. */
     if (isdigit(zCmd[0])){
         if (TCL_OK != Tcl_GetIntFromObj(interp, pTclCmd, &isNew)) return JS_EXCEPTION;
 	    QjsJsObject *pJsObject;
@@ -487,10 +487,12 @@ static JSValue findOrCreateObject(QjsInterp *qjs, Tcl_Obj *pTclCmd)
         /* Create new JSValueEntry */
         pObject = ckalloc(sizeof(*pObject));
         /* Create new object and store it */
-        pObject->v = newQjsTclObject(qjs, QjsTclClassId, pTclCmd, &p);
-        /* Store in hash table */
+        pObject->v = newQjsTclObject(qjs, 0, pTclCmd, &p);
+        /* Insert the new object into the hash table */
         Tcl_SetHashValue(pEntry, pObject);
 		p->pEntry = pEntry;
+        /* Initialise the objects events subsystem. */
+        eventTargetInit(qjs, pObject->v);
     }
     /* Existing entry found */
     pObject = (JSValueEntry *)Tcl_GetHashValue(pEntry);
@@ -538,16 +540,16 @@ static JSValue objToValue(JSContext *ctx, Tcl_Obj *pObj) {
     int n;
     if (Tcl_GetDoubleFromObj(NULL, pObj, &d) == TCL_OK) {
         return JS_NewFloat64(ctx, d);
-    } else if (Tcl_GetIntFromObj(NULL, pObj, &n) == TCL_OK) {
+    } if (Tcl_GetIntFromObj(NULL, pObj, &n) == TCL_OK) {
         return JS_NewInt32(ctx, n);
-    } else if (Tcl_GetBooleanFromObj(NULL, pObj, &n) == TCL_OK) {
+    } if (Tcl_GetBooleanFromObj(NULL, pObj, &n) == TCL_OK) {
         return JS_NewBool(ctx, n);
     } else {  // Fallback: treat as string
 		if (pObj->typePtr == Tcl_GetObjType("list")) {
 			Tcl_Obj **ap;
 			QjsInterp *qjs = (QjsInterp*)JS_GetContextOpaque(ctx);
 			Tcl_ListObjGetElements(qjs->interp, pObj, &n, &ap);
-			if (n == 1) return objToValue(ctx, ap[0]);
+			if (n == 0) return JS_UNDEFINED;
 			if (n == 2) {
 				static const char *const aType[] = {"object", "node", "method", "bridge", "transient", NULL};
 				Tcl_GetIndexFromObj(qjs->interp, ap[0], aType, "type", TCL_EXACT, &n);
@@ -556,13 +558,13 @@ static JSValue objToValue(JSContext *ctx, Tcl_Obj *pObj) {
 					case 1: return createNode(qjs, ap[1]); 	      // Node
 					case 2: return createTransient(qjs, ap[1]);  // Method
 					case 3: return createBridge(qjs, ap[1]);    // Another context's global object
-					case 4: return newQjsTclObject(qjs, QjsTclClassId, ap[1], NULL);
+					case 4: return newQjsTclObject(qjs, 0, ap[1], NULL);
 				}
 			}
 		}
 		const char *s = Tcl_GetStringFromObj(pObj, &n);
-		if (!n || n==9 && !strcmp(s, "undefined")) return JS_UNDEFINED;
-		if (n==4 && !strcmp(s, "null")) return JS_NULL;
+		if (!n || n == 9 && !strncmp(s, "undefined", 9)) return JS_UNDEFINED;
+		if (n == 4 && !strncmp(s, "null", 4)) return JS_NULL;
         return JS_NewStringLen(ctx, s, n);
     }
 }
@@ -583,7 +585,7 @@ static JSValue createNative(QjsInterp *qjs, Tcl_Obj *pTclList)
     if (rc != TCL_OK) return throwTclError(qjs->ctx, qjs->interp);
 
     JSValue ret = JS_NewObject(qjs->ctx);
-    for (i = 0; i < (n-1); i += 2){
+    for (i = 0; i < n-1; i += 2){
 		JS_SetPropertyStr(qjs->ctx, ret, Tcl_GetString(ap[i]), objToValue(qjs->ctx, ap[i+1]));
     }
     return ret;
@@ -1106,7 +1108,7 @@ static int tclQjsInterp(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *co
 	JSValue Global = JS_GetGlobalObject(qjs->ctx);
 	qjs->global = findOrCreateObject(qjs, objv[1]);
 	assert(1 == JS_SetPrototype(qjs->ctx, Global, qjs->global));
-	eventTargetInit(qjs, Global);
+	eventTargetGlobalInit(qjs, Global);
 	JS_FreeValue(qjs->ctx, Global);
     /* Initialize the object's event subsystem */
 	interpTimeoutInit(qjs->ctx);
