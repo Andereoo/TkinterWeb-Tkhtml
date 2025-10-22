@@ -390,7 +390,7 @@ namespace eval ::hv3::dom {
         type            $type         \
         bubbles         1             \
         cancelable      $isCancelable \
-        timestamp       0             \
+        timestamp       [clock milliseconds] \
 \
         view            {}            \
         detail          {}            \
@@ -433,7 +433,7 @@ namespace eval ::hv3::dom {
       type            $type           \
       bubbles         $bubbles        \
       cancelable      $isCancelable   \
-      timestamp       0               \
+      timestamp  [clock milliseconds] \
     ]
   }
 

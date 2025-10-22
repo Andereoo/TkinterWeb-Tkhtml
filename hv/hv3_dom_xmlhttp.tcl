@@ -42,11 +42,11 @@ namespace eval hv3 { set {version($Id: hv3_dom_xmlhttp.tcl,v 1.18 2008/02/15 18:
   #
   dom_get readyState {
     switch -exact -- $state(readyState) {
-      Uninitialized {list 0}
-      Open          {list 1}
-      Sent          {list 2}
-      Receiving     {list 3}
-      Loaded        {list 4}
+      Uninitialized {return 0}
+      Open          {return 1}
+      Sent          {return 2}
+      Receiving     {return 3}
+      Loaded        {return 4}
       default       {error "Bad myReadyState value: $myReadyState"}
     }
   }
@@ -68,9 +68,9 @@ namespace eval hv3 { set {version($Id: hv3_dom_xmlhttp.tcl,v 1.18 2008/02/15 18:
     return null
   }
 
-  dom_get responseText {list $state(responseText)}
-  dom_get status       {list $state(status)}
-  dom_get statusText   {list $state(statusText)}
+  dom_get responseText {return $state(responseText)}
+  dom_get status       {return $state(status)}
+  dom_get statusText   {return $state(statusText)}
 
   dom_call open {THIS method uri {async false} {user null} {password null}} {
 
@@ -166,21 +166,21 @@ namespace eval hv3 { set {version($Id: hv3_dom_xmlhttp.tcl,v 1.18 2008/02/15 18:
 
   # Constants for Event.eventPhase (Definition group PhaseType)
   #
-  dom_get CAPTURING_PHASE { list 1 }
-  dom_get AT_TARGET       { list 2 }
-  dom_get BUBBLING_PHASE  { list 3 }
+  dom_get CAPTURING_PHASE 1
+  dom_get AT_TARGET       2
+  dom_get BUBBLING_PHASE  3
 
   # Read-only attributes to access the values set by initEvent().
   #
-  dom_get type          { list "readystatechange" }
-  dom_get bubbles       { list false }
-  dom_get cancelable    { list false }
+  dom_get type          readystatechange
+  dom_get bubbles       false
+  dom_get cancelable    false
 
   # TODO: Timestamp is supposed to return a timestamp in milliseconds
   # from the epoch. But the DOM spec notes that this information is not
   # available on all systems, in which case the property should return 0. 
   #
-  dom_get timestamp  { list 0 }
+  dom_get timestamp  [clock milliseconds]
 
   dom_call_todo initEvent
 }
@@ -194,8 +194,8 @@ namespace eval ::hv3::DOM {
     upvar #0 $statevar state
 
     # Assume success...
-    set state(status)         200
-    set state(statusText)     "OK"
+    set    state(status)         200
+    set    state(statusText)     "OK"
     append state(responseText)   $data
 
     XMLHttpRequest_SetState $dom $statevar Receiving
@@ -237,7 +237,7 @@ namespace eval ::hv3::DOM {
       type            readystatechange \
       bubbles         0                \
       cancelable      0                \
-      timestamp       0                \
+      timestamp   [clock milliseconds] \
     ]
 
     set rc [catch {[$dom see] dispatch $this $event} msg]

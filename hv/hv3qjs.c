@@ -1145,8 +1145,9 @@ QjsTcl_Get(JSContext *ctx, JSValue obj, JSAtom prop, JSValueConst rec)
 	if (!p) return JS_ThrowTypeError(ctx, "Tcl interpreter not available");
 	
 	rc = callQjsTclMethod(p->interp, p->pLog, obj, atomToObj(ctx, prop), NULL);
-	
-	return objToValue(ctx, Tcl_GetObjResult(p->interp));
+	JSValue res = objToValue(ctx, Tcl_GetObjResult(p->interp));
+	if (JS_IsFunction(ctx, res)) JS_DefinePropertyValue(ctx, obj, prop, JS_DupValue(ctx, res), 0);
+	return res;
 }
 
 static int 
