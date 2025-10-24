@@ -276,7 +276,7 @@ argValueToTcl(QjsInterp *qjs, JSValueConst val, int *pN) {
 			/* Create the new QjsJsObject structure. */
 			QjsJsObject *pJsObject = js_malloc(qjs->ctx, sizeof(QjsJsObject));
 			pJsObject->iKey = qjs->iKeyNext++;
-			pJsObject->object = val;
+			pJsObject->object = JS_DupValue(qjs->ctx, val);
 
 			pJsObject->pNext = qjs->pJsObject;
 			qjs->pJsObject = pJsObject;
@@ -416,8 +416,15 @@ static JSValue newQjsTclObject(QjsInterp *qjs, int8_t isCall, Tcl_Obj *pTclCmd, 
 static void finalizeObject(JSRuntime *rt, JSValue val)
 {
     QjsTclObject *qjsTclObj = JS_GetOpaque(val, JS_GetClassID(val));
-    if (qjsTclObj) {  // Decrement reference count for each Tcl object
-        for (int i = 0; i < qjsTclObj->nWord; i++) {
+    if (qjsTclObj) {
+        /* Execute the Tcl Finalize hook. Do nothing with the result thereof. */
+        Tcl_Interp *interp = JS_GetRuntimeOpaque(rt);
+        int rc = callQjsTclMethod(interp, NULL, val, Tcl_NewStringObj("Finalize", 8), NULL);
+        if (rc != TCL_OK) {
+            Tcl_AppendResult(interp, "WARNING Qjstcl: Finalize script failed for ");
+			Tcl_AppendObjToObj(Tcl_GetObjResult(interp), qjsTclObj->pObj);
+        }
+        for (int i = 0; i < qjsTclObj->nWord; i++) {  // Decrement reference count for each Tcl object
             Tcl_DecrRefCount(qjsTclObj->apWord[i]);
         }
         // Free the array and qjsTclObj
@@ -1036,6 +1043,7 @@ static int interpCmd(
         case INTERP_TOSTRING: {  /* $interp tostring VALUE */
             JSValue val = objToValue(qjs->ctx, objv[2]);
             Tcl_SetObjResult(interp, stringToObj(qjs->ctx, val));
+			JS_FreeValue(qjs->ctx, val);
             break;
         }
         case INTERP_DISPATCH: { // $interp dispatch
@@ -1106,7 +1114,7 @@ static int tclQjsInterp(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *co
     qjs->interp = interp;
 	
 	Tcl_InitHashTable(&qjs->objects, TCL_STRING_KEYS);
-
+	JS_SetRuntimeOpaque(runtime, interp);
 	JS_SetContextOpaque(qjs->ctx, (ContextOpaque*)qjs);
 	
 	JSValue Global = JS_GetGlobalObject(qjs->ctx);

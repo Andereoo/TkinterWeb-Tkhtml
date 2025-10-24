@@ -13,10 +13,25 @@ namespace eval ::hv3::dom::code {}
 namespace eval ::hv3::DOM::docs {}
 
 proc ::hv3::dom::TclCallableStr {qjs zScript args} {
+	switch -exact -- [lindex $args 0] {
+		Finalize { return }
+		Events { return }
+		Enumerator { return }
+	}
 	set this [lindex $args 0]
 	set x [list]
 	foreach v [lrange $args 1 end] { lappend x [$qjs tostring $v] }
     return [eval $zScript [list $this] $x]
+}
+
+proc ::hv3::dom::TclCallable {zScript args} {
+	switch -exact -- [lindex $args 0] {
+		Finalize { return }
+		Events { return }
+		Enumerator { return }
+	}
+	set this [lindex $args 0]
+    return [eval $zScript [list $this] [lrange $args 1 end]]
 }
 
 #--------------------------------------------------------------------------
@@ -144,7 +159,8 @@ proc stateless {type_name args} {
 				]
 			} else {
 				lappend GetSet $zProp [string map \
-					[list %PN% $procname %PM% $compiler2::parameter] {list method [list %PN% $myDom $%PM%]}
+					[list %PN% $procname %PM% $compiler2::parameter] \
+					{list method [list ::hv3::dom::TclCallable [list %PN% $myDom $%PM%]]}
 				]
 			}
 		}
@@ -156,12 +172,14 @@ proc stateless {type_name args} {
 		set proccode [list \
 			proc ::hv3::DOM::$type_name $arglist [string map [list \
 				%GETSET%        $GetSet         \
-				%EVENTS% $compiler2::events     \
+				%FINALIZE% $compiler2::finalize \
+				%EVENTS%   $compiler2::events   \
 				%LIST%          $List           \
 				%SETSTATEARRAY% $SetStateArray  \
 			] {
 				%SETSTATEARRAY%
 				switch -exact -- [lindex $args 0] {
+					Finalize { %FINALIZE% }
 					Events { %EVENTS% }
 					Enumerator { list %LIST% }
 					%GETSET%
@@ -179,7 +197,6 @@ namespace eval compiler2 {
     variable default_value
     variable finalize
     variable events
-    variable scope
 
     variable get_array
     variable put_array
