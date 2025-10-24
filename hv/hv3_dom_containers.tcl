@@ -62,7 +62,7 @@ namespace eval hv3 { set {version($Id: hv3_dom_containers.tcl,v 1.11 2008/02/15 
 
   # HTMLCollection.item()
   #
-  dom_call -string item {THIS index} {
+  dom_call item {THIS index} {
     HTMLCollectionC_item $myDom $nodelistcmd $index
   }
 
@@ -171,7 +171,7 @@ namespace eval ::hv3::DOM {
 
   # HTMLCollection.item()
   #
-  dom_call -string item {THIS index} {
+  dom_call item {THIS index} {
     set node [eval $mySearchCmd -index [expr {int($index)}]]
     if {$node ne ""} { 
       list object [::hv3::dom::wrapWidgetNode $myDom $node] 
@@ -265,7 +265,7 @@ namespace eval ::hv3::DOM {
   #
   dom_parameter myNodelistcmd
 
-  dom_call -string item {THIS index} {
+  dom_call item {THIS index} {
     if {![string is double $index]} { return null }
     set idx [expr {int($index)}]
     NodeListC_item $myDom $myNodelistcmd $idx
@@ -308,7 +308,7 @@ namespace eval ::hv3::DOM {
   #
   dom_parameter mySearchCmd
 
-  dom_call -string item {THIS index} {
+  dom_call item {THIS index} {
     if {![string is double $index]} { return null }
     NodeListS_item $myDom $mySearchCmd [expr {int($index)}]
   }
@@ -379,7 +379,7 @@ namespace eval ::hv3::DOM {
 
   # HTMLCollection.item()
   #
-  dom_call -string item {THIS index} {
+  dom_call item {THIS index} {
     set cmd [list HTMLSelectElement_getOptions $mySelectNode]
     HTMLCollectionC_item $myDom $cmd $index
   }
@@ -403,7 +403,7 @@ namespace eval ::hv3::DOM {
   dom_get selectedIndex {
     list [[$mySelectNode replace] dom_selectionIndex]
   }
-  dom_put -string selectedIndex value {
+  dom_put selectedIndex value {
     [$mySelectNode replace] dom_setSelectionIndex $value
   }
 }

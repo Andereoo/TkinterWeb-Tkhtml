@@ -549,9 +549,12 @@ static JSValue createBridge(QjsInterp *qjs, Tcl_Obj *pTclCmd)
 /* Utility: Convert Tcl_Obj* to QuickJS JSValue */
 static JSValue objToValue(JSContext *ctx, Tcl_Obj *pObj) {
     // This is a stub: may want to parse Tcl lists to JS objects, etc.
+	Tcl_WideInt w;
     double d;
     int n;
-    if (Tcl_GetDoubleFromObj(NULL, pObj, &d) == TCL_OK) {
+    if (Tcl_GetWideIntFromObj(NULL, pObj, &w) == TCL_OK) {
+        return JS_NewInt64(ctx, w);
+    } if (Tcl_GetDoubleFromObj(NULL, pObj, &d) == TCL_OK) {
         return JS_NewFloat64(ctx, d);
     } if (Tcl_GetIntFromObj(NULL, pObj, &n) == TCL_OK) {
         return JS_NewInt32(ctx, n);

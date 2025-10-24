@@ -218,7 +218,7 @@ namespace eval hv3 { set {version($Id: hv3_dom_ns.tcl,v 1.42 2008/02/15 18:23:37
   -- 
   -- Note: In Hv3, this function always behaves as if <I>force</I> is true.
   -- Documents are always reloaded from the origin server.
-  dom_call -string reload  {THIS {force 0}} { 
+  dom_call reload  {THIS {force 0}} { 
     if {![string is boolean $force]} { error "Bad boolean arg: $force" }
     $myHv3 goto [$myHv3 location] -nosave -cachecontrol no-cache
     return ""
@@ -251,7 +251,7 @@ namespace eval ::hv3::DOM {
   dom_parameter myHv3
 
   -- TODO. Right now this is a no-op.
-  dom_call -string scrollBy {args} { }
+  dom_call scrollBy {args} { }
 
   -- A reference to the [Ref HTMLDocument] object currently associated
   -- with this window.
@@ -407,7 +407,7 @@ namespace eval ::hv3::DOM {
   -- case in the Hv3 web browser, but may be in other applications.
   -- The string passed as an argument is evaluated as a Tcl script
   -- in the widget's interpreter.
-  dom_call -string tcl {THIS script} {
+  dom_call tcl {THIS script} {
     set browser [$myDom browser]
     if {[$browser cget -unsafe]} {
       uplevel #0 $script

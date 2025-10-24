@@ -319,7 +319,7 @@ set ::hv3::dom::code::DOCUMENTEVENT {
   #     "MutationEvents"
   #     "Events"
   #
-  dom_call -string createEvent {THIS eventType} {
+  dom_call createEvent {THIS eventType} {
     if {![info exists ::hv3::DOM::EventGroup($eventType)]} {
       error {DOMException HIERACHY_REQUEST_ERR}
     }

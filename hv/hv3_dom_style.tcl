@@ -229,7 +229,7 @@ set ::hv3::dom::code::CSS2PROPERTIES {
   dom_get length {
     list [expr {[llength [$myNode prop -inline]]/2}]
   }
-  dom_call -string item {THIS index} {
+  dom_call item {THIS index} {
     set idx [expr {2*int([lindex $index 1])}]
     list [lindex [$myNode prop -inline] $idx]
   }

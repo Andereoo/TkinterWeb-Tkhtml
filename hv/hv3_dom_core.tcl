@@ -115,14 +115,14 @@ set ::hv3::dom::code::NODE {
   # Method to clone the node. Spec indicates that it is optional to
   # support this on for DOCUMENT nodes, hence the exception.
   #
-  dom_call -string cloneNode {THIS isDeep} {
+  dom_call cloneNode {THIS isDeep} {
     error "DOMException NOT_SUPPORTED_ERR"
   }
 }
 
 ::hv3::dom2::stateless Implementation {
 
-  dom_call -string hasFeature {THIS feature version} {
+  dom_call hasFeature {THIS feature version} {
     set feature [string tolower $feature]
     set version [string tolower $version]
 
@@ -255,7 +255,7 @@ set ::hv3::dom::code::DOCUMENT {
   #     createAttribute()            (todo)
   #     createEntityReference()      (todo)
   #
-  dom_call -string createElement {THIS tagname} {
+  dom_call createElement {THIS tagname} {
     set node [$myHv3 html fragment "<$tagname>"]
     if {$node eq ""} {error "DOMException NOT_SUPPORTED_ERR"}
     list object [::hv3::dom::wrapWidgetNode $myDom $node]
@@ -328,7 +328,7 @@ set ::hv3::dom::code::WIDGET_NODE {
   dom_get previousSibling {WidgetNode_Sibling $myDom $myNode -1}
   dom_get nextSibling     {WidgetNode_Sibling $myDom $myNode +1}
 
-  dom_call -string cloneNode {THIS isDeep} {
+  dom_call cloneNode {THIS isDeep} {
  
     # To clone a node, first obtain the serialized HTML representation.
     # Then parse it using the [widget fragment] API. The result is the
@@ -704,7 +704,7 @@ namespace eval ::hv3::DOM {
   # The appendData(), insertData() and deleteData() are all implemented
   # as special cases of replaceData().
   #
-  dom_call -string substringData {THIS offset count} {
+  dom_call substringData {THIS offset count} {
     set nOffset [expr {int($offset)}]
     set nCount  [expr {int($count)}]
     set idx2 [expr {$nOffset + $nCount - 1}]
@@ -739,7 +739,7 @@ namespace eval ::hv3::DOM {
 
   # splitText(offset)
   #
-  dom_call -string splitText {THIS offset} {
+  dom_call splitText {THIS offset} {
     set nOffset [expr {int($offset)}]
     set t [$myNode text -pre]
 

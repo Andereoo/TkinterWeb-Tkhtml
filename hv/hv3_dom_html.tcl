@@ -632,7 +632,7 @@ namespace eval ::hv3::DOM {
   dom_get selectedIndex {
     list [[$myNode replace] dom_selectionIndex]
   }
-  dom_put -string selectedIndex value {
+  dom_put selectedIndex value {
     [$myNode replace] dom_setSelectionIndex $value
   }
 
@@ -669,7 +669,7 @@ namespace eval ::hv3::DOM {
   dom_get disabled { 
     list [::hv3::boolean_attr $myNode disabled false]
   }
-  dom_put -string disabled val { 
+  dom_put disabled val { 
     ::hv3::put_boolean_attr $myNode disabled $val
     [$myNode replace] treechanged
   }
@@ -680,7 +680,7 @@ namespace eval ::hv3::DOM {
   #
   #     Remove the index'th option from the <select> node.
   #
-  dom_call -string remove {THIS idx} {
+  dom_call remove {THIS idx} {
     set options [HTMLSelectElement_getOptions $myNode]
     set o [lindex $options [expr {int($idx)}]] 
     if {$o ne ""} {
@@ -781,7 +781,7 @@ namespace eval ::hv3::DOM {
   # must both be numbers (and are cast to integers). The insertion
   # cursor is set to the character just after the selected range.
   #
-  dom_call -string setSelectionRange {THIS start end} {
+  dom_call setSelectionRange {THIS start end} {
     HTMLTextAreaElement_setSelectionRange $myNode $start $end
   }
 }
@@ -1140,7 +1140,7 @@ namespace eval ::hv3::DOM {
   element_attr hspace
 
   dom_get isMap { list [::hv3::boolean_attr $myNode ismap false] }
-  dom_put -string isMap val { ::hv3::put_boolean_attr $myNode ismap $val }
+  dom_put isMap val { ::hv3::put_boolean_attr $myNode ismap $val }
 
   element_attr longDesc -attribute longdesc;
   element_attr src;
