@@ -237,8 +237,8 @@ HtmlCssSearch(
         z = (char *)HtmlAlloc("temp", n);
         sprintf(z, "%s {width:0}", zOrig);
         HtmlCssSelectorParse(pTree, n, z, &pStyle);
-        if ( !pStyle || !pStyle->pUniversalRules) {
-            Tcl_AppendResult(interp, "Bad css selector: \"", zOrig, "\"", 0); 
+        if (!pStyle || !pStyle->pUniversalRules) {
+            Tcl_AppendResult(interp, "Bad css selector: \"", zOrig, "\"", (char*)NULL); 
             return TCL_ERROR;
         }
         sSearch.pRuleList = pStyle->pUniversalRules;

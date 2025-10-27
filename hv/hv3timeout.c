@@ -25,13 +25,13 @@ struct QjsTimeout {
 	JSValue *apArg;
 	int interval;  /* Number of milliseconds for setInterval(). Or -1 for setTimeout(). */
 	uint32_t id;  /* Linked list pointers and id number. */
-	QjsTimeout *pNext, **ppThis;
+	QjsTimeout *pNext, **apThis;
 };
 
 static void delTimeout(QjsTimeout *p) {
 	if (p->token) return;
-	*p->ppThis = p->pNext;
-    if (p->pNext) p->pNext->ppThis = p->ppThis;
+	*p->apThis = p->pNext;
+    if (p->pNext) p->pNext->apThis = p->apThis;
     JS_FreeValue(p->ctx, p->func);
 	for (int i=0; i < p->nArg; i++) JS_FreeValue(p->ctx, p->apArg[i]);
 	if (p->nArg > 0) js_free(p->ctx, p->apArg);
@@ -42,7 +42,7 @@ static void timeoutCb(ClientData clientData) {
     QjsTimeout *p = (QjsTimeout *)clientData;
     JSValue res;
 	
-    assert(p->ppThis);
+    assert(p->apThis);
 
     if (JS_IsFunction(p->ctx, p->func)) {
 		JSValue glb = JS_GetGlobalObject(p->ctx);
@@ -59,9 +59,9 @@ static void timeoutCb(ClientData clientData) {
          */
         if (p->interval <= NO_INTERVAL) {
             delTimeout(p);
-        } else if (p->token) {
+        } else {
             ClientData c = (ClientData)p;
-            assert(p->ppThis);
+            assert(p->apThis);
             p->token = Tcl_CreateTimerHandler(p->interval, timeoutCb, c);
         }
     }
@@ -90,11 +90,14 @@ static JSValue newTimer(
     p = js_malloc(ctx, sizeof(*p));
     p->func = JS_DupValue(ctx, argv[0]);
 	
-	const int OFF = 1 + JS_IsNumber(argv[1]);
+	const uint8_t OFF = 1 + JS_IsNumber(argv[1]);
 	if (argc > OFF) {
 		p->nArg = argc - OFF;
 		p->apArg = js_malloc(ctx, sizeof(JSValue)*p->nArg);
 		for (int i=0; i < p->nArg; i++) p->apArg[i] = JS_DupValue(ctx, argv[i+OFF]);
+	} else {
+		p->nArg = 0;
+		p->apArg = NULL;
 	}
 	
 	if (isInterval && milli < 10) milli = 10;
@@ -105,9 +108,9 @@ static JSValue newTimer(
     p->id = co->iNextTimeout++;
     p->pNext = co->pTimeout;
     co->pTimeout = p;
-	p->ppThis = &co->pTimeout;
-    if (p->pNext) p->pNext->ppThis = &p->pNext;
-    assert(p->ppThis);
+	p->apThis = &co->pTimeout;
+    if (p->pNext) p->pNext->apThis = &p->pNext;
+    assert(p->apThis);
 
     p->token = Tcl_CreateTimerHandler(milli, timeoutCb, (ClientData)p);
     return JS_NewUint32(ctx, p->id);
@@ -153,8 +156,7 @@ static JSValue clearIntervalFunc(JSContext *ctx, JSValueConst this, int argc, JS
     cancelTimer(ctx, this, 1, argc, argv);
 }
 
-static void interpTimeoutInit(JSContext *ctx) {
-	JSValue g = JS_GetGlobalObject(ctx);
+static void interpTimeoutInit(JSContext *ctx, JSValue g) {
 	static const JSCFunctionListEntry funcs[] = {
 		JS_CFUNC_DEF("setTimeout", 1, setTimeoutFunc),
 		JS_CFUNC_DEF("setInterval", 2, setIntervalFunc),
@@ -162,7 +164,6 @@ static void interpTimeoutInit(JSContext *ctx) {
 		JS_CFUNC_DEF("clearInterval", 1, clearIntervalFunc),
 	};
     JS_SetPropertyFunctionList(ctx, g, funcs, 4);
-	JS_FreeValue(ctx, g);
 }
 
 static void interpTimeoutCleanup(QjsInterp *qjs) {

@@ -152,7 +152,7 @@ static void getExoticObj(JSRuntime*);
 ** The hv3timeout.c module uses the SeeInterp.pTimeout pointer. The
 ** external interface (called from this file) is:
 */ 
-static void interpTimeoutInit(JSContext *);
+static void interpTimeoutInit(JSContext *, JSValue);
 static void interpTimeoutCleanup(QjsInterp *);
 #include "hv3timeout.c"
 
@@ -276,7 +276,7 @@ argValueToTcl(QjsInterp *qjs, JSValueConst val, int *pN) {
 			/* Create the new QjsJsObject structure. */
 			QjsJsObject *pJsObject = js_malloc(qjs->ctx, sizeof(QjsJsObject));
 			pJsObject->iKey = qjs->iKeyNext++;
-			pJsObject->object = JS_DupValue(qjs->ctx, val);
+			pJsObject->object = val;
 
 			pJsObject->pNext = qjs->pJsObject;
 			qjs->pJsObject = pJsObject;
@@ -419,8 +419,7 @@ static void finalizeObject(JSRuntime *rt, JSValue val)
     if (qjsTclObj) {
         /* Execute the Tcl Finalize hook. Do nothing with the result thereof. */
         Tcl_Interp *interp = JS_GetRuntimeOpaque(rt);
-        int rc = callQjsTclMethod(interp, NULL, val, Tcl_NewStringObj("Finalize", 8), NULL);
-        if (rc != TCL_OK) {
+        if (callQjsTclMethod(interp, NULL, val, Tcl_NewStringObj("Finalize", 8), NULL) != TCL_OK) {
             Tcl_AppendResult(interp, "WARNING Qjstcl: Finalize script failed for ");
 			Tcl_AppendObjToObj(Tcl_GetObjResult(interp), qjsTclObj->pObj);
         }
@@ -470,19 +469,19 @@ static JSValue findOrCreateObject(QjsInterp *qjs, Tcl_Obj *pTclCmd)
     const char *zCmd = Tcl_GetString(pTclCmd);
     JSValueEntry *pObject;
     Tcl_HashEntry *pEntry;
-	int isNew;
+	int isNew, iKey;
 	
     /* See if this is a javascript object reference. It is assumed to be a javascript reference if the first character is a digit. */
     if (isdigit(zCmd[0])){
-        if (TCL_OK != Tcl_GetIntFromObj(interp, pTclCmd, &isNew)) return JS_EXCEPTION;
+        if (TCL_OK != Tcl_GetIntFromObj(interp, pTclCmd, &iKey)) return JS_EXCEPTION;
 	    QjsJsObject *pJsObject;
 		for (
 			pJsObject = qjs->pJsObject;
-			pJsObject && pJsObject->iKey != isNew;
+			pJsObject && pJsObject->iKey != iKey;
 			pJsObject = pJsObject->pNext
 		);
 		if (!pJsObject) return JS_EXCEPTION;
-		return pJsObject->object;
+		return JS_DupValue(qjs->ctx, pJsObject->object);
     }
 
     /* Search for an existing Tcl object */
@@ -543,7 +542,7 @@ static JSValue createBridge(QjsInterp *qjs, Tcl_Obj *pTclCmd)
     foreignQjs = info.objClientData;
 	JSValue global = foreignQjs->global;
     assert(JS_GetClassID(global) == QjsTclClassId);
-    return global;
+    return JS_DupValue(qjs->ctx, global);
 }
 
 /* Utility: Convert Tcl_Obj* to QuickJS JSValue */
@@ -1124,9 +1123,9 @@ static int tclQjsInterp(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *co
 	eventTargetGlobalInit(qjs, Global);  // This must be done BEFORE any Tcl-JS objects are created
 	qjs->global = findOrCreateObject(qjs, objv[1]);
 	assert(1 == JS_SetPrototype(qjs->ctx, Global, qjs->global));
-	JS_FreeValue(qjs->ctx, Global);
     /* Initialize the object's event subsystem */
-	interpTimeoutInit(qjs->ctx);
+	interpTimeoutInit(qjs->ctx, Global);
+	JS_FreeValue(qjs->ctx, Global);
 
     snprintf(zCmd, sizeof(zCmd), "::qjs::interp_%d", numQjsInterp++);
     Tcl_CreateObjCommand(interp, zCmd, interpCmd, qjs, delInterpCmd);
