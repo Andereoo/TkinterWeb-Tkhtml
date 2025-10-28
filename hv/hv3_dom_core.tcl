@@ -290,6 +290,66 @@ set ::hv3::dom::code::DOCUMENT {
     catch {set html [$myHv3 html]}
     list object [list ::hv3::DOM::HTMLCollectionC $myDom [list $html search $tag]]
   }
+  
+  #-------------------------------------------------------------------------
+  # The HTMLDocument.write() and writeln() methods (DOM level 1)
+  #
+  dom_call -string write {THIS str} {
+    catch { [$myHv3 html] write text $str } msg
+    return ""
+  }
+  dom_call -string writeln {THIS str} {
+    catch { [$myHv3 html] write text "$str\n" }
+    return ""
+  }
+
+  #-------------------------------------------------------------------------
+  # HTMLDocument.getElementById() method. (DOM level 1)
+  #
+  # This returns a single object (or NULL if an object of the specified
+  # id cannot be found).
+  #
+  dom_call -string getElementById {THIS elementId} {
+    set elementId [string map [list "\x22" "\x5C\x22"] $elementId]
+    set selector [subst -nocommands {[id="$elementId"]}]
+    set node [$myHv3 html search $selector -index 0]
+    if {$node ne ""} {
+      return [list object [::hv3::dom::wrapWidgetNode $myDom $node]]
+    }
+    return null
+  }
+
+  #-------------------------------------------------------------------------
+  # HTMLDocument.getElementsByName() method. (DOM level 1)
+  #
+  # Return a NodeList of the elements whose "name" value is set to
+  # the supplied argument. This is similar to the 
+  # Document.getElementsByTagName() method in hv3_dom_core.tcl.
+  #
+  dom_call -string getElementsByName {THIS elementName} {
+    set name [string map [list "\x22" "\x5C\x22"] $elementName]
+    set selector [subst -nocommands {[name="$name"]}]
+    set nl [list ::hv3::DOM::NodeListS $myDom [list [$myHv3 html] search $selector]]
+    list transient $nl
+  }
+  
+  dom_call -string getElementsByClassName {THIS className} {
+    set className [string map [list "\x22" "\x5C\x22"] $className]
+    set selector [subst -nocommands {[class="$className"]}]
+    list object [list ::hv3::DOM::HTMLCollectionC $myDom [list [$myHv3 html] search $selector]]
+  }
+  
+  dom_call -string querySelector {THIS selector} {
+	set node [$myHv3 html search $selector -index 0]
+    if {$node ne ""} {
+      return [list object [::hv3::dom::wrapWidgetNode $myDom $node]]
+    }
+    return null
+  }
+  
+  dom_call -string querySelectorAll {THIS selector} {
+    list object [list ::hv3::DOM::HTMLCollectionC $myDom [list [$myHv3 html] search $selector]]
+  }
 }
 
 #-------------------------------------------------------------------------
@@ -376,7 +436,14 @@ namespace eval ::hv3::DOM {
     }
     return $ret
   }
-
+  
+  proc WidgetNode_ToText {node} {
+    set txt [$node text -pre]
+    foreach child [$node children] {
+      append txt [WidgetNode_ToText $child]
+    }
+    return $txt
+  }
 
   proc WidgetNode_Sibling {dom node dir} {
     set ret null
@@ -510,8 +577,52 @@ set ::hv3::dom::code::ELEMENT {
   dom_call_todo setAttributeNode
   dom_call_todo removeAttributeNode
 
-  dom_call -string getElementsByTagName {THIS tagname} {
-    list object [list ::hv3::DOM::HTMLCollectionC $myDom [list [$myNode html] search $tagname -root $myNode]]
+  #-------------------------------------------------------------------------
+  # HTMLDocument.getElementById() method. (DOM level 1)
+  #
+  # This returns a single object (or NULL if an object of the specified
+  # id cannot be found).
+  #
+  dom_call -string getElementById {THIS elementId} {
+    set elementId [string map [list "\x22" "\x5C\x22"] $elementId]
+    set selector [subst -nocommands {[id="$elementId"]}]
+    set node [$myHv3 html search $selector -root $myNode -index 0]
+    if {$node ne ""} {
+      return [list object [::hv3::dom::wrapWidgetNode $myDom $node]]
+    }
+    return null
+  }
+
+  #-------------------------------------------------------------------------
+  # HTMLDocument.getElementsByName() method. (DOM level 1)
+  #
+  # Return a NodeList of the elements whose "name" value is set to
+  # the supplied argument. This is similar to the 
+  # Document.getElementsByTagName() method in hv3_dom_core.tcl.
+  #
+  dom_call -string getElementsByName {THIS elementName} {
+    set name [string map [list "\x22" "\x5C\x22"] $elementName]
+    set selector [subst -nocommands {[name="$name"]}]
+    set nl [list ::hv3::DOM::NodeListS $myDom [list [$myHv3 html] search $selector -root $myNode]]
+    list transient $nl
+  }
+  
+  dom_call -string getElementsByClassName {THIS className} {
+    set className [string map [list "\x22" "\x5C\x22"] $className]
+    set selector [subst -nocommands {[class="$className"]}]
+    list object [list ::hv3::DOM::HTMLCollectionC $myDom [list [$myHv3 html] search $selector -root $myNode]]
+  }
+  
+  dom_call -string querySelector {THIS selector} {
+	set node [$myHv3 html search $selector -root $myNode -index 0]
+    if {$node ne ""} {
+      return [list object [::hv3::dom::wrapWidgetNode $myDom $node]]
+    }
+    return null
+  }
+  
+  dom_call -string querySelectorAll {THIS selector} {
+    list object [list ::hv3::DOM::HTMLCollectionC $myDom [list [$myHv3 html] search $selector -root $myNode]]
   }
 
   # normalize()

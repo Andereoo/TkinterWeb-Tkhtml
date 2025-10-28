@@ -119,24 +119,38 @@ proc stateless {type_name args} {
 			set SetStateArray {upvar $myStateArray state}
 		}
   
+		# Build the GetSet list for switch handling
 		set GetSet [list]
-		set putKeys [array names compiler2::put_array]
-		foreach {zProp val} [array get compiler2::get_array] {
-			if {$zProp in $putKeys} {
-				foreach {isString zArg zCode} $compiler2::put_array($zProp) {}
+		set putProps [array names compiler2::put_array]
 
-				set argVal [expr {$isString ? {[[$myDom see] tostring [lindex $args 1]]} : {[lindex $args 1]}}]
-
-				lappend GetSet $zProp [string map [list %ARG% $zArg %CODE% $zCode %VAL% $val %AV% $argVal] {
+		foreach {prop getCode} [array get compiler2::get_array] {
+			if {$prop in $putProps} {
+				# Handle read/write property
+				lassign $compiler2::put_array($prop) isString argVar putCode
+				# Template for combined get/set logic
+				if {$isString} {
+				  set template {
 					if {[llength $args] == 2} {
-						set %ARG% %AV%
-						%CODE%
+					  set %ARG% [[$myDom see] tostring [lindex $args 1]]
+					  %CODE%
 					} else {
-						%VAL%
+					  %VAL%
 					}
-				}]
-			} else {
-				lappend GetSet $zProp $val
+				  }
+				} else {
+				  set template {
+					if {[llength $args] == 2} {
+					  set %ARG% [lindex $args 1]
+					  %CODE%
+					} else {
+					  %VAL%
+					}
+				  }
+				}
+				# Substitute placeholders
+				lappend GetSet $prop [string map [list %ARG% $argVar %CODE% $putCode %VAL% $getCode] $template]
+			} else {  ;# Read-only property
+				lappend GetSet $prop $getCode
 			}
 		}
 		foreach {zProp val} [array get compiler2::call_array] {
@@ -153,15 +167,15 @@ proc stateless {type_name args} {
 			evalcode $proccode
 
 			if {$isString} {
-				lappend GetSet $zProp [string map \
-					[list %PN% $procname %PM% $compiler2::parameter] \
-					{list method [list ::hv3::dom::TclCallableStr [$myDom see] [list %PN% $myDom $%PM%]]}
-				]
+			  lappend GetSet $zProp [string map \
+				[list %PN% $procname %PM% $compiler2::parameter] \
+				{list method [list ::hv3::dom::TclCallableStr [$myDom see] [list %PN% $myDom $%PM%]]}
+			  ]
 			} else {
-				lappend GetSet $zProp [string map \
-					[list %PN% $procname %PM% $compiler2::parameter] \
-					{list method [list ::hv3::dom::TclCallable [list %PN% $myDom $%PM%]]}
-				]
+			  lappend GetSet $zProp [string map \
+				[list %PN% $procname %PM% $compiler2::parameter] \
+				{list method [list ::hv3::dom::TclCallable [list %PN% $myDom $%PM%]]}
+			  ]
 			}
 		}
 		lappend GetSet default {if {[llength $args] > 1} {return NATIVE}}

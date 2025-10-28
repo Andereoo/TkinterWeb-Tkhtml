@@ -538,7 +538,7 @@ snit::widget ::hv3::locationentry {
     if {[regexp "Search the web for \"(.*)\"" $current -> newval]} {
       # Case 4 (special version), search the web with google.
       set newval [::hv3::escape_string $newval]
-      set final "http://www.google.com/search?q=$newval"
+      set final "http://html.duckduckgo.com/html?q=$newval"
     } elseif {[string match *:/* $current] || [string match *: $current]} {
       # Case 1, a fully qualified URI. Do nothing.
     } elseif {[string range $current 0 0] eq "/"} {
@@ -550,7 +550,7 @@ snit::widget ::hv3::locationentry {
     } else {
       # Case 4, search the web with google.
       set newval [::hv3::escape_string $current]
-      set final "http://www.google.com/search?q=$newval"
+      set final "http://html.duckduckgo.com/html?q=$newval"
     }
 
     if {$final ne ""} {

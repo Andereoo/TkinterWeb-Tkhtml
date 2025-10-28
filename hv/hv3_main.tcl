@@ -428,13 +428,13 @@ snit::type ::hv3::search {
   
   variable mySearchEngines [list \
       ----------- -                                                        \
-      {Google}    "http://www.google.com/search?q=%s"                      \
-      {Tcl Wiki}  "http://wiki.tcl.tk/_search?S=%s"                        \
+      {DuckDuckGo} "http://html.duckduckgo.com/html?q=%s"                  \
+      {Tcl Wiki}   "http://wiki.tcl.tk/_search?S=%s"                       \
       ----------- -                                                        \
-      {Ask.com}   "http://www.ask.com/web?q=%s"                            \
-      {MSN}       "http://search.msn.com/results.aspx?q=%s"                \
-      {Wikipedia} "http://en.wikipedia.org/wiki/Special:Search?search=%s"  \
-      {Yahoo}     "http://search.yahoo.com/search?p=%s"                    \
+      {MSN}        "http://search.msn.com/results.aspx?q=%s"               \
+      {Wikipedia}  "http://en.wikipedia.org/wiki/Special:Search?search=%s" \
+	  {Wiby}       "http://wiby.me/?q=%s"                                  \
+	  {Brave}      "https://search.brave.com/search?q=%s"                  \
   ]
   variable myDefaultEngine Google
 
@@ -692,12 +692,8 @@ proc gui_build {widget_array} {
   ::hv3::toolbutton .toolbar.b.home -text Home -command [list \
       gui_current goto $::hv3::homeuri
   ]
-  ::hv3::toolbutton .toolbar.bug -text {Report Bug} -command gui_report_bug
-
   .toolbar.b.new configure -tooltip "Open New Tab"
   .toolbar.b.home configure -tooltip "Go to Bookmarks Manager"
-
-  .toolbar.bug configure -tooltip "Bug Report"
 
   # Create the middle bit - the browser window
   #
@@ -745,7 +741,6 @@ proc gui_build {widget_array} {
   pack [frame .toolbar.b.spacer -width 2 -height 1] -side left
 
   pack .toolbar.b -side left
-  pack .toolbar.bug -side right
   pack .toolbar.entry -fill x -expand true
 
   # Pack the top, bottom and middle, in that order. The middle must be 
@@ -824,7 +819,6 @@ proc gui_menu {widget_array} {
     .toolbar.b.stop configure -image hv3_stopimg
     .toolbar.b.new configure -image hv3_newimg
     .toolbar.b.home configure -image hv3_homeimg
-    .toolbar.bug configure -image hv3_bugimg
   }
 }
 #--------------------------------------------------------------------------
@@ -942,15 +936,6 @@ proc gui_openfile {notebook} {
 proc gui_log_window {notebook} {
   set browser [$notebook current]
   ::hv3::log_window [[$browser hv3] html]
-}
-
-proc gui_report_bug {} {
-  upvar ::hv3::G G
-  set uri [[[$G(notebook) current] hv3] uri get]
-  .notebook add "home://bug/[::hv3::format_query [encoding system] $uri]"
-
-  set cookie "tkhtml_captcha=[expr [clock seconds]+86399]; Path=/; Version=1"
-  ::hv3::the_cookie_manager SetCookie http://tkhtml.tcl.tk/ $cookie
 }
 
 proc gui_escape {} {
