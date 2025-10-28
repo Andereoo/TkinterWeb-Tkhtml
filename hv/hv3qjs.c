@@ -270,7 +270,10 @@ argValueToTcl(QjsInterp *qjs, JSValueConst val, int *pN) {
         Tcl_Obj *aTclValues[2];
 		aTclValues[0] = Tcl_NewStringObj("object", 6);
         QjsTclObject *pO = JS_GetAnyOpaque(val, &id);
-		if (pO && id == QjsTclClassId || id == QjsTclCallClassId) {
+		if (pO && id == QjsTclClassId) {
+			aTclValues[1] = pO->pObj;
+		} else if (pO && id == QjsTclCallClassId) {
+			aTclValues[0] = Tcl_NewStringObj("method", 6);
 			aTclValues[1] = pO->pObj;
 		} else {
 			/* Create the new QjsJsObject structure. */
@@ -642,7 +645,7 @@ static int handleJavascriptError(QjsInterp *qjs, JSValue val) {
 		Tcl_ListObjAppendElement(0, pError, stringToObj(qjs->ctx, exc));
 		JS_FreeValue(qjs->ctx, exc);
     } else {
-        Tcl_ListObjAppendElement(0, pError, Tcl_NewStringObj("", 0));
+        Tcl_ListObjAppendElement(0, pError, Tcl_NewObj());
     }
     Tcl_SetObjResult(qjs->interp, pError);
     return TCL_ERROR;

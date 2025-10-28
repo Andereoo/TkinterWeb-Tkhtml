@@ -529,12 +529,15 @@ static void eventTargetInit(QjsInterp *qjs, JSValue o)
         pJ = Tcl_NewStringObj("this.", 5);
         Tcl_IncrRefCount(pJ);
         Tcl_AppendObjToObj(pJ, apWord[i]);
-        Tcl_AppendToObj(pJ, " = function (event)", -1);
-        Tcl_ListObjAppendElement(pTcl, pJ, apWord[i+1]);
+        Tcl_AppendToObj(pJ, " = function (event) {", 21);
+        Tcl_AppendObjToObj(pJ, apWord[i+1]);
+        Tcl_AppendToObj(pJ, "}", 1);
         /* printf("%s\n", Tcl_GetString(pJ)); */
 
-        JS_EvalThis(qjs->ctx, o, Tcl_GetStringFromObj(pJ, &l), l, "<event>", JS_EVAL_TYPE_GLOBAL);
+		const char *pJz = Tcl_GetStringFromObj(pJ, &l);
+        JSValue res = JS_EvalThis(qjs->ctx, o, pJz, l, "<event>", JS_EVAL_TYPE_GLOBAL);
         /* Not a lot we can do with an error here... */
+        JS_FreeValue(qjs->ctx, res);
         Tcl_DecrRefCount(pJ);
     }
     Tcl_ResetResult(pTcl);
