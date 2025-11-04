@@ -41,6 +41,7 @@ namespace eval hv3 {
       bind $w <KeyPress-Up>        [list $me scrollme $wid yview scroll -1 units]
       bind $w <KeyPress-Down>      [list $me scrollme $wid yview scroll  1 units]
       bind $w <KeyPress-Return>    [list $me scrollme $wid yview scroll  1 units]
+      bind $w <KeyPress-Shift_R>   [list $me scrollme $wid yview scroll -1 units]
       bind $w <KeyPress-Right>     [list $me scrollme $wid xview scroll  1 units]
       bind $w <KeyPress-Left>      [list $me scrollme $wid xview scroll -1 units]
       bind $w <KeyPress-Next>      [list $me scrollme $wid yview scroll  1 pages]

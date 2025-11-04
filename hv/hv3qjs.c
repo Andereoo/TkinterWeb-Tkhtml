@@ -343,6 +343,7 @@ static int callQjsTclMethod(
 
     assert(p->nAllocWord - p->nWord >= 3);
 
+    Tcl_IncrRefCount(pProp);
 	p->apWord[p->nWord] = pProp;
 
     if (pVal) {
@@ -432,7 +433,6 @@ static void finalizeObject(JSRuntime *rt, JSValue val)
         // Free the array and qjsTclObj
         js_free_rt(rt, qjsTclObj->apWord);
 		assert(qjsTclObj->pObj->refCount >= 1);
-	//	Tcl_DecrRefCount(qjsTclObj->pObj);
 		if (qjsTclObj->pEntry) {
 			JSValueEntry *pV = (JSValueEntry*)Tcl_GetHashValue(qjsTclObj->pEntry);
 			Tcl_DeleteHashEntry(qjsTclObj->pEntry);
@@ -1163,6 +1163,7 @@ QjsTcl_Get(JSContext *ctx, JSValue obj, JSAtom prop, JSValueConst rec)
 	
 	rc = callQjsTclMethod(p->interp, p->pLog, obj, atomToObj(ctx, prop), NULL);
 	JSValue res = objToValue(ctx, Tcl_GetObjResult(p->interp));
+	// Caching of DOM methods
 	if (JS_IsFunction(ctx, res)) JS_DefinePropertyValue(ctx, obj, prop, JS_DupValue(ctx, res), 0);
 	return res;
 }

@@ -170,7 +170,7 @@ set ::hv3::dom::code::DOCUMENT {
 
   -- Return the root element of the document tree (an object of class
   -- [Ref HTMLHtmlElement]).
-  dom_get lastChild  {
+  dom_get lastChild {
     list object [::hv3::dom::wrapWidgetNode $myDom [$myHv3 node]]
   }
 

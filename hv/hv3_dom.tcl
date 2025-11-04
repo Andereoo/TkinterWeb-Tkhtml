@@ -23,7 +23,6 @@ package require snit
 #
 #     $dom javascript SCRIPT
 #     $dom event EVENT NODE
-#     $dom set_object_property {object property value}
 #     $dom reset
 #
 #     $dom destroy
@@ -58,7 +57,6 @@ snit::type ::hv3::dom {
 
     set myHv3 $hv3
     set mySee [::qjs::interp [list ::hv3::DOM::Window $self $hv3]]
-	$mySee function puts args {puts $args}
 
     $self configurelist $args
 
@@ -80,10 +78,10 @@ snit::type ::hv3::dom {
 
   method InitWindowEvents {body} {
     set script ""
-    foreach A {onload onunload} {
+    foreach event {onload onunload} {
       catch {
-        set V [$body attr $A]
-        append script [subst {if (!this.$A) {this.$A = function(event) {$V}}}]
+        set v [$body attr $event]
+        append script [subst {if (!this.$event) {this.$event = function(event) {$v}}}]
       }
     }
     $mySee eval -noresult $script

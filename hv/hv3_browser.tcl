@@ -1,6 +1,3 @@
-
-
-package require sqlite3
 package require Tkhtml 3.0
 
 proc sourcefile {file} [string map              \
@@ -505,6 +502,14 @@ namespace eval ::hv3::browser_frame {
     return [$O(myHv3) dom]
   }
 
+  proc globalThis {me} { 
+    upvar #0 $me O
+    return [[[$O(myHv3) dom] see] global]
+  }
+  proc evalobj {me obj args} { 
+    return [lindex [eval [concat $obj $args]] end]
+  }
+
   # The [isframeset] method returns true if this widget instance has
   # been used to parse a frameset document (widget instances may parse
   # either frameset or regular HTML documents).
@@ -524,6 +529,11 @@ namespace eval ::hv3::browser_frame {
       set isFrameset [expr {[winfo class [lindex $slaves 0]] eq "Frameset"}]
     }
     return $isFrameset
+  }
+  
+  proc win {me} {
+    upvar #0 $me O
+    return $O(win)
   }
 
   set DelegateOption(-forcefontmetrics) myHv3
@@ -867,12 +877,12 @@ namespace eval ::hv3::browser {
     }
   }
 
-  proc history {me } {
+  proc history {me} {
     upvar #0 $me O
     return $O(myHistory)
   }
 
-  proc reload {me } {
+  proc reload {me} {
     upvar #0 $me O
     $O(myHistory) reload
   }

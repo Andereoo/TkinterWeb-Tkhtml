@@ -81,7 +81,7 @@ namespace eval ::hv3::dom2 {
     eval $code
   }
 
-proc stateless {type_name args} {
+  proc stateless {type_name args} {
     set compiler2::parameter dummy
     set compiler2::default_value error
     set compiler2::finalize ""
@@ -203,9 +203,9 @@ proc stateless {type_name args} {
   
 		evalcode $proccode
     }
-}
+  }
 
-namespace eval compiler2 {
+  namespace eval compiler2 {
 
     variable parameter
     variable default_value
@@ -293,9 +293,9 @@ namespace eval compiler2 {
     proc Inherit {superclass code} {
 		eval $code
     }
-}
+  }
 
-namespace eval doccompiler {
+  namespace eval doccompiler {
 
     variable get_array
     variable put_array
