@@ -250,8 +250,12 @@ namespace eval ::hv3::DOM {
 
   dom_parameter myHv3
 
-  -- TODO. Right now this is a no-op.
-  dom_call scrollBy {args} { }
+  dom_call scrollBy {THIS x y args} {
+	[$myHv3 html] configure -xscrollincrement 1 -yscrollincrement 1
+	$myHv3 xview scroll $x units
+	$myHv3 yview scroll $y units
+	[$myHv3 html] configure -xscrollincrement 20 -yscrollincrement 20
+  }
 
   -- A reference to the [Ref HTMLDocument] object currently associated
   -- with this window.

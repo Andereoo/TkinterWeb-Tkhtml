@@ -146,7 +146,6 @@ if {[info commands ::hv3::make_constructor] eq ""} {
   source [file join [file dirname [info script]] hv3_util.tcl]
   source [file join [file dirname [info script]] hv3_form.tcl]
   source [file join [file dirname [info script]] hv3_request.tcl]
-  source [file join [file dirname [info script]] hv3_browser.tcl]
 }
 #source [file join [file dirname [info script]] hv3_request.tcl.bak]
 

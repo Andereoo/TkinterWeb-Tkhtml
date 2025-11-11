@@ -600,10 +600,7 @@ windowsRepair (HtmlTree *pTree, HtmlCanvas *pCanvas)
      */
     while (p) {
         HtmlNodeReplacement *pNext = p->pNext;
-        int iViewY;
-        int iWidth;
-        int iHeight;
-        int iViewX;
+        int iViewY, iWidth, iHeight, iViewX;
 
         if (pTree) {
             iViewX = p->iCanvasX - pTree->iScrollX; 
@@ -615,7 +612,6 @@ windowsRepair (HtmlTree *pTree, HtmlCanvas *pCanvas)
             iHeight = p->iHeight;
             iWidth = p->iWidth;
         }
-
         /* If the sub-window is not part of the viewable region, or the 
          * widget is being destroyed (pTree==0) unmap the window and remove it
          * from the HtmlTree.pMapped linked-list. 
@@ -644,7 +640,6 @@ windowsRepair (HtmlTree *pTree, HtmlCanvas *pCanvas)
             }
             pPrev = p;
         }
-
         p = pNext;
     }
 }
@@ -2830,9 +2825,7 @@ pixmapQueryCb(
         }
         case CANVAS_WINDOW: {
             if (pQuery->getwin) {
-                HtmlTree *pTree = pQuery->pTree;
-                HtmlNodeReplacement *pRep = pItem->c.window.pElem->pReplacement;
-                HtmlNodeReplacement *p;
+                HtmlNodeReplacement *p, *pRep = pItem->c.window.pElem->pReplacement;
 
                 pRep->iCanvasX = origin_x + pItem->c.window.x;
                 pRep->iCanvasY = origin_y + pItem->c.window.y;
@@ -2855,7 +2848,6 @@ pixmapQueryCb(
                     if (pRep->iCanvasY + pRep->iHeight > pOver->y + pOver->h) {
                         pRep->iHeight = pOver->y + pOver->h - pRep->iCanvasY;
                     }
-
                     /* Horizontal clipping */
                     if (pRep->iCanvasX < pOver->x) {
                         pRep->iWidth -= (pOver->x - pRep->iCanvasX);
@@ -2865,11 +2857,10 @@ pixmapQueryCb(
                         pRep->iWidth = pOver->x + pOver->w - pRep->iCanvasX;
                     }
                 }
-
-                for (p = pTree->pMapped; p && p != pRep; p = p->pNext);
+                for (p = pQuery->pTree->pMapped; p && p != pRep; p = p->pNext);
                 if (!p) {
-                    pRep->pNext = pTree->pMapped;
-                    pTree->pMapped = pRep;
+                    pRep->pNext = pQuery->pTree->pMapped;
+                    pQuery->pTree->pMapped = pRep;
                 }
             }
             break;
@@ -4260,7 +4251,7 @@ int TextToPostscript(Tk_PostscriptInfo, const char*, int n, int x, int y, int, H
 int ImageToPostscript(HtmlTree*, HtmlImage2*, int x, int y, int, HtmlNode*, Tcl_Interp*);
 int BoxToPostscript(HtmlTree*, int x, int y, int w, int h, int, HtmlNode*, int, Tcl_Interp*, HtmlComputedValues*);
 int LineToPostscript(Tk_PostscriptInfo, int x, int y, int w, int, int, int, HtmlNode*, Tcl_Interp*);
-int WinItemToPostscript(HtmlTree *pTree, int x, int y, Tk_Window , int, Tcl_Interp*);
+int WinItemToPostscript(HtmlTree *pTree, int x, int y, HtmlNodeReplacement* , int, Tcl_Interp*);
 typedef struct printingInfo {
     HtmlTree *pTree;    /* Information about overall canvas. */
     HtmlNode *pBgRoot;
@@ -4301,7 +4292,7 @@ static int HtmlPostscriptCb(
         }
         case CANVAS_WINDOW: {
             CanvasWindow *pWin = &pItem->c.window;
-            rc = WinItemToPostscript(pPrint->pTree, pWin->x+x, pWin->y+y, pWin->pElem->pReplacement->win, pPrint->prepass, pPrint->interp);
+            rc = WinItemToPostscript(pPrint->pTree, pWin->x+x, pWin->y+y, pWin->pElem->pReplacement, pPrint->prepass, pPrint->interp);
             break;
         }
         default: goto done;
