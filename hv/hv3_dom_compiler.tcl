@@ -58,9 +58,7 @@ proc ::hv3::dom::TclCallable {zScript args} {
 #     dom_todo          PROPERTY
 #     dom_call_todo     PROPERTY
 #
-#     dom_default_value CODE
 #     dom_events        CODE
-#     dom_scope         CODE
 #
 #
 namespace eval ::hv3::dom2 {
@@ -86,7 +84,6 @@ namespace eval ::hv3::dom2 {
     set compiler2::default_value error
     set compiler2::finalize ""
     set compiler2::events ""
-    set compiler2::scope ""
     array unset compiler2::get_array
     array unset compiler2::put_array
     array unset compiler2::call_array
@@ -180,7 +177,7 @@ namespace eval ::hv3::dom2 {
 		}
 		lappend GetSet default {if {[llength $args] > 1} {return NATIVE}}
   
-		set List [array names compiler2::get_array]
+		set List [lsort [array names compiler2::get_array]]
 
 		set arglist [list myDom $compiler2::parameter args]
 		set proccode [list \
