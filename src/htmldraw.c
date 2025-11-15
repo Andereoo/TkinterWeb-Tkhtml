@@ -4292,7 +4292,7 @@ static int HtmlPostscriptCb(
         }
         case CANVAS_WINDOW: {
             CanvasWindow *pWin = &pItem->c.window;
-            rc = WinItemToPostscript(pPrint->pTree, pWin->x+x, pWin->y+y, pWin->pElem->pReplacement, pPrint->prepass, pPrint->interp);
+            rc = WinItemToPostscript(pPrint->pTree, pWin->x+x, pWin->y+y, pWin->pElem->pReplacement->win, pPrint->prepass, pPrint->interp);
             break;
         }
         default: goto done;

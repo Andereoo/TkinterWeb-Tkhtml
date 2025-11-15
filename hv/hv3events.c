@@ -504,16 +504,14 @@ static void eventTargetInit(QjsInterp *qjs, JSValue o)
 {
     Tcl_Interp *pTcl = qjs->interp;
     Tcl_Obj *pList, **apWord;
-    int nWord, rc, i, l;
+    int nWord, i, l;
 
-    rc = callQjsTclMethod(pTcl, NULL, o, Tcl_NewStringObj("Events", 6), NULL);
-    if (rc != TCL_OK) {
+    if (callQjsTclMethod(pTcl, NULL, o, Tcl_NewStringObj("Events", 6), NULL) != TCL_OK) {
         Tcl_BackgroundError(pTcl);
         return;
     }
     pList = Tcl_GetObjResult(pTcl);
-    rc = Tcl_ListObjGetElements(pTcl, pList, &nWord, &apWord);
-    if (rc != TCL_OK) {
+    if (Tcl_ListObjGetElements(pTcl, pList, &nWord, &apWord) != TCL_OK) {
         Tcl_BackgroundError(pTcl);
         return;
     }

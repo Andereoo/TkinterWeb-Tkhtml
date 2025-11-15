@@ -65,6 +65,19 @@
  *     $command Finalize    Run when the JavaScript object is destroyed.
  *     $command Enumerator  Return a Tcl list of the properties defined by the command.
  *
+ *    proc test_dom {args} { # Command for demonstration of the global object
+ *    	variable myVar
+ *    	switch -exact -- [lindex $args 0] {
+ *    		testProp {
+ *    			if {[llength $args] == 2} { # Set method to update the variable's value
+ *    				set myVar [lindex $args 1]
+ *    			} else { # Get method to retrieve the variable's value
+ *    				return $myVar
+ *    			}
+ *    		}
+ *    	}
+ *    }
+ *
  * Argument PROPERTY is any property name called on the JavaScript object. VALUE is a JavaScript value converted into Tcl.
  *
  * Object resource management:
