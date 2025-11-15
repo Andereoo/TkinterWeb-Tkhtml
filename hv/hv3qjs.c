@@ -1177,16 +1177,14 @@ static inline Tcl_Obj *atomToObj(JSContext *ctx, JSAtom atm) {
 static JSValue 
 QjsTcl_Get(JSContext *ctx, JSValue obj, JSAtom prop, JSValueConst rec)
 {
-    JSPropertyDescriptor desc;  // First, check if the property exists normally
-	if (JS_GetOwnProperty(ctx, &desc, rec, prop)>0) return desc.value;
-	
-	JSValue proto = JS_GetPrototype(ctx, rec);
-	if (JS_IsObject(proto) && JS_GetOwnProperty(ctx, &desc, proto, prop)>0) {
-		JS_FreeValue(ctx, proto);
-		return desc.value;
+	for(JSValue o=JS_DupValue(ctx, rec); !JS_IsNull(o); o=JS_GetPrototype(ctx, o)){
+		JSPropertyDescriptor desc;  // First, check if the property exists normally
+		if (JS_GetOwnProperty(ctx, &desc, o, prop) > 0) {
+			JS_FreeValue(ctx, o);
+			return desc.value;
+		}
+		JS_FreeValue(ctx, o);
 	}
-	JS_FreeValue(ctx, proto);
-
 	ContextOpaque *p = JS_GetContextOpaque(ctx);
 	if (!p) return JS_ThrowTypeError(ctx, "Tcl interpreter not available");
 	
@@ -1200,25 +1198,20 @@ QjsTcl_Get(JSContext *ctx, JSValue obj, JSAtom prop, JSValueConst rec)
 static int 
 QjsTcl_Set(JSContext *ctx, JSValueConst obj, JSAtom prop, JSValueConst val, JSValueConst rec, int f)
 {
-    JSPropertyDescriptor desc;
-    int nObj, rc = JS_GetOwnProperty(ctx, &desc, rec, prop);
-    if (rc > 0 || JS_IsFunction(ctx, val)) 
-		return JS_DefinePropertyValue(ctx, rec, prop, JS_DupValue(ctx, val), f);
-	
-	JSValue proto = JS_GetPrototype(ctx, rec);
-	if (JS_IsObject(proto) && JS_HasProperty(ctx, proto, prop)) {
-		rc = JS_DefinePropertyValue(ctx, proto, prop, val, f);
-		JS_FreeValue(ctx, proto);
-		return rc;
+	int nObj, rc;
+	for(JSValue o=JS_DupValue(ctx, rec); !JS_IsNull(o); o=JS_GetPrototype(ctx, o)){
+		JSPropertyDescriptor desc;  // First, check if the property exists normally
+		if (JS_GetOwnProperty(ctx, &desc, o, prop) > 0 || JS_IsFunction(ctx, val)) {
+			JS_FreeValue(ctx, o);
+			return JS_DefinePropertyValue(ctx, o, prop, JS_DupValue(ctx, val), f);
+		}
+		JS_FreeValue(ctx, o);
 	}
-	JS_FreeValue(ctx, proto);
-	
 	ContextOpaque *p = JS_GetContextOpaque(ctx);
 	if (!p) {
 		JS_ThrowTypeError(ctx, "Tcl interpreter not available");
 		return -1;
 	}
-	
 	rc = callQjsTclMethod(p->interp, p->pLog, obj, atomToObj(ctx, prop), argValueToTcl((QjsInterp*)p, val, &nObj));
     removeTransientRefs((QjsInterp*)p, nObj);
 	if (rc != TCL_OK) {
