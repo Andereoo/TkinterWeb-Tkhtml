@@ -119,7 +119,6 @@ typedef struct QjsInterp {
 	ContextOpaque;
     JSRuntime *rt;
     JSContext *ctx;
-	ClientData instrumentData;
 	Tcl_HashTable objects;  /* Hash table containing the objects created by the Tcl interpreter that are currently in "persistent" state. */
     /* Linked list of SeeJsObject structures that will be removed from the aJsObject[] table next time removeTransientRefs() is called.
      * Variable iNextJsObject is used to assign unique integer ids (SeeJsObject.iKey) to SeeJsObject instances as they are created. */
@@ -1166,20 +1165,19 @@ static JSValue
 QjsTcl_Get(JSContext *ctx, JSValue obj, JSAtom prop, JSValueConst rec)
 {
     JSPropertyDescriptor desc;  // First, check if the property exists normally
-	int rc = JS_GetOwnProperty(ctx, &desc, rec, prop);
-	if (rc > 0) return desc.value;
+	if (JS_GetOwnProperty(ctx, &desc, rec, prop)>0) return desc.value;
 	
 	JSValue proto = JS_GetPrototype(ctx, rec);
-	if (JS_IsObject(proto) && JS_HasProperty(ctx, proto, prop)) {
+	if (JS_IsObject(proto) && JS_GetOwnProperty(ctx, &desc, proto, prop)>0) {
 		JS_FreeValue(ctx, proto);
-		return JS_GetProperty(ctx, proto, prop);
+		return desc.value;
 	}
 	JS_FreeValue(ctx, proto);
 
 	ContextOpaque *p = JS_GetContextOpaque(ctx);
 	if (!p) return JS_ThrowTypeError(ctx, "Tcl interpreter not available");
 	
-	rc = callQjsTclMethod(p->interp, p->pLog, obj, atomToObj(ctx, prop), NULL);
+	callQjsTclMethod(p->interp, p->pLog, obj, atomToObj(ctx, prop), NULL);
 	JSValue res = objToValue(ctx, Tcl_GetObjResult(p->interp));
 	// Caching of DOM methods
 	if (JS_IsFunction(ctx, res)) JS_DefinePropertyValue(ctx, obj, prop, JS_DupValue(ctx, res), 0);
