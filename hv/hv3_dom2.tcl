@@ -204,7 +204,7 @@ snit::type ::hv3::dom::HTMLDocument {
     list [::hv3::the_cookie_manager Cookie [$myHv3 uri get]]
   }
   js_put cookie value {
-    set str [[$self see] tostring $value]
+    set str [[$self qjs] tostring $value]
     ::hv3::the_cookie_manager SetCookie [$myHv3 uri get] $str
   }
 
@@ -341,7 +341,7 @@ namespace eval ::hv3::dom {
     #
     js_get innerHTML { list [::hv3::dom::get_inner_html $myNode] }
     js_put innerHTML {value} { 
-      set code [[$self see] tostring $value ]
+      set code [[$self qjs] tostring $value ]
       ::hv3::dom::set_inner_html $myHv3 $myNode $code
     }
   

@@ -383,7 +383,7 @@ namespace eval ::hv3::dom {
     #   DOM MouseEvent
     #   Gecko compatibility
     #
-    Dispatch [$dom see] $js_obj [list \
+    Dispatch [$dom qjs] $js_obj [list \
         CAPTURING_PHASE 1             \
         AT_TARGET       2             \
         BUBBLING_PHASE  3             \
@@ -426,7 +426,7 @@ namespace eval ::hv3::dom {
   proc ::hv3::dom::dispatchHtmlEvent {dom type js_obj} {
     foreach {bubbles isCancelable} $::hv3::dom::HtmlEventType($type) {}
  
-    Dispatch [$dom see] $js_obj [list \
+    Dispatch [$dom qjs] $js_obj [list \
       CAPTURING_PHASE 1               \
       AT_TARGET       2               \
       BUBBLING_PHASE  3        	      \

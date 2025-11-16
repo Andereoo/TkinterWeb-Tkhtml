@@ -22,8 +22,8 @@
  * cancelBubble. Setting it to true "cancels bubbling", just like calling stopPropagation().
  */
 #define STOP_PROPAGATION        "cancelBubble"
-#define PREVENT_DEFAULT         "hv3__see__preventDefault"
-#define CALLED_LISTENER         "hv3__see__calledListener"
+#define PREVENT_DEFAULT         "hv3__qjs__preventDefault"
+#define CALLED_LISTENER         "hv3__qjs__calledListener"
 
 #define CFUNCTION(ctx, o, name, func, len) JS_SetPropertyStr(ctx, o, name, JS_NewCFunction(ctx, func, name, len))
 
@@ -279,7 +279,7 @@ static JSValue dispatchEventFunc(JSContext *ctx, JSValueConst this, int argc, JS
  *
  * eventDispatchCmd --
  *
- *     $see dispatch TARGET-COMMAND EVENT-COMMAND
+ *     $qjs dispatch TARGET-COMMAND EVENT-COMMAND
  *
  * Results: 
  *     None.
@@ -472,7 +472,7 @@ static JSValue EventFunc(JSContext *ctx, JSValueConst this, int argc, JSValueCon
  * eventTargetInit --
  *
  *     This function initialises the events sub-system for the
- *     SeeTclObject passed as an argument. In practice, this means
+ *     QjsTclObject passed as an argument. In practice, this means
  *     it evaluates the Tcl script:
  *
  *         eval $obj Events
@@ -480,12 +480,12 @@ static JSValue EventFunc(JSContext *ctx, JSValueConst this, int argc, JSValueCon
  *     where $obj is the Tcl command implementing the object. The
  *     return value is expected to be a list of alternating attribute 
  *     names and values. Each value is compiled to a javascript function
- *     and inserted into SeeTclObject.pNative using the supplied attribute
+ *     and inserted into QjsTclObject.pNative using the supplied attribute
  *     name. For example, if the [Events] script returns:
  *
  *         onclick {alert("click!"} ondblclick {alert("dblclick!")}
  *  
- *     The "onclick" and "ondblclick" properties of SeeTclObject.pNative
+ *     The "onclick" and "ondblclick" properties of QjsTclObject.pNative
  *
  *     are set to the following objects, respectively:
  *
@@ -620,7 +620,7 @@ static inline Tcl_Obj *listenerToString(JSContext *ctx, JSValue listener)
  *
  * eventTargetDump --
  *
- *         $see events TCL-COMMAND
+ *         $qjs events TCL-COMMAND
  *
  *     This function is used to introspect event-listeners from
  *     the Tcl level. The return value is a list. Each element of

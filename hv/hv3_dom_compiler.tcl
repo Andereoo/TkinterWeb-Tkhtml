@@ -128,7 +128,7 @@ namespace eval ::hv3::dom2 {
 				if {$isString} {
 				  set template {
 					if {[llength $args] == 2} {
-					  set %ARG% [[$myDom see] tostring [lindex $args 1]]
+					  set %ARG% [[$myDom qjs] tostring [lindex $args 1]]
 					  %CODE%
 					} else {
 					  %VAL%
@@ -166,7 +166,7 @@ namespace eval ::hv3::dom2 {
 			if {$isString} {
 			  lappend GetSet $zProp [string map \
 				[list %PN% $procname %PM% $compiler2::parameter] \
-				{list method [list ::hv3::dom::TclCallableStr [$myDom see] [list %PN% $myDom $%PM%]]}
+				{list method [list ::hv3::dom::TclCallableStr [$myDom qjs] [list %PN% $myDom $%PM%]]}
 			  ]
 			} else {
 			  lappend GetSet $zProp [string map \

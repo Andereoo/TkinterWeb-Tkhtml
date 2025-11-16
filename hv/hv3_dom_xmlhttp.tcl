@@ -240,7 +240,7 @@ namespace eval ::hv3::DOM {
       timestamp   [clock milliseconds] \
     ]
 
-    set rc [catch {[$dom see] dispatch $this $event} msg]
+    set rc [catch {[$dom qjs] dispatch $this $event} msg]
 
     # If an error occured, log it in the debugging window.
     #

@@ -85,7 +85,7 @@ static JSValue newTimer(
 	} else milli = 0;
 
     /* Allocate the new QjsTimeout structure and populate the 
-     * SeeTimout.func and QjsTimeout.apArg variables.
+     * QjsTimout.func and QjsTimeout.apArg variables.
      */
     p = js_malloc(ctx, sizeof(*p));
     p->func = JS_DupValue(ctx, argv[0]);

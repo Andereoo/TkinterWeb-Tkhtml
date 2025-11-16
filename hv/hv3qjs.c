@@ -91,7 +91,7 @@
  *         {transient Tcl-COMMAND} / {method Tcl-COMMAND} (for callable objects)
  *
  *     Both forms create the same kinds of JavaScript object, but the first initialises the object in "persistent" state the second in "transient" state.
- *     Objects in "transient" state are eligible for garbage collection once the SEE interpreter state contains no more references to it.
+ *     Objects in "transient" state are eligible for garbage collection once the Runtime contains no more references to it.
  *     Objects in "persistent" state are not garbage collected until the interpreter is deleted.
  */
  
@@ -133,8 +133,8 @@ typedef struct QjsInterp {
     JSRuntime *rt;
     JSContext *ctx;
 	Tcl_HashTable objects;  /* Hash table containing the objects created by the Tcl interpreter that are currently in "persistent" state. */
-    /* Linked list of SeeJsObject structures that will be removed from the aJsObject[] table next time removeTransientRefs() is called.
-     * Variable iNextJsObject is used to assign unique integer ids (SeeJsObject.iKey) to SeeJsObject instances as they are created. */
+    /* Linked list of QjsJsObject structures that will be removed from the aJsObject[] table next time removeTransientRefs() is called.
+     * Variable iNextJsObject is used to assign unique integer ids (QjsJsObject.iKey) to QjsJsObject instances as they are created. */
 	uint16_t iKeyNext;
     QjsJsObject *pJsObject;
 	JSValue global;
@@ -157,11 +157,11 @@ static unsigned int numQjsTclObject = 0;
 
 typedef struct {JSValue v;} JSValueEntry;  // Structure for hash table entries
 
-/* Entries in the SeeInterp.pJsObject[] linked list are instances of the following structure. */
+/* Entries in the QjsInterp.pJsObject[] linked list are instances of the following structure. */
 struct QjsJsObject {
     int iKey;
     JSValue object;
-    QjsJsObject *pNext;  /* Next entry in the SeeInterp.pJsObject list */
+    QjsJsObject *pNext;  /* Next entry in the QjsInterp.pJsObject list */
 };
 
 static Tcl_ObjCmdProc eventDispatchCmd;
@@ -181,7 +181,7 @@ static void getExoticObj(JSRuntime*);
 **     clearTimeout()
 **     clearInterval()
 **
-** The hv3timeout.c module uses the SeeInterp.pTimeout pointer. The
+** The hv3timeout.c module uses the QjsInterp.pTimeout pointer. The
 ** external interface (called from this file) is:
 */ 
 static void interpTimeoutInit(JSContext *, JSValue);
@@ -348,7 +348,7 @@ static int evalObjv(Tcl_Interp *interp, int nWord, Tcl_Obj **apWord){
  * callQjsTclMethod --
  *
  *     This is a helper function used to call the following methods of
- *     the supplied SeeTclObject (argument p):
+ *     the supplied QjsTclObject (argument p):
  *
  *         Get Put CanPut HasProperty Delete DefaultValue Enumerator
  *
@@ -407,13 +407,13 @@ static int callQjsTclMethod(
 /*
  *---------------------------------------------------------------------------
  *
- * newSeeTclObject --
+ * newQjsTclObject --
  *
- *     Allocate and return a pointer to a new SeeTclObject structure 
+ *     Allocate and return a pointer to a new QjsTclObject structure 
  *     based on the Tcl command passed as the second argument.
  *
  * Results:
- *     Pointer to new SeeTclObject structure.
+ *     Pointer to new QjsTclObject structure.
  *
  * Side effects:
  *     None.
@@ -688,7 +688,7 @@ static int handleJavascriptError(QjsInterp *qjs, JSValue val) {
  *
  * delInterpCmd --
  *
- *     This function is called when a SeeInterp is deleted.
+ *     This function is called when a QjsInterp is deleted.
  *     Tcl command: $interp destroy 
  *
  * Results:
@@ -996,7 +996,7 @@ static int interpDebug(QjsInterp *qjs, int objc, Tcl_Obj *const objv[]) {
 }
 
 static int interpCmd(
-    ClientData clientData,             /* The SeeInterp data structure */
+    ClientData clientData,             /* The QjsInterp data structure */
     Tcl_Interp *interp,                /* Current interpreter. */
     int objc,                          /* Number of arguments. */
     Tcl_Obj *CONST objv[]              /* Argument strings. */
@@ -1335,7 +1335,7 @@ tclQjsCollect(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]
 }
 
 /* Package initializer */
-int Tclsee_Init(Tcl_Interp *interp) {
+int Tclqjs_Init(Tcl_Interp *interp) {
     /* Require stubs libraries version 8.4 or greater. */
 #ifdef USE_TCL_STUBS
     if (Tcl_InitStubs(interp, "8.4", 0) == 0) {
@@ -1345,10 +1345,10 @@ int Tclsee_Init(Tcl_Interp *interp) {
     JS_NewClassID(&QjsTclClassId);
     JS_NewClassID(&QjsTclCallClassId);
 	
-    Tcl_PkgProvide(interp, "Tclsee", "0.1");
-    Tcl_CreateObjCommand(interp, "::qjs::interp", tclQjsInterp, NULL, NULL);
-    Tcl_CreateObjCommand(interp, "::qjs::alloc",  tclQjsAlloc, NULL, NULL);
-	Tcl_CreateObjCommand(interp, "::qjs::format", tclSeeFormat, NULL, NULL);
+    Tcl_PkgProvide(interp, "Tclqjs", "0.1");
+    Tcl_CreateObjCommand(interp, "::qjs::interp", tclQjsInterp,  NULL, NULL);
+    Tcl_CreateObjCommand(interp, "::qjs::alloc",  tclQjsAlloc,   NULL, NULL);
+	Tcl_CreateObjCommand(interp, "::qjs::format", tclQjsFormat,  NULL, NULL);
     Tcl_CreateObjCommand(interp, "::qjs::gc",     tclQjsCollect, NULL, NULL);
     // TODO: Add more commands (e.g., ::qjs::class, etc.)
     return TCL_OK;

@@ -350,7 +350,7 @@ static void formatLessthan(JsBlob *pBlob)
 /*
  *---------------------------------------------------------------------------
  *
- * tclSeeFormat --
+ * tclQjsFormat --
  *
  *         ::qjs::format JAVASCRIPT-CODE
  *
@@ -365,7 +365,7 @@ static void formatLessthan(JsBlob *pBlob)
  *
  *---------------------------------------------------------------------------
  */
-static int tclSeeFormat(
+static int tclQjsFormat(
     ClientData clientData,             /* Not used */
     Tcl_Interp *interp,                /* Current interpreter. */
     int objc,                          /* Number of arguments. */
