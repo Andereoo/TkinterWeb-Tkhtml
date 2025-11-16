@@ -996,15 +996,14 @@ proc gui_set_memstatus {widget_array} {
     append status "[::count_vars] vars, [::count_commands] commands,"
     append status "[::count_namespaces] namespaces"
 
-    catch {
-      array set v [::see::alloc]
-      set nHeap [expr {int($v(GC_get_heap_size) / 1000)}]
-      set nFree [expr {int($v(GC_get_free_bytes) / 1000)}]
-      set nDom $v(SeeTclObject)
-      append status "          "
-      append status "GC Heap: ${nHeap}K (${nFree}K free) "
-      append status "($v(SeeTclObject) DOM objects)"
-    }
+    array set v [::qjs::alloc]
+    array set v2 $v(memory allocated)
+	set nCont [expr {int($v2(COUNT) / 1000)}]
+    set nSize [expr {int($v2(SIZE) / 1000)}]
+	array set aDom $v(QjsTclObject)
+    append status "          "
+    append status "Memory Allocated: ${nCont}K (${nSize}K bytes used) "
+    append status "($aDom(COUNT) DOM objects)"
     catch {
       foreach line [split [memory info] "\n"] {
         if {[string match {current packets allocated*} $line]} {
@@ -1019,7 +1018,7 @@ proc gui_set_memstatus {widget_array} {
     }
 
     $G(status_label) configure -text $status
-    after 2000 [list gui_set_memstatus $widget_array]
+    after 1000 [list gui_set_memstatus $widget_array]
   }
 }
 

@@ -927,9 +927,9 @@ static inline Tcl_Obj *debugAlloc(JSRuntime *rt) {
     JS_ComputeMemoryUsage(rt, &s);
 
 	const char *azNames[15] = {
-		"QjsTclObject structures allocated", "memory allocated", "memory used", "atoms", "strings",
-		"objects", "+properties", "+shapes", "bytecode functions", "+bytecode",
-		"+pc2line", "C functions", "arrays", "+elements", "binary objects",
+		"QjsTclObject", "memory allocated", "memory used", "atoms", "strings",
+		"objects", " properties", " shapes", "bytecode functions", " bytecode",
+		" pc2line", "C functions", "arrays", " elements", "binary objects",
 	};
 	int counts[15] = {
 		numQjsTclObject, s.malloc_count, s.memory_used_count, s.atom_count, s.str_count,
@@ -937,16 +937,19 @@ static inline Tcl_Obj *debugAlloc(JSRuntime *rt) {
 		s.js_func_pc2line_count, s.c_func_count, s.array_count, s.fast_array_elements, s.binary_object_count,
 	};
 	int sizes[15] = {
-		-1, s.malloc_size, s.memory_used_size, s.atom_size, s.str_size,
+		0, s.malloc_size, s.memory_used_size, s.atom_size, s.str_size,
 		s.obj_size, s.prop_size, s.shape_size, s.js_func_size, s.js_func_code_size,
-		s.js_func_pc2line_size, -1, -1, s.fast_array_elements*sizeof(JSValue), s.binary_object_size,
+		s.js_func_pc2line_size, 0, 0, s.fast_array_elements*sizeof(JSValue), s.binary_object_size,
 	};
 	for (int i = 0; i < 15; i++) {
 		Tcl_Obj *pRow = Tcl_NewObj();
 		Tcl_ListObjAppendElement(NULL, pRet, Tcl_NewStringObj(azNames[i], -1));
+		Tcl_ListObjAppendElement(NULL, pRow, Tcl_NewStringObj("COUNT", 5));
 		Tcl_ListObjAppendElement(NULL, pRow, Tcl_NewIntObj(counts[i]));
 		if (sizes[i] > 0) {
+			Tcl_ListObjAppendElement(NULL, pRow, Tcl_NewStringObj("SIZE", 4));
 			Tcl_ListObjAppendElement(NULL, pRow, Tcl_NewIntObj(sizes[i]));
+			Tcl_ListObjAppendElement(NULL, pRow, Tcl_NewStringObj("PER", 3));
 			Tcl_ListObjAppendElement(NULL, pRow, Tcl_NewDoubleObj((double)sizes[i]/counts[i]));
 		}
 		Tcl_ListObjAppendElement(NULL, pRet, pRow);
@@ -1198,10 +1201,9 @@ QjsTcl_Get(JSContext *ctx, JSValue obj, JSAtom prop, JSValueConst rec)
 static int 
 QjsTcl_Set(JSContext *ctx, JSValueConst obj, JSAtom prop, JSValueConst val, JSValueConst rec, int f)
 {
-	int nObj, rc;
+	int nObj, rc;  // First, check if the property exists normally
 	for(JSValue o=JS_DupValue(ctx, rec); !JS_IsNull(o); o=JS_GetPrototype(ctx, o)){
-		JSPropertyDescriptor desc;  // First, check if the property exists normally
-		if (JS_GetOwnProperty(ctx, &desc, o, prop) > 0 || JS_IsFunction(ctx, val)) {
+		if (JS_GetOwnProperty(ctx, NULL, o, prop) > 0 || JS_IsFunction(ctx, val)) {
 			JS_FreeValue(ctx, o);
 			return JS_DefinePropertyValue(ctx, o, prop, JS_DupValue(ctx, val), f);
 		}
