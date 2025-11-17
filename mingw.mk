@@ -60,7 +60,7 @@ MKSTARKIT = $(STARKITRT) /home/billa/sdx.kit wrap
 
 ##### Javascript libaries - libgc.a and libquickjs.a
 #
-JS_SHARED_LIB = libTclsee.dll
+JS_SHARED_LIB = libTclqjs.dll
 
 JSLIB   = /home/billa/quickjs/libquickjs.a
 JSFLAGS = -I/home/billa/quickjs

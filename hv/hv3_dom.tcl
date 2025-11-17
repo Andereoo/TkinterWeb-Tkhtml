@@ -405,9 +405,9 @@ proc ::hv3::dom_init {{init_docs 0}} {
 #         puts "No scripting here. Probably better that way."
 #     }
 #
-catch { load [file join tclsee0.1 libTclsee.so] }
-catch { load [file join tclsee0.1 libTclsee.dll] }
-catch { package require Tclsee }
+catch { load [file join tclqjs0.1 libTclqjs.so] }
+catch { load [file join tclqjs0.1 libTclqjs.dll] }
+catch { package require Tclqjs }
 
 set ::hv3::scriptdir [file dirname [info script]]
 set ::hv3::dom_init_has_run 0
