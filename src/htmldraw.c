@@ -4251,7 +4251,7 @@ int TextToPostscript(Tk_PostscriptInfo, const char*, int n, int x, int y, int, H
 int ImageToPostscript(HtmlTree*, HtmlImage2*, int x, int y, int, HtmlNode*, Tcl_Interp*);
 int BoxToPostscript(HtmlTree*, int x, int y, int w, int h, int, HtmlNode*, int, Tcl_Interp*, HtmlComputedValues*);
 int LineToPostscript(Tk_PostscriptInfo, int x, int y, int w, int, int, int, HtmlNode*, Tcl_Interp*);
-int WinItemToPostscript(HtmlTree *pTree, int x, int y, HtmlNodeReplacement* , int, Tcl_Interp*);
+int WinItemToPostscript(HtmlTree *pTree, int x, int y, Tk_Window, int, Tcl_Interp*);
 typedef struct printingInfo {
     HtmlTree *pTree;    /* Information about overall canvas. */
     HtmlNode *pBgRoot;

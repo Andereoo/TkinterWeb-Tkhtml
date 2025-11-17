@@ -40,13 +40,15 @@ set BaseList {DocumentEvent}
   %DOCUMENT%
   %DOCUMENTEVENT%
 
-  # The "title" attribute is supposed to be read/write. But this one
-  # is only read-only for the meantime.
   dom_get title {
     list [$myHv3 title]
   }
-  dom_put title val {
-    puts "TODO: HTMLDocument.title (Put method)"
+  dom_put -string title val {
+    set title [$myHv3 html search title]
+	if {$title ne ""} { $title destroy }
+	set head [lindex [[$myHv3 node] children] 0] ;# TkHTML creates the <head> node by default
+    $head insert [$myHv3 html fragment <title>$val</title>]
+	list [$myHv3 title_node_handler $head] ;# Update widget
   }
 
   # Read-only attribute "domain".
