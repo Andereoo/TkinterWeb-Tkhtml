@@ -130,18 +130,14 @@ namespace eval ::hv3::dom2 {
 					if {[llength $args] == 2} {
 					  set %ARG% [[$myDom qjs] tostring [lindex $args 1]]
 					  %CODE%
-					} else {
-					  %VAL%
-					}
+					} else { %VAL% }
 				  }
 				} else {
 				  set template {
 					if {[llength $args] == 2} {
 					  set %ARG% [lindex $args 1]
 					  %CODE%
-					} else {
-					  %VAL%
-					}
+					} else { %VAL% }
 				  }
 				}
 				# Substitute placeholders

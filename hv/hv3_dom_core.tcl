@@ -640,7 +640,7 @@ set ::hv3::dom::code::ELEMENT {
   #
   dom_call -string hasAttribute {THIS attr} {
     set rc [catch {$myNode attribute $attr}]
-    list [expr {$rc ? 0 : 1}]
+    list [expr {$rc ? false : true}]
   }
 }
 

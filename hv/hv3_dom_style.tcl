@@ -204,18 +204,24 @@ set ::hv3::dom::code::CSS2PROPERTIES {
   # throw a SYNTAX_ERROR exception.
   #
   dom_get cssText { list [$myNode attribute -default "" style] }
-  dom_put -string cssText val { 
-    $myNode attribute style $val
-  }
+  dom_put -string cssText val { $myNode attribute style $val }
 
-  dom_call_todo getPropertyValue
+  dom_call -string getPropertyValue {THIS propertyName} {
+    list [$myNode property $propertyName]
+  }
   dom_call_todo getPropertyCSSValue
-  dom_call_todo removeProperty
+  
+  dom_call -string removeProperty {THIS propertyName} {
+    if {[info exists ::hv3::DOM::CSS2Properties_simple($propertyName)]} {
+      CSSStyleDeclaration.setStyleProperty $myNode $propertyName ""
+      return
+    }
+  }
   dom_call_todo getPropertyPriority
 
-  dom_call -string setProperty {THIS propertyName value priority} {
+  dom_call -string setProperty {THIS propertyName value {priority 0}} {
     if {[info exists ::hv3::DOM::CSS2Properties_simple($propertyName)]} {
-      CSSStyleDeclaration_setStyleProperty $myNode $propertyName $value
+      CSSStyleDeclaration.setStyleProperty $myNode $propertyName $value
       return
     }
     error "DOMException SYNTAX_ERROR {unknown property $propertyName}"
