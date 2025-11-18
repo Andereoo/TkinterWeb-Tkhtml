@@ -97,7 +97,6 @@
  
 #include <tcl.h>
 #include <quickjs.h>
-#include <quickjs-atom.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -187,14 +186,6 @@ static void getExoticObj(JSRuntime*);
 static void interpTimeoutInit(JSContext *, JSValue);
 static void interpTimeoutCleanup(QjsInterp *);
 #include "hv3timeout.c"
-
-enum {
-    __JS_ATOM_NULL = JS_ATOM_NULL,
-#define DEF(name, str) JS_ATOM_ ## name,
-#include "quickjs-atom.h"
-#undef DEF
-    JS_ATOM_END,
-};
 
 static int allocWordArray(QjsInterp *qjs, QjsTclObject *w, int nExtra)
 {
@@ -539,7 +530,9 @@ static JSValue findOrCreateObject(QjsInterp *qjs, Tcl_Obj *pTclCmd)
 		while ((pS = strstr(pS, "::")) != NULL) {  /* Loop to find the last occurrence of "::" */
 			pS = last = pS + 2;  /* Point after "::". Continue searching from here */
 		}
-		JS_DefinePropertyValue(qjs->ctx, pObject->v, JS_ATOM_Symbol_toStringTag, JS_NewString(qjs->ctx, last), 0);
+		JSAtom a = JS_NewAtom(qjs->ctx, "Symbol.toStringTag");
+		JS_DefinePropertyValue(qjs->ctx, pObject->v, a, JS_NewString(qjs->ctx, last), 0);
+		JS_FreeAtom(qjs->ctx, a);
     }
     /* Existing entry found */
     pObject = (JSValueEntry *)Tcl_GetHashValue(pEntry);
