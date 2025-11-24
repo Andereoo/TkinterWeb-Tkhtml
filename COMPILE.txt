@@ -79,18 +79,18 @@ This file has two sections:
   * Tls
   * Img
   * Sqlite3
-  * tclsee (requires: QuickJS and optionally GC)
+  * tclqjs (requires: QuickJS and optionally GC)
 
-  Compiling Tclsee (javascript support)
+  Compiling Tclqjs (javascript support)
   -------------------------------------
 
-    When Hv3 is run, it tries to load package "Tclsee". If successful,
-    javascript support will be enabled. Tclsee is an extension developed
+    When Hv3 is run, it tries to load package "Tclqjs". If successful,
+    javascript support will be enabled. Tclqjs is an extension developed
     as part of Hv3 to provide access to the "QuickJS Javascript Engine" 
     library from Tcl scripts.
 
     The QuickJS library depends on the Boehm garbage-collector libary. To build
-    "Tclsee", the following third-party components are required:
+    "Tclqjs", the following third-party components are required:
   
       QuickJS:  https://bellard.org/quickjs/
       Boehm GC: http://www.hpl.hp.com/personal/Hans_Boehm/gc/
@@ -101,13 +101,11 @@ This file has two sections:
   
     Then, file "hv/hv3qjs.c" from the source distribution should be compiled
     into a shared object linked with the two libraries above. The shared
-    object will contain the binary extension "Tclsee" (C init function
-    Tclsee_Init). 
+    object will contain the binary extension "Tclqjs" (C init function Tclqjs_Init).
   
     The template makefiles (linux-gcc.mk and mingw.mk) include a target
-    "tclsee" to build this package, complete with pkgIndex.tcl file. This
-    target requires configuration of makefile variables JSLIB, JSFLAGS and
-    JS_SHARED_LIB.
+    "tclqjs" to build this package, complete with pkgIndex.tcl file. This
+    target requires configuration of makefile variables JSLIB, JSFLAGS and JS_SHARED_LIB.
   
   
   Compiling hv3_polipo
