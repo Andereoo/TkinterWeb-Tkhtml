@@ -246,6 +246,10 @@ int HtmlPostscript(
         goto cleanup;
     }
 
+    pTree->isPrintedMedia = 1;
+    HtmlCallbackRestyle(pTree, pTree->pRoot);
+    HtmlCallbackForce(pTree); /* Force any pending style and/or layout operations to run. */
+
     if (psInfo.width == -1) psInfo.width = pCanvas->right;
     if (psInfo.height == -1) psInfo.height = pCanvas->bottom;
     getLowerCorners(pPsInfo);
@@ -318,7 +322,6 @@ int HtmlPostscript(
         pTree->options.forcewidth = 1; /* If a page size has been set, make sure layout width is set to it. */
         pTree->options.width = ceil(psInfo.pageSize.width / psInfo.scale);
         HtmlCallbackLayout(pTree, pTree->pRoot);
-        pTree->isPrintedMedia = 1;
         HtmlCallbackRestyle(pTree, pTree->pRoot);
         HtmlCallbackForce(pTree);
 
@@ -329,9 +332,6 @@ int HtmlPostscript(
         pagestotal = Tk_PostscriptY(pPsInfo->y, (Tk_PostscriptInfo)pPsInfo)/psInfo.pageSize.height*pPsInfo->scale;
     } else {
         finish:
-            pTree->isPrintedMedia = 1;
-            HtmlCallbackRestyle(pTree, pTree->pRoot);
-            HtmlCallbackForce(pTree); /* Force any pending style and/or layout operations to run. */
             pagestotal = 1;
     }
     
@@ -1158,7 +1158,6 @@ int TextToPostscript(Tk_PostscriptInfo psInfo, char *z, int n, int x, int y, int
         default:               anchor = 0;    justify = "0";   break;
     }
     Tk_FontMetrics fm = pV->fFont->metrics;
-	if (n < strlen(z)) z[n] = '\0';  // Turns out 'z' is 1 char to long, not sure why. Add a null terminator
 
     // Angle, horizontal and vertical positions to render at
     Tcl_AppendPrintfToObj(psObj, "0 %d %.15g [\n", x, Tk_PostscriptY(y, psInfo));

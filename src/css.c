@@ -2464,6 +2464,14 @@ freeRulesList (CssRule **ppList)
     *ppList = 0;
 }
 
+static void freeCssRules (CssMediaRule *pRule)
+{
+    if (!pRule) return;
+	selectorFree(pRule->pQuery);
+	freeCssRules(pRule);
+	HtmlFree(pRule);
+}
+
 static void
 freeRulesHash(Tcl_HashTable *pHash)
 {
@@ -2509,6 +2517,8 @@ HtmlCssStyleSheetFree (CssStyleSheet *pStyle)
         freeRulesHash(&pStyle->aByTag); 
         freeRulesHash(&pStyle->aByClass); 
         freeRulesHash(&pStyle->aById); 
+
+		freeCssRules(pStyle->pMediaRules);
 
         /* Free the priorities list */
         pPriority = pStyle->pPriority;
@@ -2711,6 +2721,32 @@ HtmlCssSelector (
     }
 }
 
+/*--------------------------------------------------------------------------
+ *
+ * HtmlCssSelector --
+ *
+ *     This is called whenever a query selector is parsed. i.e. "all" or "screen".
+ *
+ *     A CssSelector struct is allocated and added to the beginning of the linked list at pParse->pQuery;
+ *
+ *--------------------------------------------------------------------------
+ */
+void HtmlCssMediaQuery (CssParse *pParse, int stype)
+{
+    CssSelector *pQuery;
+
+    if (pParse->isIgnore) return;  /* Do nothing if the isIgnore flag is set */
+
+#if TRACE_PARSER_CALLS
+	printf("HtmlCssMediaQuery(%p, %s)\n", pParse, constantToString(stype));
+#endif
+
+    pQuery = HtmlNew(CssSelector);
+    pQuery->eSelector = stype;
+    pQuery->pNext = pParse->pQuery;
+    pParse->pQuery = pQuery;
+}
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -2788,12 +2824,27 @@ insertRule (CssRule **ppList, CssRule *pRule)
          * latter specified wins.
          */
         CssRule *pR = *ppList;
-        while (pR->pNext && ruleCompare(pR->pNext, pRule)>0 ) {
+        while (pR->pNext && ruleCompare(pR->pNext, pRule) > 0) {
             pR = pR->pNext;
         }
         pRule->pNext = pR->pNext;
         pR->pNext = pRule;
     }
+}
+/*
+ * Append a new CssRule to the apRules array in a CssMediaRule.
+ * Returns 0 on success, or -1 on allocation failure.
+ */
+int CssMediaRuleAppend(CssMediaRule *pMedia, CssRule *pNewRule) {
+    CssRule **apNewRules;
+    unsigned int nAlloc = sizeof(CssRule*) * (pMedia->nRules+1);
+    apNewRules = (CssRule **)HtmlRealloc("CssMediaRule.apRules", (char *)pMedia->apRules, nAlloc);
+    if (!apNewRules) { // Allocation failed; log or handle error (e.g., via HtmlLog)
+        return -1;
+    }
+    pMedia->apRules = apNewRules;
+    pMedia->apRules[pMedia->nRules++] = pNewRule;
+    return 0;
 }
 
 /*
@@ -2916,7 +2967,6 @@ cssSelectorPropertySetPair (CssParse *pParse, CssSelector *pSelector, CssPropert
         }
 
         switch (pS->eSelector) {
-
             case CSS_PSEUDOELEMENT_AFTER:
                 insertRule(&pStyle->pAfterRules, pRule);
                 break;
@@ -2948,7 +2998,6 @@ cssSelectorPropertySetPair (CssParse *pParse, CssSelector *pSelector, CssPropert
                 Tcl_SetHashValue(p, pList);
                 break;
             }
-    
             default:
                 insertRule(&pStyle->pUniversalRules, pRule);
                 break;
@@ -2956,6 +3005,10 @@ cssSelectorPropertySetPair (CssParse *pParse, CssSelector *pSelector, CssPropert
     } else {
         insertRule(&pStyle->pUniversalRules, pRule);
     }
+	if (pParse->pMediaRule != NULL) { // If currently inside a media at-rule
+		pRule->pAtRule = pParse->pMediaRule;
+		CssMediaRuleAppend(pParse->pMediaRule, pRule);
+	}
 
     pRule->pSelector = pSelector;
     pRule->pPropertySet = pPropertySet;
@@ -3012,7 +3065,6 @@ HtmlCssRule (CssParse *pParse, int success)
                 cssSelectorPropertySetPair(pParse, pS, pPropertySet, flags2);
             }
         }
-
         if (pImportant) {
             unsigned int flags = (pPropertySet ? FREE_PROPERTYSET : FREE_BOTH);
             cssSelectorPropertySetPair(pParse, pSelector, pImportant, flags);
@@ -3145,19 +3197,19 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int flags)
 
             case CSS_SELECTOR_TYPE:
                 assert(nodeX->zTag || HtmlNodeIsText(nodeX));
-                if( HtmlNodeIsText(nodeX) || strcmp(nodeX->zTag, p->zValue) ) return 0;
+                if(HtmlNodeIsText(nodeX) || strcmp(nodeX->zTag, p->zValue)) return 0;
                 break;
 
             case CSS_SELECTOR_CLASS: {
                 const char *zAttr = N_ATTR(nodeX, "class");
-                if( !attrTest(CSS_SELECTOR_ATTRLISTVALUE, p->zValue, zAttr) ){
+                if(!attrTest(CSS_SELECTOR_ATTRLISTVALUE, p->zValue, zAttr)){
                     return 0;
                 }
                 break;
             }
             case CSS_SELECTOR_ID: {
                 const char *zAttr = N_ATTR(nodeX, "id");
-                if( !attrTest(CSS_SELECTOR_ATTRVALUE, p->zValue, zAttr) ){
+                if(!attrTest(CSS_SELECTOR_ATTRVALUE, p->zValue, zAttr)){
                     return 0;
                 }
                 break;
@@ -3166,7 +3218,7 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int flags)
             case CSS_SELECTOR_ATTRVALUE:
             case CSS_SELECTOR_ATTRLISTVALUE:
             case CSS_SELECTOR_ATTRHYPHEN:
-                if( !attrTest(p->eSelector, p->zValue, N_ATTR(nodeX,p->zAttr)) ){
+                if(!attrTest(p->eSelector, p->zValue, N_ATTR(nodeX,p->zAttr))){
                     return 0;
                 }
                 break;
@@ -3269,15 +3321,6 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int flags)
 
             case CSS_SELECTOR_NEVERMATCH:
                 return 0;
-                
-            case CSS_MEDIA_ALL:
-				break;
-            case CSS_MEDIA_PRINT:
-				if ((flags>>1)&1) break;
-				return 0;
-            case CSS_MEDIA_SCREEN:
-				if (!(flags>>1)&1) break;
-				return 0;
 
             default:
                 assert(!"Impossible");
@@ -3400,6 +3443,38 @@ overrideToPropertyValues(
 
 /*--------------------------------------------------------------------------
  *
+ * HtmlCssMediaTest --
+ *
+ *     Test if a selector-query matches a document state.
+ *
+ * Results:
+ *     Non-zero is returned if the selector-query matchs the state or the rule is not inside an at-rule.
+ *
+ * Side effects:
+ *     None.
+ *
+ *--------------------------------------------------------------------------
+ */
+int HtmlCssMediaTest (CssRule *pRule, HtmlTree *pTree)
+{  
+	if (pRule->pAtRule == NULL) return 1;
+    for (CssSelector *p=pRule->pAtRule->pQuery; p; p=p->pNext) {
+        switch (p->eSelector) {
+            case CSS_MEDIA_ALL:
+                return 1;
+
+            case CSS_MEDIA_PRINT:
+				return pTree->isPrintedMedia;
+
+            case CSS_MEDIA_SCREEN:
+				return !pTree->isPrintedMedia;
+        }
+    }
+}
+
+
+/*--------------------------------------------------------------------------
+ *
  * applyRule --
  *
  *     Test the selector of pRule against node pNode. If there is a match,
@@ -3417,10 +3492,11 @@ overrideToPropertyValues(
 static int 
 applyRule (HtmlTree *pTree, HtmlNode *pNode, CssRule *pRule, int *aPropDone, char **pzIfMatch, HtmlComputedValuesCreator *pCreator)
 {
+	if (!HtmlCssMediaTest(pRule, pTree)) return 0; // Tell if rule is part of a media at-rule, if so: then test is against the query
     /* Test if the selector matches the node. Variable isMatch is set to
      * true if the selector matches, or false otherwise. 
      */
-    int isMatch = HtmlCssSelectorTest(pRule->pSelector, pNode, (pTree->isPrintedMedia<<1)|0);
+    int isMatch = HtmlCssSelectorTest(pRule->pSelector, pNode, 0);
 
     /* There is a match. Log some output for debugging. */
     LOG {

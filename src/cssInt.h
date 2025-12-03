@@ -48,6 +48,7 @@ typedef struct CssParse CssParse;
 typedef struct CssToken CssToken;
 typedef struct CssPriority CssPriority;
 typedef struct CssProperties CssProperties;
+typedef struct CssMediaRule CssMediaRule;
 
 typedef unsigned char u8;
 typedef unsigned int u32;
@@ -161,7 +162,15 @@ struct CssRule {
     int freePropertySets;          /* True to delete pPropertySet */
     int freeSelector;              /* True to delete pSelector */
     CssPropertySet *pPropertySet;  /* Property values for the rule. */
+	CssMediaRule *pAtRule;         /* NULL = top-level rule */
     CssRule *pNext;                /* Next rule in this list. */
+};
+
+struct CssMediaRule {
+	CssSelector *pQuery;  /* The selector-chain for this rule */
+	CssRule **apRules;    /* The CSS rules inside this media rule (currently unused) */
+	int nRules;           /* The number of rules */
+	CssMediaRule *pNext;  /* Next rule in this list. */
 };
 
 /*
@@ -212,6 +221,8 @@ struct CssStyleSheet {
     CssRule *pAfterRules;      /* Rules that end in :after */
     CssRule *pBeforeRules;     /* Rules that end in :before */
 
+	CssMediaRule *pMediaRules; /* Rules that start with @media */
+
     Tcl_HashTable aByTag;      /* Rule lists by tag (string keys) */
     Tcl_HashTable aByClass;    /* Rule lists by class (string keys) */
     Tcl_HashTable aById;       /* Rule lists by id (string keys) */
@@ -228,6 +239,9 @@ struct CssParse {
     CssSelector *pSelector;         /* Selector currently being parsed */
     int nXtra;
     CssSelector **apXtraSelector;   /* Selectors also waiting for prop set. */
+
+    CssSelector *pQuery;            /* Current media query chain being built */
+	CssMediaRule *pMediaRule;       /* Current @media rule (when inside block) */
 
     CssPropertySet *pPropertySet;   /* Declarations being parsed. */
     CssPropertySet *pImportant;     /* !IMPORTANT declarations. */
@@ -264,6 +278,7 @@ void HtmlCssSelector(CssParse *, int, CssToken *, CssToken *);
 void HtmlCssRule(CssParse *, int);
 void HtmlCssSelectorComma(CssParse *pParse);
 void HtmlCssImport(CssParse *pParse, CssToken *);
+void HtmlCssMediaQuery(CssParse *, int);
 
 /* Test if a selector matches a node */
 int HtmlCssSelectorTest(CssSelector *, HtmlNode *, int);
