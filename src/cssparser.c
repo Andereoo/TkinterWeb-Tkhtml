@@ -869,12 +869,8 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
         CssTokenType eToken;
         CssToken tToken;
         unsigned char media_ok = 1;
-        /* If we are already into the stylesheet "body", this is a 
-         * syntax error 
-         */
-        if (pParse->isBody) {
-            return 1;
-        }
+        /* If we are already into the stylesheet "body", this is a syntax error */
+        if (pParse->isBody) return 1;
         inputNextTokenIgnoreSpace(pInput);
         eToken = inputGetToken(pInput, &tToken.z, &tToken.n);
         if (eToken != CT_STRING && eToken != CT_FUNCTION) {
@@ -896,7 +892,7 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
         inputNextTokenIgnoreSpace(pInput);
         if (parseMediaList(pInput, pParse, &media_ok)) return 1;
         if (CT_LP != inputGetToken(pInput, 0, 0)) return 1;
-        inputNextToken(pInput);
+
         if (!media_ok) {  /* The media does not match. Skip tokens until the end of the block. */
             int iNest = 1;
             while (
@@ -908,8 +904,10 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
                 inputNextToken(pInput);
             }
         } else { // Add new At-rule to stylesheet parser
-			pParse->pMediaRule = HtmlNew(CssMediaRule);
-			pParse->pMediaRule->pQuery = pParse->pQuery;
+			CssMediaRule *pAtRule = HtmlNew(CssMediaRule);
+			pAtRule->pNext = pParse->pMediaRule;
+			pParse->pMediaRule = pAtRule;
+			pAtRule->pQuery = pParse->pQuery;
 		}
     //} else if (t.n == 4 && strnicmp("page", t.z, t.n) == 0) {
         

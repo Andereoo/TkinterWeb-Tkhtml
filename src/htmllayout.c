@@ -486,7 +486,7 @@ paginationPageYOffset(LayoutContext *pLayout, HtmlComputedValues *pV, int *pY, i
                 *pY = paginationY * (pagenum + !(pagenum % 2));
                 break;
         }
-    } return;
+    };
 }
 
 static void 
