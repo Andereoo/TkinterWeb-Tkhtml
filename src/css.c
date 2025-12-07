@@ -2464,11 +2464,11 @@ freeRulesList (CssRule **ppList)
     *ppList = 0;
 }
 
-static void freeCssRules (CssMediaRule *pRule)
+static void freeCssMediaRules (CssMediaRule *pRule)
 {
     if (!pRule) return;
 	selectorFree(pRule->pQuery);
-	freeCssRules(pRule);
+	freeCssMediaRules(pRule->pNext);
 	HtmlFree(pRule);
 }
 
@@ -2518,7 +2518,7 @@ HtmlCssStyleSheetFree (CssStyleSheet *pStyle)
         freeRulesHash(&pStyle->aByClass); 
         freeRulesHash(&pStyle->aById); 
 
-		freeCssRules(pStyle->pMediaRules);
+		freeCssMediaRules(pStyle->pMediaRules);
 
         /* Free the priorities list */
         pPriority = pStyle->pPriority;
