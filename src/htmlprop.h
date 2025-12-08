@@ -264,8 +264,8 @@ struct HtmlComputedValues {
     int iBackgroundPositionY;
 
     unsigned char eOverflow;          /* 'overflow' */
-    unsigned char eOverflowX;          /* 'overflow-x' */
-    unsigned char eOverflowY;          /* 'overflow-y' */
+    unsigned char eOverflowX;         /* 'overflow-x' */
+    unsigned char eOverflowY;         /* 'overflow-y' */
 
     int iZIndex;                      /* 'z-index'        (integer, AUTO) */
 
@@ -313,7 +313,7 @@ struct HtmlComputedValues {
     unsigned char eCaptionSide;       /* 'caption-side' */
     unsigned char eEmptyCells;        /* 'empty-cells' */
 };
-#define IS_OVERFLOW(pV, css_const) ((pV)->eOverflow == (css_const) || (pV)->eOverflowY == (css_const) || (pV)->eOverflowX == (css_const))
+#define IS_OVERFLOW(pV, css_const) ((pV)->eOverflowX == (css_const) || (pV)->eOverflowY == (css_const))
 
 /*
  * If pzContent is not NULL, then the pointer it points to may be set

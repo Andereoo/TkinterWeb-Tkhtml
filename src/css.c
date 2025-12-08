@@ -2646,6 +2646,9 @@ HtmlCssDeclaration (
         case CSS_PROPERTY_COUNTER_RESET:
             propertySetAddList(pParse, prop, *ppPropertySet, pExpr);
             break;
+		case CSS_PROPERTY_OVERFLOW:
+            propertySetAdd(*ppPropertySet, CSS_PROPERTY_OVERFLOW_X, tokenToProperty(pParse, pExpr));
+            propertySetAdd(*ppPropertySet, CSS_PROPERTY_OVERFLOW_Y, tokenToProperty(pParse, pExpr));
         default:
             propertySetAdd(*ppPropertySet, prop, tokenToProperty(pParse, pExpr)); // CSS seems to be parsed though here
     }

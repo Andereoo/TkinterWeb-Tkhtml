@@ -911,9 +911,9 @@ normalFlowLayoutOverflow (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
     iHeight = PIXELVAL(pV, HEIGHT, pBox->iContainingH);
    
     /* Figure out whether or not this block uses a vertical scrollbar. */
-    if (pV->eOverflow == CSS_CONST_SCROLL || pV->eOverflowY == CSS_CONST_SCROLL) {
+    if (pV->eOverflowY == CSS_CONST_SCROLL) {
         useVertical = 1;
-    } else if ((pV->eOverflow == CSS_CONST_AUTO || pV->eOverflowY == CSS_CONST_AUTO) && iHeight != PIXELVAL_AUTO) {
+    } else if (pV->eOverflowY == CSS_CONST_AUTO && iHeight != PIXELVAL_AUTO) {
         memset(&sContent, 0, sizeof(BoxContext));
         sContent.iContainingW = iWidth;
         sContent.iContainingH = iHeight;
@@ -926,8 +926,8 @@ normalFlowLayoutOverflow (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
 
     /* Figure out whether or not this block uses a horizontal scrollbar. */
     if (
-		(pV->eOverflow == CSS_CONST_SCROLL || pV->eOverflowX == CSS_CONST_SCROLL) 
-		|| ((pV->eOverflow == CSS_CONST_AUTO || pV->eOverflowX == CSS_CONST_AUTO) && iMinContentWidth > (iWidth - (useVertical ? SCROLLBAR_WIDTH : 0)))
+		pV->eOverflowX == CSS_CONST_SCROLL || 
+		(pV->eOverflowX == CSS_CONST_AUTO && iMinContentWidth > (iWidth - (useVertical ? SCROLLBAR_WIDTH : 0)))
     ) useHorizontal = 1;
    
     memset(&sBox, 0, sizeof(BoxContext));
@@ -3149,7 +3149,7 @@ normalFlowLayoutNode (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode,
         pFlow = &FT_BLOCK_REPLACED;
     } else if (eDisplay == CSS_CONST_BLOCK || eDisplay == CSS_CONST_LIST_ITEM) {
         pFlow = &FT_BLOCK;
-        if (pV->eOverflow != CSS_CONST_VISIBLE || (pV->eOverflowY != CSS_CONST_VISIBLE || pV->eOverflowX != CSS_CONST_VISIBLE)) pFlow = &FT_OVERFLOW;
+        if (pV->eOverflow != CSS_CONST_VISIBLE || pV->eOverflowX != CSS_CONST_VISIBLE ^ pV->eOverflowY != CSS_CONST_VISIBLE) pFlow = &FT_OVERFLOW;
     } else if (eDisplay == CSS_CONST_TABLE) {
         /* Todo: 'inline-table' is currently handled as 'table' */
         pFlow = &FT_TABLE;
