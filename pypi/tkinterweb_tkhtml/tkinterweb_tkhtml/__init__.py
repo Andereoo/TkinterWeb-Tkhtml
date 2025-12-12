@@ -1,5 +1,5 @@
 """
-TkinterWeb-Tkhtml v2.0
+TkinterWeb-Tkhtml v2.1
 This package provides pre-built binaries of a modified version of the Tkhtml3 widget from https://github.com/Andereoo/TkinterWeb-Tkhtml, 
 which enables the display of styled HTML and CSS code in Tkinter applications.
 
@@ -26,7 +26,7 @@ __title__ = 'TkinterWeb-Tkhtml'
 __author__ = "Andrew Clarke"
 __copyright__ = "Copyright (c) 2025 Andrew Clarke"
 __license__ = "MIT"
-__version__ = '2.0.0'
+__version__ = '2.1.0'
 
 
 # --- Begin universal sdist ---------------------------------------------------
@@ -60,14 +60,23 @@ else:
         TKHTML_ROOT_DIR = os.path.join(TKHTML_ROOT_DIR, "win32")
 # --- End universal sdist -----------------------------------------------------
 
-ALL_TKHTML_BINARIES =  [file for file in os.listdir(TKHTML_ROOT_DIR) if "libTkhtml" in file]
+try:
+    from tkinterweb_tkhtml_extras import TKHTML_EXTRAS_ROOT_DIR
+    if TKHTML_EXTRAS_ROOT_DIR == None:
+        ALL_TKHTML_BINARIES =  [[TKHTML_ROOT_DIR, file] for file in os.listdir(TKHTML_ROOT_DIR) if "libTkhtml" in file]
+    else:
+        ALL_TKHTML_BINARIES =  [[TKHTML_ROOT_DIR, file] for file in os.listdir(TKHTML_ROOT_DIR) if "libTkhtml" in file] + \
+                            [[TKHTML_EXTRAS_ROOT_DIR, file] for file in os.listdir(TKHTML_EXTRAS_ROOT_DIR) if "libTkhtml" in file]
+except (ImportError, ModuleNotFoundError,):
+    TKHTML_EXTRAS_ROOT_DIR = None
+    ALL_TKHTML_BINARIES =  [[TKHTML_ROOT_DIR, file] for file in os.listdir(TKHTML_ROOT_DIR) if "libTkhtml" in file]
 
 if TclVersion >= 9:
-    TKHTML_BINARIES =  [file for file in ALL_TKHTML_BINARIES if "TclTk9" in file]
+    TKHTML_BINARIES =  [[loc, file] for loc, file in ALL_TKHTML_BINARIES if "TclTk9" in file]
     HELP_MESSAGE_EXP = f"Download https://github.com/Andereoo/TkinterWeb-Tkhtml/tree/experimental and run 'python compile.py' to compile Tkhtml. \
 Copy the binary into {TKHTML_ROOT_DIR}, adding 'exp-TclTk9' after the filename (eg. 'libTkhtml3.1exp-TclTk9.dll')"
 else:
-    TKHTML_BINARIES =  [file for file in ALL_TKHTML_BINARIES if "TclTk9" not in file]
+    TKHTML_BINARIES =  [[loc, file] for loc, file in ALL_TKHTML_BINARIES if "TclTk9" not in file]
     HELP_MESSAGE_EXP = f"Download https://github.com/Andereoo/TkinterWeb-Tkhtml/tree/experimental and run 'python compile.py' to compile Tkhtml. \
 Copy the binary into {TKHTML_ROOT_DIR}, adding 'exp' after the filename (eg. 'libTkhtml3.1exp.dll')"
 
@@ -85,7 +94,7 @@ def get_tkhtml_file(version=None, index=-1, experimental=False):
     if isinstance(version, float):
         version = str(version)
     if version:
-        for file in TKHTML_BINARIES:
+        for loc, file in TKHTML_BINARIES:
             if version in file:
                 # Note: experimental can be "auto"
                 if "exp" in file:
@@ -96,7 +105,7 @@ def get_tkhtml_file(version=None, index=-1, experimental=False):
                     if experimental == True:
                         raise OSError(f"Tkhtml version {version} is not an experimental release but experimental mode is enabled. {HELP_MESSAGE_EXP}")
                     experimental = False
-                return os.path.join(TKHTML_ROOT_DIR, file), version, experimental
+                return os.path.join(loc, file), version, experimental
         raise OSError(f"Tkhtml version {version} either does not exist or is unsupported on your system. {HELP_MESSAGE}")
     else:
         # Get highest numbered avaliable file if a version is not provided
@@ -108,14 +117,14 @@ def get_tkhtml_file(version=None, index=-1, experimental=False):
             files = [k for k in TKHTML_BINARIES if 'exp' not in k]
         else:
             files = TKHTML_BINARIES
-        file = sorted(files)[index]
+        loc, file = sorted(files)[index]
         if "exp" in file:
             experimental = True
         else:
             experimental = False
         version = file.replace("libTkhtml", "").replace("exp", "")
         version = version[:version.rfind(".")]
-        return os.path.join(TKHTML_ROOT_DIR, file), version, experimental
+        return os.path.join(loc, file), version, experimental
 
 
 def get_loaded_tkhtml_version(master):
@@ -127,11 +136,11 @@ def get_loaded_tkhtml_version(master):
 
 def load_tkhtml_file(master, file):
     "Load Tkhtml into the current Tcl/Tk instance"
-    if TKHTML_ROOT_DIR not in os.environ["PATH"].split(os.pathsep):
-        os.environ["PATH"] = os.pathsep.join([
-            TKHTML_ROOT_DIR,
-            os.environ["PATH"]
-        ])
+    paths = os.environ["PATH"].split(os.pathsep)
+    for path in (TKHTML_ROOT_DIR, TKHTML_EXTRAS_ROOT_DIR):
+        if path and path not in paths:
+            paths.insert(0, path)
+    os.environ["PATH"] = os.pathsep.join(paths)
     master.tk.call("load", file)
 
 
