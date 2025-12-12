@@ -1,7 +1,7 @@
 """
-Wheel and sdist generator for TkinterWeb-Tkhtml
+Wheel and sdist generator for TkinterWeb-Tkhtml-Extras
 
-This script will generate a universal wheel, a universal sdist, and platform-specific wheels for TkinterWeb-Tkhtml
+This script will generate a universal wheel, a universal sdist, and platform-specific wheels for TkinterWeb-Tkhtml-Extras
 It's a pretty messy solution but makes it possible to only bundle only the tkhtml binary needed in each platform-specific wheel
 This avoids the need to have a seperate copy of the repository for each platform
 
@@ -29,6 +29,8 @@ SETUP_PATH = os.path.join(ROOT_PATH, "setup.py")
 MANIFEST_PATH = os.path.join(ROOT_PATH, "MANIFEST.in")
 TKHTML_SUBFOLDER_NAME = ""
 
+VERSION = "1.0.0"
+
 manifest_in_contents = "recursive-include tkinterweb_tkhtml_extras/tkhtml *"
 setup_py_contents_generic = """import pathlib
 from setuptools import setup, find_namespace_packages
@@ -39,7 +41,7 @@ README = (HERE / "README.md").read_text()
 
 setup(
     name="tkinterweb-tkhtml-extras",
-    version="1.0.0",
+    version=\""""+VERSION+"""\",
     python_requires=">=3.2",
     description="HTML/CSS viewer for Tkinter",
     long_description=README,
@@ -186,6 +188,7 @@ with open(SETUP_PATH, "w+") as handle:
 
 print(f"Creating wheel and sdist for {TKINTERWEB_ROOT_PATH}...", end="")
 run_shell(PYTHON_CMD, "-m", "build", "--no-isolation", is_wheel=True)
+os.rename(os.path.join(DIST_ROOT_PATH, f"tkinterweb-tkhtml-extras-{VERSION}.tar.gz"), os.path.join(DIST_ROOT_PATH, f"tkinterweb_tkhtml_extras-{VERSION}.tar.gz"))
 
 # Copy all wheels to the main dist folder
 print(f"Copying wheels to {DIST_ROOT_PATH}\n")

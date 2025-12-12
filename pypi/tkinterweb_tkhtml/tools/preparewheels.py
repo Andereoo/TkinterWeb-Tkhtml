@@ -29,6 +29,8 @@ SETUP_PATH = os.path.join(ROOT_PATH, "setup.py")
 MANIFEST_PATH = os.path.join(ROOT_PATH, "MANIFEST.in")
 TKHTML_SUBFOLDER_NAME = ""
 
+VERSION = "2.1.0"
+
 manifest_in_contents = "recursive-include tkinterweb_tkhtml/tkhtml *"
 setup_py_contents_generic = """import pathlib
 from setuptools import setup, find_namespace_packages
@@ -39,7 +41,7 @@ README = (HERE / "README.md").read_text()
 
 setup(
     name="tkinterweb-tkhtml",
-    version="2.1.0",
+    version=\""""+VERSION+"""\",
     python_requires=">=3.2",
     description="HTML/CSS viewer for Tkinter",
     long_description=README,
@@ -184,6 +186,7 @@ with open(SETUP_PATH, "w+") as handle:
 
 print(f"Creating wheel and sdist for {TKINTERWEB_ROOT_PATH}...", end="")
 run_shell(PYTHON_CMD, "-m", "build", "--no-isolation", is_wheel=True)
+os.rename(os.path.join(DIST_ROOT_PATH, f"tkinterweb-tkhtml-{VERSION}.tar.gz"), os.path.join(DIST_ROOT_PATH, f"tkinterweb_tkhtml-{VERSION}.tar.gz"))
 
 # Copy all wheels to the main dist folder
 print(f"Copying wheels to {DIST_ROOT_PATH}\n")
