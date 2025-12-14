@@ -2750,6 +2750,15 @@ void HtmlCssMediaQuery (CssParse *pParse, int stype)
     pParse->pQuery = pQuery;
 }
 
+void HtmlCssFreeEmptyMediaRule (CssParse *pParse) {
+	if (pParse->pMediaRule->apRules == NULL) {
+		CssMediaRule *pNext = pParse->pMediaRule->pNext;
+		selectorFree(pParse->pMediaRule->pQuery);
+		HtmlFree(pParse->pMediaRule);
+		pParse->pMediaRule = pNext;
+	}
+}
+
 /*
  *---------------------------------------------------------------------------
  *
@@ -2833,21 +2842,6 @@ insertRule (CssRule **ppList, CssRule *pRule)
         pRule->pNext = pR->pNext;
         pR->pNext = pRule;
     }
-}
-/*
- * Append a new CssRule to the apRules array in a CssMediaRule.
- * Returns 0 on success, or -1 on allocation failure.
- */
-int CssMediaRuleAppend(CssMediaRule *pMedia, CssRule *pNewRule) {
-    CssRule **apNewRules;
-    unsigned int nAlloc = sizeof(CssRule*) * (pMedia->nRules+1);
-    apNewRules = (CssRule **)HtmlRealloc("CssMediaRule.apRules", (char *)pMedia->apRules, nAlloc);
-    if (!apNewRules) { // Allocation failed; log or handle error (e.g., via HtmlLog)
-        return -1;
-    }
-    pMedia->apRules = apNewRules;
-    pMedia->apRules[pMedia->nRules++] = pNewRule;
-    return 0;
 }
 
 /*
@@ -3010,7 +3004,8 @@ cssSelectorPropertySetPair (CssParse *pParse, CssSelector *pSelector, CssPropert
     }
 	if (pParse->pMediaRule != NULL) { // If currently inside a media at-rule
 		pRule->pAtRule = pParse->pMediaRule;
-		CssMediaRuleAppend(pParse->pMediaRule, pRule);
+		if (pParse->pMediaRule->apRules == NULL) pParse->pMediaRule->apRules = pRule;
+		pParse->pMediaRule->pLast = pRule;
 	}
 
     pRule->pSelector = pSelector;

@@ -969,7 +969,10 @@ HtmlCssRunParser (const char *zInput, int nInput, CssParse *pParse)
             case CT_RP:
                 isSyntaxError = 0;  // The next 2 lines are to end the parsing of an at-rule
 				if (pParse->pQuery) pParse->pQuery = NULL;
-				if (pParse->pMediaRule) pParse->pMediaRule = NULL;
+				if (pParse->pMediaRule) {
+					HtmlCssFreeEmptyMediaRule(pParse);
+					pParse->pMediaRule = NULL;
+				}
 				break;
             case CT_AT:
                 isSyntaxError = parseAtRule(&sInput, pParse); break;
