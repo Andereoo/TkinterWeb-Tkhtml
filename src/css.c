@@ -4019,6 +4019,18 @@ HtmlCssSelectorToString(CssSelector *pSelector, Tcl_Obj *pObj)
                 "[", pSelector->zAttr, "|=\"", pSelector->zValue, "\"]", NULL);
             break;
 
+		case CSS_MEDIA_ALL: 
+            Tcl_AppendStringsToObj(pObj, "@madia all", NULL);
+            break;
+
+		case CSS_MEDIA_PRINT: 
+            Tcl_AppendStringsToObj(pObj, "@madia print", NULL);
+            break;
+
+		case CSS_MEDIA_SCREEN: 
+            Tcl_AppendStringsToObj(pObj, "@madia screen", NULL);
+            break;
+
         case CSS_SELECTOR_NEVERMATCH: 
             Tcl_AppendStringsToObj(pObj, "NEVERMATCH", NULL);
             break;
@@ -4296,7 +4308,7 @@ HtmlCssStyleConfigDump(
     CssRule *apRule[MAX_RULES];
     Tcl_Obj *pRet;
     int nRule = 0;
-    int jj = 0;
+    int i;
 
     for (pRule = pStyle->pUniversalRules; pRule; pRule = pRule->pNext) {
         if (nRule < MAX_RULES) {
@@ -4307,13 +4319,10 @@ HtmlCssStyleConfigDump(
     apTable[0] = &pStyle->aByTag;
     apTable[1] = &pStyle->aById;
     apTable[2] = &pStyle->aByClass;
-    for (jj = 0; jj < 3; jj++) {
+    for (i = 0; i < 3; i++) {
         Tcl_HashEntry *pEntry;
         Tcl_HashSearch search;
-        for (pEntry = Tcl_FirstHashEntry(apTable[jj], &search);
-             pEntry;
-             pEntry = Tcl_NextHashEntry(&search)
-        ) {
+        for (pEntry = Tcl_FirstHashEntry(apTable[i], &search); pEntry; pEntry = Tcl_NextHashEntry(&search)) {
             pRule = (CssRule *)Tcl_GetHashValue(pEntry);
             for ( ; pRule; pRule = pRule->pNext) {
                 if (nRule < MAX_RULES) {
@@ -4326,29 +4335,26 @@ HtmlCssStyleConfigDump(
     qsort(apRule, nRule, sizeof(CssRule *), ruleQsortCompare);
 
     pRet = Tcl_NewObj();
-    for (jj = 0; jj < nRule; jj++) {
-        CssPriority *pPri = apRule[jj]->pPriority;
+    for (i = 0; i < nRule; i++) {
+        CssPriority *pPri = apRule[i]->pPriority;
         Tcl_Obj *pList = Tcl_NewObj();
         Tcl_Obj *p;
         char zBuf[256];
-        int ii;
         int isRequireSemi = 0;
-        pRule = apRule[jj];
+        pRule = apRule[i];
 
         p = Tcl_NewObj();
         HtmlCssSelectorToString(pRule->pSelector, p);
         Tcl_ListObjAppendElement(0, pList, p);
         
         p = Tcl_NewObj();
-        for (ii = 0; ii < pRule->pPropertySet->n; ii++) {
-            CssProperty *pProp = pRule->pPropertySet->a[ii].pProp;
+        for (int j = 0; j < pRule->pPropertySet->n; j++) {
+            CssProperty *pProp = pRule->pPropertySet->a[j].pProp;
             if (pProp) {
-                int eProp = pRule->pPropertySet->a[ii].eProp;
+                int eProp = pRule->pPropertySet->a[j].eProp;
                 char *zPropVal;
                 char *zFree = 0;
-                if (isRequireSemi) {
-                    Tcl_AppendToObj(p, "; ", 2);
-                }
+                if (isRequireSemi) Tcl_AppendToObj(p, "; ", 2);
                 zPropVal = HtmlPropertyToString(pProp, &zFree);
                 Tcl_AppendToObj(p, HtmlCssPropertyToString(eProp), -1);
                 Tcl_AppendToObj(p, ":", 1);
@@ -4368,10 +4374,8 @@ HtmlCssStyleConfigDump(
         );
         zBuf[255] = '\0';
         Tcl_ListObjAppendElement(0, pList, Tcl_NewStringObj(zBuf, -1));
-
         Tcl_ListObjAppendElement(0, pRet, pList);
     }
- 
     Tcl_SetObjResult(interp, pRet);
     return TCL_OK;
 }

@@ -2818,10 +2818,9 @@ normalFlowLayoutText (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode,
 static int 
 normalFlowLayoutInlineReplaced (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode, int *pY, InlineContext *pContext, NormalFlow *pNormal)
 {
-    BoxContext sBox, sContent;
+    BoxContext sBox;
     HtmlCanvas canvas;
-    int h, i;
-    int iOffset = 0;
+    int h, iOffset = 0;
 
     MarginProperties margin;
     BoxProperties box;

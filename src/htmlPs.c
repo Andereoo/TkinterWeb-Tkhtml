@@ -1126,7 +1126,7 @@ TkPostscriptImage(
  *
  *--------------------------------------------------------------
  */
-int TextToPostscript(Tk_PostscriptInfo psInfo, char *z, int n, int x, int y, int prepass, HtmlNode *pNode, Tcl_Interp *interp)
+int TextToPostscript(Tk_PostscriptInfo psInfo, const char *z, int n, int x, int y, int prepass, HtmlNode *pNode, Tcl_Interp *interp)
 {
     float anchor;
     const char *justify;
