@@ -3724,30 +3724,6 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
 
 /*--------------------------------------------------------------------------
  *
- * generateContentText --
- *
- *     Argument zContent points to a nul-terminated string containing
- *     a value assigned to the 'content' property. This function allocates 
- *     and returns an HtmlTextNode structure populated with text
- *     based on the 'content' property.
- *
- * Results:
- *
- *     None.
- *
- * Side effects:
- *
- *--------------------------------------------------------------------------
- */
-static HtmlTextNode *
-generateContentText (HtmlTree *pTree, const char *zContent)
-{
-    HtmlTextNode *pTextNode = HtmlTextNew(strlen(zContent), zContent, 0, 0);
-    return pTextNode;
-}
-
-/*--------------------------------------------------------------------------
- *
  * generatedContent --
  *
  * Results:
@@ -3795,9 +3771,9 @@ generatedContent (
 
     if (zContent) {
         /* If a value was specified for the 'content' property, create
-         * a text node also.
+         * a text node based on the 'content' property also.
          */
-        HtmlTextNode *pTextNode = generateContentText(pTree, zContent);
+        HtmlTextNode *pTextNode = HtmlTextNew(strlen(zContent), zContent, 0, 0);
         int idx = HtmlNodeAddTextChild(*ppNode, pTextNode);
         HtmlNodeChild(*ppNode, idx)->index = HTML_NODE_GENERATED;
         HtmlFree(zContent);

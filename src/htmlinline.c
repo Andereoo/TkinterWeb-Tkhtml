@@ -1696,7 +1696,6 @@ HtmlInlineContextAddText (InlineContext *pContext, HtmlNode *pNode)
                 pContext->ignoreLineHeight = 0;
                 break;
             }
-
             case HTML_TEXT_TOKEN_NEWLINE:
                 if (eWhitespace == CSS_CONST_PRE) {
                     int i;
@@ -1707,7 +1706,6 @@ HtmlInlineContextAddText (InlineContext *pContext, HtmlNode *pNode)
                     break;
                 }
                 /* Otherwise fall through */
-
             case HTML_TEXT_TOKEN_SPACE: {
                 int i;
                 if (
@@ -1721,11 +1719,9 @@ HtmlInlineContextAddText (InlineContext *pContext, HtmlNode *pNode)
                 }
                 break;
             }
-
             default: assert(!"Illegal value returned by TextIterType()");
         }
     }
-
     return;
 }
 
