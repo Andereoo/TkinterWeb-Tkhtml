@@ -624,7 +624,7 @@ styleApply (HtmlTree *pTree, HtmlNode *pNode, StyleApply *p)
         if (pElem->pBefore || pElem->pAfter) {
             redrawmode = MAX(redrawmode, 2);
         }
-    } else if(pElem->pAfter) {
+    } else if (pElem->pAfter) {
         HtmlStyleHandleCounters(pTree, HtmlNodeComputedValues(pElem->pAfter));
     }
 

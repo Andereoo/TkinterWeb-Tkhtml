@@ -968,14 +968,10 @@ static void
 treeCloseFosterTree (HtmlTree *pTree)
 {
     if (pTree->state.pFoster) {
-        HtmlNode *pFosterRoot = findFosterParent(pTree, 0);
-        HtmlNode *pFoster;
-
-        pFoster = pTree->state.pFoster;
-        for ( ;pFoster != pFosterRoot; pFoster = HtmlNodeParent(pFoster)) {
+        HtmlNode *pFosterRoot = findFosterParent(pTree, 0); // This may crash if <table> is inside another <table>
+        for (HtmlNode *pFoster = pTree->state.pFoster; pFoster != pFosterRoot; pFoster = HtmlNodeParent(pFoster)) {
             nodeHandlerCallbacks(pTree, pFoster);
         }
-
         pTree->state.pFoster = 0;
     }
 }
