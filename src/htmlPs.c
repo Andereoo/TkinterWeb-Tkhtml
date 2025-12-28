@@ -1132,7 +1132,6 @@ int TextToPostscript(Tk_PostscriptInfo psInfo, const char *z, int n, int x, int 
     const char *justify;
     Tcl_Obj *psObj;
     Tcl_InterpState interpState;
-    int w, h;
     Tk_TextLayout tl;
 
     HtmlComputedValues *pV = HtmlNodeComputedValues(pNode);
@@ -1153,19 +1152,24 @@ int TextToPostscript(Tk_PostscriptInfo psInfo, const char *z, int n, int x, int 
     Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
     
     switch (pV->eTextAlign) {
-        case CSS_CONST_CENTER: anchor = 0.15; justify = "0.5"; break;
-        case CSS_CONST_RIGHT:  anchor = 0.30; justify = "1";   break;
-        default:               anchor = 0;    justify = "0";   break;
+        case CSS_CONST_CENTER: anchor = 1/6; justify = "0";  break;
+        case CSS_CONST_RIGHT:  anchor = 1/3; justify = "1";  break;
+        default:               anchor = 0;   justify = "-1"; break;
     }
     Tk_FontMetrics fm = pV->fFont->metrics;
+	char *a = HtmlAlloc("temp", 1+n);
+    memcpy(a, z, n);
+	a[n] = '\0';
+    tl = Tk_ComputeTextLayout(pV->fFont->tkfont, a, -1, 0, 0, 0, 0, 0);
 
     // Angle, horizontal and vertical positions to render at
     Tcl_AppendPrintfToObj(psObj, "0 %d %.15g [\n", x, Tk_PostscriptY(y, psInfo));
     Tcl_ResetResult(interp);
-    tl = Tk_ComputeTextLayout(pV->fFont->tkfont, z, n, 0, 0, 0, &w, &h);
     Tk_TextLayoutToPostscript(interp, tl);
     Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp)); // How far apart two lines of text in the same font
     Tcl_AppendPrintfToObj(psObj, "] %d %g 1 %s false DrawText\n", fm.linespace, anchor, justify);
+
+	HtmlFree(a);
 
     // Plug the accumulated postscript back into the result.
     done:
