@@ -437,6 +437,10 @@ parseSyntaxError (
         eToken = inputGetToken(pInput, 0, 0);
     }
     iErrorLength = pInput->iInput - iErrorStart;
+	if (isStopAtSemiColon && pParse->pQuery) {
+		HtmlCssFreeErrorMediaQuery(pParse);
+		pParse->pQuery = NULL;
+	}
 
     if (pParse->pErrorLog) {
         Tcl_Obj *pError = pParse->pErrorLog;
@@ -967,7 +971,7 @@ HtmlCssRunParser (const char *zInput, int nInput, CssParse *pParse)
             case CT_SGML_CLOSE:
                 isSyntaxError = 0; break;
             case CT_RP:
-                isSyntaxError = 0;  // The next 2 lines are to end the parsing of an at-rule
+                isSyntaxError = 0;  // The next 5 lines are to end the parsing of an at-rule
 				if (pParse->pQuery) pParse->pQuery = NULL;
 				if (pParse->pMediaRule) {
 					HtmlCssFreeEmptyMediaRule(pParse);

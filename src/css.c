@@ -2750,13 +2750,14 @@ void HtmlCssMediaQuery (CssParse *pParse, int stype)
     pParse->pQuery = pQuery;
 }
 
-void HtmlCssFreeEmptyMediaRule (CssParse *pParse) {
-	if (pParse->pMediaRule->apRules == NULL) {
-		CssMediaRule *pNext = pParse->pMediaRule->pNext;
-		selectorFree(pParse->pMediaRule->pQuery);
-		HtmlFree(pParse->pMediaRule);
-		pParse->pMediaRule = pNext;
+void HtmlCssFreeEmptyMediaRule (CssParse *p) {
+	if (p->pMediaRule && p->pMediaRule->apRules == NULL) {
+		HtmlFree(p->pMediaRule);
 	}
+}
+
+void HtmlCssFreeErrorMediaQuery (CssParse *p) {
+	selectorFree(p->pQuery);
 }
 
 /*
@@ -3223,9 +3224,8 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int flags)
 
             case CSS_SELECTORCHAIN_DESCENDANT: {
                 HtmlNode *pParent = N_PARENT(nodeX);
-                CssSelector *pNext = p->pNext;
                 while (pParent) {
-                    if (HtmlCssSelectorTest(pNext, pParent, flags&1)) {
+                    if (HtmlCssSelectorTest(p->pNext, pParent, flags&1)) {
                         return 1;
                     }
                     pParent = N_PARENT(pParent);
@@ -3327,6 +3327,41 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int flags)
     }
 
     return (nodeX && !p) ? 1 : 0;
+}
+
+/*--------------------------------------------------------------------------
+ *
+ * HtmlCssMediaTest --
+ *
+ *     Test if a selector-query matches a document state.
+ *
+ * Results:
+ *     Non-zero is returned if the selector-query matchs the state or the rule is not inside an at-rule.
+ *
+ * Side effects:
+ *     None.
+ *
+ *--------------------------------------------------------------------------
+ */
+int HtmlCssMediaTest (CssRule *pRule, HtmlTree *pTree)
+{
+	CssSelector *p;
+	if (pRule->pAtRule == NULL) return 1;
+    for (p = pRule->pAtRule->pQuery; p; p = p->pNext) {
+        switch (p->eSelector) {
+            case CSS_MEDIA_ALL:
+                break;
+
+            case CSS_MEDIA_PRINT:
+				if (!pTree->isPrintedMedia) return 0;
+				break;
+
+            case CSS_MEDIA_SCREEN:
+				if (pTree->isPrintedMedia) return 0;
+				break;
+        }
+    }
+	return !p ? 1 : 0;
 }
 
 /*
@@ -3438,38 +3473,6 @@ overrideToPropertyValues(
         }
     }
 }
-
-/*--------------------------------------------------------------------------
- *
- * HtmlCssMediaTest --
- *
- *     Test if a selector-query matches a document state.
- *
- * Results:
- *     Non-zero is returned if the selector-query matchs the state or the rule is not inside an at-rule.
- *
- * Side effects:
- *     None.
- *
- *--------------------------------------------------------------------------
- */
-int HtmlCssMediaTest (CssRule *pRule, HtmlTree *pTree)
-{  
-	if (pRule->pAtRule == NULL) return 1;
-    for (CssSelector *p=pRule->pAtRule->pQuery; p; p=p->pNext) {
-        switch (p->eSelector) {
-            case CSS_MEDIA_ALL:
-                return 1;
-
-            case CSS_MEDIA_PRINT:
-				return pTree->isPrintedMedia;
-
-            case CSS_MEDIA_SCREEN:
-				return !pTree->isPrintedMedia;
-        }
-    }
-}
-
 
 /*--------------------------------------------------------------------------
  *
