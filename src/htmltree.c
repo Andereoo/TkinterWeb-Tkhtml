@@ -222,9 +222,8 @@ HtmlNodeClearStyle (HtmlTree *pTree, HtmlElementNode *pElem)
         HtmlNodeClearGenerated(pTree, pElem);
         HtmlComputedValuesRelease(pTree, pElem->pPropertyValues);
         HtmlComputedValuesRelease(pTree, pElem->pPreviousValues);
-        HtmlCssInlineFree(pElem->pStyle);
+        HtmlCssInlineFree(pElem);
         HtmlCssFreeDynamics(pElem);
-        pElem->pStyle = 0;
         pElem->pPropertyValues = 0;
         pElem->pPreviousValues = 0;
         pElem->pDynamic = 0;
@@ -810,8 +809,7 @@ setNodeAttribute (HtmlNode *pNode, const char *zAttrName, const char *zAttrVal)
      * compiled version at version HtmlElementNode.pStyle.
      */
     if (strcmp(HTML_INLINE_STYLE_ATTR, zAttrName) == 0) {
-        HtmlCssInlineFree(pElem->pStyle);
-        pElem->pStyle = 0;
+        HtmlCssInlineFree(pElem);
     }
 }
 

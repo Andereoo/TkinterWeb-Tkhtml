@@ -170,7 +170,7 @@ struct CssMediaRule {
 	CssSelector *pQuery;  /* The selector-chain for this rule */
 	CssRule *apRules;     /* The CSS rules inside this media rule (currently unused) */
 	CssRule *pLast;       /* The last rule inside this media rule */
-	CssMediaRule *pNext;  /* Next rule in this list. */
+	CssMediaRule *pNext;  /* Next media rule in this list. */
 };
 
 /*

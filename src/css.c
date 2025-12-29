@@ -3172,10 +3172,10 @@ attrTest (int eType, const char *zString, const char *zAttr)
  *
  *---------------------------------------------------------------------------
  */
-void 
-HtmlCssInlineFree (CssPropertySet *pPropertySet)
+void HtmlCssInlineFree (HtmlElementNode *pElem)
 {
-    propertySetFree(pPropertySet);
+    propertySetFree(pElem->pStyle);
+	pElem->pStyle = NULL;
 }
 
 /*
@@ -3209,26 +3209,7 @@ propertySetToPropertyValues (HtmlComputedValuesCreator *p, int *aPropDone, CssPr
 /*
  *---------------------------------------------------------------------------
  *
- * ruleToPropertyValues --
- *
- * Results:
- *     None.
- *
- * Side effects:
- *     None.
- *
- *---------------------------------------------------------------------------
- */
-static void 
-ruleToPropertyValues (HtmlComputedValuesCreator *p, int *aPropDone, CssRule *pRule)
-{
-    propertySetToPropertyValues(p, aPropDone, pRule->pPropertySet);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * ruleToPropertyValues --
+ * overrideToPropertyValues --
  *
  * Results:
  *     None.
@@ -3522,7 +3503,7 @@ applyRule (HtmlTree *pTree, HtmlNode *pNode, CssRule *pRule, int *aPropDone, cha
         }
 
         /* Copy the properties from the rule into the computed values set. */
-        ruleToPropertyValues(pCreator, aPropDone, pRule);
+        propertySetToPropertyValues(pCreator, aPropDone, pRule->pPropertySet);
     }
 
     assert(isMatch == 0 || isMatch == 1);
