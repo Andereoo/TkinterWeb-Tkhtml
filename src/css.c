@@ -3161,6 +3161,116 @@ attrTest (int eType, const char *zString, const char *zAttr)
     return 0;
 }
 
+/*
+ *---------------------------------------------------------------------------
+ *
+ * HtmlCssInlineFree --
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *---------------------------------------------------------------------------
+ */
+void 
+HtmlCssInlineFree (CssPropertySet *pPropertySet)
+{
+    propertySetFree(pPropertySet);
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * propertySetToPropertyValues --
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *---------------------------------------------------------------------------
+ */
+static void 
+propertySetToPropertyValues (HtmlComputedValuesCreator *p, int *aPropDone, CssPropertySet *pSet)
+{
+    int i, eProp;
+    assert(pSet);
+
+    for (i = pSet->n - 1; i >= 0; i--) {
+        eProp = pSet->a[i].eProp;
+        /* eProp may be greater than MAX_PROPERTY if it stores a composite
+         * property that Tkhtml doesn't handle. In this case just ignore it.
+         */
+        if (eProp <= CSS_PROPERTY_MAX_PROPERTY && 0 == aPropDone[eProp]) {
+            if (0 == HtmlComputedValuesSet(p, eProp, pSet->a[i].pProp)) aPropDone[eProp] = 1;
+        }
+    }
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * ruleToPropertyValues --
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ *---------------------------------------------------------------------------
+ */
+static void 
+ruleToPropertyValues (HtmlComputedValuesCreator *p, int *aPropDone, CssRule *pRule)
+{
+    propertySetToPropertyValues(p, aPropDone, pRule->pPropertySet);
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * ruleToPropertyValues --
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ *---------------------------------------------------------------------------
+ */
+static void 
+overrideToPropertyValues(
+    HtmlComputedValuesCreator *p,
+    int *aPropDone,
+    Tcl_Obj *pOverride
+    )
+{
+    Tcl_Obj **apObj = 0;
+    int nObj = 0;
+    int ii;
+
+    if (!pOverride) return;
+    Tcl_ListObjGetElements(0, pOverride, &nObj, &apObj);
+
+    for (ii = 0; ii < (nObj - 1); ii += 2) { 
+        int eProp;
+        const char *zProp;
+        int nProp;
+
+        zProp = Tcl_GetStringFromObj(apObj[ii], &nProp);
+        eProp = HtmlCssPropertyLookup(nProp, zProp);
+
+    if (eProp <= CSS_PROPERTY_MAX_PROPERTY && 0 == aPropDone[eProp]) {
+            const char *zVal = Tcl_GetString(apObj[ii + 1]);
+            CssProperty *pProp = HtmlCssStringToProperty(zVal, -1);
+            if (0 == HtmlComputedValuesSet(p, eProp, pProp)) {
+                aPropDone[eProp] = 1;
+            }
+            HtmlComputedValuesFreeProperty(p, pProp);
+        }
+    }
+}
+
 /*--------------------------------------------------------------------------
  *
  * HtmlCssSelectorTest --
@@ -3349,8 +3459,7 @@ int HtmlCssMediaTest (CssRule *pRule, HtmlTree *pTree)
 	if (pRule->pAtRule == NULL) return 1;
     for (p = pRule->pAtRule->pQuery; p; p = p->pNext) {
         switch (p->eSelector) {
-            case CSS_MEDIA_ALL:
-                break;
+            case CSS_MEDIA_ALL: break;
 
             case CSS_MEDIA_PRINT:
 				if (!pTree->isPrintedMedia) return 0;
@@ -3362,116 +3471,6 @@ int HtmlCssMediaTest (CssRule *pRule, HtmlTree *pTree)
         }
     }
 	return !p ? 1 : 0;
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * HtmlCssInlineFree --
- *
- * Results:
- *
- * Side effects:
- *
- *---------------------------------------------------------------------------
- */
-void 
-HtmlCssInlineFree (CssPropertySet *pPropertySet)
-{
-    propertySetFree(pPropertySet);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * propertySetToPropertyValues --
- *
- * Results:
- *
- * Side effects:
- *
- *---------------------------------------------------------------------------
- */
-static void 
-propertySetToPropertyValues (HtmlComputedValuesCreator *p, int *aPropDone, CssPropertySet *pSet)
-{
-    int i, eProp;
-    assert(pSet);
-
-    for (i = pSet->n - 1; i >= 0; i--) {
-        eProp = pSet->a[i].eProp;
-        /* eProp may be greater than MAX_PROPERTY if it stores a composite
-         * property that Tkhtml doesn't handle. In this case just ignore it.
-         */
-        if (eProp <= CSS_PROPERTY_MAX_PROPERTY && 0 == aPropDone[eProp]) {
-            if (0 == HtmlComputedValuesSet(p, eProp, pSet->a[i].pProp)) aPropDone[eProp] = 1;
-        }
-    }
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * ruleToPropertyValues --
- *
- * Results:
- *     None.
- *
- * Side effects:
- *     None.
- *
- *---------------------------------------------------------------------------
- */
-static void 
-ruleToPropertyValues (HtmlComputedValuesCreator *p, int *aPropDone, CssRule *pRule)
-{
-    propertySetToPropertyValues(p, aPropDone, pRule->pPropertySet);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * ruleToPropertyValues --
- *
- * Results:
- *     None.
- *
- * Side effects:
- *     None.
- *
- *---------------------------------------------------------------------------
- */
-static void 
-overrideToPropertyValues(
-    HtmlComputedValuesCreator *p,
-    int *aPropDone,
-    Tcl_Obj *pOverride
-    )
-{
-    Tcl_Obj **apObj = 0;
-    int nObj = 0;
-    int ii;
-
-    if (!pOverride) return;
-    Tcl_ListObjGetElements(0, pOverride, &nObj, &apObj);
-
-    for (ii = 0; ii < (nObj - 1); ii += 2) { 
-        int eProp;
-        const char *zProp;
-        int nProp;
-
-        zProp = Tcl_GetStringFromObj(apObj[ii], &nProp);
-        eProp = HtmlCssPropertyLookup(nProp, zProp);
-
-    if (eProp <= CSS_PROPERTY_MAX_PROPERTY && 0 == aPropDone[eProp]) {
-            const char *zVal = Tcl_GetString(apObj[ii + 1]);
-            CssProperty *pProp = HtmlCssStringToProperty(zVal, -1);
-            if (0 == HtmlComputedValuesSet(p, eProp, pProp)) {
-                aPropDone[eProp] = 1;
-            }
-            HtmlComputedValuesFreeProperty(p, pProp);
-        }
-    }
 }
 
 /*--------------------------------------------------------------------------
