@@ -195,8 +195,8 @@ struct CssMediaRule {
  * structure.
  */
 struct CssPriority {
-    int important;           /* True if !IMPORTANT flag is set */
-    int origin;              /* One of CSS_ORIGIN_AGENT, _AUTHOR or _USER */ 
+    u8 important;            /* True if !IMPORTANT flag is set */
+    u8 origin;               /* One of CSS_ORIGIN_AGENT, _AUTHOR or _USER */ 
     Tcl_Obj *pIdTail;        /* Tail of the stylesheet id */
     int iPriority;
     CssPriority *pNext;      /* Linked list pointer */

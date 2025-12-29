@@ -3521,23 +3521,20 @@ applyRule (HtmlTree *pTree, HtmlNode *pNode, CssRule *pRule, int *aPropDone, cha
  *--------------------------------------------------------------------------
  */
 static CssRule *
-nextRule (CssRule **apRule, int n)
+nextRule (CssRule **apRule, unsigned int n)
 {
     CssRule **ppRule = 0;
     CssRule *pRet = 0;
-    int i;
 
-    for (i = 0; i < n; i++) {
+    for (unsigned int i = 0; i < n; i++) {
         if (apRule[i] && (ppRule == 0 || ruleCompare(apRule[i], *ppRule) > 0)) {
             ppRule = &apRule[i];
         }
     }
-
     if (ppRule) {
         pRet = *ppRule;
         *ppRule = (*ppRule)->pNext;
     }
-
     return pRet;
 }
 
@@ -3574,7 +3571,7 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
     CssRule *pRule;                           /* Iterator variable */
 
     /* Boolean: set after considering the inline-style information */
-    int isStyleDone = 0;
+    unsigned char isStyleDone = 0;
 
     HtmlComputedValuesCreator sCreator;
 
@@ -3590,22 +3587,22 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
     char const *zIdAttr;               /* Value of node "id" attribute */
 
     CssRule *apRule[MAX_CLASSES + 2];  /* Array of applicable rules lists. */
-    int npRule;
+    unsigned int nRule;
 
-    int nSelectorMatch = 0;
-    int nSelectorTest = 0;
+    unsigned int nSelectorMatch = 0;
+    unsigned int nSelectorTest = 0;
 
     HtmlElementNode *pElem = HtmlNodeAsElement(pNode);
     assert(pElem);
 
     /* The universal rules list applies to all nodes */
     apRule[0] = pStyle->pUniversalRules;
-    npRule = 1;
+    nRule = 1;
 
     /* Find the applicable "by-tag" rules list, if any. */
     pEntry = Tcl_FindHashEntry(&pStyle->aByTag, pNode->zTag);
     if (pEntry) {
-        apRule[npRule++] = Tcl_GetHashValue(pEntry);
+        apRule[nRule++] = Tcl_GetHashValue(pEntry);
     }
 
     /* Find a rules list for the element id, if any */
@@ -3613,19 +3610,19 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
     if (zIdAttr) {
         pEntry = Tcl_FindHashEntry(&pStyle->aById, zIdAttr);
         if (pEntry) {
-            apRule[npRule++] = (CssRule *)Tcl_GetHashValue(pEntry);
+            apRule[nRule++] = (CssRule *)Tcl_GetHashValue(pEntry);
         }
     }
 
     /* Find a rules list for each class the element belongs to */
     zClassAttr = HtmlNodeAttr(pNode, "class");
     if (zClassAttr) {
-        int nClass;
+        unsigned int nClass;
         char const *zClass = zClassAttr;
         char zTerm[MAX_CLASS_NAME];
 
         while (
-            npRule < (MAX_CLASSES + 2) &&
+            nRule < (MAX_CLASSES + 2) &&
             (zClass = HtmlCssGetNextListItem(zClass, strlen(zClass), &nClass))
         ) {
             strncpy(zTerm, zClass, MIN(MAX_CLASS_NAME, nClass));
@@ -3634,7 +3631,7 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
 
             pEntry = Tcl_FindHashEntry(&pStyle->aByClass, zTerm);
             if (pEntry) {
-                apRule[npRule++] = (CssRule *)Tcl_GetHashValue(pEntry);
+                apRule[nRule++] = (CssRule *)Tcl_GetHashValue(pEntry);
             }
         }
     }
@@ -3656,7 +3653,7 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
      * earlier in the list have a higher priority than those that occur later.
      */
     for (
-        pRule = nextRule(apRule, npRule); pRule; pRule = nextRule(apRule, npRule)
+        pRule = nextRule(apRule, nRule); pRule; pRule = nextRule(apRule, nRule)
     ) {
         CssPriority *pPriority = pRule->pPriority;
         CssSelector *pSelector = pRule->pSelector;
