@@ -136,10 +136,15 @@ def make():
     else:
         run_command(["make"])
 
-print("Welcome to TkinterWeb's TkHtml3.1 compile script. Note that for this to succeed you will need tcl-dev, tk-dev, cairo, gcc, and make installed on your system.")
+print("Welcome to TkinterWeb's TkHtml3.1 compile script. For this to succeed you will need tcl-dev, tk-dev, gcc, and make installed on your system.")
+
+if not disable_cairo:
+    print("""\nCairo graphics support is enabled, adding support for the CSS border-radius property. 
+Cairo is not part of Tcl/Tk and must be installed on your system.
+To disable Cairo support, re-run this script with the additional option --disable-cairo.""")
 
 if mode == "ask":
-    mode = input("""Please enter an option:
+    mode = input("""\nPlease enter an option:
    C: update CSS support, run the configure script to generate a makefile, and build and test your binary
    T: test the binary
    Any other key: build and test your binary and only run the configure script if the build directory does not exist
