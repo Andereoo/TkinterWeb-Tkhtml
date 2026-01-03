@@ -26,7 +26,7 @@ __title__ = 'TkinterWeb-Tkhtml'
 __author__ = "Andrew Clarke"
 __copyright__ = "Copyright (c) 2025 Andrew Clarke"
 __license__ = "MIT"
-__version__ = '2.1.0'
+__version__ = '2.1.1'
 
 
 # --- Begin universal sdist ---------------------------------------------------
@@ -80,7 +80,7 @@ else:
     HELP_MESSAGE_EXP = f"Download https://github.com/Andereoo/TkinterWeb-Tkhtml/tree/experimental and run 'python compile.py' to compile Tkhtml. \
 Copy the binary into {TKHTML_ROOT_DIR}, adding 'exp' after the filename (eg. 'libTkhtml3.1exp.dll')"
 
-HELP_MESSAGE = f"Download https://github.com/Andereoo/TkinterWeb-Tkhtml/tree/3.1-TclTk9 and run 'python compile.py --install' to compile and install Tkhtml. If you think this is a bug, consider filing a bug report."
+HELP_MESSAGE = f"Download https://github.com/Andereoo/TkinterWeb-Tkhtml and run 'python compile.py --install' to compile and install Tkhtml. If you think this is a bug, consider filing a bug report."
 
 
 def get_tkhtml_file(version=None, index=-1, experimental=False):
