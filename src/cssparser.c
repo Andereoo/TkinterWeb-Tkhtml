@@ -827,27 +827,22 @@ static int parseDeclarationBlock(CssInput *pInput, CssParse *pParse){
  *---------------------------------------------------------------------------
  */
 static int 
-parseMediaList(CssInput *pInput, CssParse *pParse, unsigned char *pIsMatch)
+parseMediaList(CssInput *pInput, CssParse *pParse)
 {
-    unsigned char media_ok = 0;
     while (1) {
         CssToken t; // Get current query after at-rule
         if (inputGetToken(pInput, &t.z, &t.n) != CT_IDENT) return 1; // Parse all queries after at-rule, if matches: macros are added to array.
         if (t.n == 3 && strnicmp("all", t.z, t.n) == 0) {
 			HtmlCssMediaQuery(pParse, CSS_MEDIA_ALL);
-			media_ok = 1;
         } else if (t.n == 5 && strnicmp("print", t.z, t.n) == 0) {
 			HtmlCssMediaQuery(pParse, CSS_MEDIA_PRINT);
-			media_ok = 1;
         } else if (t.n == 6 && strnicmp("screen", t.z, t.n) == 0) {
 			HtmlCssMediaQuery(pParse, CSS_MEDIA_SCREEN);
-			media_ok = 1;
         }
         inputNextTokenIgnoreSpace(pInput); // Get next query, if is not a comma then stop.
 		if (CT_COMMA != inputGetToken(pInput, 0, 0)) break;
         inputNextTokenIgnoreSpace(pInput);
     };
-    *pIsMatch = media_ok;
     return 0;
 }
 
@@ -872,7 +867,6 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
     if (t.n == 6 && strnicmp("import", t.z, t.n) == 0) {
         CssTokenType eToken;
         CssToken tToken;
-        unsigned char media_ok = 1;
         /* If we are already into the stylesheet "body", this is a syntax error */
         if (pParse->isBody) return 1;
         inputNextTokenIgnoreSpace(pInput);
@@ -883,21 +877,20 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
         inputNextTokenIgnoreSpace(pInput);
         eToken = inputGetToken(pInput, 0, 0);
         if (eToken != CT_SEMICOLON && eToken != CT_EOF) {
-            if (parseMediaList(pInput, pParse, &media_ok)) return 1;
+            if (parseMediaList(pInput, pParse)) return 1;
         }
   
         eToken = inputGetToken(pInput, 0, 0);
         if (eToken != CT_SEMICOLON && eToken != CT_EOF) return 1;
   
-        if (media_ok) HtmlCssImport(pParse, &tToken);
+        if (pParse->pQuery) HtmlCssImport(pParse, &tToken);
     } else if (t.n == 5 && strnicmp("media", t.z, t.n) == 0) {
-        unsigned char media_ok;
         pParse->isBody = 1;
         inputNextTokenIgnoreSpace(pInput);
-        if (parseMediaList(pInput, pParse, &media_ok)) return 1;
+        if (parseMediaList(pInput, pParse)) return 1;
         if (CT_LP != inputGetToken(pInput, 0, 0)) return 1;
 
-        if (!media_ok) {  /* The media does not match. Skip tokens until the end of the block. */
+        if (!pParse->pQuery) {  /* The media does not match. Skip tokens until the end of the block. */
             int iNest = 1;
             while (
                 (inputGetToken(pInput, 0, 0) != CT_EOF) &&
