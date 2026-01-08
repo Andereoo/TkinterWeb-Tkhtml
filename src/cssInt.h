@@ -159,8 +159,7 @@ struct CssRule {
     int specificity;         /* Specificity of the selector */
     int iRule;               /* Rule-number within source style sheet */
     CssSelector *pSelector;  /* The selector-chain for this rule */
-    int freePropertySets;          /* True to delete pPropertySet */
-    int freeSelector;              /* True to delete pSelector */
+    u8 freeWhat;             /* Flags to delete pPropertySet and to delete pSelector */
     CssPropertySet *pPropertySet;  /* Property values for the rule. */
 	CssMediaRule *pAtRule;         /* NULL = top-level rule */
     CssRule *pNext;                /* Next rule in this list. */
@@ -237,7 +236,7 @@ struct CssParse {
     CssStyleSheet *pStyle;
 
     CssSelector *pSelector;         /* Selector currently being parsed */
-    int nXtra;
+    unsigned int nXtra;
     CssSelector **apXtraSelector;   /* Selectors also waiting for prop set. */
 
     CssSelector *pQuery;            /* Current media query chain being built */

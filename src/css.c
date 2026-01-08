@@ -2438,14 +2438,16 @@ HtmlCssInlineParse(
  *
  *---------------------------------------------------------------------------
  */
-static void 
-ruleFree (CssRule *pRule)
+#define FREE_SELECTOR    0x00000001
+#define FREE_PROPERTYSET 0x00000002
+#define FREE_BOTH        0x00000003
+static void ruleFree (CssRule *pRule)
 {
     if (pRule) {
-        if (pRule->freeSelector) {
+        if (pRule->freeWhat & FREE_SELECTOR) {
             selectorFree(pRule->pSelector);
         }
-        if (pRule->freePropertySets) {
+        if (pRule->freeWhat & FREE_PROPERTYSET) {
             propertySetFree(pRule->pPropertySet);
         }
         HtmlFree(pRule);
@@ -2866,9 +2868,6 @@ insertRule (CssRule **ppList, CssRule *pRule)
  *
  *---------------------------------------------------------------------------
  */
-#define FREE_SELECTOR    0x00000001
-#define FREE_PROPERTYSET 0x00000002
-#define FREE_BOTH        0x00000003
 static void 
 cssSelectorPropertySetPair (CssParse *pParse, CssSelector *pSelector, CssPropertySet *pPropertySet, unsigned int freeWhat)
 {
@@ -2879,12 +2878,7 @@ cssSelectorPropertySetPair (CssParse *pParse, CssSelector *pSelector, CssPropert
 
     assert(pPropertySet && pPropertySet->n > 0);
 
-    if (freeWhat & FREE_PROPERTYSET) {
-        pRule->freePropertySets = 1;
-    }
-    if (freeWhat & FREE_SELECTOR) {
-        pRule->freeSelector = 1;
-    }
+    if (freeWhat) pRule->freeWhat = freeWhat;
 
     /* Calculate the specificity of the rules. We use the following
      * formala:
@@ -3037,8 +3031,7 @@ HtmlCssRule (CssParse *pParse, int success)
     CssPropertySet *pPropertySet = pParse->pPropertySet;
     CssPropertySet *pImportant = pParse->pImportant;
     CssSelector **apXtraSelector = pParse->apXtraSelector;
-    int nXtra = pParse->nXtra;
-    int i;
+    unsigned int nXtra = pParse->nXtra, i;
 
 #if TRACE_PARSER_CALLS
     printf("HtmlCssRule(%p, %d)\n", pParse, success);
@@ -3056,19 +3049,17 @@ HtmlCssRule (CssParse *pParse, int success)
     if (success && !pParse->isIgnore && pSelector && (pPropertySet || pImportant))
     {
         if (pPropertySet) {
-            unsigned int flags = FREE_BOTH;
-            cssSelectorPropertySetPair(pParse, pSelector, pPropertySet, flags);
+            cssSelectorPropertySetPair(pParse, pSelector, pPropertySet, FREE_BOTH);
             for (i = 0; i < nXtra; i++){
-                unsigned int flags2 = FREE_SELECTOR;
                 CssSelector *pS = apXtraSelector[i];
-                cssSelectorPropertySetPair(pParse, pS, pPropertySet, flags2);
+                cssSelectorPropertySetPair(pParse, pS, pPropertySet, FREE_SELECTOR);
             }
         }
         if (pImportant) {
-            unsigned int flags = (pPropertySet ? FREE_PROPERTYSET : FREE_BOTH);
+            u8 flags = (pPropertySet ? FREE_PROPERTYSET : FREE_BOTH);
             cssSelectorPropertySetPair(pParse, pSelector, pImportant, flags);
             for (i = 0; i < nXtra; i++){
-                unsigned int flags2 = (pPropertySet ? 0 : FREE_SELECTOR);
+                u8 flags2 = (pPropertySet ? 0 : FREE_SELECTOR);
                 CssSelector *pS = apXtraSelector[i];
                 cssSelectorPropertySetPair(pParse, pS, pImportant, flags2);
             }
