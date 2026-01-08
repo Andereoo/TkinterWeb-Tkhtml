@@ -4255,8 +4255,8 @@ int WinItemToPostscript(HtmlTree *pTree, int x, int y, Tk_Window, int, Tcl_Inter
 typedef struct printingInfo {
     HtmlTree *pTree;    /* Information about overall canvas. */
     HtmlNode *pBgRoot;
-    int prepass;    /* 1 means this is a prepass to collect font information; 0 means final Postscript is being created. */
-    int nographics;
+    char prepass;    /* 1 means this is a prepass to collect font information; 0 means final Postscript is being created. */
+    char nographics;
     Tcl_Interp *interp;    /* Leave Postscript or error message here. */
     Tcl_Obj *psObj;
 } printingInfo;
@@ -4297,7 +4297,6 @@ static int HtmlPostscriptCb(
         }
         default: goto done;
     }
-
     if (pPrint->prepass || !strlen(Tcl_GetStringResult(pPrint->interp))) goto done;
     Tcl_AppendToObj(pPrint->psObj, "gsave\n", -1);
     Tcl_AppendObjToObj(pPrint->psObj, Tcl_GetObjResult(pPrint->interp));
@@ -4308,7 +4307,7 @@ static int HtmlPostscriptCb(
         return rc;
 }
 int HtmlGetPostscript(
-HtmlTree *pTree, HtmlNode *pBgRoot, int ymin, int ymax, int prepass, int nogfx, Tcl_Interp *interp, Tcl_Obj *psObj, HtmlComputedValues *pV
+HtmlTree *pTree, HtmlNode *pBgRoot, int ymin, int ymax, char prepass, char nogfx, Tcl_Interp *interp, Tcl_Obj *psObj, HtmlComputedValues *pV
 ) {
     struct printingInfo sPrint = {pTree, pBgRoot, prepass, nogfx, interp, psObj};
     return searchSortedCanvas(pTree, ymin, ymax, 0, HtmlPostscriptCb, (ClientData)&sPrint);

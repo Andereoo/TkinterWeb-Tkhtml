@@ -2751,7 +2751,7 @@ void HtmlCssMediaQuery (CssParse *pParse, int stype)
 }
 
 void HtmlCssFreeEmptyMediaRule (CssParse *p) {
-	if (p->pMediaRule && p->pMediaRule->apRules == NULL) {
+	if (p->pMediaRule && p->pMediaRule->pFirst == NULL) {
 		HtmlFree(p->pMediaRule);
 	}
 }
@@ -3005,7 +3005,7 @@ cssSelectorPropertySetPair (CssParse *pParse, CssSelector *pSelector, CssPropert
     }
 	if (pParse->pMediaRule != NULL) { // If currently inside a media at-rule
 		pRule->pAtRule = pParse->pMediaRule;
-		if (pParse->pMediaRule->apRules == NULL) pParse->pMediaRule->apRules = pRule;
+		if (pParse->pMediaRule->pFirst == NULL) pParse->pMediaRule->pFirst = pRule;
 		pParse->pMediaRule->pLast = pRule;
 	}
 
@@ -3663,11 +3663,11 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
         /* The contents of the "style" attribute, if one exists, are handled
          * after the important rules but before anything else. This is because:
          * 
-     *     (a) CSS 2.1, in section 6.4.3 says that a style attribute has
-     *         the maximum possible specificity, and
-     *     (b) Tkhtml assumes the style attribute resides on the author
-     *         stylesheet, with no !important flag - hence, according to
-     *         section 6.4.1 it is handled just after the !important stuff.
+         *     (a) CSS 2.1, in section 6.4.3 says that a style attribute has
+         *         the maximum possible specificity, and
+         *     (b) Tkhtml assumes the style attribute resides on the author
+         *         stylesheet, with no !important flag - hence, according to
+         *         section 6.4.1 it is handled just after the !important stuff.
          */
         if (!isStyleDone && !pPriority->important) {
             isStyleDone = 1;
