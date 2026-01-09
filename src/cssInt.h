@@ -40,7 +40,6 @@
 #define __CSSINT_H__
 
 #include "css.h"
-#include <tcl.h>
 
 typedef struct CssSelector CssSelector;
 typedef struct CssRule CssRule;
@@ -161,7 +160,6 @@ struct CssRule {
     CssSelector *pSelector;  /* The selector-chain for this rule */
     u8 freeWhat;             /* Flags to delete pPropertySet and to delete pSelector */
     CssPropertySet *pPropertySet;  /* Property values for the rule. */
-	CssMediaRule *pAtRule;         /* NULL = top-level rule */
     CssRule *pNext;                /* Next rule in this list. */
 };
 
@@ -212,7 +210,7 @@ struct CssPriority {
  * list accessible by looking up "h1" in the rules hash table.
  */
 struct CssStyleSheet {
-    int nSyntaxErr;           /* Number of syntax errors during parsing */
+    u32 nSyntaxErr;            /* Number of syntax errors during parsing */
     CssPriority *pPriority;
 
     CssRule *pUniversalRules;  /* Rules that do not belong to any other list */
@@ -236,7 +234,7 @@ struct CssParse {
     CssStyleSheet *pStyle;
 
     CssSelector *pSelector;         /* Selector currently being parsed */
-    unsigned int nXtra;
+    u32 nXtra;
     CssSelector **apXtraSelector;   /* Selectors also waiting for prop set. */
 
     CssSelector *pQuery;            /* Current media query chain being built */

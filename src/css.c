@@ -3002,7 +3002,6 @@ cssSelectorPropertySetPair (CssParse *pParse, CssSelector *pSelector, CssPropert
         insertRule(&pStyle->pUniversalRules, pRule);
     }
 	if (pParse->pMediaRule != NULL) { // If currently inside a media at-rule
-		pRule->pAtRule = pParse->pMediaRule;
 		if (pParse->pMediaRule->pFirst == NULL) pParse->pMediaRule->pFirst = pRule;
 		pParse->pMediaRule->pLast = pRule;
 	}
@@ -3422,31 +3421,28 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int flags)
  *     Test if a selector-query matches a document state.
  *
  * Results:
- *     Non-zero is returned if the selector-query matchs the state or the rule is not inside an at-rule.
+ *     Non-zero is returned if the selector-query matchs the state.
  *
  * Side effects:
  *     None.
  *
  *--------------------------------------------------------------------------
  */
-int HtmlCssMediaTest (CssRule *pRule, HtmlTree *pTree)
+int HtmlCssMediaTest (CssMediaRule *pAtRule, HtmlTree *pTree)
 {
 	CssSelector *p;
-	if (pRule->pAtRule == NULL) return 1;
-    for (p = pRule->pAtRule->pQuery; p; p = p->pNext) {
+    for (p = pAtRule->pQuery; p; p = p->pNext) {
         switch (p->eSelector) {
             case CSS_MEDIA_ALL: break;
-
             case CSS_MEDIA_PRINT:
-				if (!pTree->isPrintedMedia) return 0;
-				break;
-
+                if (!pTree->isPrintedMedia) return 0;
+                break;
             case CSS_MEDIA_SCREEN:
-				if (pTree->isPrintedMedia) return 0;
-				break;
+                if (pTree->isPrintedMedia) return 0;
+                break;
         }
     }
-	return !p ? 1 : 0;
+	return !p;
 }
 
 /*--------------------------------------------------------------------------
@@ -3468,7 +3464,6 @@ int HtmlCssMediaTest (CssRule *pRule, HtmlTree *pTree)
 static int 
 applyRule (HtmlTree *pTree, HtmlNode *pNode, CssRule *pRule, int *aPropDone, char **pzIfMatch, HtmlComputedValuesCreator *pCreator)
 {
-	if (!HtmlCssMediaTest(pRule, pTree)) return 0; // Tell if rule is part of a media at-rule, if so: then test is against the query
     /* Test if the selector matches the node. Variable isMatch is set to
      * true if the selector matches, or false otherwise. 
      */
@@ -3566,7 +3561,7 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
     CssRule *pRule;                           /* Iterator variable */
 
     /* Boolean: set after considering the inline-style information */
-    unsigned char isStyleDone = 0;
+    u8 isStyleDone = 0;
 
     HtmlComputedValuesCreator sCreator;
 
@@ -3582,10 +3577,8 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
     char const *zIdAttr;               /* Value of node "id" attribute */
 
     CssRule *apRule[MAX_CLASSES + 2];  /* Array of applicable rules lists. */
-    unsigned int nRule;
-
-    unsigned int nSelectorMatch = 0;
-    unsigned int nSelectorTest = 0;
+    u32 nRule;
+    u32 nSelectorMatch = 0, nSelectorTest = 0;
 
     HtmlElementNode *pElem = HtmlNodeAsElement(pNode);
     assert(pElem);
@@ -3612,7 +3605,7 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
     /* Find a rules list for each class the element belongs to */
     zClassAttr = HtmlNodeAttr(pNode, "class");
     if (zClassAttr) {
-        unsigned int nClass;
+        u32 nClass;
         char const *zClass = zClassAttr;
         char zTerm[MAX_CLASS_NAME];
 
@@ -3644,6 +3637,7 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
      */
     overrideToPropertyValues(&sCreator, aPropDone, pElem->pOverride);
 
+	CssMediaRule *pMedia = pStyle->pMediaRules;
     /* Loop through the list of CSS rules in the stylesheet. Rules that occur
      * earlier in the list have a higher priority than those that occur later.
      */
@@ -3669,7 +3663,12 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
             if (pElem->pStyle) {
                 propertySetToPropertyValues(&sCreator, aPropDone, pElem->pStyle);
             }
-        }
+        } // Tell if rule is part of a media at-rule, if so: then test is against the query
+		if (pMedia && pMedia->pFirst==pRule && !HtmlCssMediaTest(pMedia, pTree)) {
+			pRule = pMedia->pLast->pNext;
+			pMedia = pMedia->pNext;
+			continue;
+		}
 
         /* If the selector is a match for our node, apply the rule properties */
         nSelectorMatch += applyRule(pTree, pNode, pRule, aPropDone, (char **)0, &sCreator);
