@@ -866,11 +866,10 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
   
     if (t.n == 6 && strnicmp("import", t.z, t.n) == 0) {
         CssTokenType eToken;
-        CssToken tToken;
         /* If we are already into the stylesheet "body", this is a syntax error */
         if (pParse->isBody) return 1;
         inputNextTokenIgnoreSpace(pInput);
-        eToken = inputGetToken(pInput, &tToken.z, &tToken.n);
+        eToken = inputGetToken(pInput, &t.z, &t.n);
         if (eToken != CT_STRING && eToken != CT_FUNCTION) {
             return 1;
         }
@@ -879,11 +878,10 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
         if (eToken != CT_SEMICOLON && eToken != CT_EOF) {
             if (parseMediaList(pInput, pParse)) return 1;
         }
-  
         eToken = inputGetToken(pInput, 0, 0);
         if (eToken != CT_SEMICOLON && eToken != CT_EOF) return 1;
   
-        if (pParse->pQuery) HtmlCssImport(pParse, &tToken);
+        if (pParse->pQuery) HtmlCssImport(pParse, &t);
     } else if (t.n == 5 && strnicmp("media", t.z, t.n) == 0) {
         pParse->isBody = 1;
         inputNextTokenIgnoreSpace(pInput);
@@ -905,6 +903,7 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
 			pAtRule->pNext = pParse->pMediaRule;
 			pParse->pMediaRule = pAtRule;
 			pAtRule->pQuery = pParse->pQuery;
+			pParse->pQuery = NULL;
 		}
     //} else if (t.n == 4 && strnicmp("page", t.z, t.n) == 0) {
         
@@ -967,7 +966,7 @@ HtmlCssRunParser (const char *zInput, int nInput, CssParse *pParse)
                 isSyntaxError = 0;  // The next 5 lines are to end the parsing of an at-rule
 				if (pParse->pQuery) pParse->pQuery = NULL;
 				if (pParse->pMediaRule) {
-					HtmlCssFreeEmptyMediaRule(pParse);
+					HtmlCssMediaRule(pParse);
 					pParse->pMediaRule = NULL;
 				}
 				break;

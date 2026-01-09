@@ -278,7 +278,7 @@ void HtmlCssRule(CssParse *, int);
 void HtmlCssSelectorComma(CssParse *pParse);
 void HtmlCssImport(CssParse *pParse, CssToken *);
 void HtmlCssMediaQuery(CssParse *, int);
-void HtmlCssFreeEmptyMediaRule(CssParse *);
+void HtmlCssMediaRule(CssParse *);
 void HtmlCssFreeErrorMediaQuery(CssParse *);
 
 /* Test if a selector matches a node */

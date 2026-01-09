@@ -2752,9 +2752,13 @@ void HtmlCssMediaQuery (CssParse *pParse, int stype)
     pParse->pQuery = pQuery;
 }
 
-void HtmlCssFreeEmptyMediaRule (CssParse *p) {
+void HtmlCssMediaRule (CssParse *p) {
 	if (p->pMediaRule && p->pMediaRule->pFirst == NULL) {
+		HtmlCssFreeErrorMediaQuery(p);
 		HtmlFree(p->pMediaRule);
+	} else {
+		p->pMediaRule->pNext = p->pStyle->pMediaRules;
+		p->pStyle->pMediaRules = p->pMediaRule;
 	}
 }
 
