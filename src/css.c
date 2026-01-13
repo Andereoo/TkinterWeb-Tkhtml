@@ -2720,7 +2720,7 @@ HtmlCssSelector (
     dequote(pSelector->zValue);
 
     /* Tag names are case-insensitive - fold to lower case */
-    if( stype==CSS_SELECTOR_TYPE ){
+    if (stype==CSS_SELECTOR_TYPE) {
         assert(pSelector->zValue);
         Tcl_UtfToLower(pSelector->zValue);
     }
@@ -2728,7 +2728,7 @@ HtmlCssSelector (
 
 /*--------------------------------------------------------------------------
  *
- * HtmlCssSelector --
+ * HtmlCssMediaQuery --
  *
  *     This is called whenever a query selector is parsed. i.e. "all" or "screen".
  *
@@ -2753,17 +2753,16 @@ void HtmlCssMediaQuery (CssParse *pParse, int stype)
 }
 
 void HtmlCssMediaRule (CssParse *p) {
-	if (p->pMediaRule && p->pMediaRule->pFirst == NULL) {
-		HtmlCssFreeErrorMediaQuery(p);
-		HtmlFree(p->pMediaRule);
-	} else {
-		p->pMediaRule->pNext = p->pStyle->pMediaRules;
-		p->pStyle->pMediaRules = p->pMediaRule;
-	}
+	CssMediaRule *pAtRule = HtmlNew(CssMediaRule);
+	pAtRule->pNext = p->pStyle->pMediaRules;
+	p->pStyle->pMediaRules = pAtRule;
+	pAtRule->pQuery = p->pQuery;
+	p->pQuery = NULL;
 }
 
-void HtmlCssFreeErrorMediaQuery (CssParse *p) {
+void HtmlCssFreeMediaQuery (CssParse *p) {
 	selectorFree(p->pQuery);
+	p->pQuery = NULL;
 }
 
 /*
@@ -2818,7 +2817,7 @@ ruleCompare(CssRule *pLeft, CssRule *pRight) {
                  * priority rule is the one that appeared later in the 
                  * source stylesheet.
                  */
-        res = pLeft->iRule - pRight->iRule;
+				res = pLeft->iRule - pRight->iRule;
             }
         }
     }
@@ -3001,10 +3000,6 @@ cssSelectorPropertySetPair (CssParse *pParse, CssSelector *pSelector, CssPropert
     } else {
         insertRule(&pStyle->pUniversalRules, pRule);
     }
-	if (pParse->pMediaRule != NULL) { // If currently inside a media at-rule
-		if (pParse->pMediaRule->pFirst == NULL) pParse->pMediaRule->pFirst = pRule;
-		pParse->pMediaRule->pLast = pRule;
-	}
 
     pRule->pSelector = pSelector;
     pRule->pPropertySet = pPropertySet;
@@ -3034,7 +3029,7 @@ HtmlCssRule (CssParse *pParse, int success)
     CssPropertySet *pPropertySet = pParse->pPropertySet;
     CssPropertySet *pImportant = pParse->pImportant;
     CssSelector **apXtraSelector = pParse->apXtraSelector;
-    unsigned int nXtra = pParse->nXtra, i;
+    u32 nXtra = pParse->nXtra, i;
 
 #if TRACE_PARSER_CALLS
     printf("HtmlCssRule(%p, %d)\n", pParse, success);
@@ -3428,10 +3423,11 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int flags)
  *
  *--------------------------------------------------------------------------
  */
-int HtmlCssMediaTest (CssMediaRule *pAtRule, HtmlTree *pTree)
+int HtmlCssMediaTest (CssRule *pRule, HtmlTree *pTree)
 {
 	CssSelector *p;
-    for (p = pAtRule->pQuery; p; p = p->pNext) {
+    for (p = pRule->pSelector; p; p = p->pNext) {
+		if (p->eSelector < CSS_MEDIA_ALL) continue;
         switch (p->eSelector) {
             case CSS_MEDIA_ALL: break;
             case CSS_MEDIA_PRINT:
@@ -3464,6 +3460,7 @@ int HtmlCssMediaTest (CssMediaRule *pAtRule, HtmlTree *pTree)
 static int 
 applyRule (HtmlTree *pTree, HtmlNode *pNode, CssRule *pRule, int *aPropDone, char **pzIfMatch, HtmlComputedValuesCreator *pCreator)
 {
+	if (!HtmlCssMediaTest(pRule, pTree)) return 0; // Tell if rule is part of a media at-rule, if so: then test is against the query
     /* Test if the selector matches the node. Variable isMatch is set to
      * true if the selector matches, or false otherwise. 
      */
@@ -3662,12 +3659,7 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
             if (pElem->pStyle) {
                 propertySetToPropertyValues(&sCreator, aPropDone, pElem->pStyle);
             }
-        } // Tell if rule is part of a media at-rule, if so: then test is against the query
-		if (pMedia && pMedia->pFirst==pRule && !HtmlCssMediaTest(pMedia, pTree)) {
-			pRule = pMedia->pLast->pNext;
-			pMedia = pMedia->pNext;
-			continue;
-		}
+        }
 
         /* If the selector is a match for our node, apply the rule properties */
         nSelectorMatch += applyRule(pTree, pNode, pRule, aPropDone, (char **)0, &sCreator);
@@ -3842,6 +3834,7 @@ HtmlCssSelectorComma (CssParse *pParse)
     pParse->apXtraSelector[pParse->nXtra] = pParse->pSelector;
     pParse->pSelector = 0;
     pParse->nXtra++;
+	if(pParse->pQuery) HtmlCssSelector(pParse, pParse->pQuery->eSelector, NULL, NULL);
 }
 
 /*

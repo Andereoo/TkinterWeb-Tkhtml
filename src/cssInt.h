@@ -165,8 +165,6 @@ struct CssRule {
 
 struct CssMediaRule {
 	CssSelector *pQuery;  /* The selector-chain for this rule */
-	CssRule *pFirst;      /* The CSS rules inside this media rule (currently unused) */
-	CssRule *pLast;       /* The last rule inside this media rule */
 	CssMediaRule *pNext;  /* Next media rule in this list. */
 };
 
@@ -277,7 +275,7 @@ void HtmlCssSelectorComma(CssParse *pParse);
 void HtmlCssImport(CssParse *pParse, CssToken *);
 void HtmlCssMediaQuery(CssParse *, int);
 void HtmlCssMediaRule(CssParse *);
-void HtmlCssFreeErrorMediaQuery(CssParse *);
+void HtmlCssFreeMediaQuery(CssParse *);
 
 /* Test if a selector matches a node */
 int HtmlCssSelectorTest(CssSelector *, HtmlNode *, int);

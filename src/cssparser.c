@@ -437,10 +437,7 @@ parseSyntaxError (
         eToken = inputGetToken(pInput, 0, 0);
     }
     iErrorLength = pInput->iInput - iErrorStart;
-	if (isStopAtSemiColon && pParse->pQuery) {
-		HtmlCssFreeErrorMediaQuery(pParse);
-		pParse->pQuery = NULL;
-	}
+	if (isStopAtSemiColon && pParse->pQuery) HtmlCssFreeMediaQuery(pParse);
 
     if (pParse->pErrorLog) {
         Tcl_Obj *pError = pParse->pErrorLog;
@@ -518,6 +515,7 @@ parseDeclarationError (CssInput *pInput, CssParse *pParse)
 static int 
 parseSelector (CssInput *pInput, CssParse *pParse)
 {
+	if(pParse->pQuery) HtmlCssSelector(pParse, pParse->pQuery->eSelector, NULL, NULL);
     while (1) {
         const char *zToken;
         int nToken;
@@ -881,7 +879,10 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
         eToken = inputGetToken(pInput, 0, 0);
         if (eToken != CT_SEMICOLON && eToken != CT_EOF) return 1;
   
-        if (pParse->pQuery) HtmlCssImport(pParse, &t);
+        if (pParse->pQuery) {
+			HtmlCssImport(pParse, &t);
+			HtmlCssFreeMediaQuery(pParse);
+		}
     } else if (t.n == 5 && strnicmp("media", t.z, t.n) == 0) {
         pParse->isBody = 1;
         inputNextTokenIgnoreSpace(pInput);
@@ -898,13 +899,8 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
                 if (inputGetToken(pInput, 0, 0) == CT_RP) iNest--;
                 inputNextToken(pInput);
             }
-        } else { // Add new At-rule to stylesheet parser
-			CssMediaRule *pAtRule = HtmlNew(CssMediaRule);
-			pAtRule->pNext = pParse->pMediaRule;
-			pParse->pMediaRule = pAtRule;
-			pAtRule->pQuery = pParse->pQuery;
-			pParse->pQuery = NULL;
-		}
+			HtmlCssFreeMediaQuery(pParse);
+        }
     //} else if (t.n == 4 && strnicmp("page", t.z, t.n) == 0) {
         
     } else if (t.n == 7 && strnicmp("charset", t.z, t.n) == 0) {
@@ -955,7 +951,7 @@ HtmlCssRunParser (const char *zInput, int nInput, CssParse *pParse)
      * is either an at-rule or a declaration.
      */
     while (0 == inputNextTokenIgnoreSpace(&sInput)) {
-        int isSyntaxError;
+        u8 isSyntaxError;
 
         eToken = inputGetToken(&sInput, 0, 0);
         switch (eToken) {
@@ -963,12 +959,8 @@ HtmlCssRunParser (const char *zInput, int nInput, CssParse *pParse)
             case CT_SGML_CLOSE:
                 isSyntaxError = 0; break;
             case CT_RP:
-                isSyntaxError = 0;  // The next 5 lines are to end the parsing of an at-rule
-				if (pParse->pQuery) pParse->pQuery = NULL;
-				if (pParse->pMediaRule) {
-					HtmlCssMediaRule(pParse);
-					pParse->pMediaRule = NULL;
-				}
+                isSyntaxError = 0;  // The next lines are to end the parsing of an at-rule
+				if (pParse->pQuery) HtmlCssMediaRule(pParse);
 				break;
             case CT_AT:
                 isSyntaxError = parseAtRule(&sInput, pParse); break;
