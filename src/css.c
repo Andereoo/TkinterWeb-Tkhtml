@@ -3552,7 +3552,6 @@ nextRule (CssRule **apRule, unsigned int n)
 void 
 HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode) 
 {
-
     /* The two hard coded constants mentioned above */
     #define MAX_CLASSES    126
     #define MAX_CLASS_NAME 128
@@ -3730,8 +3729,10 @@ generatedContent (
     sCreator.pzContent = &zContent;
     for (pRule = pCssRule; pRule; pRule = pRule->pNext) {
         char **pz = (have ? 0 : (&zContent));
-        int isMatch = applyRule(pTree, pNode, pRule, aPropDone, pz, &sCreator);
-        if (isMatch) have = 1;
+        if (applyRule(pTree, pNode, pRule, aPropDone, pz, &sCreator)) have = 1;
+        if (pRule->pSelector->isDynamic && HtmlCssSelectorTest(pRule->pSelector, pNode, 1)) {
+            HtmlCssAddDynamic((HtmlElementNode*)pNode, pRule->pSelector, 0);
+        }
     }
     if (have) {
         pValues = HtmlComputedValuesFinish(&sCreator);
