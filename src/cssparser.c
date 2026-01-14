@@ -711,10 +711,17 @@ parseSelector (CssInput *pInput, CssParse *pParse)
                 break;
             }
             case CT_COMMA: {
-            if( !pParse->pSelector ){
-                  goto syntax_error;
-                }
-                HtmlCssSelectorComma(pParse);
+				if(!pParse->pSelector) goto syntax_error;
+				if(!pParse->isIgnore) {  /* Do nothing if the isIgnore flag is set */
+					pParse->apXtraSelector = (CssSelector **)HtmlRealloc(
+						   "CssParse.apXtraSelector", (char *)pParse->apXtraSelector, 
+						   (pParse->nXtra + 1) * sizeof(CssSelector *)
+					);
+					pParse->apXtraSelector[pParse->nXtra] = pParse->pSelector;
+					pParse->pSelector = NULL;
+					pParse->nXtra++;
+					if(pParse->pQuery) HtmlCssSelector(pParse, pParse->pQuery->eSelector, NULL, NULL);
+				}
                 if (CT_SPACE == eNext) inputNextToken(pInput);
                 break;
             }
@@ -722,7 +729,6 @@ parseSelector (CssInput *pInput, CssParse *pParse)
             default: goto syntax_error;
         }
     }
-
   syntax_error:
     return 1;
 }
@@ -926,7 +932,6 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
  *     Calls the following functions from css.c:
  *
  *         HtmlCssDeclaration
- *         HtmlCssSelectorComma
  *         HtmlCssSelector
  *         HtmlCssImport
  *         HtmlCssRule

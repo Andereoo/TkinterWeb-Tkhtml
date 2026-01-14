@@ -244,16 +244,16 @@ struct CssParse {
     CssPriority *pPriority1;
     CssPriority *pPriority2;
 
-    int iNextRule;                  /* iRule value for next rule */
+    u32 iNextRule;                  /* iRule value for next rule */
 
     /* The parser sets the isIgnore flag to true when it enters an @media {}
      * block that does *not* apply, and sets it back to false when it exits the
      * @media block.
      */
-    int isIgnore;                   /* True to ignore new elements */
+    u8 isIgnore;                    /* True to ignore new elements */
 
     /* In the body of a stylesheet @import directives must be ignored. */
-    int isBody;                     /* True once we are in the body */
+    u8 isBody;                      /* True once we are in the body */
 
     int origin;
     Tcl_Obj *pStyleId;
@@ -271,7 +271,6 @@ struct CssParse {
 void HtmlCssDeclaration(CssParse *, CssToken *, CssToken *, int);
 void HtmlCssSelector(CssParse *, int, CssToken *, CssToken *);
 void HtmlCssRule(CssParse *, int);
-void HtmlCssSelectorComma(CssParse *pParse);
 void HtmlCssImport(CssParse *pParse, CssToken *);
 void HtmlCssMediaQuery(CssParse *, int);
 void HtmlCssMediaRule(CssParse *);

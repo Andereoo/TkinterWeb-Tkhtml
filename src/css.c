@@ -3810,36 +3810,6 @@ HtmlCssPropertiesGet (CssProperties *pProperties, int prop, int *pSheetnum, int 
 /*
  *---------------------------------------------------------------------------
  *
- * HtmlCssSelectorComma --
- *
- * Results:
- *     None.
- *
- * Side effects:
- *     None.
- *
- *---------------------------------------------------------------------------
- */
-void 
-HtmlCssSelectorComma (CssParse *pParse)
-{
-    int n = (pParse->nXtra + 1) * sizeof(CssSelector *);
-
-    /* Do nothing if the isIgnore flag is set */
-    if (pParse->isIgnore) return;
-
-    pParse->apXtraSelector = (CssSelector **)HtmlRealloc(
-           "CssParse.apXtraSelector", (char *)pParse->apXtraSelector, n
-    );
-    pParse->apXtraSelector[pParse->nXtra] = pParse->pSelector;
-    pParse->pSelector = 0;
-    pParse->nXtra++;
-	if(pParse->pQuery) HtmlCssSelector(pParse, pParse->pQuery->eSelector, NULL, NULL);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
  * HtmlCssImport --
  *
  *     The parser calls this function when an @import directive is encountered.
