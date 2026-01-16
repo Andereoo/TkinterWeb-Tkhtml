@@ -318,6 +318,7 @@
         "OL UL, UL OL,\n" \
         "UL UL, OL OL    { margin-top: 0; margin-bottom: 0 }\n" \
         "U, INS          { text-decoration: underline }\n" \
+        "MARK            { background-color: yellow }\n" \
         "BR:before       { content: \"\\A\" ; white-space: pre }\n" \
         "/* :before, :after { white-space: pre-line } */\n" \
         "ABBR, ACRONYM   { font-variant: small-caps; letter-spacing: 0.1em }\n" \
