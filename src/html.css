@@ -142,6 +142,7 @@ OL              { list-style-type: decimal }
 OL UL, UL OL,
 UL UL, OL OL    { margin-top: 0; margin-bottom: 0 }
 U, INS          { text-decoration: underline }
+MARK            { background-color: yellow }
 BR:before       { content: "\A" ; white-space: pre }
 /* :before, :after { white-space: pre-line } */
 ABBR, ACRONYM   { font-variant: small-caps; letter-spacing: 0.1em }
