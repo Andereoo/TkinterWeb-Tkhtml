@@ -3488,7 +3488,6 @@ applyRule (HtmlTree *pTree, HtmlNode *pNode, CssRule *pRule, int *aPropDone, cha
             HtmlComputedValuesInit(pTree, pNode, pNode, pCreator);
             pCreator->pzContent = pzIfMatch;
         }
-
         /* Copy the properties from the rule into the computed values set. */
         propertySetToPropertyValues(pCreator, aPropDone, pRule->pPropertySet);
     }

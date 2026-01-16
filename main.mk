@@ -75,7 +75,7 @@ htmldefaultstyle.c: $(TOP)/src/tkhtml.tcl  $(TOP)/src/html.css $(TOP)/src/mkdefa
 	@echo '$$(TCLSH) $(TOP)/src/mkdefaultstyle.tcl > htmldefaultstyle.c'
 	@$(TCLSH) $(TOP)/src/mkdefaultstyle.tcl > htmldefaultstyle.c
 
-htmltokens.h:	$(TOP)/src/tokenlist.txt
+htmltokens.h: $(TOP)/src/tokenlist.tcl
 	@echo '$$(TCLSH) $<'
 	@$(TCLSH) $<
 

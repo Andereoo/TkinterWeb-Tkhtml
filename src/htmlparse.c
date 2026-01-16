@@ -451,7 +451,7 @@ HtmlLiContent (HtmlTree *pTree, HtmlNode *pNode, int tag)
     return TAG_PARENT;
 }
 
-/* htmltokens.c is generated from source file tokenlist.txt during the
+/* htmltokens.c is generated from source file tokenlist.tcl during the
  * build process. It contains the HtmlMarkupMap constant array, declared as:
  *
  * HtmlTokenMap HtmlMarkupMap[] = {...};

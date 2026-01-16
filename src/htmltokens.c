@@ -3,7 +3,7 @@
  * DO NOT EDIT!
  *
  * The code in this file was automatically generated. See the files
- * src/tokenlist.txt and tools/maketokens.tcl from the tkhtml source
+ * src/tokenlist.tcl and tools/maketokens.tcl from the tkhtml source
  * distribution.
  */
 

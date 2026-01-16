@@ -1085,7 +1085,7 @@ normalFlowLayoutFloat (
      * width to use for the element is described in sections 10.3.5
      * (non-replaced) and 10.3.6 (replaced) of the CSS 2.1 spec.
      */
-    do { // This part is repeated for pagination to get the Y origin of the float, it must be drawn to the cannot in order to get that.
+    do { // This part is repeated for pagination to get the Y origin of the float, it must be drawn to the canvas in order to get that.
         if (i == 1) paginationPageYOrigin(iTop, pLayout);
         if (nodeIsReplaced(pNode)) {
             /* For a replaced element, the drawReplacement() function takes care of
@@ -1685,9 +1685,7 @@ drawReplacementContent (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNod
      * PIXELVAL_AUTO. A value of less than 1 pixel that is not PIXELVAL_AUTO
      * is treated as exactly 1 pixel.
      */
-    width = PIXELVAL(
-        pV, WIDTH, pLayout->minmaxTest ? PIXELVAL_AUTO : pBox->iContainingW
-    );
+    width = PIXELVAL(pV, WIDTH, pLayout->minmaxTest ? PIXELVAL_AUTO : pBox->iContainingW);
     height = PIXELVAL(pV, HEIGHT, pLayout->minmaxTest ? PIXELVAL_AUTO : pBox->iContainingH);
     if (height != PIXELVAL_AUTO) height = MAX(height, 1);
     if (width != PIXELVAL_AUTO) width = MAX(width, 1);
@@ -3769,14 +3767,14 @@ doConfigureCmd (HtmlTree *pTree, HtmlElementNode *pElem, int iContainingW)
         if (pTmp) {
             XColor *xcolor = pTmpComputed->cBackgroundColor->xcolor;
             Tcl_ListObjAppendElement(interp, pArray, 
-                    Tcl_NewStringObj("background-color", -1)
+                    Tcl_NewStringObj("background-color", 16)
             );
             Tcl_ListObjAppendElement(interp, pArray, 
                     Tcl_NewStringObj(Tk_NameOfColor(xcolor), -1)
             );
         }
 
-        Tcl_ListObjAppendElement(interp, pArray, Tcl_NewStringObj("font",-1));
+        Tcl_ListObjAppendElement(interp, pArray, Tcl_NewStringObj("font", 4));
         Tcl_ListObjAppendElement(interp, pArray, 
                 Tcl_NewStringObj(pV->fFont->zFont, -1)
         );
@@ -3784,7 +3782,7 @@ doConfigureCmd (HtmlTree *pTree, HtmlElementNode *pElem, int iContainingW)
         /* If the 'width' attribute is not PIXELVAL_AUTO, pass it to the
          * replacement window.  */
         if (PIXELVAL_AUTO != (iWidth = PIXELVAL(pV, WIDTH, iContainingW))) {
-            Tcl_Obj *pWidth = Tcl_NewStringObj("width",-1);
+            Tcl_Obj *pWidth = Tcl_NewStringObj("width", 5);
             iWidth = MAX(iWidth, 1);
             Tcl_ListObjAppendElement(interp, pArray, pWidth);
             Tcl_ListObjAppendElement(interp, pArray, Tcl_NewIntObj(iWidth));
@@ -3793,7 +3791,7 @@ doConfigureCmd (HtmlTree *pTree, HtmlElementNode *pElem, int iContainingW)
         /* If the 'height' attribute is not PIXELVAL_AUTO, pass it to the
          * replacement window.  */
         if (PIXELVAL_AUTO != (iHeight = PIXELVAL(pV, HEIGHT, PIXELVAL_AUTO))) {
-            Tcl_Obj *pHeight = Tcl_NewStringObj("height",-1);
+            Tcl_Obj *pHeight = Tcl_NewStringObj("height", 6);
             iHeight = MAX(iHeight, 1);
             Tcl_ListObjAppendElement(interp, pArray, pHeight);
             Tcl_ListObjAppendElement(interp, pArray, Tcl_NewIntObj(iHeight));
