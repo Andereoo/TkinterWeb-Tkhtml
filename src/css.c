@@ -2724,6 +2724,12 @@ HtmlCssSelector (
         assert(pSelector->zValue);
         Tcl_UtfToLower(pSelector->zValue);
     }
+	if (pParse->pQuery) {
+		CssSelector *pQuery = HtmlNew(CssSelector);
+		pQuery->eSelector = pParse->pQuery->eSelector;
+		pQuery->pNext = pParse->pSelector;
+		pParse->pSelector = pQuery;
+	}
 }
 
 /*--------------------------------------------------------------------------
@@ -3427,7 +3433,7 @@ int HtmlCssMediaTest (CssRule *pRule, HtmlTree *pTree)
 {
 	CssSelector *p;
     for (p = pRule->pSelector; p; p = p->pNext) {
-		if (p->eSelector < CSS_MEDIA_ALL) continue;
+		if (p->eSelector < CSS_MEDIA_ALL) return 1;
         switch (p->eSelector) {
             case CSS_MEDIA_ALL: break;
             case CSS_MEDIA_PRINT:

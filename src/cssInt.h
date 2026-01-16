@@ -235,8 +235,7 @@ struct CssParse {
     u32 nXtra;
     CssSelector **apXtraSelector;   /* Selectors also waiting for prop set. */
 
-    CssSelector *pQuery;            /* Current media query chain being built */
-	CssMediaRule *pMediaRule;       /* Current @media rule (when inside block) */
+    CssSelector *pQuery;            /* Current media query chain being built (if parsing @rule) */
 
     CssPropertySet *pPropertySet;   /* Declarations being parsed. */
     CssPropertySet *pImportant;     /* !IMPORTANT declarations. */

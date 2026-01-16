@@ -515,7 +515,6 @@ parseDeclarationError (CssInput *pInput, CssParse *pParse)
 static int 
 parseSelector (CssInput *pInput, CssParse *pParse)
 {
-	if(pParse->pQuery) HtmlCssSelector(pParse, pParse->pQuery->eSelector, NULL, NULL);
     while (1) {
         const char *zToken;
         int nToken;
@@ -720,7 +719,6 @@ parseSelector (CssInput *pInput, CssParse *pParse)
 					pParse->apXtraSelector[pParse->nXtra] = pParse->pSelector;
 					pParse->pSelector = NULL;
 					pParse->nXtra++;
-					if(pParse->pQuery) HtmlCssSelector(pParse, pParse->pQuery->eSelector, NULL, NULL);
 				}
                 if (CT_SPACE == eNext) inputNextToken(pInput);
                 break;
@@ -896,16 +894,7 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
         if (CT_LP != inputGetToken(pInput, 0, 0)) return 1;
 
         if (!pParse->pQuery) {  /* The media does not match. Skip tokens until the end of the block. */
-            int iNest = 1;
-            while (
-                (inputGetToken(pInput, 0, 0) != CT_EOF) &&
-                (inputGetToken(pInput, 0, 0) != CT_RP || iNest != 1)
-            ) {
-                if (inputGetToken(pInput, 0, 0) == CT_LP) iNest++;
-                if (inputGetToken(pInput, 0, 0) == CT_RP) iNest--;
-                inputNextToken(pInput);
-            }
-			HtmlCssFreeMediaQuery(pParse);
+            pParse->isIgnore = 1;
         }
     //} else if (t.n == 4 && strnicmp("page", t.z, t.n) == 0) {
         
@@ -964,7 +953,7 @@ HtmlCssRunParser (const char *zInput, int nInput, CssParse *pParse)
             case CT_SGML_CLOSE:
                 isSyntaxError = 0; break;
             case CT_RP:
-                isSyntaxError = 0;  // The next lines are to end the parsing of an at-rule
+                pParse->isIgnore = isSyntaxError = 0;  // The next lines are to end the parsing of an at-rule
 				if (pParse->pQuery) HtmlCssMediaRule(pParse);
 				break;
             case CT_AT:
