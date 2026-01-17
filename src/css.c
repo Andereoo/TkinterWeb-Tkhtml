@@ -629,7 +629,19 @@ tokenToProperty (CssParse *pParse, CssToken *pToken)
                         pProp = (CssProperty *)HtmlAlloc("CssProperty", nAlloc);
                         pProp->eType = CSS_TYPE_RAW;
                         pProp->v.zVal = (char *)&pProp[1];
-                        rgbToColor(pProp->v.zVal, zArg, nArg);
+                        /* Prevent CSS variabes from causing a segfault */
+                        if (strchr(zArg, ',')) {
+                            int canCont = 1;
+                            for (int i = 0; zArg[i]; i++) {
+                                if (isalpha((unsigned char)zArg[i])) {
+                                    canCont = 0;
+                                    break;
+                                }
+                            }
+                            if (canCont) {
+                                rgbToColor(pProp->v.zVal, zArg, nArg);
+                            };
+                        }
                     } else {
                         int nAlloc = sizeof(CssProperty) + nArg + 1;
                         pProp = (CssProperty *)HtmlAlloc("CssProperty", nAlloc);
@@ -1555,10 +1567,16 @@ static void
 propertySetAddFontFamily (
     CssParse *pParse,          /* Parse context */
     CssPropertySet *p,         /* Property set */
-    CssToken *v               /* Value for 'background' property */
+    CssToken *v               /* Value for 'font-family' property */
 )
 {
     CssProperty *pProp = textToFontFamilyProperty(pParse, v->z, v->n);
+
+    /* Remove the Noto Color Emoji font, which historically caused segfaults when used in Tkinter widgets */
+    if (pProp->v.zVal && strcmp(pProp->v.zVal, "noto color emoji") == 0) {
+        pProp = textToProperty(NULL, "noto sans", -1);
+    }
+
     propertySetAdd(p, CSS_PROPERTY_FONT_FAMILY, pProp);
 }
 
@@ -1705,6 +1723,11 @@ propertySetAddShortcutFont (
     if (!pVariant) pVariant = tokenToProperty(pParse, &normal);
     if (!pWeight) pWeight = tokenToProperty(pParse, &normal);
     if (!pLineHeight) pLineHeight = tokenToProperty(pParse, &normal);
+
+    /* Remove the Noto Color Emoji font, which historically caused segfaults when used in Tkinter widgets */
+    if (pFamily->v.zVal && strcmp(pFamily->v.zVal, "noto color emoji") == 0) {
+        pFamily = textToProperty(NULL, "noto sans", -1);
+    }
 
     propertySetAdd(p, CSS_PROPERTY_FONT_STYLE, pStyle);
     propertySetAdd(p, CSS_PROPERTY_FONT_VARIANT, pVariant);
