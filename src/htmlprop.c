@@ -1128,7 +1128,10 @@ decrementColorRef (HtmlTree *pTree, HtmlColor *pColor)
         if (pColor->nRef == 0) {
             Tcl_HashEntry *pEntry;
             pEntry = Tcl_FindHashEntry(&pTree->aColor, pColor->zColor);
-            Tcl_DeleteHashEntry(pEntry);
+            /* TODO: This if statement is needed since introducing colorcmd */
+            if (pEntry) {
+                Tcl_DeleteHashEntry(pEntry);
+            }
             if (pColor->xcolor) {
                 Tk_FreeColor(pColor->xcolor);
             }
@@ -1159,6 +1162,7 @@ dumpColorTable (HtmlTree *pTree)
     return iRet;
 }
 #endif
+
 
 /*
  *---------------------------------------------------------------------------
@@ -1197,6 +1201,11 @@ propertyValuesSetColor (HtmlComputedValuesCreator *p, HtmlColor **pCVar, CssProp
         goto setcolor_out;
     }
 
+    int cType = 0;
+    if (&p->values.cColor == pCVar) {
+        cType = 1;
+    }
+
     /* According to CSS2.1, a color value must be either one of the 
      * keyword colors, or a numeric color specification. We modify
      * this slightly so that any Tk color can be used as a keyword (but
@@ -1209,9 +1218,20 @@ propertyValuesSetColor (HtmlComputedValuesCreator *p, HtmlColor **pCVar, CssProp
     zColor = HtmlCssPropertyGetString(pProp);
     if (!zColor || !zColor[0]) return 1;
 
-    pEntry = Tcl_CreateHashEntry(&pTree->aColor, zColor, &newEntry);
-    if (newEntry) {
+    pEntry = Tcl_FindHashEntry(&pTree->aColor, zColor);
+    Tcl_Obj *pColorCmd = pTree->options.colorcmd;
+    
+
+    if (!pEntry || (pColorCmd && (strcmp(zColor, "transparent") != 0 || p->pParent == NULL))){
         XColor *color;
+
+        if (!pEntry && !pColorCmd) {
+            pEntry = Tcl_CreateHashEntry(&pTree->aColor, zColor, &newEntry);
+        }
+
+        if (strcmp(zColor, "transparent") == 0) {
+            zColor = "white";
+        }
 
         if (zColor[0] == '#' && strlen(zColor) == 4) {
         /* Tk interprets a color value of "#ABC" as the same as "#A0B0C0".
@@ -1239,10 +1259,30 @@ propertyValuesSetColor (HtmlComputedValuesCreator *p, HtmlColor **pCVar, CssProp
              */
             char zBuf[14];
             sprintf(zBuf, "#%s", zColor);
+
             color = Tk_GetColor(pTree->interp, pTree->tkwin, zBuf);
         }
 
         if (color) {
+            /* Handle colorCmd */
+            if (pColorCmd) {
+                Tcl_Interp *interp = pTree->interp;
+
+                Tcl_Obj *pScript = Tcl_DuplicateObj(pColorCmd);
+
+                Tcl_IncrRefCount(pScript);
+                Tcl_ListObjAppendElement(interp, pScript, Tcl_NewIntObj(color->red / 256));
+                Tcl_ListObjAppendElement(interp, pScript, Tcl_NewIntObj(color->green / 256));
+                Tcl_ListObjAppendElement(interp, pScript, Tcl_NewIntObj(color->blue / 256));
+                Tcl_ListObjAppendElement(interp, pScript, Tcl_NewIntObj(cType));
+
+                Tcl_EvalObjEx(interp, pScript, TCL_EVAL_DIRECT | TCL_EVAL_GLOBAL);
+                Tcl_DecrRefCount(pScript);
+
+                char *s = Tcl_GetStringResult(interp);
+                color = Tk_GetColor(interp, pTree->tkwin, s);
+            }
+
             cVal = (HtmlColor *)HtmlAlloc(
                 "HtmlColor", sizeof(HtmlColor)+strlen(zColor)+1
             );
@@ -1250,9 +1290,13 @@ propertyValuesSetColor (HtmlComputedValuesCreator *p, HtmlColor **pCVar, CssProp
             cVal->xcolor = color;
             cVal->zColor = (char *)(&cVal[1]);
             strcpy(cVal->zColor, zColor);
-            Tcl_SetHashValue(pEntry, cVal);
+            if (!pColorCmd) {
+                Tcl_SetHashValue(pEntry, cVal);
+            }
         } else {
-            Tcl_DeleteHashEntry(pEntry);
+            if (!pColorCmd) {
+                Tcl_DeleteHashEntry(pEntry);
+            }
             return 1;
         }
     } else {
@@ -3132,9 +3176,11 @@ HtmlComputedValuesCleanupTables (HtmlTree *pTree)
     for (pzCursor = azColor; *pzCursor; pzCursor++) {
         HtmlColor *pColor;
         Tcl_HashEntry *pEntry = Tcl_FindHashEntry(&pTree->aColor, *pzCursor);
-        assert(pEntry);
-        pColor = (HtmlColor *)Tcl_GetHashValue(pEntry);
-        decrementColorRef(pTree, pColor);
+        /* TODO: This if statement is needed since introducing colorcmd */
+        if (pEntry) {
+            pColor = (HtmlColor *)Tcl_GetHashValue(pEntry);
+            decrementColorRef(pTree, pColor);
+        }
     }
 
     HtmlFontCacheClear(pTree, 0);

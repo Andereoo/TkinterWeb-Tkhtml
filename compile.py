@@ -87,6 +87,25 @@ def run_command(cmd, cmd_input=None, capture_output=False):
     else:
         return subprocess.run(cmd, input=cmd_input, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, universal_newlines=True, check=True)
 
+
+###
+def rgb_to_hex(red, green, blue, *args):
+    "Convert RGB colour code to HEX"
+    return f"#{red:02x}{green:02x}{blue:02x}"
+
+def invert_color(rgb, is_color, limit):
+    "Check colour, invert if necessary, and convert"
+    if (is_color == 0 and sum(rgb) < limit) or (
+        is_color == 1 and sum(rgb) > limit
+    ):
+        return rgb_to_hex(*rgb)
+    else:
+        rgb[0] = max(1, min(255, 240 - rgb[0]))
+        rgb[1] = max(1, min(255, 240 - rgb[1]))
+        rgb[2] = max(1, min(255, 240 - rgb[2]))
+        return rgb_to_hex(*rgb)
+###
+
 def test():
     global tkhtml_version, tkhtml_file
     print("\nTesting result...")
@@ -115,6 +134,12 @@ def test():
         root.tk.eval("set auto_path [linsert $auto_path 0 {"+BUILD_PATH+"}]")
         tkhtml_version = root.tk.eval("package require Tkhtml")
         widget = tkinter.Widget(root, "html")
+
+        def on_colorcmd(red, green, blue, is_color):
+            color = invert_color([int(red), int(green), int(blue)], int(is_color), 280)
+            return color
+        widget.config(colorcmd=widget.register(on_colorcmd))
+        #widget.config(colorcmd="")
         widget.tk.call(widget._w, "parse", TEST_STRING)
         for i in root.tk.call("info", "loaded"):
             if i[1] == "Tkhtml":

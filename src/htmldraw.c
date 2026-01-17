@@ -3393,9 +3393,11 @@ getPixmap (
     ) {
         Tcl_HashEntry *pEntry;
         pEntry = Tcl_FindHashEntry(&pTree->aColor, "white");
-        assert(pEntry);
-        bg_color = ((HtmlColor *)Tcl_GetHashValue(pEntry))->xcolor;
-        fill_rectangle(win, pmap, bg_color, 0, 0, w, h);
+        /* TODO: This if statement is needed since introducing colorcmd */
+        if (pEntry) {
+            bg_color = ((HtmlColor *)Tcl_GetHashValue(pEntry))->xcolor;
+            fill_rectangle(win, pmap, bg_color, 0, 0, w, h);
+        }
     }
 
     sQuery.pTree = pTree;

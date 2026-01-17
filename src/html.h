@@ -427,6 +427,7 @@ struct HtmlOptions {
     int      forcewidth;
     Tcl_Obj *imagecmd;
     Tcl_Obj *drawcleanupcrashcmd;
+    Tcl_Obj *colorcmd;
     int      imagecache;
     int      imagepixmapify;
     int      mode;                      /* One of the HTML_MODE_XXX values */
