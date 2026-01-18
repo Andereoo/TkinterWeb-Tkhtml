@@ -630,14 +630,16 @@ tokenToProperty (CssParse *pParse, CssToken *pToken)
                         pProp->eType = CSS_TYPE_RAW;
                         pProp->v.zVal = (char *)&pProp[1];
                         /* Prevent CSS variabes from causing a segfault */
-                        if (strchr(zArg, ',')) {
+                        if (memchr(zArg, ',', nArg)) {
                             int canCont = 1;
-                            for (int i = 0; zArg[i]; i++) {
+
+                            for (int i = 0; i < nArg && zArg[i]; i++) {
                                 if (isalpha((unsigned char)zArg[i])) {
                                     canCont = 0;
                                     break;
                                 }
                             }
+
                             if (canCont) {
                                 rgbToColor(pProp->v.zVal, zArg, nArg);
                             };
