@@ -412,8 +412,7 @@ parseSyntaxError (
     CssInput *pInput,
     CssParse *pParse,
     int isStopAtSemiColon        /* True if error occured parsing an @ rule */
-)
-{
+) {
     char *zToken;
     int nToken;
     CssTokenType eToken;
@@ -437,7 +436,7 @@ parseSyntaxError (
         eToken = inputGetToken(pInput, 0, 0);
     }
     iErrorLength = pInput->iInput - iErrorStart;
-	if (isStopAtSemiColon && pParse->pQuery) HtmlCssFreeMediaQuery(pParse);
+	if (isStopAtSemiColon && pParse->eMedia) pParse->eMedia = CSS_MEDIA_ALL;
 
     if (pParse->pErrorLog) {
         Tcl_Obj *pError = pParse->pErrorLog;
@@ -831,15 +830,16 @@ static int parseDeclarationBlock(CssInput *pInput, CssParse *pParse){
 static int 
 parseMediaList(CssInput *pInput, CssParse *pParse)
 {
+    pParse->eMedia = 0;
     while (1) {
         CssToken t; // Get current query after at-rule
         if (inputGetToken(pInput, &t.z, &t.n) != CT_IDENT) return 1; // Parse all queries after at-rule, if matches: macros are added to array.
         if (t.n == 3 && strnicmp("all", t.z, t.n) == 0) {
-			HtmlCssMediaQuery(pParse, CSS_MEDIA_ALL);
+			pParse->eMedia = CSS_MEDIA_ALL;
         } else if (t.n == 5 && strnicmp("print", t.z, t.n) == 0) {
-			HtmlCssMediaQuery(pParse, CSS_MEDIA_PRINT);
+			pParse->eMedia = CSS_MEDIA_PRINT;
         } else if (t.n == 6 && strnicmp("screen", t.z, t.n) == 0) {
-			HtmlCssMediaQuery(pParse, CSS_MEDIA_SCREEN);
+			pParse->eMedia = CSS_MEDIA_SCREEN;
         }
         inputNextTokenIgnoreSpace(pInput); // Get next query, if is not a comma then stop.
 		if (CT_COMMA != inputGetToken(pInput, 0, 0)) break;
@@ -883,17 +883,14 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
         eToken = inputGetToken(pInput, 0, 0);
         if (eToken != CT_SEMICOLON && eToken != CT_EOF) return 1;
   
-        if (pParse->pQuery) {
-			HtmlCssImport(pParse, &t);
-			HtmlCssFreeMediaQuery(pParse);
-		}
+        if (pParse->eMedia) HtmlCssImport(pParse, &t);
     } else if (t.n == 5 && strnicmp("media", t.z, t.n) == 0) {
         pParse->isBody = 1;
         inputNextTokenIgnoreSpace(pInput);
         if (parseMediaList(pInput, pParse)) return 1;
         if (CT_LP != inputGetToken(pInput, 0, 0)) return 1;
 
-        if (!pParse->pQuery) {  /* The media does not match. Skip tokens until the end of the block. */
+        if (!pParse->eMedia) {  /* The media does not match. Skip tokens until the end of the block. */
             pParse->isIgnore = 1;
         }
     //} else if (t.n == 4 && strnicmp("page", t.z, t.n) == 0) {
@@ -953,8 +950,8 @@ HtmlCssRunParser (const char *zInput, int nInput, CssParse *pParse)
             case CT_SGML_CLOSE:
                 isSyntaxError = 0; break;
             case CT_RP:
-                pParse->isIgnore = isSyntaxError = 0;  // The next lines are to end the parsing of an at-rule
-				if (pParse->pQuery) HtmlCssMediaRule(pParse);
+                pParse->isIgnore = isSyntaxError = 0;  // The next lines are to end the parsing of @media
+				pParse->eMedia = CSS_MEDIA_ALL;
 				break;
             case CT_AT:
                 isSyntaxError = parseAtRule(&sInput, pParse); break;

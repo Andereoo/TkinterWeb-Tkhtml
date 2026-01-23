@@ -2240,6 +2240,7 @@ cssParse(
     sParse.pImportCmd = pImportCmd;
     sParse.pUrlCmd = pUrlCmd;
     sParse.interp = (pTree ? pTree->interp : 0);
+    sParse.eMedia = CSS_MEDIA_ALL;
     sParse.pTree = pTree;
     if (pErrorVar) {
         sParse.pErrorLog = Tcl_NewObj();
@@ -2466,14 +2467,6 @@ freeRulesList (CssRule **ppList)
     *ppList = 0;
 }
 
-static void freeCssMediaRules (CssMediaRule *pRule)
-{
-    if (!pRule) return;
-	selectorFree(pRule->pQuery);
-	freeCssMediaRules(pRule->pNext);
-	HtmlFree(pRule);
-}
-
 static void
 freeRulesHash(Tcl_HashTable *pHash)
 {
@@ -2519,8 +2512,6 @@ HtmlCssStyleSheetFree (CssStyleSheet *pStyle)
         freeRulesHash(&pStyle->aByTag); 
         freeRulesHash(&pStyle->aByClass); 
         freeRulesHash(&pStyle->aById); 
-
-		freeCssMediaRules(pStyle->pMediaRules);
 
         /* Free the priorities list */
         pPriority = pStyle->pPriority;
@@ -2732,45 +2723,6 @@ HtmlCssSelector (
 	}
 }
 
-/*--------------------------------------------------------------------------
- *
- * HtmlCssMediaQuery --
- *
- *     This is called whenever a query selector is parsed. i.e. "all" or "screen".
- *
- *     A CssSelector struct is allocated and added to the beginning of the linked list at pParse->pQuery;
- *
- *--------------------------------------------------------------------------
- */
-void HtmlCssMediaQuery (CssParse *pParse, int stype)
-{
-    CssSelector *pQuery;
-
-    if (pParse->isIgnore) return;  /* Do nothing if the isIgnore flag is set */
-
-#if TRACE_PARSER_CALLS
-	printf("HtmlCssMediaQuery(%p, %s)\n", pParse, constantToString(stype));
-#endif
-
-    pQuery = HtmlNew(CssSelector);
-    pQuery->eSelector = stype;
-    pQuery->pNext = pParse->pQuery;
-    pParse->pQuery = pQuery;
-}
-
-void HtmlCssMediaRule (CssParse *p) {
-	CssMediaRule *pAtRule = HtmlNew(CssMediaRule);
-	pAtRule->pNext = p->pStyle->pMediaRules;
-	p->pStyle->pMediaRules = pAtRule;
-	pAtRule->pQuery = p->pQuery;
-	p->pQuery = NULL;
-}
-
-void HtmlCssFreeMediaQuery (CssParse *p) {
-	selectorFree(p->pQuery);
-	p->pQuery = NULL;
-}
-
 /*
  *---------------------------------------------------------------------------
  *
@@ -2889,6 +2841,7 @@ cssSelectorPropertySetPair (CssParse *pParse, CssSelector *pSelector, CssPropert
 
     if (freeWhat) pRule->freeWhat = freeWhat;
 
+	pRule->eMedia = pParse->eMedia;
     /* Calculate the specificity of the rules. We use the following
      * formala:
      *
@@ -3417,38 +3370,6 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int flags)
 
 /*--------------------------------------------------------------------------
  *
- * HtmlCssMediaTest --
- *
- *     Test if a selector-query matches a document state.
- *
- * Results:
- *     Non-zero is returned if the selector-query matchs the state.
- *
- * Side effects:
- *     None.
- *
- *--------------------------------------------------------------------------
- */
-int HtmlCssMediaTest (CssRule *pRule, HtmlTree *pTree)
-{
-	CssSelector *p;
-    for (p = pRule->pSelector; p; p = p->pNext) {
-		if (p->eSelector < CSS_MEDIA_ALL) return 1;
-        switch (p->eSelector) {
-            case CSS_MEDIA_ALL: break;
-            case CSS_MEDIA_PRINT:
-                if (!pTree->isPrintedMedia) return 0;
-                break;
-            case CSS_MEDIA_SCREEN:
-                if (pTree->isPrintedMedia) return 0;
-                break;
-        }
-    }
-	return !p;
-}
-
-/*--------------------------------------------------------------------------
- *
  * applyRule --
  *
  *     Test the selector of pRule against node pNode. If there is a match,
@@ -3465,8 +3386,13 @@ int HtmlCssMediaTest (CssRule *pRule, HtmlTree *pTree)
  */
 static int 
 applyRule (HtmlTree *pTree, HtmlNode *pNode, CssRule *pRule, int *aPropDone, char **pzIfMatch, HtmlComputedValuesCreator *pCreator)
-{
-	if (!HtmlCssMediaTest(pRule, pTree)) return 0; // Tell if rule is part of a media at-rule, if so: then test is against the query
+{ // Tell if rule is part of a media at-rule, if so: then test is against the query
+	if (pRule->eMedia == CSS_MEDIA_ALL); // Do nothing for @media all
+	else if (pRule->eMedia == CSS_MEDIA_PRINT && !pTree->isPrintedMedia) {
+		return 0;
+	} else if (pRule->eMedia == CSS_MEDIA_SCREEN && pTree->isPrintedMedia) {
+		return 0;
+	}
     /* Test if the selector matches the node. Variable isMatch is set to
      * true if the selector matches, or false otherwise. 
      */
@@ -3638,7 +3564,6 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
      */
     overrideToPropertyValues(&sCreator, aPropDone, pElem->pOverride);
 
-	CssMediaRule *pMedia = pStyle->pMediaRules;
     /* Loop through the list of CSS rules in the stylesheet. Rules that occur
      * earlier in the list have a higher priority than those that occur later.
      */

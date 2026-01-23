@@ -141,7 +141,7 @@ struct CssSelector {
 ** A collection of CSS2 properties and values.
 */
 struct CssPropertySet {
-    int n;
+    u32 n;
     struct CssPropertySetItem {
         int eProp;
         CssProperty *pProp;
@@ -159,13 +159,9 @@ struct CssRule {
     int iRule;               /* Rule-number within source style sheet */
     CssSelector *pSelector;  /* The selector-chain for this rule */
     u8 freeWhat;             /* Flags to delete pPropertySet and to delete pSelector */
+    u8 eMedia;               /* CSS_MEDIA_* value */
     CssPropertySet *pPropertySet;  /* Property values for the rule. */
     CssRule *pNext;                /* Next rule in this list. */
-};
-
-struct CssMediaRule {
-	CssSelector *pQuery;  /* The selector-chain for this rule */
-	CssMediaRule *pNext;  /* Next media rule in this list. */
 };
 
 /*
@@ -216,8 +212,6 @@ struct CssStyleSheet {
     CssRule *pAfterRules;      /* Rules that end in :after */
     CssRule *pBeforeRules;     /* Rules that end in :before */
 
-	CssMediaRule *pMediaRules; /* Rules that start with @media */
-
     Tcl_HashTable aByTag;      /* Rule lists by tag (string keys) */
     Tcl_HashTable aByClass;    /* Rule lists by class (string keys) */
     Tcl_HashTable aById;       /* Rule lists by id (string keys) */
@@ -250,11 +244,10 @@ struct CssParse {
      * @media block.
      */
     u8 isIgnore;                    /* True to ignore new elements */
-
     /* In the body of a stylesheet @import directives must be ignored. */
     u8 isBody;                      /* True once we are in the body */
-
-    int origin;
+    u8 origin;
+    u8 eMedia;                      /* Current media (if parsing @rule) */
     Tcl_Obj *pStyleId;
     Tcl_Obj *pImportCmd;            /* Script to invoke for @import */
     Tcl_Obj *pUrlCmd;               /* Script to invoke for url() */
@@ -271,9 +264,6 @@ void HtmlCssDeclaration(CssParse *, CssToken *, CssToken *, int);
 void HtmlCssSelector(CssParse *, int, CssToken *, CssToken *);
 void HtmlCssRule(CssParse *, int);
 void HtmlCssImport(CssParse *pParse, CssToken *);
-void HtmlCssMediaQuery(CssParse *, int);
-void HtmlCssMediaRule(CssParse *);
-void HtmlCssFreeMediaQuery(CssParse *);
 
 /* Test if a selector matches a node */
 int HtmlCssSelectorTest(CssSelector *, HtmlNode *, int);
