@@ -446,47 +446,26 @@ paginationOffsetInside(LayoutContext *pLayout, HtmlNode *pNode, HtmlComputedValu
     return y;
 }
 static void 
-paginationPageYOffset(LayoutContext *pLayout, HtmlComputedValues *pV, int *pY, int mode){
+paginationPageYOffset(LayoutContext *pLayout, unsigned char ePageBreak, int *pY){
     int pagenum, paginationY = pLayout->pTree->options.pagination;
     if (!paginationY) return;
-    switch (mode) {
-        case 0:
-        switch (pV->ePageBreakAfter) {
-            case CSS_CONST_AUTO: break;
-            case CSS_CONST_ALWAYS:
-                *pY = (*pY + paginationY - 1) / paginationY * paginationY;
-                break;
-            case CSS_CONST_AVOID:
-                // Not sure what to put here
-                break;
-            case CSS_CONST_LEFT:
-                pagenum = (*pY + paginationY - 1) / paginationY;
-                *pY = paginationY * (pagenum + pagenum % 2);
-                break;
-            case CSS_CONST_RIGHT:
-                pagenum = (*pY + paginationY - 1) / paginationY;
-                *pY = paginationY * (pagenum + !(pagenum % 2));
-                break;
-        }
-        case 1:
-        switch (pV->ePageBreakBefore) {
-            case CSS_CONST_AUTO: break;
-            case CSS_CONST_ALWAYS:
-                *pY = (*pY + paginationY) / paginationY * paginationY;
-                break;
-            case CSS_CONST_AVOID:
-                // Not sure what to put here
-                break;
-            case CSS_CONST_LEFT:
-                pagenum = (*pY + paginationY) / paginationY;
-                *pY = paginationY * (pagenum + pagenum % 2);
-                break;
-            case CSS_CONST_RIGHT:
-                pagenum = (*pY + paginationY) / paginationY;
-                *pY = paginationY * (pagenum + !(pagenum % 2));
-                break;
-        }
-    };
+    switch (ePageBreak) {
+        case CSS_CONST_AUTO: break;
+        case CSS_CONST_ALWAYS:
+            *pY = (*pY + paginationY - 1) / paginationY * paginationY;
+            break;
+        case CSS_CONST_AVOID:
+            // Not sure what to put here
+            break;
+        case CSS_CONST_LEFT:
+            pagenum = (*pY + paginationY - 1) / paginationY;
+            *pY = paginationY * (pagenum + pagenum % 2);
+            break;
+        case CSS_CONST_RIGHT:
+            pagenum = (*pY + paginationY - 1) / paginationY;
+            *pY = paginationY * (pagenum + !(pagenum % 2));
+            break;
+    }
 }
 
 static void 
@@ -1069,7 +1048,7 @@ normalFlowLayoutFloat (
     y = HtmlFloatListClear(pNormal->pFloat, pV->eClear, y);
     y = HtmlFloatListClearTop(pNormal->pFloat, y);
 
-    paginationPageYOffset(pLayout, pV, pY, 1);
+    paginationPageYOffset(pLayout, pV->ePageBreakBefore, pY);
     nodeGetMargins(pLayout, pNode, iContainingW, &margin);
 
     /* The code that calculates computed values (htmlprop.c) should have
@@ -1175,7 +1154,7 @@ normalFlowLayoutFloat (
     }
     y = paginationOffsetInside(pLayout, pNode, pV, pY, y, iTotalHeight);
     DRAW_CANVAS(&pBox->vc, &sBox.vc, x, y, pNode); // This controls the CanvasOrigin Y-axis for CSS float
-    paginationPageYOffset(pLayout, pV, pY, 0);
+    paginationPageYOffset(pLayout, pV->ePageBreakAfter, pY);
 
     /* If the right-edge of this floating box exceeds the current actual
      * width of the box it is drawn in, set the actual width to the 
@@ -2664,7 +2643,7 @@ normalFlowLayoutBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
         sNormalFlowCallback.pNext = 0;
         normalFlowCbAdd(pNormal, &sNormalFlowCallback);
     }
-    paginationPageYOffset(pLayout, pV, pY, 1);
+    paginationPageYOffset(pLayout, pV->ePageBreakBefore, pY);
 
     /* Calculate x and y as pixel values. */
     *pY += box.iTop;
@@ -2736,7 +2715,7 @@ normalFlowLayoutBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
     y = paginationOffsetInside(pLayout, pNode, pV, pY, y, sContent.height);
     DRAW_CANVAS(&pBox->vc, &sBox.vc, iWrappedX, y-box.iTop+yBorderOffset, pNode); // This controls the CanvasOrigin Y-axis
     
-    paginationPageYOffset(pLayout, pV, pY, 0);
+    paginationPageYOffset(pLayout, pV->ePageBreakAfter, pY);
 
     /* Account for the 'margin-bottom' property of this node. */
     normalFlowMarginAdd(pLayout, pNode, pNormal, margin.margin_bottom);
