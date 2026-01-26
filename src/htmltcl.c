@@ -1332,6 +1332,7 @@ STRING  (drawcleanupcrashcmd, "drawcleanupcrashCmd", "DrawCleanupCrashCmd", ""),
 STRINGT (mode, "mode", "Mode", "standards", azModes),
 STRINGT (parsemode, "parsemode", "Parsemode", "html", azParseModes),
 BOOLEAN (shrink, "shrink", "Shrink", "0", S_MASK),
+BOOLEAN (textwrap, "textwrap", "textwrap", "1", S_MASK),
 DOUBLE  (zoom, "zoom", "Zoom", "1.0", F_MASK),
 
 /* Debugging options */
@@ -2701,8 +2702,8 @@ newWidget(
         Tk_DestroyWindow(pTree->tkwin);
         return TCL_ERROR;
     }
-    assert(!pTree->options.logcmd);
-    assert(!pTree->options.timercmd);
+    /*assert(!pTree->options.logcmd);
+    assert(!pTree->options.timercmd);*/
 
     /* Load the default style-sheet, ready for the first document. */
     doLoadDefaultStyle(pTree);

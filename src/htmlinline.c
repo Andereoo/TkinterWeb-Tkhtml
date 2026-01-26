@@ -37,6 +37,7 @@ static const char rcsid[] = "$Id: htmlinline.c,v 1.60 2008/01/12 14:23:05 daniel
 #include "htmllayout.h"
 #include <stdio.h>
 #include <stdarg.h>
+#include <limits.h>
 
 /*
  *
@@ -1157,8 +1158,11 @@ HtmlInlineContextGetLineBox (
      *     + The first token is wider than iReqWidth, and the 
      *       LINEBOX_FORCEBOX flag is not set. In this case iLineWidth
      *       is set to the width required by the first inline token.
+     * 
+     * We also never wrap when textwrap is 0.
      */
-    if (!calculateLineBoxWidth(p,flags,iReqWidth,&iLineWidth,&nBox,&hasText)) {
+    
+    if (!calculateLineBoxWidth(p,flags,(p->pTree->options.textwrap==0)?INT_MAX:iReqWidth,&iLineWidth,&nBox,&hasText)) {
         *pWidth = iLineWidth;
         return 0;
     }

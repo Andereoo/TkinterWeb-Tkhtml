@@ -431,6 +431,7 @@ struct HtmlOptions {
     int      imagepixmapify;
     int      mode;                      /* One of the HTML_MODE_XXX values */
     int      shrink;                    /* Boolean */
+    int      textwrap;                  /* Boolean */
     double   zoom;                      /* Universal scaling factor. */
 
     int      parsemode;                 /* One of the HTML_PARSEMODE values */
