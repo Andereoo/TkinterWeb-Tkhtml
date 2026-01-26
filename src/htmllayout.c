@@ -1020,9 +1020,6 @@ normalFlowLayoutFloat (
     MarginProperties margin; /* Margin properties of pNode */
     BoxContext sBox;         /* Box context for content to be drawn into */
 
-    memset(&sBox, 0, sizeof(BoxContext));
-    sBox.iContainingW = iContainingW;
-
     if (pLayout->minmaxTest) {
         eFloat = CSS_CONST_LEFT;
     }
@@ -1060,93 +1057,93 @@ normalFlowLayoutFloat (
     );
     assert(eFloat == CSS_CONST_LEFT || eFloat == CSS_CONST_RIGHT);
 
+  REDO: // This part of the function is rerun once in order to get the height for the second pass
+    memset(&sBox, 0, sizeof(BoxContext));
+    sBox.iContainingW = iContainingW;
+	if (pLayout->pTree->options.pagination) i++; // On 2nd run
+
+	paginationPageYOrigin(y, pLayout);
     /* Draw the floating element to sBox. The procedure for determining the
      * width to use for the element is described in sections 10.3.5
      * (non-replaced) and 10.3.6 (replaced) of the CSS 2.1 spec.
      */
-    do { // This part is repeated for pagination to get the Y origin of the float, it must be drawn to the canvas in order to get that.
-        if (i == 1) paginationPageYOrigin(iTop, pLayout);
-        if (nodeIsReplaced(pNode)) {
-            /* For a replaced element, the drawReplacement() function takes care of
-             * calculating the actual width and height, and of drawing borders
-             * etc. As usual horizontal margins are included, but vertical are not.
-             */
-            CHECK_INTEGER_PLAUSIBILITY(sBox.vc.bottom);
-            drawReplacement(pLayout, &sBox, pNode);
-            CHECK_INTEGER_PLAUSIBILITY(sBox.vc.bottom);
+    if (nodeIsReplaced(pNode)) {
+        /* For a replaced element, the drawReplacement() function takes care of
+         * calculating the actual width and height, and of drawing borders
+         * etc. As usual horizontal margins are included, but vertical are not.
+         */
+        CHECK_INTEGER_PLAUSIBILITY(sBox.vc.bottom);
+        drawReplacement(pLayout, &sBox, pNode);
+        CHECK_INTEGER_PLAUSIBILITY(sBox.vc.bottom);
+    } else {
+        /* A non-replaced element. */
+        BoxProperties box;   /* Box properties of pNode */
+        BoxContext sContent;
+        int c = pLayout->minmaxTest ? PIXELVAL_AUTO : iContainingW;
+        int iWidth = PIXELVAL(pV, WIDTH, c);
+        int iHeight = PIXELVAL(pV, HEIGHT, pBox->iContainingH);
+        int isAuto = 0;
+
+        nodeGetBoxProperties(pLayout, pNode, iContainingW, &box);
+
+        /* If the computed value if iWidth is "auto", calculate the
+         * shrink-to-fit content width and use that instead.  */
+        if (iWidth == PIXELVAL_AUTO) {
+            int iMax;            /* Preferred maximum width */
+            int iMin;            /* Preferred minimum width */
+            int iAvailable;      /* Available width */
+        
+            iAvailable = sBox.iContainingW;
+            iAvailable -= (margin.margin_left + margin.margin_right);
+            iAvailable -= (box.iLeft + box.iRight);
+            blockMinMaxWidth(pLayout, pNode, &iMin, &iMax);
+            iWidth = MIN(MAX(iMin, iAvailable), iMax);
+            isAuto = 1;
+        }
+        considerMinMaxWidth(pNode, iContainingW, &iWidth);
+
+        /* Layout the node content into sContent. Then add the border and
+         * transfer the result to sBox. 
+         */
+        memset(&sContent, 0, sizeof(BoxContext));
+        sContent.iContainingW = iWidth;
+        sContent.iContainingH = iHeight;
+        HtmlLayoutNodeContent(pLayout, &sContent, pNode);
+
+        iHeight = getHeight(
+            pNode, sContent.height, pBox->iContainingH
+        );
+        if (pV->eDisplay == CSS_CONST_TABLE) {
+            sContent.height = MAX(iHeight, sContent.height);
         } else {
-            /* A non-replaced element. */
-            BoxProperties box;   /* Box properties of pNode */
-            BoxContext sContent;
-            int c = pLayout->minmaxTest ? PIXELVAL_AUTO : iContainingW;
-            int iWidth = PIXELVAL(pV, WIDTH, c);
-            int iHeight = PIXELVAL(pV, HEIGHT, pBox->iContainingH);
-            int isAuto = 0;
-
-            nodeGetBoxProperties(pLayout, pNode, iContainingW, &box);
-
-            /* If the computed value if iWidth is "auto", calculate the
-             * shrink-to-fit content width and use that instead.  */
-            if (iWidth == PIXELVAL_AUTO) {
-                int iMax;            /* Preferred maximum width */
-                int iMin;            /* Preferred minimum width */
-                int iAvailable;      /* Available width */
-        
-                iAvailable = sBox.iContainingW;
-                iAvailable -= (margin.margin_left + margin.margin_right);
-                iAvailable -= (box.iLeft + box.iRight);
-                blockMinMaxWidth(pLayout, pNode, &iMin, &iMax);
-                iWidth = MIN(MAX(iMin, iAvailable), iMax);
-                isAuto = 1;
-            }
-            considerMinMaxWidth(pNode, iContainingW, &iWidth);
-
-            /* Layout the node content into sContent. Then add the border and
-             * transfer the result to sBox. 
-             */
-            memset(&sContent, 0, sizeof(BoxContext));
-            sContent.iContainingW = iWidth;
-            sContent.iContainingH = iHeight;
-            HtmlLayoutNodeContent(pLayout, &sContent, pNode);
-
-            iHeight = getHeight(
-                pNode, sContent.height, pBox->iContainingH
-            );
-            if (pV->eDisplay == CSS_CONST_TABLE) {
-                sContent.height = MAX(iHeight, sContent.height);
-            } else {
-                sContent.height = iHeight;
-            }
-
-            if (!isAuto && DISPLAY(pV) != CSS_CONST_TABLE) {
-                sContent.width = iWidth;
-            } else {
-                sContent.width = MAX(iWidth, sContent.width);
-            }
-            considerMinMaxWidth(pNode, iContainingW, &sContent.width);
-
-            wrapContent(pLayout, &sBox, &sContent, pNode);
+            sContent.height = iHeight;
         }
 
-        iTotalWidth = sBox.width;
-        iTotalHeight = sBox.height + margin.margin_top + margin.margin_bottom;
-        iTotalHeight = MAX(iTotalHeight, 0);
-        
-        if (pLayout->pTree->options.pagination) {
-            if (i < 1) memset(&sBox, 0, sizeof(BoxContext)); // Reset the box if we are just getting the height this pass
-            else paginationPageYOrigin(-iTop, pLayout);
-            i++;
+        if (!isAuto && DISPLAY(pV) != CSS_CONST_TABLE) {
+            sContent.width = iWidth;
+        } else {
+            sContent.width = MAX(iWidth, sContent.width);
         }
+        considerMinMaxWidth(pNode, iContainingW, &sContent.width);
 
-        iLeft = 0;
-        iRight = iContainingW;
+        wrapContent(pLayout, &sBox, &sContent, pNode);
+    }
+	paginationPageYOrigin(-y, pLayout);
 
-        iTop = y;
-        iTop = HtmlFloatListPlace(pFloat, iContainingW, iTotalWidth, iTotalHeight, iTop);
-    } while (i == 1);
+    iTotalWidth = sBox.width;
+    iTotalHeight = sBox.height + margin.margin_top + margin.margin_bottom;
+    iTotalHeight = MAX(iTotalHeight, 0);
+
+    iLeft = 0;
+    iRight = iContainingW;
+
+    iTop = HtmlFloatListPlace(pFloat, iContainingW, iTotalWidth, iTotalHeight, y);
     HtmlFloatListMargins(pFloat, iTop, iTop+iTotalHeight, &iLeft, &iRight);
 
+	if (1 < i) iTop -= margin.margin_top; // On 2nd run
     y = iTop + margin.margin_top;
+	if (pLayout->pTree->options.pagination && 1 == i) goto REDO;
+
     if (eFloat == CSS_CONST_LEFT) {
         x = iLeft;
     } else {
