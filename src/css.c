@@ -3550,7 +3550,6 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
             }
         }
     }
-    
 
     /* Initialise aPropDone and sCreator */
     HtmlComputedValuesInit(pTree, pNode, 0, &sCreator);
@@ -3858,18 +3857,6 @@ HtmlCssSelectorToString(CssSelector *pSelector, Tcl_Obj *pObj)
                 "[", pSelector->zAttr, "|=\"", pSelector->zValue, "\"]", NULL);
             break;
 
-		case CSS_MEDIA_ALL: 
-            Tcl_AppendStringsToObj(pObj, "@madia all", NULL);
-            break;
-
-		case CSS_MEDIA_PRINT: 
-            Tcl_AppendStringsToObj(pObj, "@madia print", NULL);
-            break;
-
-		case CSS_MEDIA_SCREEN: 
-            Tcl_AppendStringsToObj(pObj, "@madia screen", NULL);
-            break;
-
         case CSS_SELECTOR_NEVERMATCH: 
             Tcl_AppendStringsToObj(pObj, "NEVERMATCH", NULL);
             break;
@@ -4105,7 +4092,6 @@ ruleQsortCompare(const void *pLeft, const void *pRight)
 {
     CssRule *pL = *(CssRule **)pLeft;
     CssRule *pR = *(CssRule **)pRight;
-
     return ruleCompare(pL, pR);
 }
 
@@ -4154,6 +4140,12 @@ HtmlCssStyleConfigDump(
             apRule[nRule++] = pRule;
         }
     }
+	for (pRule=pStyle->pAfterRules; pRule && nRule<MAX_RULES; pRule=pRule->pNext) {
+        apRule[nRule++] = pRule;
+    }
+	for (pRule=pStyle->pBeforeRules; pRule && nRule<MAX_RULES; pRule=pRule->pNext) {
+        apRule[nRule++] = pRule;
+    }
 
     apTable[0] = &pStyle->aByTag;
     apTable[1] = &pStyle->aById;
@@ -4177,12 +4169,10 @@ HtmlCssStyleConfigDump(
     for (i = 0; i < nRule; i++) {
         CssPriority *pPri = apRule[i]->pPriority;
         Tcl_Obj *pList = Tcl_NewObj();
-        Tcl_Obj *p;
-        char zBuf[256];
+        Tcl_Obj *p = Tcl_NewObj();
         int isRequireSemi = 0;
         pRule = apRule[i];
 
-        p = Tcl_NewObj();
         HtmlCssSelectorToString(pRule->pSelector, p);
         Tcl_ListObjAppendElement(0, pList, p);
         
@@ -4191,29 +4181,24 @@ HtmlCssStyleConfigDump(
             CssProperty *pProp = pRule->pPropertySet->a[j].pProp;
             if (pProp) {
                 int eProp = pRule->pPropertySet->a[j].eProp;
-                char *zPropVal;
                 char *zFree = 0;
                 if (isRequireSemi) Tcl_AppendToObj(p, "; ", 2);
-                zPropVal = HtmlPropertyToString(pProp, &zFree);
                 Tcl_AppendToObj(p, HtmlCssPropertyToString(eProp), -1);
                 Tcl_AppendToObj(p, ":", 1);
-                Tcl_AppendToObj(p, zPropVal, -1);
+                Tcl_AppendToObj(p, HtmlPropertyToString(pProp, &zFree), -1);
                 isRequireSemi = 1;
                 if (zFree) HtmlFree(zFree);
             }
         }
-        Tcl_ListObjAppendElement(0, pList, p);
-
-        snprintf(zBuf, 255, "%s%s%s", 
+        Tcl_ListObjAppendElement(NULL, pList, p);
+        Tcl_ListObjAppendElement(NULL, pList, Tcl_ObjPrintf("%s%s%s", 
             (pPri->origin == CSS_ORIGIN_AUTHOR) ? "author" :
             (pPri->origin == CSS_ORIGIN_AGENT) ? "agent" :
             (pPri->origin == CSS_ORIGIN_USER) ? "user" : "N/A",
             Tcl_GetString(pPri->pIdTail),
             pPri->important ? " (!important)" : ""
-        );
-        zBuf[255] = '\0';
-        Tcl_ListObjAppendElement(0, pList, Tcl_NewStringObj(zBuf, -1));
-        Tcl_ListObjAppendElement(0, pRet, pList);
+        ));
+        Tcl_ListObjAppendElement(NULL, pRet, pList);
     }
     Tcl_SetObjResult(interp, pRet);
     return TCL_OK;
