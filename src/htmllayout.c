@@ -1140,9 +1140,9 @@ normalFlowLayoutFloat (
     iTop = HtmlFloatListPlace(pFloat, iContainingW, iTotalWidth, iTotalHeight, y);
     HtmlFloatListMargins(pFloat, iTop, iTop+iTotalHeight, &iLeft, &iRight);
 
-	if (1 < i) iTop -= margin.margin_top; // On 2nd run
+	if (pLayout->pTree->options.pagination && 1 < i) iTop -= margin.margin_top; // On 2nd run
     y = iTop + margin.margin_top;
-	if (pLayout->pTree->options.pagination && 1 == i) goto REDO;
+	if (pLayout->pTree->options.pagination && 1 == i) goto REDO; // If the document is paginated; go back and reexecute after finding the box height
 
     if (eFloat == CSS_CONST_LEFT) {
         x = iLeft;

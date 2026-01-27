@@ -3867,6 +3867,20 @@ HtmlCssSelectorToString(CssSelector *pSelector, Tcl_Obj *pObj)
 
     if (z) Tcl_AppendToObj(pObj, z, -1);
 }
+void HtmlCssQueryToString(CssRule *pRule, Tcl_Obj *pObj)
+{
+    switch (pRule->eMedia) {
+		case CSS_MEDIA_ALL: 
+            Tcl_AppendStringsToObj(pObj, "@madia all", NULL);
+            break;
+		case CSS_MEDIA_PRINT: 
+            Tcl_AppendStringsToObj(pObj, "@madia print", NULL);
+            break;
+		case CSS_MEDIA_SCREEN: 
+            Tcl_AppendStringsToObj(pObj, "@madia screen", NULL);
+            break;
+	}
+}
 
 /*
  *---------------------------------------------------------------------------
@@ -4132,6 +4146,7 @@ HtmlCssStyleConfigDump(
     CssRule *pRule;
     CssRule *apRule[MAX_RULES];
     Tcl_Obj *pRet;
+    Tcl_Obj *pMedia;
     int nRule = 0;
     int i;
 
@@ -4198,6 +4213,14 @@ HtmlCssStyleConfigDump(
             Tcl_GetString(pPri->pIdTail),
             pPri->important ? " (!important)" : ""
         ));
+		if (CSS_MEDIA_ALL != pRule->eMedia != 0) {
+			if (pMedia == NULL) {
+				pMedia = Tcl_NewObj();
+				HtmlCssQueryToString(pRule, pMedia);
+			}
+			Tcl_ListObjAppendElement(NULL, pMedia, pList);
+			pList = pMedia;
+		} else if (pMedia != NULL) pMedia = NULL;
         Tcl_ListObjAppendElement(NULL, pRet, pList);
     }
     Tcl_SetObjResult(interp, pRet);
