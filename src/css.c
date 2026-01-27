@@ -4217,9 +4217,12 @@ HtmlCssStyleConfigDump(
 			if (pMedia == NULL) {
 				pMedia = Tcl_NewObj();
 				HtmlCssQueryToString(pRule, pMedia);
+				Tcl_ListObjAppendElement(NULL, pMedia, pList);
+				pList = pMedia;
+			} else {
+				Tcl_ListObjAppendElement(NULL, pMedia, pList);
+				continue;
 			}
-			Tcl_ListObjAppendElement(NULL, pMedia, pList);
-			pList = pMedia;
 		} else if (pMedia != NULL) pMedia = NULL;
         Tcl_ListObjAppendElement(NULL, pRet, pList);
     }
