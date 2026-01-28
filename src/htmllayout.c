@@ -1060,7 +1060,7 @@ normalFlowLayoutFloat (
   REDO: // This part of the function is rerun once in order to get the height for the second pass
     memset(&sBox, 0, sizeof(BoxContext));
     sBox.iContainingW = iContainingW;
-	if (pLayout->pTree->options.pagination) i++; // On 2nd run
+	if (pLayout->pTree->options.pagination) i++;
 
 	paginationPageYOrigin(y, pLayout);
     /* Draw the floating element to sBox. The procedure for determining the
@@ -1108,6 +1108,7 @@ normalFlowLayoutFloat (
         memset(&sContent, 0, sizeof(BoxContext));
         sContent.iContainingW = iWidth;
         sContent.iContainingH = iHeight;
+		paginationPageYOrigin(box.iTop, pLayout);
         HtmlLayoutNodeContent(pLayout, &sContent, pNode);
 
         iHeight = getHeight(
@@ -1127,6 +1128,7 @@ normalFlowLayoutFloat (
         considerMinMaxWidth(pNode, iContainingW, &sContent.width);
 
         wrapContent(pLayout, &sBox, &sContent, pNode);
+		paginationPageYOrigin(-box.iTop, pLayout);
     }
 	paginationPageYOrigin(-y, pLayout);
 
@@ -2154,9 +2156,7 @@ wrapContent (LayoutContext *pLayout, BoxContext *pBox, BoxContext *pContent, Htm
         pLayout->pTree, &pBox->vc, x, y, w, h, pNode, 0, pLayout->minmaxTest
     );
 
-    x += box.iLeft;
-    y += box.iTop;
-    HtmlDrawCanvas(&pBox->vc, &pContent->vc, x, y, pNode);
+    HtmlDrawCanvas(&pBox->vc, &pContent->vc, x+box.iLeft, y+box.iTop, pNode);
 
     pBox->width = MAX(pBox->width, 
         margin.margin_left + box.iLeft + pContent->width + box.iRight + margin.margin_right
