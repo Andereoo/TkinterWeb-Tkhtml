@@ -183,7 +183,7 @@ int HtmlPostscript(
     int deltaX = 0, deltaY = 0;    /* Offset of lower-left corner of area to be
                  * marked up, measured in canvas units from the positioning point on the page (reflects
                  * anchor position). Initial values needed only to stop compiler warnings. */
-    int nographics;
+    unsigned char nographics;
     double pagestotal;
 
     /*
@@ -586,7 +586,7 @@ int HtmlPostscript(
         }
     }
     
-    int page_h = 0, pagenum, pageYmin, pageYmax;
+    unsigned int page_h = 0, pagenum, pageYmin, pageYmax;
     if (psInfo.pageMode) page_h = scaledHeight(pPsInfo);
 
     /*

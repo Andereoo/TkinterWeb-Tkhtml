@@ -1006,7 +1006,7 @@ normalFlowLayoutFloat (
     HtmlComputedValues *pV = HtmlNodeComputedValues(pNode);
     int eFloat = pV->eFloat;
     int iContainingW = pBox->iContainingW;
-    int i = 0;
+    char i = 0;
     HtmlFloatList *pFloat = pNormal->pFloat;
 
     int iTotalHeight;        /* Height of floating box (incl. margins) */
@@ -1060,7 +1060,6 @@ normalFlowLayoutFloat (
   REDO: // This part of the function is rerun once in order to get the height for the second pass
     memset(&sBox, 0, sizeof(BoxContext));
     sBox.iContainingW = iContainingW;
-	if (pLayout->pTree->options.pagination) i++;
 
 	paginationPageYOrigin(y, pLayout);
     /* Draw the floating element to sBox. The procedure for determining the
@@ -1082,7 +1081,7 @@ normalFlowLayoutFloat (
         int c = pLayout->minmaxTest ? PIXELVAL_AUTO : iContainingW;
         int iWidth = PIXELVAL(pV, WIDTH, c);
         int iHeight = PIXELVAL(pV, HEIGHT, pBox->iContainingH);
-        int isAuto = 0;
+        unsigned char mmt, isAuto = 0;
 
         nodeGetBoxProperties(pLayout, pNode, iContainingW, &box);
 
@@ -1109,17 +1108,18 @@ normalFlowLayoutFloat (
         sContent.iContainingW = iWidth;
         sContent.iContainingH = iHeight;
 		paginationPageYOrigin(box.iTop, pLayout);
+		if (pLayout->pTree->options.pagination && !i) {
+			mmt = pLayout->minmaxTest;
+			pLayout->minmaxTest = 1;
+		}
         HtmlLayoutNodeContent(pLayout, &sContent, pNode);
 
-        iHeight = getHeight(
-            pNode, sContent.height, pBox->iContainingH
-        );
+        iHeight = getHeight(pNode, sContent.height, pBox->iContainingH);
         if (pV->eDisplay == CSS_CONST_TABLE) {
             sContent.height = MAX(iHeight, sContent.height);
         } else {
             sContent.height = iHeight;
         }
-
         if (!isAuto && DISPLAY(pV) != CSS_CONST_TABLE) {
             sContent.width = iWidth;
         } else {
@@ -1129,6 +1129,7 @@ normalFlowLayoutFloat (
 
         wrapContent(pLayout, &sBox, &sContent, pNode);
 		paginationPageYOrigin(-box.iTop, pLayout);
+		if (pLayout->pTree->options.pagination && !i) pLayout->minmaxTest = mmt;
     }
 	paginationPageYOrigin(-y, pLayout);
 
@@ -1142,10 +1143,12 @@ normalFlowLayoutFloat (
     iTop = HtmlFloatListPlace(pFloat, iContainingW, iTotalWidth, iTotalHeight, y);
     HtmlFloatListMargins(pFloat, iTop, iTop+iTotalHeight, &iLeft, &iRight);
 
-	if (pLayout->pTree->options.pagination && 1 < i) iTop -= margin.margin_top; // On 2nd run
+	if (pLayout->pTree->options.pagination && 0<i) iTop -= margin.margin_top; // On 2nd run
     y = iTop + margin.margin_top;
-	if (pLayout->pTree->options.pagination && 1 == i) goto REDO; // If the document is paginated; go back and reexecute after finding the box height
-
+	if (pLayout->pTree->options.pagination) {
+		i++;
+		if (1 == i) goto REDO; // If the document is paginated; go back and reexecute after finding the box height
+	}
     if (eFloat == CSS_CONST_LEFT) {
         x = iLeft;
     } else {
@@ -1182,7 +1185,6 @@ normalFlowLayoutFloat (
             ((eFloat == CSS_CONST_LEFT) ? x + iTotalWidth : x),
             iTop, iTop + iTotalHeight);
     }
-
     LOG(pNode) {
         HtmlTree *pTree = pLayout->pTree;
         char const *zNode = Tcl_GetString(HtmlNodeCommand(pTree, pNode));
@@ -1190,7 +1192,6 @@ normalFlowLayoutFloat (
         HtmlLog(pTree, "LAYOUTENGINE", "%s (Float) %dx%d (%d,%d)", zNode, iTotalWidth, iTotalHeight, x, iTop, NULL);
         HtmlFloatListLog(pTree, zCaption, zNode, pNormal->pFloat);
     }
-
     return 0;
 }
 
