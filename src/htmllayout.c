@@ -113,14 +113,14 @@ struct LayoutCache {
     int iFloatLeft;
     int iFloatRight;
 
+    /* If not PIXELVAL_AUTO, value for normal-flow callbacks */
+    int iMarginCollapse;
+
     /* Cached output values for normalFlowLayout() */
     NormalFlow normalFlowOut;
     int iWidth;
     int iHeight;
     HtmlCanvas canvas;
-  
-    /* If not PIXELVAL_AUTO, value for normal-flow callbacks */
-    int iMarginCollapse;
 };
 
 struct HtmlLayoutCache {

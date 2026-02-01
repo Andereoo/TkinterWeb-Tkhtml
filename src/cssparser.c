@@ -884,6 +884,7 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
         if (eToken != CT_SEMICOLON && eToken != CT_EOF) return 1;
   
         if (pParse->eMedia) HtmlCssImport(pParse, &t);
+		pParse->eMedia = CSS_MEDIA_ALL;
     } else if (t.n == 5 && strnicmp("media", t.z, t.n) == 0) {
         pParse->isBody = 1;
         inputNextTokenIgnoreSpace(pInput);

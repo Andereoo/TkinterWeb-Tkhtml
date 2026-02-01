@@ -2146,7 +2146,7 @@ styleCmd(
     };
     Tcl_Obj *apObj[5];
     int rc = TCL_OK;
-    int n;
+    unsigned int n;
     HtmlTree *pTree = (HtmlTree *)clientData;
 
     /* First assert() that the sizes of the aConf and apObj array match. Then

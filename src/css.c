@@ -3778,10 +3778,14 @@ HtmlCssImport (CssParse *pParse, CssToken *pToken)
             default:
                 return;
         }
-
         pEval = Tcl_DuplicateObj(pEval);
         Tcl_IncrRefCount(pEval);
         Tcl_ListObjAppendElement(interp, pEval, Tcl_NewStringObj(zUrl, -1));
+		if (pParse->eMedia == CSS_MEDIA_PRINT) {
+			Tcl_ListObjAppendElement(interp, pEval, Tcl_NewStringObj("print", 5));
+		} else if (pParse->eMedia == CSS_MEDIA_SCREEN) {
+			Tcl_ListObjAppendElement(interp, pEval, Tcl_NewStringObj("screen", 6));
+		}
         Tcl_EvalObjEx(interp, pEval, TCL_EVAL_GLOBAL|TCL_EVAL_DIRECT);
         Tcl_DecrRefCount(pEval);
         HtmlFree(pProp);
