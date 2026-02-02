@@ -30,8 +30,8 @@ CFLAGS += -DUSE_TCL_STUBS=1 -DUSE_TK_STUBS=1
 
 ##### The name of the shared library file to build.
 #
-SHARED_LIB_DEBUG = libTkhtml3g.dll
-SHARED_LIB_RELEASE = libTkhtml3.dll
+SHARED_LIB_DEBUG = libTkhtml3.0g.dll
+SHARED_LIB_RELEASE = libTkhtml3.0.dll
 SHARED_LIB = $(SHARED_LIB_$(BUILD))
 
 ##### Command to build a shared library from a set of object files. The
