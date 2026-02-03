@@ -39,20 +39,20 @@ namespace eval hv3 { set {version($Id: hv3_dom_core.tcl,v 1.40 2008/02/15 18:23:
 namespace eval ::hv3::dom::code {
   set NODE_PROTOTYPE {
     # Required by XML and HTML applications:
-    dom_get ELEMENT_NODE                {list number 1}
-    dom_get ATTRIBUTE_NODE              {list number 2}
-    dom_get TEXT_NODE                   {list number 3}
-    dom_get COMMENT_NODE                {list number 8}
-    dom_get DOCUMENT_NODE               {list number 9}
-    dom_get DOCUMENT_FRAGMENT_NODE      {list number 11}
+    dom_get ELEMENT_NODE                {list 1}
+    dom_get ATTRIBUTE_NODE              {list 2}
+    dom_get TEXT_NODE                   {list 3}
+    dom_get COMMENT_NODE                {list 8}
+    dom_get DOCUMENT_NODE               {list 9}
+    dom_get DOCUMENT_FRAGMENT_NODE      {list 11}
   
     # Required by XML applications only:
-    dom_get CDATA_SECTION_NODE          {list number 4}
-    dom_get ENTITY_REFERENCE_NODE       {list number 5}
-    dom_get ENTITY_NODE                 {list number 6}
-    dom_get PROCESSING_INSTRUCTION_NODE {list number 7}
-    dom_get DOCUMENT_TYPE_NODE          {list number 10}
-    dom_get NOTATION_NODE               {list number 12}
+    dom_get CDATA_SECTION_NODE          {list 4}
+    dom_get ENTITY_REFERENCE_NODE       {list 5}
+    dom_get ENTITY_NODE                 {list 6}
+    dom_get PROCESSING_INSTRUCTION_NODE {list 7}
+    dom_get DOCUMENT_TYPE_NODE          {list 10}
+    dom_get NOTATION_NODE               {list 12}
   }
   ::hv3::dom2::stateless NodePrototype %NODE_PROTOTYPE%
   set NODE_PROTOTYPE [list Inherit NodePrototype $NODE_PROTOTYPE]
@@ -84,7 +84,7 @@ set ::hv3::dom::code::NODE {
   dom_get nextSibling     {list null}
 
   -- Always null for this object.
-  dom_get parentNode {list cache null}
+  dom_get parentNode {list null}
 
   dom_get firstChild {list null}
   dom_get lastChild  {list null}
@@ -95,7 +95,7 @@ set ::hv3::dom::code::NODE {
   dom_get childNodes {
     list object [list ::hv3::DOM::NodeListC $myDom list]
   }
-  dom_call hasChildNodes {THIS} {list boolean false}
+  dom_call hasChildNodes {THIS} {list false}
 
   dom_todo ownerDocument
 
@@ -115,14 +115,14 @@ set ::hv3::dom::code::NODE {
   # Method to clone the node. Spec indicates that it is optional to
   # support this on for DOCUMENT nodes, hence the exception.
   #
-  dom_call -string cloneNode {THIS isDeep} {
+  dom_call cloneNode {THIS isDeep} {
     error "DOMException NOT_SUPPORTED_ERR"
   }
 }
 
 ::hv3::dom2::stateless Implementation {
 
-  dom_call -string hasFeature {THIS feature version} {
+  dom_call hasFeature {THIS feature version} {
     set feature [string tolower $feature]
     set version [string tolower $version]
 
@@ -134,9 +134,9 @@ set ::hv3::dom::code::NODE {
     array set f $FeatureList
 
     if {[info exists f($feature)]} {
-      list boolean true
+      list true
     } else {
-      list boolean false
+      list false
     }
   }
 }
@@ -149,10 +149,10 @@ set ::hv3::dom::code::DOCUMENT {
   dom_parameter myHv3
 
   -- Always Node.DOCUMENT_NODE (integer value 9).
-  dom_get nodeType {list number 9}
+  dom_get nodeType {list 9}
 
   -- Always the literal string \"#document\".
-  dom_get nodeName {list string #document}
+  dom_get nodeName {list #document}
 
   -- The Document node always has exactly one child: the &lt\;HTML&gt\; element
   -- of the document tree. This property always contains a [Ref NodeList] 
@@ -170,18 +170,62 @@ set ::hv3::dom::code::DOCUMENT {
 
   -- Return the root element of the document tree (an object of class
   -- [Ref HTMLHtmlElement]).
-  dom_get lastChild  {
+  dom_get lastChild {
     list object [::hv3::dom::wrapWidgetNode $myDom [$myHv3 node]]
   }
 
   -- The document node always has exactly one child node. So this property
   -- is always set to true.
-  dom_call hasChildNodes {THIS} {list boolean true}
+  dom_call hasChildNodes {THIS} {list true}
 
-  dom_call_todo insertBefore
-  dom_call_todo replaceChild
-  dom_call_todo removeChild 
-  dom_call_todo appendChild  
+  dom_call insertBefore {THIS newChild refChild}  {
+    # TODO: Arg checking and correct error messages (excptions).
+    set new [GetNodeFromObj $newChild]
+
+    if {$refChild ne ""} {
+      [$myHv3 node] insert -before [GetNodeFromObj $refChild] $new
+    } else {
+      [$myHv3 node] insert $new
+    }
+    # Return value is a reference to the object just inserted as a new child node.
+    set newChild
+  }
+
+  dom_call appendChild {THIS newChild} {
+    # TODO: Arg checking and correct error messages (excptions).
+
+    [$myHv3 node] insert [GetNodeFromObj $newChild]
+
+    # Return value is a reference to the object just inserted 
+    # as a new child node.
+    set newChild
+  }
+
+  dom_call removeChild {THIS oldChild} {
+    # TODO: Arg checking and correct error messages (excptions).
+
+    [$myHv3 node] remove [GetNodeFromObj $oldChild]
+
+    # Return value is a reference to the node just removed. 
+    #
+    # TODO: At the Tkhtml widget level, the node is now an 
+    # orphan. What we should be doing is telling the javascript 
+    # interpreter that the object is now eligible for finalization.
+    # The finalizer can safely delete the orphaned node object. 
+    #
+    set oldChild
+  }
+
+  dom_call replaceChild {THIS newChild oldChild} {
+    # TODO: Arg checking and correct error messages (excptions).
+
+    set old [GetNodeFromObj $oldChild]
+    [$myHv3 node] insert -before $old [GetNodeFromObj $newChild]
+    [$myHv3 node] remove $old
+
+    # TODO: Same memory management problem as removeChild().
+    set oldChild
+  }
 
   -- For a Document node, the ownerDocument is null.
   dom_get ownerDocument {list null}
@@ -211,7 +255,7 @@ set ::hv3::dom::code::DOCUMENT {
   #     createAttribute()            (todo)
   #     createEntityReference()      (todo)
   #
-  dom_call -string createElement {THIS tagname} {
+  dom_call createElement {THIS tagname} {
     set node [$myHv3 html fragment "<$tagname>"]
     if {$node eq ""} {error "DOMException NOT_SUPPORTED_ERR"}
     list object [::hv3::dom::wrapWidgetNode $myDom $node]
@@ -244,8 +288,67 @@ set ::hv3::dom::code::DOCUMENT {
     #
     set html $myHv3
     catch {set html [$myHv3 html]}
-    set nl [list ::hv3::DOM::NodeListS $myDom [list $html search $tag]]
+    list object [list ::hv3::DOM::HTMLCollectionC $myDom [list $html search $tag]]
+  }
+  
+  #-------------------------------------------------------------------------
+  # The HTMLDocument.write() and writeln() methods (DOM level 1)
+  #
+  dom_call -string write {THIS str} {
+    catch { [$myHv3 html] write text $str } msg
+    return ""
+  }
+  dom_call -string writeln {THIS str} {
+    catch { [$myHv3 html] write text "$str\n" }
+    return ""
+  }
+
+  #-------------------------------------------------------------------------
+  # HTMLDocument.getElementById() method. (DOM level 1)
+  #
+  # This returns a single object (or NULL if an object of the specified
+  # id cannot be found).
+  #
+  dom_call -string getElementById {THIS elementId} {
+    set elementId [string map [list "\x22" "\x5C\x22"] $elementId]
+    set selector [subst -nocommands {[id="$elementId"]}]
+    set node [$myHv3 html search $selector -index 0]
+    if {$node ne ""} {
+      return [list object [::hv3::dom::wrapWidgetNode $myDom $node]]
+    }
+    return null
+  }
+
+  #-------------------------------------------------------------------------
+  # HTMLDocument.getElementsByName() method. (DOM level 1)
+  #
+  # Return a NodeList of the elements whose "name" value is set to
+  # the supplied argument. This is similar to the 
+  # Document.getElementsByTagName() method in hv3_dom_core.tcl.
+  #
+  dom_call -string getElementsByName {THIS elementName} {
+    set name [string map [list "\x22" "\x5C\x22"] $elementName]
+    set selector [subst -nocommands {[name="$name"]}]
+    set nl [list ::hv3::DOM::NodeListS $myDom [list [$myHv3 html] search $selector]]
     list transient $nl
+  }
+  
+  dom_call -string getElementsByClassName {THIS className} {
+    set className [string map [list "\x22" "\x5C\x22"] $className]
+    set selector [subst -nocommands {[class="$className"]}]
+    list object [list ::hv3::DOM::HTMLCollectionC $myDom [list [$myHv3 html] search $selector]]
+  }
+  
+  dom_call -string querySelector {THIS selector} {
+	set node [$myHv3 html search $selector -index 0]
+    if {$node ne ""} {
+      return [list object [::hv3::dom::wrapWidgetNode $myDom $node]]
+    }
+    return null
+  }
+  
+  dom_call -string querySelectorAll {THIS selector} {
+    list object [list ::hv3::DOM::HTMLCollectionC $myDom [list [$myHv3 html] search $selector]]
   }
 }
 
@@ -285,7 +388,7 @@ set ::hv3::dom::code::WIDGET_NODE {
   dom_get previousSibling {WidgetNode_Sibling $myDom $myNode -1}
   dom_get nextSibling     {WidgetNode_Sibling $myDom $myNode +1}
 
-  dom_call -string cloneNode {THIS isDeep} {
+  dom_call cloneNode {THIS isDeep} {
  
     # To clone a node, first obtain the serialized HTML representation.
     # Then parse it using the [widget fragment] API. The result is the
@@ -333,7 +436,14 @@ namespace eval ::hv3::DOM {
     }
     return $ret
   }
-
+  
+  proc WidgetNode_ToText {node} {
+    set txt [$node text -pre]
+    foreach child [$node children] {
+      append txt [WidgetNode_ToText $child]
+    }
+    return $txt
+  }
 
   proc WidgetNode_Sibling {dom node dir} {
     set ret null
@@ -361,8 +471,8 @@ set ::hv3::dom::code::ELEMENT {
 
   # Override parts of the Node interface.
   #
-  dom_get nodeType {list number 1}           ;#     Node.ELEMENT_NODE -> 1
-  dom_get nodeName {list string [string toupper [$myNode tag]]}
+  dom_get nodeType {list 1}           ;#     Node.ELEMENT_NODE -> 1
+  dom_get nodeName {list [string toupper [$myNode tag]]}
 
   dom_get childNodes {
     list object [list ::hv3::DOM::NodeListC $myDom [list $myNode children]]
@@ -370,30 +480,21 @@ set ::hv3::dom::code::ELEMENT {
 
   dom_call insertBefore {THIS newChild refChild}  {
     # TODO: Arg checking and correct error messages (excptions).
-
     set new [GetNodeFromObj [lindex $newChild 1]]
 
-    set ref ""
-    if {[lindex $refChild 0] eq "object"} {
-      set ref [GetNodeFromObj [lindex $refChild 1]]
-    }
-
-    if {$ref ne ""} {
-      $myNode insert -before $ref $new
+    if {$refChild ne ""} {
+      $myNode insert -before [GetNodeFromObj $refChild] $new
     } else {
       $myNode insert $new
     }
-
-    # Return value is a reference to the object just inserted 
-    # as a new child node.
+    # Return value is a reference to the object just inserted as a new child node.
     set newChild
   }
 
   dom_call appendChild {THIS newChild} {
     # TODO: Arg checking and correct error messages (excptions).
 
-    set new [GetNodeFromObj [lindex $newChild 1]]
-    $myNode insert $new
+    $myNode insert [GetNodeFromObj [lindex $newChild 1]]
 
     # Return value is a reference to the object just inserted 
     # as a new child node.
@@ -403,8 +504,7 @@ set ::hv3::dom::code::ELEMENT {
   dom_call removeChild {THIS oldChild} {
     # TODO: Arg checking and correct error messages (excptions).
 
-    set old [GetNodeFromObj [lindex $oldChild 1]]
-    $myNode remove $old
+    $myNode remove [GetNodeFromObj [lindex $oldChild 1]]
 
     # Return value is a reference to the node just removed. 
     #
@@ -419,10 +519,8 @@ set ::hv3::dom::code::ELEMENT {
   dom_call replaceChild {THIS newChild oldChild} {
     # TODO: Arg checking and correct error messages (excptions).
 
-    set new [GetNodeFromObj [lindex $newChild 1]]
     set old [GetNodeFromObj [lindex $oldChild 1]]
-
-    $myNode insert -before $old $new
+    $myNode insert -before $old [GetNodeFromObj [lindex $newChild 1]]
     $myNode remove $old
 
     # TODO: Same memory management problem as removeChild().
@@ -461,7 +559,7 @@ set ::hv3::dom::code::ELEMENT {
   #     probably be altered to match this.
   #
   dom_get tagName {
-    list string [string toupper [$myNode tag]]
+    list [string toupper [$myNode tag]]
   }
 
   dom_call -string getAttribute {THIS attr} {
@@ -479,12 +577,52 @@ set ::hv3::dom::code::ELEMENT {
   dom_call_todo setAttributeNode
   dom_call_todo removeAttributeNode
 
-  dom_call -string getElementsByTagName {THIS tagname} {
-    set htmlwidget [$myNode html]
-    set nl [list ::hv3::DOM::NodeListS $myDom [
-      list $htmlwidget search $tagname -root $myNode
-    ]]
+  #-------------------------------------------------------------------------
+  # HTMLDocument.getElementById() method. (DOM level 1)
+  #
+  # This returns a single object (or NULL if an object of the specified
+  # id cannot be found).
+  #
+  dom_call -string getElementById {THIS elementId} {
+    set elementId [string map [list "\x22" "\x5C\x22"] $elementId]
+    set selector [subst -nocommands {[id="$elementId"]}]
+    set node [$myHv3 html search $selector -root $myNode -index 0]
+    if {$node ne ""} {
+      return [list object [::hv3::dom::wrapWidgetNode $myDom $node]]
+    }
+    return null
+  }
+
+  #-------------------------------------------------------------------------
+  # HTMLDocument.getElementsByName() method. (DOM level 1)
+  #
+  # Return a NodeList of the elements whose "name" value is set to
+  # the supplied argument. This is similar to the 
+  # Document.getElementsByTagName() method in hv3_dom_core.tcl.
+  #
+  dom_call -string getElementsByName {THIS elementName} {
+    set name [string map [list "\x22" "\x5C\x22"] $elementName]
+    set selector [subst -nocommands {[name="$name"]}]
+    set nl [list ::hv3::DOM::NodeListS $myDom [list [$myHv3 html] search $selector -root $myNode]]
     list transient $nl
+  }
+  
+  dom_call -string getElementsByClassName {THIS className} {
+    set className [string map [list "\x22" "\x5C\x22"] $className]
+    set selector [subst -nocommands {[class="$className"]}]
+    list object [list ::hv3::DOM::HTMLCollectionC $myDom [list [$myHv3 html] search $selector -root $myNode]]
+  }
+  
+  dom_call -string querySelector {THIS selector} {
+	set node [$myHv3 html search $selector -root $myNode -index 0]
+    if {$node ne ""} {
+      return [list object [::hv3::dom::wrapWidgetNode $myDom $node]]
+    }
+    return null
+  }
+  
+  dom_call -string querySelectorAll {THIS selector} {
+    list object [list ::hv3::DOM::HTMLCollectionC $myDom [list [$myHv3 html] search $selector -root $myNode]]
   }
 
   # normalize()
@@ -502,13 +640,13 @@ set ::hv3::dom::code::ELEMENT {
   #
   dom_call -string hasAttribute {THIS attr} {
     set rc [catch {$myNode attribute $attr}]
-    list boolean [expr {$rc ? 0 : 1}]
+    list [expr {$rc ? false : true}]
   }
 }
 
 namespace eval ::hv3::DOM {
   proc Element_getAttributeString {node name def} {
-    list string [$node attribute -default $def $name]
+    list [$node attribute -default $def $name]
   }
 
   proc Element_putAttributeString {node name val} {
@@ -659,12 +797,12 @@ namespace eval ::hv3::DOM {
 
   # The "data" property is a get/set on the contents of this text node.
   #
-  dom_get data { list string [$myNode text -pre] }
+  dom_get data { list [$myNode text -pre] }
   dom_put -string data newText { $myNode text set $newText }
 
   # Read-only "length" property.
   #
-  dom_get length { list number [string length [$myNode text -pre]] }
+  dom_get length { list [string length [$myNode text -pre]] }
 
   # The 5 functions specified by DOM:
   #
@@ -677,11 +815,11 @@ namespace eval ::hv3::DOM {
   # The appendData(), insertData() and deleteData() are all implemented
   # as special cases of replaceData().
   #
-  dom_call -string substringData {THIS offset count} {
+  dom_call substringData {THIS offset count} {
     set nOffset [expr {int($offset)}]
     set nCount  [expr {int($count)}]
     set idx2 [expr {$nOffset + $nCount - 1}]
-    list string [string range [$myNode text -pre] $nOffset $idx2]
+    list [string range [$myNode text -pre] $nOffset $idx2]
   }
   dom_call -string appendData {THIS arg} {
     set nChar [string length [$myNode text -pre]]
@@ -699,12 +837,12 @@ namespace eval ::hv3::DOM {
 
   # Override parts of the Node interface.
   #
-  dom_get nodeType  {list number 3}           ;#     Node.TEXT_NODE -> 3
-  dom_get nodeName  {list string #text}
+  dom_get nodeType  {list 3}           ;#     Node.TEXT_NODE -> 3
+  dom_get nodeName  {list #text}
 
   # nodeValue is read/write for a Text node.
   #
-  dom_get nodeValue {list string [$myNode text -pre] }
+  dom_get nodeValue {list [$myNode text -pre] }
   dom_put -string nodeValue newText { $myNode text set $newText }
 
   # End of Node interface overrides.
@@ -712,7 +850,7 @@ namespace eval ::hv3::DOM {
 
   # splitText(offset)
   #
-  dom_call -string splitText {THIS offset} {
+  dom_call splitText {THIS offset} {
     set nOffset [expr {int($offset)}]
     set t [$myNode text -pre]
 

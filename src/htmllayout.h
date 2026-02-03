@@ -17,6 +17,7 @@
 
 typedef struct LayoutContext LayoutContext;
 typedef struct NodeListLink NodeListLink;
+typedef struct HtmlFloatList HtmlFloatList;
 
 /*
  * A single Layout context object is allocated for use throughout
@@ -183,5 +184,16 @@ CHECK_INTEGER_PLAUSIBILITY (int x)
 #else
   #define CHECK_INTEGER_PLAUSIBILITY(x)
 #endif
+
+void HtmlFloatListAdd(HtmlFloatList*, int, int, int, int);
+HtmlFloatList *HtmlFloatListNew();
+void HtmlFloatListDelete(HtmlFloatList*);
+int HtmlFloatListPlace(HtmlFloatList*, int, int, int, int);
+int HtmlFloatListClear(HtmlFloatList*, int, int);
+int HtmlFloatListClearTop(HtmlFloatList*, int);
+void HtmlFloatListNormalize(HtmlFloatList*, int, int);
+void HtmlFloatListMargins(HtmlFloatList*, int, int, int *, int *);
+void HtmlFloatListLog(HtmlTree *, CONST char *, CONST char *, HtmlFloatList *);
+int HtmlFloatListIsConstant(HtmlFloatList*, int, int);
 
 #endif

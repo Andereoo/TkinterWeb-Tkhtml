@@ -114,8 +114,7 @@ inputDiscardComment (CssInput *pInput)
 
     if (n > 1 && z[0] == '/' && z[1] == '*') {
         int i;
-        for (i = 4; i <= n && (z[i-1] != '/' || z[i-2] != '*'); i++) {
-        }
+        for (i = 4; i <= n && (z[i-1] != '/' || z[i-2] != '*'); i++);
         pInput->iInput += i;
 
         /* If the previous token returned was CT_SPACE, then ignore any 
@@ -413,8 +412,7 @@ parseSyntaxError (
     CssInput *pInput,
     CssParse *pParse,
     int isStopAtSemiColon        /* True if error occured parsing an @ rule */
-)
-{
+) {
     char *zToken;
     int nToken;
     CssTokenType eToken;
@@ -438,6 +436,7 @@ parseSyntaxError (
         eToken = inputGetToken(pInput, 0, 0);
     }
     iErrorLength = pInput->iInput - iErrorStart;
+	if (isStopAtSemiColon && pParse->eMedia) pParse->eMedia = CSS_MEDIA_ALL;
 
     if (pParse->pErrorLog) {
         Tcl_Obj *pError = pParse->pErrorLog;
@@ -515,7 +514,6 @@ parseDeclarationError (CssInput *pInput, CssParse *pParse)
 static int 
 parseSelector (CssInput *pInput, CssParse *pParse)
 {
-
     while (1) {
         const char *zToken;
         int nToken;
@@ -538,7 +536,6 @@ parseSelector (CssInput *pInput, CssParse *pParse)
                 HtmlCssSelector(pParse, CSS_SELECTOR_TYPE, 0, &tType);
                 break;
             }
-    
             case CT_SPACE: {    /* Descendant selector (section 5.5) */
                 /* Three possibilities here:
                  *
@@ -560,14 +557,12 @@ parseSelector (CssInput *pInput, CssParse *pParse)
                 }
                 break;
             }
-    
             case CT_GT: {    /* Child selector (section 5.5) */
                 HtmlCssSelector(pParse, CSS_SELECTORCHAIN_CHILD, 0, 0);
                 /* Ignore any white-space that occurs after a '>' */
                 if (eNext == CT_SPACE) inputNextToken(pInput);
                 break;
             }
-
             case CT_COLON: {
                 struct _Pseudo {
                     char *z;
@@ -616,14 +611,12 @@ parseSelector (CssInput *pInput, CssParse *pParse)
                 inputNextToken(pInput);
                 break;
             }
-
             case CT_PLUS: {    /* Child selector (section 5.7) */
                 HtmlCssSelector(pParse, CSS_SELECTORCHAIN_ADJACENT, 0, 0);
                 /* Ignore any white-space that occurs after a '+' */
                 if (eNext == CT_SPACE) inputNextToken(pInput);
                 break;
             }
-
             case CT_DOT: {    /* Class selector (section 5.8.3) */
                 CssToken t;
                 eToken = inputGetToken(pInput, &t.z, &t.n);
@@ -642,7 +635,6 @@ parseSelector (CssInput *pInput, CssParse *pParse)
                 inputNextToken(pInput);
                 break;
             }
-
             case CT_HASH: {    /* Id selector (section 5.9) */
                 CssToken t;
                 eToken = inputGetToken(pInput, &t.z, &t.n);
@@ -661,7 +653,6 @@ parseSelector (CssInput *pInput, CssParse *pParse)
                 inputNextToken(pInput);
                 break;
             }
-
             case CT_LSP: {    /* Attribute selector of some kind */
                 CssToken t1;
                 CssToken t2;
@@ -717,21 +708,24 @@ parseSelector (CssInput *pInput, CssParse *pParse)
                 inputNextToken(pInput);
                 break;
             }
-
             case CT_COMMA: {
-            if( !pParse->pSelector ){
-                  goto syntax_error;
-                }
-                HtmlCssSelectorComma(pParse);
+				if(!pParse->pSelector) goto syntax_error;
+				if(!pParse->isIgnore) {  /* Do nothing if the isIgnore flag is set */
+					pParse->apXtraSelector = (CssSelector **)HtmlRealloc(
+						   "CssParse.apXtraSelector", (char *)pParse->apXtraSelector, 
+						   (pParse->nXtra + 1) * sizeof(CssSelector *)
+					);
+					pParse->apXtraSelector[pParse->nXtra] = pParse->pSelector;
+					pParse->pSelector = NULL;
+					pParse->nXtra++;
+				}
                 if (CT_SPACE == eNext) inputNextToken(pInput);
                 break;
             }
-
             case CT_LP: return 0;
             default: goto syntax_error;
         }
     }
-
   syntax_error:
     return 1;
 }
@@ -834,27 +828,23 @@ static int parseDeclarationBlock(CssInput *pInput, CssParse *pParse){
  *---------------------------------------------------------------------------
  */
 static int 
-parseMediaList(CssInput *pInput, unsigned char **media, unsigned char *count)
+parseMediaList(CssInput *pInput, CssParse *pParse)
 {
-    *count = 0; // Initialize the count to 0
+    pParse->eMedia = 0;
     while (1) {
-        CssTokenType eToken;
-        char *zToken;
-        int nToken; // Get current query after at-rule
-        eToken = inputGetToken(pInput, (const char **)&zToken, &nToken);
-
-        if (eToken != CT_IDENT) return 1; // Parse all queries after at-rule, if matches: macros are added to array.
-        if (nToken == 3 && strnicmp("all", zToken, nToken) == 0) {
-            (*media)[(*count)++] = CSS_MEDIA_ALL;
-        } else if (nToken == 5 && strnicmp("print", zToken, nToken) == 0) {
-            (*media)[(*count)++] = CSS_MEDIA_PRINT;
-        } else if (nToken == 6 && strnicmp("screen", zToken, nToken) == 0) {
-            (*media)[(*count)++] = CSS_MEDIA_SCREEN;
+        CssToken t; // Get current query after at-rule
+        if (inputGetToken(pInput, &t.z, &t.n) != CT_IDENT) return 1; // Parse all queries after at-rule, if matches: macros are added to array.
+        if (t.n == 3 && strnicmp("all", t.z, t.n) == 0) {
+			pParse->eMedia = CSS_MEDIA_ALL;
+        } else if (t.n == 5 && strnicmp("print", t.z, t.n) == 0) {
+			pParse->eMedia = CSS_MEDIA_PRINT;
+        } else if (t.n == 6 && strnicmp("screen", t.z, t.n) == 0) {
+			pParse->eMedia = CSS_MEDIA_SCREEN;
         }
         inputNextTokenIgnoreSpace(pInput); // Get next query, if is not a comma then stop.
-        if (CT_COMMA != inputGetToken(pInput, 0, 0)) break;
+		if (CT_COMMA != inputGetToken(pInput, 0, 0)) break;
         inputNextTokenIgnoreSpace(pInput);
-    }
+    };
     return 0;
 }
 
@@ -870,77 +860,43 @@ parseMediaList(CssInput *pInput, unsigned char **media, unsigned char *count)
  *---------------------------------------------------------------------------
  */
 static int parseAtRule(CssInput *pInput, CssParse *pParse){
-    char *zWord;
-    int nWord;
+    CssToken t;
     inputNextToken(pInput);
   
     /* According to CSS2.1, white-space after the '@' character is illegal */
-    if (CT_IDENT != inputGetToken(pInput, (const char **)&zWord, &nWord)) return 1;
+    if (CT_IDENT != inputGetToken(pInput, (const char **)&t.z, &t.n)) return 1;
   
-    if (nWord == 6 && strnicmp("import", zWord, nWord) == 0) {
+    if (t.n == 6 && strnicmp("import", t.z, t.n) == 0) {
         CssTokenType eToken;
-        CssToken tToken;
-        unsigned char media_ok, *media = malloc(9*sizeof(unsigned char));
-
-        /* If we are already into the stylesheet "body", this is a 
-         * syntax error 
-         */
-        if (pParse->isBody) {
-            return 1;
-        }
-  
+        /* If we are already into the stylesheet "body", this is a syntax error */
+        if (pParse->isBody) return 1;
         inputNextTokenIgnoreSpace(pInput);
-        eToken = inputGetToken(pInput, &tToken.z, &tToken.n);
+        eToken = inputGetToken(pInput, &t.z, &t.n);
         if (eToken != CT_STRING && eToken != CT_FUNCTION) {
             return 1;
         }
-  
         inputNextTokenIgnoreSpace(pInput);
         eToken = inputGetToken(pInput, 0, 0);
-        if (eToken != CT_SEMICOLON && eToken != CT_EOF) return 1;
-        parseMediaList(pInput, &media, &media_ok);
-  
+        if (eToken != CT_SEMICOLON && eToken != CT_EOF) {
+            if (parseMediaList(pInput, pParse)) return 1;
+        }
         eToken = inputGetToken(pInput, 0, 0);
         if (eToken != CT_SEMICOLON && eToken != CT_EOF) return 1;
   
-        if (media_ok > 0) {
-            HtmlCssImport(pParse, &tToken);
-        }
-    } else if (nWord == 5 && strnicmp("media", zWord, nWord) == 0) {
-        unsigned char isError, count, *media = malloc(9*sizeof(unsigned char));
+        if (pParse->eMedia) HtmlCssImport(pParse, &t);
+		pParse->eMedia = CSS_MEDIA_ALL;
+    } else if (t.n == 5 && strnicmp("media", t.z, t.n) == 0) {
         pParse->isBody = 1;
         inputNextTokenIgnoreSpace(pInput);
-        parseMediaList(pInput, &media, &count);
+        if (parseMediaList(pInput, pParse)) return 1;
         if (CT_LP != inputGetToken(pInput, 0, 0)) return 1;
 
-        if (!count) {
-            /* The media does not match. Skip tokens until the end of
-             * the block.
-             */
-            int iNest = 1;
-            while (
-                (inputGetToken(pInput, 0, 0) != CT_EOF) &&
-                (inputGetToken(pInput, 0, 0) != CT_RP || iNest != 1)
-            ) {
-                if (inputGetToken(pInput, 0, 0) == CT_LP) iNest++;
-                if (inputGetToken(pInput, 0, 0) == CT_RP) iNest--;
-                inputNextToken(pInput);
-            }
-        } else {
-            while (0 == inputNextTokenIgnoreSpace(pInput)) {
-                isError = parseSelector(pInput, pParse);
-                if (!isError) { // Parse CSS in body of '@media'
-                    for (unsigned char i = 0; i < count; i++) {
-                        HtmlCssSelector(pParse, media[i], 0, 0);
-                    }
-                    isError = parseDeclarationBlock(pInput, pParse);
-                } else break;
-                HtmlCssRule(pParse, !isError);
-            }
+        if (!pParse->eMedia) {  /* The media does not match. Skip tokens until the end of the block. */
+            pParse->isIgnore = 1;
         }
-    } else if (nWord == 4 && strnicmp("page", zWord, nWord) == 0) {
+    //} else if (t.n == 4 && strnicmp("page", t.z, t.n) == 0) {
         
-    } else if (nWord == 7 && strnicmp("charset", zWord, nWord) == 0) {
+    } else if (t.n == 7 && strnicmp("charset", t.z, t.n) == 0) {
         CssTokenType eNext;
         do {
             inputNextTokenIgnoreSpace(pInput);
@@ -950,7 +906,6 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
         pParse->isBody = 1;
         return 1;
     }
-  
     return 0;
 }
 
@@ -964,7 +919,6 @@ static int parseAtRule(CssInput *pInput, CssParse *pParse){
  *     Calls the following functions from css.c:
  *
  *         HtmlCssDeclaration
- *         HtmlCssSelectorComma
  *         HtmlCssSelector
  *         HtmlCssImport
  *         HtmlCssRule
@@ -989,7 +943,7 @@ HtmlCssRunParser (const char *zInput, int nInput, CssParse *pParse)
      * is either an at-rule or a declaration.
      */
     while (0 == inputNextTokenIgnoreSpace(&sInput)) {
-        int isSyntaxError;
+        u8 isSyntaxError;
 
         eToken = inputGetToken(&sInput, 0, 0);
         switch (eToken) {
@@ -997,7 +951,9 @@ HtmlCssRunParser (const char *zInput, int nInput, CssParse *pParse)
             case CT_SGML_CLOSE:
                 isSyntaxError = 0; break;
             case CT_RP:
-                isSyntaxError = 0; break;
+                pParse->isIgnore = isSyntaxError = 0;  // The next lines are to end the parsing of @media
+				pParse->eMedia = CSS_MEDIA_ALL;
+				break;
             case CT_AT:
                 isSyntaxError = parseAtRule(&sInput, pParse); break;
             default:

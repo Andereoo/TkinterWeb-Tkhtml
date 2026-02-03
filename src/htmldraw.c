@@ -611,30 +611,25 @@ windowsRepair (HtmlTree *pTree, HtmlCanvas *pCanvas)
      */
     while (p) {
         HtmlNodeReplacement *pNext = p->pNext;
-        Tk_Window control = p->win;
-        int iViewY;
-        int iWidth;
-        int iHeight;
-        int iViewX;
+        int iViewY, iWidth, iHeight, iViewX;
 
         if (pTree) {
             iViewX = p->iCanvasX - pTree->iScrollX; 
             iViewY = p->iCanvasY - pTree->iScrollY; 
-            if (Tk_Parent(control) == pTree->docwin) {
+            if (Tk_Parent(p->win) == pTree->docwin) {
                 iViewX -= Tk_X(pTree->docwin);
                 iViewY -= Tk_Y(pTree->docwin);
             }
             iHeight = p->iHeight;
             iWidth = p->iWidth;
         }
-
         /* If the sub-window is not part of the viewable region, or the 
          * widget is being destroyed (pTree==0) unmap the window and remove it
          * from the HtmlTree.pMapped linked-list. 
          */
-    if (!pTree || p->clipped || iWidth <= 0 || iHeight <= 0) {
-            if (Tk_IsMapped(control)) {
-                Tk_UnmapWindow(control);
+		if (!pTree || p->clipped || iWidth <= 0 || iHeight <= 0) {
+            if (Tk_IsMapped(p->win)) {
+                Tk_UnmapWindow(p->win);
             }
             if (pPrev) {
                 assert(pPrev->pNext == p);
@@ -645,18 +640,17 @@ windowsRepair (HtmlTree *pTree, HtmlCanvas *pCanvas)
             }
             p->pNext = 0;
         } else {
-            if (!Tk_IsMapped(control)) {
-                Tk_MoveResizeWindow(control, iViewX, iViewY, iWidth, iHeight);
-                Tk_MapWindow(control);
+            if (!Tk_IsMapped(p->win)) {
+                Tk_MoveResizeWindow(p->win, iViewX, iViewY, iWidth, iHeight);
+                Tk_MapWindow(p->win);
             } else if(
-                iViewX != Tk_X(control) || Tk_Y(control) != iViewY ||
-                iWidth != Tk_Width(control) || Tk_Height(control) != iHeight
+                iViewX != Tk_X(p->win) || Tk_Y(p->win) != iViewY ||
+                iWidth != Tk_Width(p->win) || Tk_Height(p->win) != iHeight
             ) {
-                Tk_MoveResizeWindow(control, iViewX, iViewY, iWidth, iHeight);
+                Tk_MoveResizeWindow(p->win, iViewX, iViewY, iWidth, iHeight);
             }
             pPrev = p;
         }
-
         p = pNext;
     }
 }
@@ -1026,9 +1020,8 @@ itemToBox (HtmlCanvasItem *pItem, int origin_x, int origin_y, int *pX, int *pY, 
         case CANVAS_WINDOW: {
             HtmlNodeReplacement *pR = pItem->c.window.pElem->pReplacement;
             if (pR && pR->win) {
-                Tk_Window control = pR->win;
-                *pW = Tk_ReqWidth(control);
-                *pH = Tk_ReqHeight(control);
+                *pW = Tk_ReqWidth(pR->win);
+                *pH = Tk_ReqHeight(pR->win);
             } else {
                 *pW = 1;
                 *pH = 1;
@@ -3034,13 +3027,11 @@ pixmapQueryCb(
             drawText(pQuery, pItem, drawable, x, y);
             break;
         }
-
         case CANVAS_IMAGE: {
             setClippingDrawable(pQuery, pItem, &drawable, &x, &y);
             drawImage(pQuery, &pItem->c.image, drawable, x, y, w, h);
             break;
         }
-
         case CANVAS_BOX: {
             Outline *p;
             int xv = pQuery->x - pQuery->pTree->iScrollX;
@@ -3057,16 +3048,13 @@ pixmapQueryCb(
             }
             break;
         }
-
         case CANVAS_LINE: {
             drawLine(pQuery, pItem, drawable, x, y, w, h);
             break;
         }
         case CANVAS_WINDOW: {
             if (pQuery->getwin) {
-                HtmlTree *pTree = pQuery->pTree;
-                HtmlNodeReplacement *pRep = pItem->c.window.pElem->pReplacement;
-                HtmlNodeReplacement *p;
+                HtmlNodeReplacement *p, *pRep = pItem->c.window.pElem->pReplacement;
 
                 pRep->iCanvasX = origin_x + pItem->c.window.x;
                 pRep->iCanvasY = origin_y + pItem->c.window.y;
@@ -3089,7 +3077,6 @@ pixmapQueryCb(
                     if (pRep->iCanvasY + pRep->iHeight > pOver->y + pOver->h) {
                         pRep->iHeight = pOver->y + pOver->h - pRep->iCanvasY;
                     }
-
                     /* Horizontal clipping */
                     if (pRep->iCanvasX < pOver->x) {
                         pRep->iWidth -= (pOver->x - pRep->iCanvasX);
@@ -3099,11 +3086,10 @@ pixmapQueryCb(
                         pRep->iWidth = pOver->x + pOver->w - pRep->iCanvasX;
                     }
                 }
-
-                for (p = pTree->pMapped; p && p != pRep; p = p->pNext);
+                for (p = pQuery->pTree->pMapped; p && p != pRep; p = p->pNext);
                 if (!p) {
-                    pRep->pNext = pTree->pMapped;
-                    pTree->pMapped = pRep;
+                    pRep->pNext = pQuery->pTree->pMapped;
+                    pQuery->pTree->pMapped = pRep;
                 }
             }
             break;
@@ -4494,12 +4480,12 @@ int TextToPostscript(Tk_PostscriptInfo, const char*, int n, int x, int y, int, H
 int ImageToPostscript(HtmlTree*, HtmlImage2*, int x, int y, int, HtmlNode*, Tcl_Interp*);
 int BoxToPostscript(HtmlTree*, int x, int y, int w, int h, int, HtmlNode*, int, Tcl_Interp*, HtmlComputedValues*);
 int LineToPostscript(Tk_PostscriptInfo, int x, int y, int w, int, int, int, HtmlNode*, Tcl_Interp*);
-int WinItemToPostscript(HtmlTree *pTree, int x, int y, Tk_Window , int, Tcl_Interp*);
+int WinItemToPostscript(HtmlTree *pTree, int x, int y, Tk_Window, int, Tcl_Interp*);
 typedef struct printingInfo {
     HtmlTree *pTree;    /* Information about overall canvas. */
     HtmlNode *pBgRoot;
-    int prepass;    /* 1 means this is a prepass to collect font information; 0 means final Postscript is being created. */
-    int nographics;
+    char prepass;    /* 1 means this is a prepass to collect font information; 0 means final Postscript is being created. */
+    char nographics;
     Tcl_Interp *interp;    /* Leave Postscript or error message here. */
     Tcl_Obj *psObj;
 } printingInfo;
@@ -4509,7 +4495,6 @@ static int HtmlPostscriptCb(
 ) {
     printingInfo *pPrint = (printingInfo *)clientData;
     int rc = TCL_OK;
-
     switch (pItem->type) {
         case CANVAS_TEXT: {
             CanvasText *pT = &pItem->c.text;
@@ -4541,7 +4526,6 @@ static int HtmlPostscriptCb(
         }
         default: goto done;
     }
-
     if (pPrint->prepass || !strlen(Tcl_GetStringResult(pPrint->interp))) goto done;
     Tcl_AppendToObj(pPrint->psObj, "gsave\n", -1);
     Tcl_AppendObjToObj(pPrint->psObj, Tcl_GetObjResult(pPrint->interp));
@@ -4552,7 +4536,7 @@ static int HtmlPostscriptCb(
         return rc;
 }
 int HtmlGetPostscript(
-HtmlTree *pTree, HtmlNode *pBgRoot, int ymin, int ymax, int prepass, int nogfx, Tcl_Interp *interp, Tcl_Obj *psObj, HtmlComputedValues *pV
+HtmlTree *pTree, HtmlNode *pBgRoot, int ymin, int ymax, char prepass, char nogfx, Tcl_Interp *interp, Tcl_Obj *psObj, HtmlComputedValues *pV
 ) {
     struct printingInfo sPrint = {pTree, pBgRoot, prepass, nogfx, interp, psObj};
     ClientData clientData = (ClientData)&sPrint;

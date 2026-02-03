@@ -31,7 +31,7 @@ STARKITRT = ~/bin/tclkit
 
 ##### Javascript libaries - libgc.a and libsee.a
 #
-JS_SHARED_LIB = libTclsee.so
+JS_SHARED_LIB = libTclqjs.so
 
 JSLIB   = $(HOME)/work/tkhtml/js/lib/libgc.a
 JSLIB  += $(HOME)/work/tkhtml/js/lib/libsee.a -lpthread

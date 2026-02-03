@@ -210,6 +210,12 @@ HtmlLog(HtmlTree *pTree, CONST char *zSubject, CONST char *zFormat, ...) {
     va_start(ap, zFormat);
     logCommon(pTree, pTree->options.logcmd, zSubject, zFormat, ap);
 }
+void 
+HtmlUnspptd(HtmlTree *pTree, CONST char *zFormat, ...) {
+    va_list ap;
+    va_start(ap, zFormat);
+    logCommon(pTree, pTree->options.unspptdcmd, "UNSUPPORTED", zFormat, ap);
+}
 
 /*
  *---------------------------------------------------------------------------
@@ -258,13 +264,13 @@ doLoadDefaultStyle (HtmlTree *pTree)
  *---------------------------------------------------------------------------
  */
 static void
-doSingleScrollCallback(interp, pScript, iOffScreen, iTotal, iPage)
-    Tcl_Interp *interp;
-    Tcl_Obj *pScript;
-    int iOffScreen;
-    int iTotal;
-    int iPage;
-{
+doSingleScrollCallback(
+    Tcl_Interp *interp,
+    Tcl_Obj *pScript,
+    int iOffScreen,
+    int iTotal,
+    int iPage
+) {
     if (pScript) {
         double fArg1;
         double fArg2;
@@ -1328,6 +1334,7 @@ configureCmd(
         BOOLEAN (layoutcache, "layoutCache", "LayoutCache", "1", L_MASK),
         STRING  (logcmd, "logCmd", "LogCmd", ""),
         STRING  (timercmd, "timerCmd", "TimerCmd", ""),
+        STRING  (unspptdcmd, "unspptdCmd", "UnspptdCmd", ""),
 
         {TK_OPTION_END, 0, 0, 0, 0, 0, 0, 0, 0}
     };
@@ -2139,7 +2146,7 @@ styleCmd(
     };
     Tcl_Obj *apObj[5];
     int rc = TCL_OK;
-    int n;
+    unsigned int n;
     HtmlTree *pTree = (HtmlTree *)clientData;
 
     /* First assert() that the sizes of the aConf and apObj array match. Then

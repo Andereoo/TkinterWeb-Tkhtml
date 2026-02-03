@@ -156,7 +156,7 @@ HtmlCssSearch(
 
     /* Search only descendants of this node (NULL means search whole tree) */
     HtmlNode *pSearchRoot = 0;
-    int eMode = SEARCH_MODE_ALL;
+    u8 eMode = SEARCH_MODE_ALL;
     int iIndex = 0;
 
     int iArg;
@@ -237,8 +237,8 @@ HtmlCssSearch(
         z = (char *)HtmlAlloc("temp", n);
         sprintf(z, "%s {width:0}", zOrig);
         HtmlCssSelectorParse(pTree, n, z, &pStyle);
-        if ( !pStyle || !pStyle->pUniversalRules) {
-            Tcl_AppendResult(interp, "Bad css selector: \"", zOrig, "\"", 0); 
+        if (!pStyle || !pStyle->pUniversalRules) {
+            Tcl_AppendResult(interp, "Bad css selector: \"", zOrig, "\"", (char*)NULL); 
             return TCL_ERROR;
         }
         sSearch.pRuleList = pStyle->pUniversalRules;
@@ -260,15 +260,13 @@ HtmlCssSearch(
     switch (eMode) {
         case SEARCH_MODE_ALL: {
             Tcl_Obj *pRet = Tcl_NewObj();
-            int ii;
-            for(ii = 0; ii < pCache->nNode; ii++){
-                Tcl_Obj *pCmd = HtmlNodeCommand(pTree, pCache->apNode[ii]);
+            for(int i = 0; i < pCache->nNode; i++){
+                Tcl_Obj *pCmd = HtmlNodeCommand(pTree, pCache->apNode[i]);
                 Tcl_ListObjAppendElement(interp, pRet, pCmd);
             }
             Tcl_SetObjResult(interp, pRet);
             break;
         }
-
         case SEARCH_MODE_LENGTH:
             Tcl_SetObjResult(interp, Tcl_NewIntObj(pCache->nNode));
             break;

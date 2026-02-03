@@ -1160,14 +1160,11 @@ struct TagDeleteContext {
 typedef struct TagDeleteContext TagDeleteContext;
 
 static int
-tagDeleteCallback(pTree, pNode, clientData)
-    HtmlTree *pTree;
-    HtmlNode *pNode;
-    ClientData clientData;
+tagDeleteCallback(HtmlTree *pTree, HtmlNode *pNode, ClientData cd)
 {
     HtmlTextNode *pTextNode = HtmlNodeAsText(pNode);
     if (pTextNode) {
-        TagDeleteContext *p = (TagDeleteContext *)clientData;
+        TagDeleteContext *p = (TagDeleteContext *)cd;
         p->nOcc += removeTagFromNode(pTextNode, p->pTag);
     }
     return HTML_WALK_DESCEND;

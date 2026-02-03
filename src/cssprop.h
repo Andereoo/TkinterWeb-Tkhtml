@@ -159,8 +159,6 @@ const char * HtmlCssConstantToString(int);
 #define CSS_CONST_XX_LARGE 256
 #define CSS_CONST_XX_SMALL 257
 #define CSS_CONST_YELLOW 258
-#define CSS_CONST_ZOOM_IN 259
-#define CSS_CONST_ZOOM_OUT 260
 int HtmlCssPropertyLookup(int, const char *);
 const char * HtmlCssPropertyToString(int);
 #define CSS_PROPERTY__TKHTML_ORDERED_LIST_START 0
@@ -299,8 +297,8 @@ const char * HtmlCssPropertyToString(int);
 #define CSS_SHORTCUTPROPERTY_PADDING 133
 #define CSS_CONST_MIN_CONSTANT 100
 #define CSS_PROPERTY_MIN_PROPERTY 0
-#define CSS_CONST_MAX_CONSTANT 260
-#define CSS_PROPERTY_MAX_PROPERTY 116
+#define CSS_CONST_MAX_CONSTANT 258
+#define CSS_PROPERTY_MAX_PROPERTY 112
 
 unsigned char *HtmlCssEnumeratedValues(int);
   

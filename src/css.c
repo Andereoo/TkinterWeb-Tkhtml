@@ -435,6 +435,7 @@ rgbToColor(char *zOut, CONST char *zRgb, int nRgb)
     for (ii = 0; ii < 3; ii++){
         aToken[ii].z = HtmlCssGetNextCommaListItem(z, zEnd - z, &aToken[ii].n);
         z = &(aToken[ii].z[aToken[ii].n]);
+		if (!z) break;
     }
     if (!aToken[0].z || !aToken[1].z || !aToken[2].z ||
         !aToken[0].n || !aToken[1].n || !aToken[2].n
@@ -2245,15 +2246,14 @@ cssParse(
     sParse.pImportCmd = pImportCmd;
     sParse.pUrlCmd = pUrlCmd;
     sParse.interp = (pTree ? pTree->interp : 0);
+    sParse.eMedia = CSS_MEDIA_ALL;
     sParse.pTree = pTree;
     if (pErrorVar) {
         sParse.pErrorLog = Tcl_NewObj();
         Tcl_IncrRefCount(sParse.pErrorLog);
     }
 
-    if( n<0 ){
-        n = strlen(z);
-    }
+    if(n<0) n = strlen(z);
 
     /* If *ppStyle is NULL, then create a new CssStyleSheet object. If it
      * is not zero, then append the rules from the new stylesheet document
@@ -2445,14 +2445,16 @@ HtmlCssInlineParse(
  *
  *---------------------------------------------------------------------------
  */
-static void 
-ruleFree (CssRule *pRule)
+#define FREE_SELECTOR    0x00000001
+#define FREE_PROPERTYSET 0x00000002
+#define FREE_BOTH        0x00000003
+static void ruleFree (CssRule *pRule)
 {
     if (pRule) {
-        if (pRule->freeSelector) {
+        if (pRule->freeWhat & FREE_SELECTOR) {
             selectorFree(pRule->pSelector);
         }
-        if (pRule->freePropertySets) {
+        if (pRule->freeWhat & FREE_PROPERTYSET) {
             propertySetFree(pRule->pPropertySet);
         }
         HtmlFree(pRule);
@@ -2591,7 +2593,10 @@ HtmlCssDeclaration (
     dequote(zBuf);
     prop = HtmlCssPropertyLookup(-1, zBuf);
 
-    if(prop<0) return;
+    if (prop < 0) {
+		HtmlUnspptd(pParse->pTree, "CSS %s", zBuf);
+		return;
+	}
 
     if (isImportant) {
         ppPropertySet = &pParse->pImportant;
@@ -2641,6 +2646,9 @@ HtmlCssDeclaration (
         case CSS_PROPERTY_COUNTER_RESET:
             propertySetAddList(pParse, prop, *ppPropertySet, pExpr);
             break;
+		case CSS_PROPERTY_OVERFLOW:
+            propertySetAdd(*ppPropertySet, CSS_PROPERTY_OVERFLOW_X, tokenToProperty(pParse, pExpr));
+            propertySetAdd(*ppPropertySet, CSS_PROPERTY_OVERFLOW_Y, tokenToProperty(pParse, pExpr));
         default:
             propertySetAdd(*ppPropertySet, prop, tokenToProperty(pParse, pExpr)); // CSS seems to be parsed though here
     }
@@ -2710,10 +2718,16 @@ HtmlCssSelector (
     dequote(pSelector->zValue);
 
     /* Tag names are case-insensitive - fold to lower case */
-    if( stype==CSS_SELECTOR_TYPE ){
+    if (stype==CSS_SELECTOR_TYPE) {
         assert(pSelector->zValue);
         Tcl_UtfToLower(pSelector->zValue);
     }
+	if (pParse->pQuery) {
+		CssSelector *pQuery = HtmlNew(CssSelector);
+		pQuery->eSelector = pParse->pQuery->eSelector;
+		pQuery->pNext = pParse->pSelector;
+		pParse->pSelector = pQuery;
+	}
 }
 
 /*
@@ -2768,7 +2782,7 @@ ruleCompare(CssRule *pLeft, CssRule *pRight) {
                  * priority rule is the one that appeared later in the 
                  * source stylesheet.
                  */
-        res = pLeft->iRule - pRight->iRule;
+				res = pLeft->iRule - pRight->iRule;
             }
         }
     }
@@ -2793,7 +2807,7 @@ insertRule (CssRule **ppList, CssRule *pRule)
          * latter specified wins.
          */
         CssRule *pR = *ppList;
-        while (pR->pNext && ruleCompare(pR->pNext, pRule)>0 ) {
+        while (pR->pNext && ruleCompare(pR->pNext, pRule) > 0) {
             pR = pR->pNext;
         }
         pRule->pNext = pR->pNext;
@@ -2822,9 +2836,6 @@ insertRule (CssRule **ppList, CssRule *pRule)
  *
  *---------------------------------------------------------------------------
  */
-#define FREE_SELECTOR    0x00000001
-#define FREE_PROPERTYSET 0x00000002
-#define FREE_BOTH        0x00000003
 static void 
 cssSelectorPropertySetPair (CssParse *pParse, CssSelector *pSelector, CssPropertySet *pPropertySet, unsigned int freeWhat)
 {
@@ -2835,13 +2846,9 @@ cssSelectorPropertySetPair (CssParse *pParse, CssSelector *pSelector, CssPropert
 
     assert(pPropertySet && pPropertySet->n > 0);
 
-    if (freeWhat & FREE_PROPERTYSET) {
-        pRule->freePropertySets = 1;
-    }
-    if (freeWhat & FREE_SELECTOR) {
-        pRule->freeSelector = 1;
-    }
+    if (freeWhat) pRule->freeWhat = freeWhat;
 
+	pRule->eMedia = pParse->eMedia;
     /* Calculate the specificity of the rules. We use the following
      * formala:
      *
@@ -2921,7 +2928,6 @@ cssSelectorPropertySetPair (CssParse *pParse, CssSelector *pSelector, CssPropert
         }
 
         switch (pS->eSelector) {
-
             case CSS_PSEUDOELEMENT_AFTER:
                 insertRule(&pStyle->pAfterRules, pRule);
                 break;
@@ -2953,7 +2959,6 @@ cssSelectorPropertySetPair (CssParse *pParse, CssSelector *pSelector, CssPropert
                 Tcl_SetHashValue(p, pList);
                 break;
             }
-    
             default:
                 insertRule(&pStyle->pUniversalRules, pRule);
                 break;
@@ -2990,8 +2995,7 @@ HtmlCssRule (CssParse *pParse, int success)
     CssPropertySet *pPropertySet = pParse->pPropertySet;
     CssPropertySet *pImportant = pParse->pImportant;
     CssSelector **apXtraSelector = pParse->apXtraSelector;
-    int nXtra = pParse->nXtra;
-    int i;
+    u32 nXtra = pParse->nXtra, i;
 
 #if TRACE_PARSER_CALLS
     printf("HtmlCssRule(%p, %d)\n", pParse, success);
@@ -3009,20 +3013,17 @@ HtmlCssRule (CssParse *pParse, int success)
     if (success && !pParse->isIgnore && pSelector && (pPropertySet || pImportant))
     {
         if (pPropertySet) {
-            unsigned int flags = FREE_BOTH;
-            cssSelectorPropertySetPair(pParse, pSelector, pPropertySet, flags);
+            cssSelectorPropertySetPair(pParse, pSelector, pPropertySet, FREE_BOTH);
             for (i = 0; i < nXtra; i++){
-                unsigned int flags2 = FREE_SELECTOR;
                 CssSelector *pS = apXtraSelector[i];
-                cssSelectorPropertySetPair(pParse, pS, pPropertySet, flags2);
+                cssSelectorPropertySetPair(pParse, pS, pPropertySet, FREE_SELECTOR);
             }
         }
-
         if (pImportant) {
-            unsigned int flags = (pPropertySet ? FREE_PROPERTYSET : FREE_BOTH);
+            u8 flags = (pPropertySet ? FREE_PROPERTYSET : FREE_BOTH);
             cssSelectorPropertySetPair(pParse, pSelector, pImportant, flags);
             for (i = 0; i < nXtra; i++){
-                unsigned int flags2 = (pPropertySet ? 0 : FREE_SELECTOR);
+                u8 flags2 = (pPropertySet ? 0 : FREE_SELECTOR);
                 CssSelector *pS = apXtraSelector[i];
                 cssSelectorPropertySetPair(pParse, pS, pImportant, flags2);
             }
@@ -3115,6 +3116,97 @@ attrTest (int eType, const char *zString, const char *zAttr)
     return 0;
 }
 
+/*
+ *---------------------------------------------------------------------------
+ *
+ * HtmlCssInlineFree --
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *---------------------------------------------------------------------------
+ */
+void HtmlCssInlineFree (HtmlElementNode *pElem)
+{
+    propertySetFree(pElem->pStyle);
+	pElem->pStyle = NULL;
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * propertySetToPropertyValues --
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *---------------------------------------------------------------------------
+ */
+static void 
+propertySetToPropertyValues (HtmlComputedValuesCreator *p, int *aPropDone, CssPropertySet *pSet)
+{
+    int i, eProp;
+    assert(pSet);
+
+    for (i = pSet->n - 1; i >= 0; i--) {
+        eProp = pSet->a[i].eProp;
+        /* eProp may be greater than MAX_PROPERTY if it stores a composite
+         * property that Tkhtml doesn't handle. In this case just ignore it.
+         */
+        if (eProp <= CSS_PROPERTY_MAX_PROPERTY && 0 == aPropDone[eProp]) {
+            if (0 == HtmlComputedValuesSet(p, eProp, pSet->a[i].pProp)) aPropDone[eProp] = 1;
+        }
+    }
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * overrideToPropertyValues --
+ *
+ * Results:
+ *     None.
+ *
+ * Side effects:
+ *     None.
+ *
+ *---------------------------------------------------------------------------
+ */
+static void 
+overrideToPropertyValues(
+    HtmlComputedValuesCreator *p,
+    int *aPropDone,
+    Tcl_Obj *pOverride
+    )
+{
+    Tcl_Obj **apObj = 0;
+    int nObj = 0;
+    int ii;
+
+    if (!pOverride) return;
+    Tcl_ListObjGetElements(0, pOverride, &nObj, &apObj);
+
+    for (ii = 0; ii < (nObj - 1); ii += 2) { 
+        int eProp;
+        const char *zProp;
+        int nProp;
+
+        zProp = Tcl_GetStringFromObj(apObj[ii], &nProp);
+        eProp = HtmlCssPropertyLookup(nProp, zProp);
+
+    if (eProp <= CSS_PROPERTY_MAX_PROPERTY && 0 == aPropDone[eProp]) {
+            const char *zVal = Tcl_GetString(apObj[ii + 1]);
+            CssProperty *pProp = HtmlCssStringToProperty(zVal, -1);
+            if (0 == HtmlComputedValuesSet(p, eProp, pProp)) {
+                aPropDone[eProp] = 1;
+            }
+            HtmlComputedValuesFreeProperty(p, pProp);
+        }
+    }
+}
+
 /*--------------------------------------------------------------------------
  *
  * HtmlCssSelectorTest --
@@ -3141,50 +3233,45 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int flags)
     HtmlNode *nodeX = pNode;
 
     HtmlElementNode *pElem = HtmlNodeAsElement(pNode);
-    assert(pElem);
+	if (!pElem) return 1;
 
-    while( p && nodeX ){
-        pElem = HtmlNodeAsElement(nodeX);
-
-        switch( p->eSelector ){
+    while (p && nodeX) {
+        switch (p->eSelector) {
             case CSS_SELECTOR_UNIVERSAL:
                 break;
 
             case CSS_SELECTOR_TYPE:
                 assert(nodeX->zTag || HtmlNodeIsText(nodeX));
-                if( HtmlNodeIsText(nodeX) || strcmp(nodeX->zTag, p->zValue) ) return 0;
+                if(HtmlNodeIsText(nodeX) || strcmp(nodeX->zTag, p->zValue)) return 0;
                 break;
 
             case CSS_SELECTOR_CLASS: {
                 const char *zAttr = N_ATTR(nodeX, "class");
-                if( !attrTest(CSS_SELECTOR_ATTRLISTVALUE, p->zValue, zAttr) ){
+                if(!attrTest(CSS_SELECTOR_ATTRLISTVALUE, p->zValue, zAttr)){
                     return 0;
                 }
                 break;
             }
-
             case CSS_SELECTOR_ID: {
                 const char *zAttr = N_ATTR(nodeX, "id");
-                if( !attrTest(CSS_SELECTOR_ATTRVALUE, p->zValue, zAttr) ){
+                if(!attrTest(CSS_SELECTOR_ATTRVALUE, p->zValue, zAttr)){
                     return 0;
                 }
                 break;
             }
-
             case CSS_SELECTOR_ATTR:
             case CSS_SELECTOR_ATTRVALUE:
             case CSS_SELECTOR_ATTRLISTVALUE:
             case CSS_SELECTOR_ATTRHYPHEN:
-                if( !attrTest(p->eSelector, p->zValue, N_ATTR(nodeX,p->zAttr)) ){
+                if(!attrTest(p->eSelector, p->zValue, N_ATTR(nodeX,p->zAttr))){
                     return 0;
                 }
                 break;
 
             case CSS_SELECTORCHAIN_DESCENDANT: {
                 HtmlNode *pParent = N_PARENT(nodeX);
-                CssSelector *pNext = p->pNext;
                 while (pParent) {
-                    if (HtmlCssSelectorTest(pNext, pParent, flags&1)) {
+                    if (HtmlCssSelectorTest(p->pNext, pParent, flags&1)) {
                         return 1;
                     }
                     pParent = N_PARENT(pParent);
@@ -3219,7 +3306,6 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int flags)
 
                 break;
             }
-
             case CSS_PSEUDOCLASS_FIRSTCHILD: {
                 /* :first-child selector matches if nodeX is the left-most child
                  * of it's parent, not including white-space nodes. */
@@ -3279,10 +3365,6 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int flags)
 
             case CSS_SELECTOR_NEVERMATCH:
                 return 0;
-                
-            case CSS_MEDIA_ALL: break;
-            case CSS_MEDIA_PRINT: if ((flags>>1)&1) break; return 0;
-            case CSS_MEDIA_SCREEN: if (!(flags>>1)&1) break; return 0;
 
             default:
                 assert(!"Impossible");
@@ -3291,116 +3373,6 @@ HtmlCssSelectorTest (CssSelector *pSelector, HtmlNode *pNode, int flags)
     }
 
     return (nodeX && !p) ? 1 : 0;
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * HtmlCssInlineFree --
- *
- * Results:
- *
- * Side effects:
- *
- *---------------------------------------------------------------------------
- */
-void 
-HtmlCssInlineFree (CssPropertySet *pPropertySet)
-{
-    propertySetFree(pPropertySet);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * propertySetToPropertyValues --
- *
- * Results:
- *
- * Side effects:
- *
- *---------------------------------------------------------------------------
- */
-static void 
-propertySetToPropertyValues (HtmlComputedValuesCreator *p, int *aPropDone, CssPropertySet *pSet)
-{
-    int i, eProp;
-    assert(pSet);
-
-    for (i = pSet->n - 1; i >= 0; i--) {
-        eProp = pSet->a[i].eProp;
-        /* eProp may be greater than MAX_PROPERTY if it stores a composite
-         * property that Tkhtml doesn't handle. In this case just ignore it.
-         */
-        if (eProp <= CSS_PROPERTY_MAX_PROPERTY && 0 == aPropDone[eProp]) {
-            if (0 == HtmlComputedValuesSet(p, eProp, pSet->a[i].pProp)) aPropDone[eProp] = 1;
-        }
-    }
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * ruleToPropertyValues --
- *
- * Results:
- *     None.
- *
- * Side effects:
- *     None.
- *
- *---------------------------------------------------------------------------
- */
-static void 
-ruleToPropertyValues (HtmlComputedValuesCreator *p, int *aPropDone, CssRule *pRule)
-{
-    propertySetToPropertyValues(p, aPropDone, pRule->pPropertySet);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * ruleToPropertyValues --
- *
- * Results:
- *     None.
- *
- * Side effects:
- *     None.
- *
- *---------------------------------------------------------------------------
- */
-static void 
-overrideToPropertyValues(
-    HtmlComputedValuesCreator *p,
-    int *aPropDone,
-    Tcl_Obj *pOverride
-    )
-{
-    Tcl_Obj **apObj = 0;
-    int nObj = 0;
-    int ii;
-
-    if (!pOverride) return;
-    Tcl_ListObjGetElements(0, pOverride, &nObj, &apObj);
-
-    for (ii = 0; ii < (nObj - 1); ii += 2) { 
-        int eProp;
-        const char *zProp;
-        int nProp;
-
-        zProp = Tcl_GetStringFromObj(apObj[ii], &nProp);
-        eProp = HtmlCssPropertyLookup(nProp, zProp);
-
-    if (eProp <= CSS_PROPERTY_MAX_PROPERTY && 0 == aPropDone[eProp]) {
-            const char *zVal = Tcl_GetString(apObj[ii + 1]);
-            CssProperty *pProp = HtmlCssStringToProperty(zVal, -1);
-            if (0 == HtmlComputedValuesSet(p, eProp, pProp)) {
-                aPropDone[eProp] = 1;
-            }
-            HtmlComputedValuesFreeProperty(p, pProp);
-        }
-    }
 }
 
 /*--------------------------------------------------------------------------
@@ -3421,11 +3393,17 @@ overrideToPropertyValues(
  */
 static int 
 applyRule (HtmlTree *pTree, HtmlNode *pNode, CssRule *pRule, int *aPropDone, char **pzIfMatch, HtmlComputedValuesCreator *pCreator)
-{
+{ // Tell if rule is part of a media at-rule, if so: then test is against the query
+	if (pRule->eMedia == CSS_MEDIA_ALL); // Do nothing for @media all
+	else if (pRule->eMedia == CSS_MEDIA_PRINT && !pTree->isPrintedMedia) {
+		return 0;
+	} else if (pRule->eMedia == CSS_MEDIA_SCREEN && pTree->isPrintedMedia) {
+		return 0;
+	}
     /* Test if the selector matches the node. Variable isMatch is set to
      * true if the selector matches, or false otherwise. 
      */
-    int isMatch = HtmlCssSelectorTest(pRule->pSelector, pNode, (pTree->isPrintedMedia<<1)|0);
+    int isMatch = HtmlCssSelectorTest(pRule->pSelector, pNode, 0);
 
     /* There is a match. Log some output for debugging. */
     LOG {
@@ -3449,9 +3427,8 @@ applyRule (HtmlTree *pTree, HtmlNode *pNode, CssRule *pRule, int *aPropDone, cha
             HtmlComputedValuesInit(pTree, pNode, pNode, pCreator);
             pCreator->pzContent = pzIfMatch;
         }
-
         /* Copy the properties from the rule into the computed values set. */
-        ruleToPropertyValues(pCreator, aPropDone, pRule);
+        propertySetToPropertyValues(pCreator, aPropDone, pRule->pPropertySet);
     }
 
     assert(isMatch == 0 || isMatch == 1);
@@ -3469,23 +3446,20 @@ applyRule (HtmlTree *pTree, HtmlNode *pNode, CssRule *pRule, int *aPropDone, cha
  *--------------------------------------------------------------------------
  */
 static CssRule *
-nextRule (CssRule **apRule, int n)
+nextRule (CssRule **apRule, unsigned int n)
 {
     CssRule **ppRule = 0;
     CssRule *pRet = 0;
-    int i;
 
-    for (i = 0; i < n; i++) {
+    for (unsigned int i = 0; i < n; i++) {
         if (apRule[i] && (ppRule == 0 || ruleCompare(apRule[i], *ppRule) > 0)) {
             ppRule = &apRule[i];
         }
     }
-
     if (ppRule) {
         pRet = *ppRule;
         *ppRule = (*ppRule)->pNext;
     }
-
     return pRet;
 }
 
@@ -3513,7 +3487,6 @@ nextRule (CssRule **apRule, int n)
 void 
 HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode) 
 {
-
     /* The two hard coded constants mentioned above */
     #define MAX_CLASSES    126
     #define MAX_CLASS_NAME 128
@@ -3522,7 +3495,7 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
     CssRule *pRule;                           /* Iterator variable */
 
     /* Boolean: set after considering the inline-style information */
-    int isStyleDone = 0;
+    u8 isStyleDone = 0;
 
     HtmlComputedValuesCreator sCreator;
 
@@ -3538,22 +3511,20 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
     char const *zIdAttr;               /* Value of node "id" attribute */
 
     CssRule *apRule[MAX_CLASSES + 2];  /* Array of applicable rules lists. */
-    int npRule;
-
-    int nSelectorMatch = 0;
-    int nSelectorTest = 0;
+    u32 nRule;
+    u32 nSelectorMatch = 0, nSelectorTest = 0;
 
     HtmlElementNode *pElem = HtmlNodeAsElement(pNode);
     assert(pElem);
 
     /* The universal rules list applies to all nodes */
     apRule[0] = pStyle->pUniversalRules;
-    npRule = 1;
+    nRule = 1;
 
     /* Find the applicable "by-tag" rules list, if any. */
     pEntry = Tcl_FindHashEntry(&pStyle->aByTag, pNode->zTag);
     if (pEntry) {
-        apRule[npRule++] = Tcl_GetHashValue(pEntry);
+        apRule[nRule++] = Tcl_GetHashValue(pEntry);
     }
 
     /* Find a rules list for the element id, if any */
@@ -3561,19 +3532,19 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
     if (zIdAttr) {
         pEntry = Tcl_FindHashEntry(&pStyle->aById, zIdAttr);
         if (pEntry) {
-            apRule[npRule++] = (CssRule *)Tcl_GetHashValue(pEntry);
+            apRule[nRule++] = (CssRule *)Tcl_GetHashValue(pEntry);
         }
     }
 
     /* Find a rules list for each class the element belongs to */
     zClassAttr = HtmlNodeAttr(pNode, "class");
     if (zClassAttr) {
-        int nClass;
+        u32 nClass;
         char const *zClass = zClassAttr;
         char zTerm[MAX_CLASS_NAME];
 
         while (
-            npRule < (MAX_CLASSES + 2) &&
+            nRule < (MAX_CLASSES + 2) &&
             (zClass = HtmlCssGetNextListItem(zClass, strlen(zClass), &nClass))
         ) {
             strncpy(zTerm, zClass, MIN(MAX_CLASS_NAME, nClass));
@@ -3582,11 +3553,10 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
 
             pEntry = Tcl_FindHashEntry(&pStyle->aByClass, zTerm);
             if (pEntry) {
-                apRule[npRule++] = (CssRule *)Tcl_GetHashValue(pEntry);
+                apRule[nRule++] = (CssRule *)Tcl_GetHashValue(pEntry);
             }
         }
     }
-    
 
     /* Initialise aPropDone and sCreator */
     HtmlComputedValuesInit(pTree, pNode, 0, &sCreator);
@@ -3604,7 +3574,7 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
      * earlier in the list have a higher priority than those that occur later.
      */
     for (
-        pRule = nextRule(apRule, npRule); pRule; pRule = nextRule(apRule, npRule)
+        pRule = nextRule(apRule, nRule); pRule; pRule = nextRule(apRule, nRule)
     ) {
         CssPriority *pPriority = pRule->pPriority;
         CssSelector *pSelector = pRule->pSelector;
@@ -3614,11 +3584,11 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
         /* The contents of the "style" attribute, if one exists, are handled
          * after the important rules but before anything else. This is because:
          * 
-     *     (a) CSS 2.1, in section 6.4.3 says that a style attribute has
-     *         the maximum possible specificity, and
-     *     (b) Tkhtml assumes the style attribute resides on the author
-     *         stylesheet, with no !important flag - hence, according to
-     *         section 6.4.1 it is handled just after the !important stuff.
+         *     (a) CSS 2.1, in section 6.4.3 says that a style attribute has
+         *         the maximum possible specificity, and
+         *     (b) Tkhtml assumes the style attribute resides on the author
+         *         stylesheet, with no !important flag - hence, according to
+         *         section 6.4.1 it is handled just after the !important stuff.
          */
         if (!isStyleDone && !pPriority->important) {
             isStyleDone = 1;
@@ -3655,30 +3625,6 @@ HtmlCssStyleSheetApply (HtmlTree *pTree, HtmlNode *pNode)
 
 /*--------------------------------------------------------------------------
  *
- * generateContentText --
- *
- *     Argument zContent points to a nul-terminated string containing
- *     a value assigned to the 'content' property. This function allocates 
- *     and returns an HtmlTextNode structure populated with text
- *     based on the 'content' property.
- *
- * Results:
- *
- *     None.
- *
- * Side effects:
- *
- *--------------------------------------------------------------------------
- */
-static HtmlTextNode *
-generateContentText (HtmlTree *pTree, const char *zContent)
-{
-    HtmlTextNode *pTextNode = HtmlTextNew(strlen(zContent), zContent, 0, 0);
-    return pTextNode;
-}
-
-/*--------------------------------------------------------------------------
- *
  * generatedContent --
  *
  * Results:
@@ -3711,8 +3657,10 @@ generatedContent (
     sCreator.pzContent = &zContent;
     for (pRule = pCssRule; pRule; pRule = pRule->pNext) {
         char **pz = (have ? 0 : (&zContent));
-        int isMatch = applyRule(pTree, pNode, pRule, aPropDone, pz, &sCreator);
-        if (isMatch) have = 1;
+        if (applyRule(pTree, pNode, pRule, aPropDone, pz, &sCreator)) have = 1;
+        if (pRule->pSelector->isDynamic && HtmlCssSelectorTest(pRule->pSelector, pNode, 1)) {
+            HtmlCssAddDynamic((HtmlElementNode*)pNode, pRule->pSelector, 0);
+        }
     }
     if (have) {
         pValues = HtmlComputedValuesFinish(&sCreator);
@@ -3726,9 +3674,9 @@ generatedContent (
 
     if (zContent) {
         /* If a value was specified for the 'content' property, create
-         * a text node also.
+         * a text node based on the 'content' property also.
          */
-        HtmlTextNode *pTextNode = generateContentText(pTree, zContent);
+        HtmlTextNode *pTextNode = HtmlTextNew(strlen(zContent), zContent, 0, 0);
         int idx = HtmlNodeAddTextChild(*ppNode, pTextNode);
         HtmlNodeChild(*ppNode, idx)->index = HTML_NODE_GENERATED;
         HtmlFree(zContent);
@@ -3798,35 +3746,6 @@ HtmlCssPropertiesGet (CssProperties *pProperties, int prop, int *pSheetnum, int 
 /*
  *---------------------------------------------------------------------------
  *
- * HtmlCssSelectorComma --
- *
- * Results:
- *     None.
- *
- * Side effects:
- *     None.
- *
- *---------------------------------------------------------------------------
- */
-void 
-HtmlCssSelectorComma (CssParse *pParse)
-{
-    int n = (pParse->nXtra + 1) * sizeof(CssSelector *);
-
-    /* Do nothing if the isIgnore flag is set */
-    if (pParse->isIgnore) return;
-
-    pParse->apXtraSelector = (CssSelector **)HtmlRealloc(
-           "CssParse.apXtraSelector", (char *)pParse->apXtraSelector, n
-    );
-    pParse->apXtraSelector[pParse->nXtra] = pParse->pSelector;
-    pParse->pSelector = 0;
-    pParse->nXtra++;
-}
-
-/*
- *---------------------------------------------------------------------------
- *
  * HtmlCssImport --
  *
  *     The parser calls this function when an @import directive is encountered.
@@ -3866,10 +3785,14 @@ HtmlCssImport (CssParse *pParse, CssToken *pToken)
             default:
                 return;
         }
-
         pEval = Tcl_DuplicateObj(pEval);
         Tcl_IncrRefCount(pEval);
         Tcl_ListObjAppendElement(interp, pEval, Tcl_NewStringObj(zUrl, -1));
+		if (pParse->eMedia == CSS_MEDIA_PRINT) {
+			Tcl_ListObjAppendElement(interp, pEval, Tcl_NewStringObj("print", 5));
+		} else if (pParse->eMedia == CSS_MEDIA_SCREEN) {
+			Tcl_ListObjAppendElement(interp, pEval, Tcl_NewStringObj("screen", 6));
+		}
         Tcl_EvalObjEx(interp, pEval, TCL_EVAL_GLOBAL|TCL_EVAL_DIRECT);
         Tcl_DecrRefCount(pEval);
         HtmlFree(pProp);
@@ -3954,6 +3877,20 @@ HtmlCssSelectorToString(CssSelector *pSelector, Tcl_Obj *pObj)
     }
 
     if (z) Tcl_AppendToObj(pObj, z, -1);
+}
+void HtmlCssQueryToString(CssRule *pRule, Tcl_Obj *pObj)
+{
+    switch (pRule->eMedia) {
+		case CSS_MEDIA_ALL: 
+            Tcl_AppendStringsToObj(pObj, "@madia all", NULL);
+            break;
+		case CSS_MEDIA_PRINT: 
+            Tcl_AppendStringsToObj(pObj, "@madia print", NULL);
+            break;
+		case CSS_MEDIA_SCREEN: 
+            Tcl_AppendStringsToObj(pObj, "@madia screen", NULL);
+            break;
+	}
 }
 
 /*
@@ -4180,7 +4117,6 @@ ruleQsortCompare(const void *pLeft, const void *pRight)
 {
     CssRule *pL = *(CssRule **)pLeft;
     CssRule *pR = *(CssRule **)pRight;
-
     return ruleCompare(pL, pR);
 }
 
@@ -4221,25 +4157,29 @@ HtmlCssStyleConfigDump(
     CssRule *pRule;
     CssRule *apRule[MAX_RULES];
     Tcl_Obj *pRet;
+    Tcl_Obj *pMedia;
     int nRule = 0;
-    int jj = 0;
+    int i;
 
     for (pRule = pStyle->pUniversalRules; pRule; pRule = pRule->pNext) {
         if (nRule < MAX_RULES) {
             apRule[nRule++] = pRule;
         }
     }
+	for (pRule=pStyle->pAfterRules; pRule && nRule<MAX_RULES; pRule=pRule->pNext) {
+        apRule[nRule++] = pRule;
+    }
+	for (pRule=pStyle->pBeforeRules; pRule && nRule<MAX_RULES; pRule=pRule->pNext) {
+        apRule[nRule++] = pRule;
+    }
 
     apTable[0] = &pStyle->aByTag;
     apTable[1] = &pStyle->aById;
     apTable[2] = &pStyle->aByClass;
-    for (jj = 0; jj < 3; jj++) {
+    for (i = 0; i < 3; i++) {
         Tcl_HashEntry *pEntry;
         Tcl_HashSearch search;
-        for (pEntry = Tcl_FirstHashEntry(apTable[jj], &search);
-             pEntry;
-             pEntry = Tcl_NextHashEntry(&search)
-        ) {
+        for (pEntry = Tcl_FirstHashEntry(apTable[i], &search); pEntry; pEntry = Tcl_NextHashEntry(&search)) {
             pRule = (CssRule *)Tcl_GetHashValue(pEntry);
             for ( ; pRule; pRule = pRule->pNext) {
                 if (nRule < MAX_RULES) {
@@ -4252,52 +4192,51 @@ HtmlCssStyleConfigDump(
     qsort(apRule, nRule, sizeof(CssRule *), ruleQsortCompare);
 
     pRet = Tcl_NewObj();
-    for (jj = 0; jj < nRule; jj++) {
-        CssPriority *pPri = apRule[jj]->pPriority;
+    for (i = 0; i < nRule; i++) {
+        CssPriority *pPri = apRule[i]->pPriority;
         Tcl_Obj *pList = Tcl_NewObj();
-        Tcl_Obj *p;
-        char zBuf[256];
-        int ii;
+        Tcl_Obj *p = Tcl_NewObj();
         int isRequireSemi = 0;
-        pRule = apRule[jj];
+        pRule = apRule[i];
 
-        p = Tcl_NewObj();
         HtmlCssSelectorToString(pRule->pSelector, p);
         Tcl_ListObjAppendElement(0, pList, p);
         
         p = Tcl_NewObj();
-        for (ii = 0; ii < pRule->pPropertySet->n; ii++) {
-            CssProperty *pProp = pRule->pPropertySet->a[ii].pProp;
+        for (int j = 0; j < pRule->pPropertySet->n; j++) {
+            CssProperty *pProp = pRule->pPropertySet->a[j].pProp;
             if (pProp) {
-                int eProp = pRule->pPropertySet->a[ii].eProp;
-                char *zPropVal;
+                int eProp = pRule->pPropertySet->a[j].eProp;
                 char *zFree = 0;
-                if (isRequireSemi) {
-                    Tcl_AppendToObj(p, "; ", 2);
-                }
-                zPropVal = HtmlPropertyToString(pProp, &zFree);
+                if (isRequireSemi) Tcl_AppendToObj(p, "; ", 2);
                 Tcl_AppendToObj(p, HtmlCssPropertyToString(eProp), -1);
                 Tcl_AppendToObj(p, ":", 1);
-                Tcl_AppendToObj(p, zPropVal, -1);
+                Tcl_AppendToObj(p, HtmlPropertyToString(pProp, &zFree), -1);
                 isRequireSemi = 1;
                 if (zFree) HtmlFree(zFree);
             }
         }
-        Tcl_ListObjAppendElement(0, pList, p);
-
-        snprintf(zBuf, 255, "%s%s%s", 
+        Tcl_ListObjAppendElement(NULL, pList, p);
+        Tcl_ListObjAppendElement(NULL, pList, Tcl_ObjPrintf("%s%s%s", 
             (pPri->origin == CSS_ORIGIN_AUTHOR) ? "author" :
             (pPri->origin == CSS_ORIGIN_AGENT) ? "agent" :
             (pPri->origin == CSS_ORIGIN_USER) ? "user" : "N/A",
             Tcl_GetString(pPri->pIdTail),
             pPri->important ? " (!important)" : ""
-        );
-        zBuf[255] = '\0';
-        Tcl_ListObjAppendElement(0, pList, Tcl_NewStringObj(zBuf, -1));
-
-        Tcl_ListObjAppendElement(0, pRet, pList);
+        ));
+		if (CSS_MEDIA_ALL != pRule->eMedia != 0) {
+			if (pMedia == NULL) {
+				pMedia = Tcl_NewObj();
+				HtmlCssQueryToString(pRule, pMedia);
+				Tcl_ListObjAppendElement(NULL, pMedia, pList);
+				pList = pMedia;
+			} else {
+				Tcl_ListObjAppendElement(NULL, pMedia, pList);
+				continue;
+			}
+		} else if (pMedia != NULL) pMedia = NULL;
+        Tcl_ListObjAppendElement(NULL, pRet, pList);
     }
- 
     Tcl_SetObjResult(interp, pRet);
     return TCL_OK;
 }

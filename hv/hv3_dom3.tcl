@@ -32,11 +32,11 @@ append InlineStyleDefn {
   variable myNode
 
   method GetStyleProp {prop} {
-      list string [$myNode prop -inline $hv3::dom::CSS_PROPERTY_MAP($prop)]
+      list [$myNode prop -inline $hv3::dom::CSS_PROPERTY_MAP($prop)]
   }
 
   method PutStyleProp {property js_value} {
-    set value [[$self see] tostring $js_value]
+    set value [[$self qjs] tostring $js_value]
 
     array set current [$myNode prop -inline]
 
@@ -87,13 +87,13 @@ namespace eval ::hv3::dom {
     #
     method CompileEventFunctions {} {
       if {$myEventFunctionsCompiled} return
-      set see [$self see]
+      set qjs [$self qjs]
       foreach event $::hv3::dom::DOM0Events_EventList {
         set body [$myNode attr -default "" $event]
         if {$body ne ""} {
-          set ref [$see function $body]
+          set ref [$qjs function $body]
           $myJavascriptParent Put $event [list object $ref]
-          eval $see $ref Finalize
+          eval $qjs $ref Finalize
         }
       }
       set myEventFunctionsCompiled 1

@@ -72,7 +72,7 @@ E cursor                s-resize w-resize text wait help progress
 E cursor                context-menu cell vertical-text alias copy
 E cursor                no-drop not-allowed grab grabbing all-scroll
 E cursor                col-resize row-resize ew-resize ns-resize nesw-resize
-E cursor                nwse-resize zoom-in zoom-out gobbler none
+E cursor                nwse-resize gobbler none
 E direction             ltr rtl
 E display               inline table-header-group table-footer-group 
 E display               table-row block list-item none
@@ -208,12 +208,12 @@ proc CodeInfrastructure {} {
             }
 
             for (
-                 t = aTable[Hash(nString, zString)]; 
-                 t >= 0 && (
-                     strlen(aHashTable[t].zString) != nString || 
-                     strnicmp(zString, aHashTable[t].zString, nString)
-                 );
-                 t = aHashTable[t].iNext
+                t = aTable[Hash(nString, zString)]; 
+                t >= 0 && (
+                    strlen(aHashTable[t].zString) != nString || 
+                    strnicmp(zString, aHashTable[t].zString, nString)
+                );
+                t = aHashTable[t].iNext
             );
 
             return t;

@@ -116,7 +116,6 @@ typedef struct HtmlAttributes HtmlAttributes;
 typedef struct HtmlTokenMap HtmlTokenMap;
 typedef struct HtmlCanvas HtmlCanvas;
 typedef struct HtmlCanvasItem HtmlCanvasItem;
-typedef struct HtmlFloatList HtmlFloatList;
 typedef struct HtmlPropertyCache HtmlPropertyCache;
 typedef struct HtmlNodeReplacement HtmlNodeReplacement;
 typedef struct HtmlCallback HtmlCallback;
@@ -425,6 +424,7 @@ struct HtmlOptions {
     int      layoutcache;
     Tcl_Obj *logcmd;
     Tcl_Obj *timercmd;
+    Tcl_Obj *unspptdcmd;
 };
 
 #define HTML_MODE_QUIRKS    0
@@ -437,6 +437,7 @@ struct HtmlOptions {
 
 void HtmlLog(HtmlTree *, CONST char *, CONST char *, ...);
 void HtmlTimer(HtmlTree *, CONST char *, CONST char *, ...);
+void HtmlUnspptd(HtmlTree *, CONST char *, ...);
 
 typedef struct HtmlCanvasSnapshot HtmlCanvasSnapshot;
 
@@ -811,17 +812,6 @@ void HtmlWidgetOverflowBox(HtmlTree *, HtmlNode *, int *, int *, int *, int *);
 HtmlTokenMap *HtmlMarkup(int);
 CONST char * HtmlMarkupName(int);
 char * HtmlMarkupArg(HtmlAttributes *, CONST char *, char *);
-
-void HtmlFloatListAdd(HtmlFloatList*, int, int, int, int);
-HtmlFloatList *HtmlFloatListNew();
-void HtmlFloatListDelete();
-int HtmlFloatListPlace(HtmlFloatList*, int, int, int, int);
-int HtmlFloatListClear(HtmlFloatList*, int, int);
-int HtmlFloatListClearTop(HtmlFloatList*, int);
-void HtmlFloatListNormalize(HtmlFloatList*, int, int);
-void HtmlFloatListMargins(HtmlFloatList*, int, int, int *, int *);
-void HtmlFloatListLog(HtmlTree *, CONST char *, CONST char *, HtmlFloatList *);
-int HtmlFloatListIsConstant(HtmlFloatList*, int, int);
 
 HtmlPropertyCache * HtmlNewPropertyCache();
 void HtmlSetPropertyCache(HtmlPropertyCache *, int, CssProperty *);

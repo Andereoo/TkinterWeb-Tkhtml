@@ -40,7 +40,7 @@
 static const char rcsid[] = "$Id: htmlfloat.c,v 1.21 2006/10/27 15:19:18 danielk1977 Exp $";
 
 #include <assert.h>
-#include "html.h"
+#include "htmllayout.h"
 
 /* #define DEBUG_FLOAT_LIST */
 

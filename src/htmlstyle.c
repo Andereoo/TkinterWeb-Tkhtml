@@ -600,7 +600,7 @@ styleApply (HtmlTree *pTree, HtmlNode *pNode, StyleApply *p)
         if (pElem->pBefore) {
             ((HtmlElementNode *)(pElem->pBefore))->pStack = pElem->pStack;
             pElem->pBefore->pParent = pNode;
-            pElem->pBefore->index = -1;
+            pElem->pBefore->index = HTML_NODE_GENERATED;
         }
     } else if (pElem->pBefore) {
         HtmlStyleHandleCounters(pTree, HtmlNodeComputedValues(pElem->pBefore));
@@ -618,13 +618,13 @@ styleApply (HtmlTree *pTree, HtmlNode *pNode, StyleApply *p)
         if (pElem->pAfter) {
             ((HtmlElementNode *)(pElem->pAfter))->pStack = pElem->pStack;
             pElem->pAfter->pParent = pNode;
-            pElem->pAfter->index = -1;
+            pElem->pAfter->index = HTML_NODE_GENERATED;
         }
 
         if (pElem->pBefore || pElem->pAfter) {
             redrawmode = MAX(redrawmode, 2);
         }
-    } else if(pElem->pAfter) {
+    } else if (pElem->pAfter) {
         HtmlStyleHandleCounters(pTree, HtmlNodeComputedValues(pElem->pAfter));
     }
 

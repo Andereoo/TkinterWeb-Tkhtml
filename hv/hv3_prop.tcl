@@ -516,7 +516,7 @@ proc ::hv3::debug::EventsReport {hv3 node} {
   if {$dom ne ""} {
     foreach evt [$dom eventdump $node] {
       foreach {e l j} $evt {}
-      set fj [::hv3::string::htmlize [::see::format $j]]
+      set fj [::hv3::string::htmlize [::qjs::format $j]]
       append Tbl "<tr><td>$e<td>$l<td><pre>$fj</pre>" 
     }
   }

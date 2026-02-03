@@ -38,17 +38,20 @@ namespace eval hv3 {
       set O(myHsb) [::hv3::scrollbar ${w}.hsb -orient horizontal -takefocus 0]
 
       set wid $O(myWidget)
-      bind $w <KeyPress-Up>     [list $me scrollme $wid yview scroll -1 units]
-      bind $w <KeyPress-Down>   [list $me scrollme $wid yview scroll  1 units]
-      bind $w <KeyPress-Return> [list $me scrollme $wid yview scroll  1 units]
-      bind $w <KeyPress-Right>  [list $me scrollme $wid xview scroll  1 units]
-      bind $w <KeyPress-Left>   [list $me scrollme $wid xview scroll -1 units]
-      bind $w <KeyPress-Next>   [list $me scrollme $wid yview scroll  1 pages]
-      bind $w <KeyPress-space>  [list $me scrollme $wid yview scroll  1 pages]
-      bind $w <KeyPress-Prior>  [list $me scrollme $wid yview scroll -1 pages]
-  
-      $O(myVsb) configure -cursor "top_left_arrow"
-      $O(myHsb) configure -cursor "top_left_arrow"
+      bind $w <KeyPress-Up>        [list $me scrollme $wid yview scroll -1 units]
+      bind $w <KeyPress-Down>      [list $me scrollme $wid yview scroll  1 units]
+      bind $w <KeyPress-Return>    [list $me scrollme $wid yview scroll  1 units]
+      bind $w <KeyPress-Shift_R>   [list $me scrollme $wid yview scroll -1 units]
+      bind $w <KeyPress-Right>     [list $me scrollme $wid xview scroll  1 units]
+      bind $w <KeyPress-Left>      [list $me scrollme $wid xview scroll -1 units]
+      bind $w <KeyPress-Next>      [list $me scrollme $wid yview scroll  1 pages]
+      bind $w <KeyPress-Prior>     [list $me scrollme $wid yview scroll -1 pages]
+	  bind $w <KeyPress-space>     [list $me scrollme $wid xview scroll  1 pages]
+      bind $w <KeyPress-BackSpace> [list $me scrollme $wid xview scroll -1 pages]
+      bind $w <KeyPress-Home>      [list $me scrollme $wid xview moveto 0]
+      bind $w <KeyPress-Home>      [list $me scrollme $wid yview moveto 0]
+	  bind $w <KeyPress-End>       [list $me scrollme $wid xview moveto 1]
+      bind $w <KeyPress-End>       [list $me scrollme $wid yview moveto 1]
   
       grid configure $O(myWidget) -column 0 -row 1 -sticky nsew
       grid columnconfigure $w 0 -weight 1
@@ -99,11 +102,11 @@ namespace eval hv3 {
       eval $args
     }
   
-    proc scrollcallback {me scrollbar first last} {
+    proc scrollcallback {me scrollbar first last} {  ;# This seems to be where the scrollbars for the browser are set-up
       upvar #0 $me O
 
       $scrollbar set $first $last
-      set ismapped   [expr [winfo ismapped $scrollbar] ? 1 : 0]
+      set ismapped [expr [winfo ismapped $scrollbar] ? 1 : 0]
   
       if {$O(-scrollbarpolicy) eq "auto"} {
         set isrequired [expr ($first == 0.0 && $last == 1.0) ? 0 : 1]

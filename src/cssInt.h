@@ -40,7 +40,6 @@
 #define __CSSINT_H__
 
 #include "css.h"
-#include <tcl.h>
 
 typedef struct CssSelector CssSelector;
 typedef struct CssRule CssRule;
@@ -48,6 +47,7 @@ typedef struct CssParse CssParse;
 typedef struct CssToken CssToken;
 typedef struct CssPriority CssPriority;
 typedef struct CssProperties CssProperties;
+typedef struct CssMediaRule CssMediaRule;
 
 typedef unsigned char u8;
 typedef unsigned int u32;
@@ -141,7 +141,7 @@ struct CssSelector {
 ** A collection of CSS2 properties and values.
 */
 struct CssPropertySet {
-    int n;
+    u32 n;
     struct CssPropertySetItem {
         int eProp;
         CssProperty *pProp;
@@ -158,8 +158,8 @@ struct CssRule {
     int specificity;         /* Specificity of the selector */
     int iRule;               /* Rule-number within source style sheet */
     CssSelector *pSelector;  /* The selector-chain for this rule */
-    int freePropertySets;          /* True to delete pPropertySet */
-    int freeSelector;              /* True to delete pSelector */
+    u8 freeWhat;             /* Flags to delete pPropertySet and to delete pSelector */
+    u8 eMedia;               /* CSS_MEDIA_* value */
     CssPropertySet *pPropertySet;  /* Property values for the rule. */
     CssRule *pNext;                /* Next rule in this list. */
 };
@@ -186,8 +186,8 @@ struct CssRule {
  * structure.
  */
 struct CssPriority {
-    int important;           /* True if !IMPORTANT flag is set */
-    int origin;              /* One of CSS_ORIGIN_AGENT, _AUTHOR or _USER */ 
+    u8 important;            /* True if !IMPORTANT flag is set */
+    u8 origin;               /* One of CSS_ORIGIN_AGENT, _AUTHOR or _USER */ 
     Tcl_Obj *pIdTail;        /* Tail of the stylesheet id */
     int iPriority;
     CssPriority *pNext;      /* Linked list pointer */
@@ -204,7 +204,7 @@ struct CssPriority {
  * list accessible by looking up "h1" in the rules hash table.
  */
 struct CssStyleSheet {
-    int nSyntaxErr;           /* Number of syntax errors during parsing */
+    u32 nSyntaxErr;            /* Number of syntax errors during parsing */
     CssPriority *pPriority;
 
     CssRule *pUniversalRules;  /* Rules that do not belong to any other list */
@@ -226,8 +226,10 @@ struct CssParse {
     CssStyleSheet *pStyle;
 
     CssSelector *pSelector;         /* Selector currently being parsed */
-    int nXtra;
+    u32 nXtra;
     CssSelector **apXtraSelector;   /* Selectors also waiting for prop set. */
+
+    CssSelector *pQuery;            /* Current media query chain being built (if parsing @rule) */
 
     CssPropertySet *pPropertySet;   /* Declarations being parsed. */
     CssPropertySet *pImportant;     /* !IMPORTANT declarations. */
@@ -235,18 +237,17 @@ struct CssParse {
     CssPriority *pPriority1;
     CssPriority *pPriority2;
 
-    int iNextRule;                  /* iRule value for next rule */
+    u32 iNextRule;                  /* iRule value for next rule */
 
     /* The parser sets the isIgnore flag to true when it enters an @media {}
      * block that does *not* apply, and sets it back to false when it exits the
      * @media block.
      */
-    int isIgnore;                   /* True to ignore new elements */
-
+    u8 isIgnore;                    /* True to ignore new elements */
     /* In the body of a stylesheet @import directives must be ignored. */
-    int isBody;                     /* True once we are in the body */
-
-    int origin;
+    u8 isBody;                      /* True once we are in the body */
+    u8 origin;
+    u8 eMedia;                      /* Current media (if parsing @rule) */
     Tcl_Obj *pStyleId;
     Tcl_Obj *pImportCmd;            /* Script to invoke for @import */
     Tcl_Obj *pUrlCmd;               /* Script to invoke for url() */
@@ -262,7 +263,6 @@ struct CssParse {
 void HtmlCssDeclaration(CssParse *, CssToken *, CssToken *, int);
 void HtmlCssSelector(CssParse *, int, CssToken *, CssToken *);
 void HtmlCssRule(CssParse *, int);
-void HtmlCssSelectorComma(CssParse *pParse);
 void HtmlCssImport(CssParse *pParse, CssToken *);
 
 /* Test if a selector matches a node */

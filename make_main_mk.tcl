@@ -59,9 +59,9 @@ $(LIBNAME):	headers $(OBJ)
 	$(AR) $(LIBNAME) $(OBJ)
 	$(RANLIB) $(LIBNAME)
 
-htmltokens.c:	$(SRCDIR)/src/tokenlist.txt $(SRCDIR)/tools/maketokens.tcl
+htmltokens.c:	$(SRCDIR)/src/tokenlist.tcl $(SRCDIR)/tools/maketokens.tcl
 	$(TCLSH) $(SRCDIR)/tools/maketokens.tcl \
-		$(SRCDIR)/src/tokenlist.txt >htmltokents.c
+		$(SRCDIR)/src/tokenlist.tcl >htmltokents.c
 
 headers:	makeheaders htmltokens.c $(SRC)
 	./makeheaders $(SRCDIR)/src/html.h htmltokens.c $(SRC)

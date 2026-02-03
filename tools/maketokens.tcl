@@ -6,7 +6,7 @@
 exec tclsh "$0" ${1+"$@"}
 
 if {$argc!=1} {
-  puts stderr "Usage: $argv0 tokenlist.txt"
+  puts stderr "Usage: $argv0 tokenlist.tcl"
   exit 1
 }
 if {[catch {open [lindex $argv 0] r} f]} {
@@ -34,7 +34,7 @@ set warning {
  * DO NOT EDIT!
  *
  * The code in this file was automatically generated. See the files
- * src/tokenlist.txt and tools/maketokens.tcl from the tkhtml source
+ * src/tokenlist.tcl and tools/maketokens.tcl from the tkhtml source
  * distribution.
  */
 }

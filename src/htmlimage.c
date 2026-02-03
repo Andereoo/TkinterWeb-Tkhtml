@@ -1437,31 +1437,29 @@ HtmlImageServerReport(
         pEntry; 
         pEntry = Tcl_NextHashEntry(&search)
     ) {
-      HtmlImage2 *pImage = (HtmlImage2 *)Tcl_GetHashValue(pEntry);
-      for( ; pImage; pImage = pImage->pNext){
-        Tcl_Obj *p = Tcl_NewObj();
-        const char *zUrl = "";
-        if( !pImage->pUnscaled ){
-          zUrl = pImage->zUrl;
-        }
-        Tcl_ListObjAppendElement(interp, p, Tcl_NewStringObj(zUrl, -1));
-    if (pImage->pImageName) {
-            Tcl_ListObjAppendElement(interp, p, pImage->pImageName);
-        } else {
-            Tcl_ListObjAppendElement(interp, p, Tcl_NewStringObj("", -1));
-        }
-        Tcl_ListObjAppendElement(interp, p, Tcl_NewStringObj(
-            pImage->pixmap?"PIX":"", -1));
-        Tcl_ListObjAppendElement(interp, p, Tcl_NewIntObj(pImage->width));
-        Tcl_ListObjAppendElement(interp, p, Tcl_NewIntObj(pImage->height));
-        Tcl_ListObjAppendElement(interp, p, Tcl_NewStringObj(
-          pImage->eAlpha==ALPHA_CHANNEL_UNKNOWN?"unknown":
-          pImage->eAlpha==ALPHA_CHANNEL_TRUE?"true":
-          pImage->eAlpha==ALPHA_CHANNEL_FALSE?"false":"internal error!", -1));
-        Tcl_ListObjAppendElement(interp, p, Tcl_NewIntObj(pImage->nRef));
+		HtmlImage2 *pImage = (HtmlImage2 *)Tcl_GetHashValue(pEntry);
+		for(; pImage; pImage = pImage->pNext) {
+			Tcl_Obj *p = Tcl_NewObj();
+			const char *zUrl = "";
+			if(!pImage->pUnscaled) zUrl = pImage->zUrl;
+			Tcl_ListObjAppendElement(interp, p, Tcl_NewStringObj(zUrl, -1));
+			if (pImage->pImageName) {
+				Tcl_ListObjAppendElement(interp, p, pImage->pImageName);
+			} else {
+				Tcl_ListObjAppendElement(interp, p, Tcl_NewStringObj("", -1));
+			}
+			Tcl_ListObjAppendElement(interp, p, Tcl_NewStringObj(pImage->pixmap?"PIX":"", -1));
+			Tcl_ListObjAppendElement(interp, p, Tcl_NewIntObj(pImage->width));
+			Tcl_ListObjAppendElement(interp, p, Tcl_NewIntObj(pImage->height));
+			Tcl_ListObjAppendElement(interp, p, Tcl_NewStringObj(
+			  pImage->eAlpha==ALPHA_CHANNEL_UNKNOWN ? "unknown":
+			  pImage->eAlpha==ALPHA_CHANNEL_TRUE    ? "true":
+			  pImage->eAlpha==ALPHA_CHANNEL_FALSE   ? "false":"internal error!", -1
+			));
+			Tcl_ListObjAppendElement(interp, p, Tcl_NewIntObj(pImage->nRef));
 
-        Tcl_ListObjAppendElement(interp, pRet, p);
-      }
+			Tcl_ListObjAppendElement(interp, pRet, p);
+		}
     }
 
     Tcl_SetObjResult(interp, pRet);

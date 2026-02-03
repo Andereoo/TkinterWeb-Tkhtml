@@ -88,15 +88,15 @@ proc TAG {args} {
 #         ?-pcdata?
 #
 TAG a -flow inline -content HtmlAnchorContent
-# TAG abbr
-# TAG acronym
+TAG abbr -flow inline
+TAG acronym -flow inline
 TAG address
 TAG applet -flow inline
 TAG area -content HtmlEmptyContent
 TAG base -content HtmlEmptyContent             
 TAG basefont
 TAG b -flow inline
-# TAG bdo
+TAG bdo
 TAG big -flow inline
 TAG blockquote -flow block
 TAG body       
@@ -106,10 +106,10 @@ TAG caption
 TAG center -flow block
 TAG cite -flow inline
 TAG code -flow inline
-# TAG col
+TAG col
 # TAG colgroup -content HtmlColgroupContent
 TAG dd -content HtmlLiContent
-# TAG del
+TAG del -flow inline
 TAG dfn -flow inline
 TAG dir -flow block -content HtmlUlContent
 TAG div -flow block
@@ -147,12 +147,12 @@ TAG noframes
 TAG noscript                            
 TAG object
 TAG ol -flow block -content HtmlUlContent
-# TAG optgroup
+TAG optgroup
 TAG option -content HtmlPcdataContent -flow inline
 TAG p -flow block -content HtmlInlineContent
 TAG param -content HtmlEmptyContent
 TAG pre -flow block
-# TAG q
+TAG q
 TAG s -flow inline
 TAG samp -flow inline
 TAG script -content HtmlEmptyContent -flow inline
@@ -185,6 +185,35 @@ TAG tt -flow inline
 TAG u -flow inline
 TAG ul -flow block -content HtmlUlContent
 TAG var -flow inline
+
+# HTML5 elements
+TAG article -flow block
+TAG aside -flow block
+TAG audio -flow inline
+TAG canvas -flow inline
+TAG datalist
+TAG details -flow block
+TAG figcaption -flow block
+TAG figure -flow block
+TAG footer -flow block
+TAG header -flow block
+TAG hgroup -flow block
+TAG keygen
+TAG main -flow block
+TAG mark -flow inline
+TAG meter -flow inline
+TAG nav -flow block
+TAG output -flow inline
+TAG progress -flow inline
+TAG rp -flow inline
+TAG rt -flow inline
+TAG ruby -flow inline
+TAG section -flow block
+TAG source -content HtmlEmptyContent
+TAG summary -flow block
+TAG time -flow inline
+TAG track -content HtmlEmptyContent
+TAG video -flow inline
 
 #     The tags listed above are the complete set of HTML 4.01 tags. Some
 #     are commented out because we don't support them in any way.
@@ -300,7 +329,7 @@ set warning {
  * DO NOT EDIT!
  *
  * The code in this file was automatically generated. See the files
- * src/tokenlist.txt and tools/maketokens.tcl from the tkhtml source
+ * src/tokenlist.tcl and tools/maketokens.tcl from the tkhtml source
  * distribution.
  */
 }

@@ -488,7 +488,7 @@ pixelsToPoints (HtmlComputedValuesCreator *p, int pixels)
  *---------------------------------------------------------------------------
  */
 static int 
-physicalToPixels (HtmlComputedValuesCreator *p, double rVal, int type)
+physicalToPixels (HtmlComputedValuesCreator *p, double rVal, char type)
 {
     char zBuf[64];
     int pixels;

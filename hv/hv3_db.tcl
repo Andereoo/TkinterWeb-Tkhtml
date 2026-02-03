@@ -374,6 +374,7 @@ proc ::hv3::dbinit {} {
   if {[info commands ::hv3::sqlitedb] ne ""} return
   if {![info exists ::hv3::statefile]} {set ::hv3::statefile ""}
 
+  package require sqlite3
   sqlite3 ::hv3::sqlitedb $::hv3::statefile
   catch {::hv3::profile::instrument ::hv3::sqlitedb}
   ::hv3::sqlitedb eval {PRAGMA synchronous = OFF}

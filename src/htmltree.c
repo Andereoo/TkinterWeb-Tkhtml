@@ -185,8 +185,7 @@ clearReplacement (HtmlTree *pTree, HtmlElementNode *pElem)
 
         /* If there is a delete script, invoke it now. */
         if (p->pDelete) {
-            int flags = TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL;
-            Tcl_EvalObjEx(pTree->interp, p->pDelete, flags);
+            Tcl_EvalObjEx(pTree->interp, p->pDelete, TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL);
         }
 
         /* Remove any entry from the HtmlTree.pMapped list. */
@@ -194,7 +193,7 @@ clearReplacement (HtmlTree *pTree, HtmlElementNode *pElem)
             pTree->pMapped = p->pNext;
         } else {
             HtmlNodeReplacement *pCur = pTree->pMapped; 
-            while( pCur && pCur->pNext != p ) pCur = pCur->pNext;
+            while (pCur && pCur->pNext != p) pCur = pCur->pNext;
             if (pCur) {
                 pCur->pNext = p->pNext;
             }
@@ -202,7 +201,7 @@ clearReplacement (HtmlTree *pTree, HtmlElementNode *pElem)
 
         /* Cancel geometry management */
         if (p->win) {
-            if (Tk_IsMapped(p->win)) {
+            if (Tk_IsMapped(p->win) && Tk_WindowId(p->win) < 1) {
                 Tk_UnmapWindow(p->win);
             }
             Tk_ManageGeometry(p->win, 0, 0);
@@ -223,9 +222,8 @@ HtmlNodeClearStyle (HtmlTree *pTree, HtmlElementNode *pElem)
         HtmlNodeClearGenerated(pTree, pElem);
         HtmlComputedValuesRelease(pTree, pElem->pPropertyValues);
         HtmlComputedValuesRelease(pTree, pElem->pPreviousValues);
-        HtmlCssInlineFree(pElem->pStyle);
+        HtmlCssInlineFree(pElem);
         HtmlCssFreeDynamics(pElem);
-        pElem->pStyle = 0;
         pElem->pPropertyValues = 0;
         pElem->pPreviousValues = 0;
         pElem->pDynamic = 0;
@@ -268,7 +266,7 @@ HtmlNodeDeleteCommand (HtmlTree *pTree, HtmlNode *pNode)
 static void 
 freeNode (HtmlTree *pTree, HtmlNode *pNode)
 {
-    if( pNode ){
+    if(pNode){
         int i;
 
         /* Invalidate the cache of the parent node before deleting any
@@ -301,7 +299,6 @@ freeNode (HtmlTree *pTree, HtmlNode *pNode)
             clearReplacement(pTree, pElem);
 
             HtmlDrawCanvasItemRelease(pTree, pElem->pBox);
-
         } else {
             HtmlTextNode *pTextNode = HtmlNodeAsText(pNode);
             assert(pTextNode);
@@ -812,8 +809,7 @@ setNodeAttribute (HtmlNode *pNode, const char *zAttrName, const char *zAttrVal)
      * compiled version at version HtmlElementNode.pStyle.
      */
     if (strcmp(HTML_INLINE_STYLE_ATTR, zAttrName) == 0) {
-        HtmlCssInlineFree(pElem->pStyle);
-        pElem->pStyle = 0;
+        HtmlCssInlineFree(pElem);
     }
 }
 
@@ -970,14 +966,10 @@ static void
 treeCloseFosterTree (HtmlTree *pTree)
 {
     if (pTree->state.pFoster) {
-        HtmlNode *pFosterRoot = findFosterParent(pTree, 0);
-        HtmlNode *pFoster;
-
-        pFoster = pTree->state.pFoster;
-        for ( ;pFoster != pFosterRoot; pFoster = HtmlNodeParent(pFoster)) {
+        HtmlNode *pFosterRoot = findFosterParent(pTree, 0); // This may crash if <table> is inside another <table>
+        for (HtmlNode *pFoster = pTree->state.pFoster; pFoster != pFosterRoot; pFoster = HtmlNodeParent(pFoster)) {
             nodeHandlerCallbacks(pTree, pFoster);
         }
-
         pTree->state.pFoster = 0;
     }
 }
@@ -1272,23 +1264,22 @@ HtmlTreeAddElement (HtmlTree *pTree, int eType, const char *zType, HtmlAttribute
 
         default: {
             int eCurrentType = HtmlNodeTagType(pCurrent);
-            int isTableType = ((
+            int isTableType = (
                 eCurrentType == Html_TABLE || eCurrentType == Html_TBODY || 
                 eCurrentType == Html_TFOOT || eCurrentType == Html_THEAD || 
                 eCurrentType == Html_TR
-            ) ? 1 : 0);
+            );
             if (isTableType && eType != Html_FORM) {
                 /* Need to add this node to the foster tree. */
                 pParsed = treeAddFosterElement(pTree, eType, zType, pAttr);
             } else {
                 /* Add this node to pCurrent. */
                 int nClose = 0;
-                int i;
                 HtmlElementNode *pC;
                 int N;
 
                 implicitCloseCount(pTree, pCurrent, eType, &nClose);
-                for (i = 0; i < nClose && pCurrent != pBodyNode; i++) {
+                for (int i = 0; i < nClose && pCurrent != pBodyNode; i++) {
                     nodeHandlerCallbacks(pTree, pCurrent);
                     pCurrent = HtmlNodeParent(pCurrent);
                 }

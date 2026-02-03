@@ -42,11 +42,11 @@ namespace eval hv3 { set {version($Id: hv3_dom_xmlhttp.tcl,v 1.18 2008/02/15 18:
   #
   dom_get readyState {
     switch -exact -- $state(readyState) {
-      Uninitialized {list number 0}
-      Open          {list number 1}
-      Sent          {list number 2}
-      Receiving     {list number 3}
-      Loaded        {list number 4}
+      Uninitialized {return 0}
+      Open          {return 1}
+      Sent          {return 2}
+      Receiving     {return 3}
+      Loaded        {return 4}
       default       {error "Bad myReadyState value: $myReadyState"}
     }
   }
@@ -68,17 +68,11 @@ namespace eval hv3 { set {version($Id: hv3_dom_xmlhttp.tcl,v 1.18 2008/02/15 18:
     return null
   }
 
-  dom_get responseText {list string $state(responseText)}
-  dom_get status       {list number $state(status)}
-  dom_get statusText   {list string $state(statusText)}
+  dom_get responseText {return $state(responseText)}
+  dom_get status       {return $state(status)}
+  dom_get statusText   {return $state(statusText)}
 
-  dom_call open {THIS 
-    method 
-    uri 
-    {async    {boolean false}}
-    {user     null}
-    {password null}
-  } {
+  dom_call open {THIS method uri {async false} {user null} {password null}} {
 
     # If there was already a download-handle, destroy it.
     if {$state(downloadHandle) ne ""} {
@@ -95,17 +89,17 @@ namespace eval hv3 { set {version($Id: hv3_dom_xmlhttp.tcl,v 1.18 2008/02/15 18:
     # Check the $method argument. Hv3 only supports GET and POST.
     # Anything that is not a POST is sent as a GET.
     set state(method) GET
-    if {[string equal -nocase [lindex $method 1] POST]} {
+    if {[string equal -nocase $method POST]} {
       set state(method) POST
     }
 
     # Configure the download-handle with the URI to access.
-    set rel [lindex $uri 1]
+    set rel $uri
     set fulluri [$state(hv3) resolve_uri $rel]
     $state(downloadHandle) configure -uri $fulluri
 
     # Set the asynchronous flag.
-    set state(async) [lindex $async 1]
+    set state(async) $async
     if {$state(async) eq "" || ![string is boolean $state(async)]} {
       set state(async) false
     }
@@ -172,21 +166,21 @@ namespace eval hv3 { set {version($Id: hv3_dom_xmlhttp.tcl,v 1.18 2008/02/15 18:
 
   # Constants for Event.eventPhase (Definition group PhaseType)
   #
-  dom_get CAPTURING_PHASE { list number 1 }
-  dom_get AT_TARGET       { list number 2 }
-  dom_get BUBBLING_PHASE  { list number 3 }
+  dom_get CAPTURING_PHASE 1
+  dom_get AT_TARGET       2
+  dom_get BUBBLING_PHASE  3
 
   # Read-only attributes to access the values set by initEvent().
   #
-  dom_get type          { list string "readystatechange" }
-  dom_get bubbles       { list boolean 0 }
-  dom_get cancelable    { list boolean 0 }
+  dom_get type          readystatechange
+  dom_get bubbles       false
+  dom_get cancelable    false
 
   # TODO: Timestamp is supposed to return a timestamp in milliseconds
   # from the epoch. But the DOM spec notes that this information is not
   # available on all systems, in which case the property should return 0. 
   #
-  dom_get timestamp  { list number 0 }
+  dom_get timestamp  [clock milliseconds]
 
   dom_call_todo initEvent
 }
@@ -200,8 +194,8 @@ namespace eval ::hv3::DOM {
     upvar #0 $statevar state
 
     # Assume success...
-    set state(status)         200
-    set state(statusText)     "OK"
+    set    state(status)         200
+    set    state(statusText)     "OK"
     append state(responseText)   $data
 
     XMLHttpRequest_SetState $dom $statevar Receiving
@@ -236,17 +230,17 @@ namespace eval ::hv3::DOM {
     # a "readystatechange" event.
     #
     set this  [list ::hv3::DOM::XMLHttpRequest $dom $statevar]
-    set event [list                             \
-      CAPTURING_PHASE {number 1}                \
-      AT_TARGET       {number 2}                \
-      BUBBLING_PHASE  {number 3}                \
-      type            {string readystatechange} \
-      bubbles         {boolean 0}               \
-      cancelable      {boolean 0}               \
-      timestamp       {number 0}                \
+    set event [list                    \
+      CAPTURING_PHASE 1                \
+      AT_TARGET       2                \
+      BUBBLING_PHASE  3                \
+      type            readystatechange \
+      bubbles         0                \
+      cancelable      0                \
+      timestamp   [clock milliseconds] \
     ]
 
-    set rc [catch {[$dom see] dispatch $this $event} msg]
+    set rc [catch {[$dom qjs] dispatch $this $event} msg]
 
     # If an error occured, log it in the debugging window.
     #

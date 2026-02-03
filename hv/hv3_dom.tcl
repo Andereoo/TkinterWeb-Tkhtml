@@ -23,7 +23,6 @@ package require snit
 #
 #     $dom javascript SCRIPT
 #     $dom event EVENT NODE
-#     $dom set_object_property {object property value}
 #     $dom reset
 #
 #     $dom destroy
@@ -37,7 +36,7 @@ package require snit
 snit::type ::hv3::dom {
 
   # Javascript interpreter.
-  variable mySee ""
+  variable myQjs ""
 
   # Instance of [::hv3::hv3] that contains the window used as the
   # global object by this interpreter.
@@ -57,39 +56,35 @@ snit::type ::hv3::dom {
     ::hv3::enable_javascript
 
     set myHv3 $hv3
-    set mySee [::see::interp [list ::hv3::DOM::Window $self $hv3]]
+    set myQjs [::qjs::interp [list ::hv3::DOM::Window $self $hv3]]
 
     $self configurelist $args
 
     set frame [$myHv3 cget -frame]
     if {$frame ne ""} {
-      $frame update_parent_dom $mySee
+      $frame update_parent_dom $myQjs
     }
   }
 
-  destructor { 
-    catch { $mySee destroy }
-  }
+  destructor { $myQjs destroy }
 
   # Invoked to set the value of the -logcmd option
   method ConfigureLogcmd {option value} {
     set options($option) $value
-    if {$mySee ne ""} {
-      $mySee log $value
+    if {$myQjs ne ""} {
+      $myQjs log $value
     }
   }
 
   method InitWindowEvents {body} {
     set script ""
-    foreach A {onload onunload} {
+    foreach event {onload onunload} {
       catch {
-        set V [$body attr $A]
-        append script [subst {
-          if (!window.$A) { window.$A = function(event) {$V} }
-        }]
+        set v [$body attr $event]
+        append script [subst {if (!this.$event) {this.$event = function(event) {$v}}}]
       }
     }
-    $mySee eval -noresult $script
+    $myQjs eval -noresult $script
   }
 
   method NewFilename {} {
@@ -155,12 +150,12 @@ snit::type ::hv3::dom {
       if {$::hv3::reformat_scripts_option} {
         set script [string map {"\r\n" "\n"} $script]
         set script [string map {"\r" "\n"} $script]
-        set script [::see::format $script]
+        set script [::qjs::format $script]
       }
     }
 
     set name [$self NewFilename]
-    set rc [catch {$mySee eval -noresult -file $name $script} msg]
+    set rc [catch {$myQjs eval -noresult -file $name $script} msg]
     if {$rc} {puts "MSG: $msg"}
 
     $self Log $title $name $script $rc $msg
@@ -169,7 +164,7 @@ snit::type ::hv3::dom {
 
   method javascript {script} {
     set name [$self NewFilename]
-    set rc [catch {$mySee eval -file $name $script} msg]
+    set rc [catch {$myQjs eval -file $name $script} msg]
     return $msg
   }
 
@@ -181,7 +176,7 @@ snit::type ::hv3::dom {
   #     onchange
   #
   method event {event node} {
-    if {$mySee eq ""} {return ""}
+    if {$myQjs eq ""} {return ""}
 
     # Strip off the "on", if present. i.e. "onsubmit" -> "submit"
     #
@@ -210,9 +205,7 @@ snit::type ::hv3::dom {
     }
 
     # Dispatch the event.
-    set rc [catch {
-      ::hv3::dom::dispatchHtmlEvent $self $event $js_obj
-    } msg]
+    set rc [catch {::hv3::dom::dispatchHtmlEvent $self $event $js_obj} msg]
 
     # If an error occured, log it in the debugging window.
     #
@@ -257,7 +250,7 @@ snit::type ::hv3::dom {
       set hv3 [[winfo parent [$iframe html]] hv3 me]
 
       set js_obj [::hv3::dom::wrapWidgetNode [$hv3 dom] $iframe]
-      $hv3 dom DispatchHtmlEvent load $js_obj
+      [$hv3 dom] DispatchHtmlEvent load $js_obj
       return
     }
 
@@ -295,7 +288,7 @@ snit::type ::hv3::dom {
   # [::hv3::dom::dispatchMouseEvent].
   #
   method mouseevent {event node x y args} {
-    if {$mySee eq ""} {return 1}
+    if {$myQjs eq ""} {return 1}
 
     # This can happen if the node is deleted by a DOM event handler
     # invoked by the same logical GUI event as this DOM event.
@@ -305,7 +298,7 @@ snit::type ::hv3::dom {
     set Node [::hv3::dom::wrapWidgetNode $self $node]
 
     set rc [catch {
-      $mySee node $Node
+      $myQjs node $Node
       ::hv3::dom::dispatchMouseEvent $self $event $Node $x $y $args
     } msg]
     if {$rc} {
@@ -316,7 +309,7 @@ snit::type ::hv3::dom {
     set msg
   }
 
-  method see {} { return $mySee }
+  method qjs {} { return $myQjs }
 
   #------------------------------------------------------------------
   # Logging system follows.
@@ -353,8 +346,8 @@ snit::type ::hv3::dom {
   # javascript object associated with the specified tkhtml node.
   #
   method eventdump {node} {
-    if {$mySee eq ""} {return ""}
-    $mySee events [::hv3::dom::wrapWidgetNode $self $node]
+    if {$myQjs eq ""} {return ""}
+    $myQjs events [::hv3::dom::wrapWidgetNode $self $node]
   }
 }
 
@@ -381,7 +374,7 @@ proc ::hv3::dom_init {{init_docs 0}} {
   if {$init_docs} {set ::hv3::dom::CREATE_DOM_DOCS 1}
 
   if {
-    $::hv3::dom::CREATE_DOM_DOCS == 0 && [info commands ::see::interp] eq ""
+    $::hv3::dom::CREATE_DOM_DOCS == 0 && [info commands ::qjs::interp] eq ""
   } return
 
   uplevel #0 {
@@ -406,15 +399,15 @@ proc ::hv3::dom_init {{init_docs 0}} {
 # interpreter library. If it fails, then we have a scriptless browser. 
 # The test for whether or not the browser is script-enabled is:
 #
-#     if {[info commands ::see::interp] ne ""} {
+#     if {[info commands ::qjs::interp] ne ""} {
 #         puts "We have scripting :)"
 #     } else {
 #         puts "No scripting here. Probably better that way."
 #     }
 #
-catch { load [file join tclsee0.1 libTclsee.so] }
-catch { load [file join tclsee0.1 libTclsee.dll] }
-catch { package require Tclsee }
+catch { load [file join tclqjs0.1 libTclqjs.so] }
+catch { load [file join tclqjs0.1 libTclqjs.dll] }
+catch { package require Tclqjs }
 
 set ::hv3::scriptdir [file dirname [info script]]
 set ::hv3::dom_init_has_run 0

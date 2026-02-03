@@ -3,7 +3,7 @@
 #
 BUILD = DEBUG
 
-HV3_POLIPO = /home/dan/work/polipo/hv3_polipo.exe
+HV3_POLIPO = C:\Users\billa\Downloads\hv3_polipo.exe
 
 ##### Version of and path to the Tcl installation to use.
 #
@@ -30,8 +30,8 @@ CFLAGS += -DUSE_TCL_STUBS=1 -DUSE_TK_STUBS=1
 
 ##### The name of the shared library file to build.
 #
-SHARED_LIB_DEBUG = Tkhtml30g.dll
-SHARED_LIB_RELEASE = Tkhtml30.dll
+SHARED_LIB_DEBUG = libTkhtml3.0g.dll
+SHARED_LIB_RELEASE = libTkhtml3.0.dll
 SHARED_LIB = $(SHARED_LIB_$(BUILD))
 
 ##### Command to build a shared library from a set of object files. The
@@ -55,16 +55,15 @@ STRIP_RELEASE = strip
 STRIP_DEBUG = true
 STRIP = $(STRIP_$(BUILD))
 
-MKSTARKIT = tclkit /home/dan/bin/sdx.kit wrap
-STARKITRT = /home/dan/work/tclkit-win32.upx.exe
+STARKITRT = /home/billa/work/tclkitsh-win32.upx.exe
+MKSTARKIT = $(STARKITRT) /home/billa/sdx.kit wrap
 
-##### Javascript libaries - libgc.a and libsee.a
+##### Javascript libaries - libgc.a and libquickjs.a
 #
-JS_SHARED_LIB = libTclsee.dll
+JS_SHARED_LIB = libTclqjs.dll
 
-JSLIB   = $(HOME)/work/tkhtml/jswin/lib/libsee.a
-JSLIB  += $(HOME)/work/tkhtml/jswin/lib/libgc.a
-JSFLAGS = -I$(HOME)/work/tkhtml/jswin/include
+JSLIB   = /home/billa/quickjs/libquickjs.a
+JSFLAGS = -I/home/billa/quickjs
 
 #
 # End of configuration section.

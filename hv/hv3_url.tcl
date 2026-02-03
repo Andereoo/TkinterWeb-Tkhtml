@@ -211,6 +211,7 @@ swproc url_get {url {fragment ""} {prefragment ""} {port ""} {host ""}} {
 #     A tiny API to implement a primitive web cache.
 #
 proc cache_init {file} {
+  package require sqlite3
   sqlite3 dbcache $file
   .html var cache dbcache
   catch {

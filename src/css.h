@@ -172,7 +172,7 @@ void HtmlCssStyleGenerateContent(HtmlTree *, HtmlElementNode *, int);
  * the "style" attribute).
  */
 int  HtmlCssInlineParse(HtmlTree *, int, CONST char *, CssPropertySet **);
-void HtmlCssInlineFree(CssPropertySet *);
+void HtmlCssInlineFree(HtmlElementNode *);
 int HtmlCssInlineQuery(Tcl_Interp *, CssPropertySet *, Tcl_Obj *);
 
 /*

@@ -183,7 +183,7 @@ int HtmlPostscript(
     int deltaX = 0, deltaY = 0;    /* Offset of lower-left corner of area to be
                  * marked up, measured in canvas units from the positioning point on the page (reflects
                  * anchor position). Initial values needed only to stop compiler warnings. */
-    int nographics;
+    unsigned char nographics;
     double pagestotal;
 
     /*
@@ -245,6 +245,10 @@ int HtmlPostscript(
     if (result != TCL_OK) {
         goto cleanup;
     }
+
+    pTree->isPrintedMedia = 1;
+    HtmlCallbackRestyle(pTree, pTree->pRoot);
+    HtmlCallbackForce(pTree); /* Force any pending style and/or layout operations to run. */
 
     if (psInfo.width == -1) psInfo.width = pCanvas->right;
     if (psInfo.height == -1) psInfo.height = pCanvas->bottom;
@@ -318,7 +322,6 @@ int HtmlPostscript(
         pTree->options.forcewidth = 1; /* If a page size has been set, make sure layout width is set to it. */
         pTree->options.width = ceil(psInfo.pageSize.width / psInfo.scale);
         HtmlCallbackLayout(pTree, pTree->pRoot);
-        pTree->isPrintedMedia = 1;
         HtmlCallbackRestyle(pTree, pTree->pRoot);
         HtmlCallbackForce(pTree);
 
@@ -329,9 +332,6 @@ int HtmlPostscript(
         pagestotal = Tk_PostscriptY(pPsInfo->y, (Tk_PostscriptInfo)pPsInfo)/psInfo.pageSize.height*pPsInfo->scale;
     } else {
         finish:
-            pTree->isPrintedMedia = 1;
-            HtmlCallbackRestyle(pTree, pTree->pRoot);
-            HtmlCallbackForce(pTree); /* Force any pending style and/or layout operations to run. */
             pagestotal = 1;
     }
     
@@ -586,7 +586,7 @@ int HtmlPostscript(
         }
     }
     
-    int page_h = 0, pagenum, pageYmin, pageYmax;
+    unsigned int page_h = 0, pagenum, pageYmin, pageYmax;
     if (psInfo.pageMode) page_h = scaledHeight(pPsInfo);
 
     /*
@@ -1126,13 +1126,12 @@ TkPostscriptImage(
  *
  *--------------------------------------------------------------
  */
-int TextToPostscript(Tk_PostscriptInfo psInfo, char *z, int n, int x, int y, int prepass, HtmlNode *pNode, Tcl_Interp *interp)
+int TextToPostscript(Tk_PostscriptInfo psInfo, const char *z, int n, int x, int y, int prepass, HtmlNode *pNode, Tcl_Interp *interp)
 {
     float anchor;
     const char *justify;
     Tcl_Obj *psObj;
     Tcl_InterpState interpState;
-    int w, h;
     Tk_TextLayout tl;
 
     HtmlComputedValues *pV = HtmlNodeComputedValues(pNode);
@@ -1153,20 +1152,24 @@ int TextToPostscript(Tk_PostscriptInfo psInfo, char *z, int n, int x, int y, int
     Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
     
     switch (pV->eTextAlign) {
-        case CSS_CONST_CENTER: anchor = 0.15; justify = "0.5"; break;
-        case CSS_CONST_RIGHT:  anchor = 0.30; justify = "1";   break;
-        default:               anchor = 0;    justify = "0";   break;
+        case CSS_CONST_CENTER: anchor = 1/6; justify = "0";  break;
+        case CSS_CONST_RIGHT:  anchor = 1/3; justify = "1";  break;
+        default:               anchor = 0;   justify = "-1"; break;
     }
     Tk_FontMetrics fm = pV->fFont->metrics;
-	if (n < strlen(z)) z[n] = '\0';  // Turns out 'z' is 1 char to long, not sure why. Add a null terminator
+	char *a = HtmlAlloc("temp", 1+n);
+    memcpy(a, z, n);
+	a[n] = '\0';
+    tl = Tk_ComputeTextLayout(pV->fFont->tkfont, a, -1, 0, 0, 0, 0, 0);
 
     // Angle, horizontal and vertical positions to render at
     Tcl_AppendPrintfToObj(psObj, "0 %d %.15g [\n", x, Tk_PostscriptY(y, psInfo));
     Tcl_ResetResult(interp);
-    tl = Tk_ComputeTextLayout(pV->fFont->tkfont, z, n, 0, 0, 0, &w, &h);
     Tk_TextLayoutToPostscript(interp, tl);
     Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp)); // How far apart two lines of text in the same font
     Tcl_AppendPrintfToObj(psObj, "] %d %g 1 %s false DrawText\n", fm.linespace, anchor, justify);
+
+	HtmlFree(a);
 
     // Plug the accumulated postscript back into the result.
     done:
@@ -1457,7 +1460,7 @@ int WinItemToPostscript(HtmlTree *pTree, int x, int y, Tk_Window win, int prepas
     #endif
     Tcl_Obj *cmdObj, *psObj;
 
-    if (prepass || win == NULL) { return TCL_OK; }
+    if (prepass || win == NULL) return TCL_OK;
 
     w = Tk_Width(win);
     h = Tk_Height(win);

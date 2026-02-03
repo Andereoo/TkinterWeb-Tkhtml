@@ -1344,11 +1344,11 @@ namespace eval ::hv3::hv3 {
     # Execute the -requestcmd script. Fail the download and raise
     # an exception if an error occurs during script evaluation.
     set cmd [concat $O(-requestcmd) [list $downloadHandle]]
-    set rc [catch $cmd errmsg]
+    set rc [catch $cmd err opts]
     if {$rc} {
-      #set einfo $::errorInfo
-      #error $errmsg $einfo
-      puts "Error in -requestcmd [$downloadHandle cget -uri]: $errmsg"
+      # Log detailed error info
+      set errInfo [dict get $opts -errorinfo]
+      puts stderr "Error, Stack trace:\n$errInfo"
       catch {$downloadHandle destroy}
     }
   }

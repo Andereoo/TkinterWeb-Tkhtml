@@ -75,7 +75,7 @@ htmldefaultstyle.c: $(TOP)/src/tkhtml.tcl  $(TOP)/src/html.css $(TOP)/src/mkdefa
 	@echo '$$(TCLSH) $(TOP)/src/mkdefaultstyle.tcl > htmldefaultstyle.c'
 	@$(TCLSH) $(TOP)/src/mkdefaultstyle.tcl > htmldefaultstyle.c
 
-htmltokens.h:	$(TOP)/src/tokenlist.txt
+htmltokens.h: $(TOP)/src/tokenlist.tcl
 	@echo '$$(TCLSH) $<'
 	@$(TCLSH) $<
 
@@ -118,8 +118,8 @@ hv3_img.vfs: binaries
 	if test -d $(TCL)/lib/*sqlite3*/ ; then \
 	  cp -R $(TCL)/lib/*sqlite3* ./hv3_img.vfs/lib ; \
 	fi
-	if test -d tclsee0.1/ ; then \
-	  cp -R tclsee0.1/ ./hv3_img.vfs/lib ; \
+	if test -d tclqjs0.1/ ; then \
+	  cp -R tclqjs0.1/ ./hv3_img.vfs/lib ; \
 	fi
 	cp $(HV3_POLIPO) ./hv3_img.vfs/
 	touch hv3_img.vfs
@@ -172,7 +172,7 @@ tkhtml.n: $(TOP)/doc/macros.tcl $(TOP)/doc/html.man
 #-----------------------------------------------------------------------
 
 #-----------------------------------------------------------------------
-# Targets to build the binary javascript extension (libtclsee.so) and
+# Targets to build the binary javascript extension (libtclqjs.so) and
 # set up a package directory for it. Requires that the following 
 # variables are set:
 #
@@ -180,22 +180,22 @@ tkhtml.n: $(TOP)/doc/macros.tcl $(TOP)/doc/html.man
 #     JSLIB
 #     JSFLAGS
 #
-# Building the target "tclsee" creates a directory "tclsee0.1" and
+# Building the target "tclqjs" creates a directory "tclqjs0.1" and
 # populates it with a pkgIndex.tcl and shared object file implementing
-# the "Tclsee" package.
+# the "Tclqjs" package.
 #
-tclsee: tclsee.o
-	mkdir -p tclsee0.1
-	@echo '$$(MKSHLIB) tclsee.o $(JSLIB) -o $(JS_SHARED_LIB)'
-	@$(MKSHLIB) tclsee.o $(JSLIB) $(TCLSTUBSLIB) -o $(JS_SHARED_LIB)
+tclqjs: tclqjs.o
+	mkdir -p tclqjs0.1
+	@echo '$$(MKSHLIB) tclqjs.o $(JSLIB) -o $(JS_SHARED_LIB)'
+	@$(MKSHLIB) tclqjs.o $(JSLIB) $(TCLSTUBSLIB) -o $(JS_SHARED_LIB)
 	@echo '$$(STRIP) $(JS_SHARED_LIB)'
 	@$(STRIP) $(JS_SHARED_LIB)
-	mv $(JS_SHARED_LIB) tclsee0.1
-	echo 'package ifneeded Tclsee 0.1 [list load [file join $$dir $(JS_SHARED_LIB)]]' > tclsee0.1/pkgIndex.tcl
+	mv $(JS_SHARED_LIB) tclqjs0.1
+	echo 'package ifneeded Tclqjs 0.1 [list load [file join $$dir $(JS_SHARED_LIB)]]' > tclqjs0.1/pkgIndex.tcl
 
-tclsee.o: $(TOP)/hv/hv3see.c $(TOP)/hv/hv3format.c $(TOP)/hv/hv3events.c $(TOP)/hv/hv3timeout.c $(TOP)/hv/hv3bridge.c
-	@echo '$$(COMPILE) $(JSFLAGS) -c $(TOP)/hv/hv3see.c -o $@'
-	@$(COMPILE) $(JSFLAGS) -c $(TOP)/hv/hv3see.c -o $@
+tclqjs.o: $(TOP)/hv/hv3qjs.c $(TOP)/hv/hv3format.c $(TOP)/hv/hv3events.c $(TOP)/hv/hv3timeout.c
+	@echo '$$(COMPILE) $(JSFLAGS) -c $(TOP)/hv/hv3qjs.c -o $@'
+	@$(COMPILE) $(JSFLAGS) -c $(TOP)/hv/hv3qjs.c -o $@
 #
 #-----------------------------------------------------------------------
 
