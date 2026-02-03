@@ -1,0 +1,35 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: macos-13
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: rn1
+      run: pip install tkinterweb
+    - name: rn2
+      run: python -m tkinterweb.__init__ Demo
+    - name: check
+      run: ls /System/Volumes/Data/usr/local/Cellar/tcl-tk@8/8.6.16/include/tcl-tk/ && ls /System/Volumes/Data/usr/local/Cellar/tcl-tk@8/8.6.16/include/tcl-tk/ && ls /usr/local/Cellar/tcl-tk@8/8.6.16/lib/ && ls /usr/local/Cellar/tcl-tk@8/8.6.16/lib/
+    - name: Prepare files
+      run: |
+        tclsh src/cssprop.tcl && tclsh src/tokenlist.txt && tclsh src/mkdefaultstyle.tcl > htmldefaultstyle.c 
+        chmod +rwx ./configure
+        mv *.c src && mv *.h src
+    - name: Configure
+      run: ./configure CC="gcc" --with-tclinclude=/System/Volumes/Data/usr/local/Cellar/tcl-tk@8/8.6.16/include/tcl-tk/ --with-tkinclude=/System/Volumes/Data/usr/local/Cellar/tcl-tk@8/8.6.16/include/tcl-tk/ --with-tcl=/usr/local/Cellar/tcl-tk@8/8.6.16/lib/ --with-tk=/usr/local/Cellar/tcl-tk@8/8.6.16/lib/
+    - name: Make
+      run: make
+    - name: Archive code coverage results
+      uses: actions/upload-artifact@v4
+      with:
+        name: code-coverage-report
+        path: .

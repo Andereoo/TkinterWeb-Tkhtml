@@ -242,6 +242,8 @@ struct HtmlComputedValues {
     int iMaxHeight;                   /* 'max-height'     (pixels, %, NONE)   */
     HtmlFourSides padding;            /* 'padding'        (pixels, %)         */
     HtmlFourSides margin;             /* 'margin'         (pixels, %, AUTO)   */
+    
+    HtmlFourSides radius;             /* 'border-radius'  (pixels)         */
 
     HtmlFourSides border;             /* 'border-width'   (pixels)            */
     unsigned char eBorderTopStyle;    /* 'border-top-style' */
@@ -493,10 +495,10 @@ int HtmlComputedValuesCompare(HtmlComputedValues *, HtmlComputedValues *);
 #define HTML_COMPUTED_PADDING_BOTTOM  padding.iBottom
 #define HTML_COMPUTED_PADDING_LEFT    padding.iLeft
 
-#define HTML_COMPUTED_PADDING_TOP     padding.iTop
-#define HTML_COMPUTED_PADDING_RIGHT   padding.iRight
-#define HTML_COMPUTED_PADDING_BOTTOM  padding.iBottom
-#define HTML_COMPUTED_PADDING_LEFT    padding.iLeft
+#define HTML_COMPUTED_BORDER_TOP_LEFT_RADIUS       radius.iTop
+#define HTML_COMPUTED_BORDER_TOP_RIGHT_RADIUS      radius.iRight
+#define HTML_COMPUTED_BORDER_BOTTOM_RIGHT_RADIUS   radius.iBottom
+#define HTML_COMPUTED_BORDER_BOTTOM_LEFT_RADIUS    radius.iLeft
 
 #define HTML_COMPUTED_TOP             position.iTop
 #define HTML_COMPUTED_RIGHT           position.iRight

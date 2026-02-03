@@ -35,7 +35,18 @@ static const char rcsid[] = "$Id: htmldraw.c,v 1.208 2008/02/14 08:43:49 danielk
 #include "html.h"
 #include <assert.h>
 #include <X11/Xutil.h>
+#include <cairo/cairo.h>
 
+#ifdef WIN32
+    #include <cairo/cairo-win32.h>
+    #include <tkWinInt.h>
+    int roundingAllowed = 1;
+#elif __APPLE__ // TODO: Handle MacOS
+    int roundingAllowed = 0;
+#else
+   #include <cairo/cairo-xlib.h>
+   int roundingAllowed = 1;
+#endif
 
 /*-------------------------------------------------------------------------
  * OVERVIEW:
@@ -1526,10 +1537,10 @@ fill_quad(
     Tk_Window win,
     Drawable d,
     XColor *xcolor,
-    int x1, int y1,  // Starting point (top-left corner)
-    int x2, int y2,  // Offset for the second point (top-right corner)
-    int x3, int y3,  // Offset for the third point (bottom-right corner)
-    int x4, int y4)  // Offset for the fourth point (bottom-left corner)
+    int x1, int y1,
+    int x2, int y2,
+    int x3, int y3,
+    int x4, int y4)
 {
     XPoint points[4];
     Display *display = Tk_Display(win);
@@ -1550,13 +1561,13 @@ fill_quad(
      * the mode set to CoordModeOrigin.
      */
     points[0].x = x1; 
-    points[0].y = y1; // Top-left corner
+    points[0].y = y1;
     points[1].x = points[0].x + x2; 
-    points[1].y = points[0].y + y2; // Top-right corner
+    points[1].y = points[0].y + y2;
     points[2].x = points[1].x + x3; 
-    points[2].y = points[1].y + y3; // Bottom-right corner
+    points[2].y = points[1].y + y3;
     points[3].x = points[2].x + x4; 
-    points[3].y = points[2].y + y4; // Bottom-left corner
+    points[3].y = points[2].y + y4;
 
     XFillPolygon(display, d, gc, points, 4, Convex, CoordModeOrigin);
 
@@ -1580,8 +1591,193 @@ fill_rectangle(
     
         gc_values.foreground = xcolor->pixel;
         gc = Tk_GetGC(win, GCForeground, &gc_values);
+
         XFillRectangle(display, d, gc, x, y, w, h);
         Tk_FreeGC(display, gc);
+    }
+
+    return 0;
+}
+
+static double 
+xcolor_to_cairo_rgb (int color) {
+    return color / 65535.0;
+}
+
+static int
+fill_round_rectangle(
+    Tk_Window win,
+    Drawable d,
+    XColor *xcolor,
+    int x, int y, int width, int height, 
+    int tlradius, int trradius, int brradius, int blradius, int allow,
+    XColor *xtcolor, XColor *xlcolor, XColor *xbcolor, XColor *xrcolor,
+    float btwidth, float blwidth, float bbwidth, float brwidth)
+{
+    if (width > 0 && height > 0){
+        Display *display = Tk_Display(win);
+
+        #ifdef WIN32
+            TkWinDCState state;
+            HDC hdc = TkWinGetDrawableDC(display, d, &state);
+            cairo_surface_t *surface = cairo_win32_surface_create(hdc);
+        #else // TODO: Handle MacOS
+            cairo_surface_t *surface = cairo_xlib_surface_create(display, d,
+                Tk_Visual(win),
+                x + width, y + height);
+        #endif
+
+        cairo_t *cr = cairo_create(surface);
+
+        // TODO: figure this out in htmlprop instead of here
+        // TODO: split each radius into rx and ry
+        if (tlradius < 0) {
+            tlradius = MAX(height, width) * ((float)tlradius / -100);
+        } if (trradius < 0) {
+            trradius = MAX(height, width) * ((float)trradius / -100);
+        } if (brradius < 0) {
+            brradius = MAX(height, width) * ((float)brradius / -100);
+        } if (blradius < 0) {
+            blradius = MAX(height, width) * ((float)blradius / -100);
+        }
+
+        float max_radius = MIN(height, width) / 2;
+        if (tlradius > max_radius) {
+            tlradius = max_radius;
+        } if (trradius > max_radius) {
+            trradius = max_radius;
+        } if (brradius > max_radius) {
+            brradius = max_radius;
+        } if (blradius > max_radius) {
+            blradius = max_radius;
+        }
+
+        cairo_set_antialias(cr, CAIRO_ANTIALIAS_BEST);
+
+        cairo_translate(cr, x, y);
+
+        if (xcolor) {
+            cairo_arc(cr, width - trradius, trradius, trradius, -3.14/2, 0);  // top-right corner
+            cairo_arc(cr, width - brradius, height - brradius, brradius, 0, 3.14/2);  // bottom-right corner
+            cairo_arc(cr, blradius, height - blradius, blradius, 3.14/2, 3.14);  // bottom-left corner
+            cairo_arc(cr, tlradius, tlradius, tlradius, 3.14, (3*3.14)/2);  // top-left corner
+
+            cairo_set_source_rgb(cr, xcolor_to_cairo_rgb(xcolor->red), xcolor_to_cairo_rgb(xcolor->green), xcolor_to_cairo_rgb(xcolor->blue));
+            cairo_fill_preserve(cr);
+            cairo_set_line_width(cr, 0);
+            cairo_stroke(cr);
+        }
+
+        if (allow) {
+            int halfheight = height / 2;
+            int halfwidth = width / 2;
+            btwidth = MIN(MIN(btwidth, halfheight), halfwidth);
+            brwidth = MIN(MIN(brwidth, halfwidth), halfheight);
+            bbwidth = MIN(MIN(bbwidth, halfheight), halfwidth);
+            blwidth = MIN(MIN(blwidth, halfwidth), halfheight);
+
+            float toffset, roffset, boffset, loffset, stlradius, strradius, srtradius, srbradius, sblradius, sbrradius, sltradius, slbradius;
+            int tlnewrad, trnewrad, rtnewrad, rbnewrad, brnewrad, blnewrad, lbnewrad, ltnewrad;
+
+            if (btwidth < 10 || brwidth < 10 || bbwidth < 10 || blwidth < 10) {
+                toffset = btwidth / 2;
+                roffset = brwidth / 2;
+                boffset = bbwidth / 2;
+                loffset = blwidth / 2;
+
+                stlradius = tlradius - toffset;
+                strradius = trradius - toffset;
+                srtradius = trradius - roffset;
+                srbradius = brradius - roffset;
+                sblradius = blradius - boffset;
+                sbrradius = brradius - boffset;
+                sltradius = tlradius - loffset;
+                slbradius = blradius - loffset;
+            } if (btwidth >= 10 || brwidth >= 10 || bbwidth >= 10 || blwidth >= 10) {
+                tlnewrad = MAX(tlradius - btwidth, 0);
+                trnewrad = MAX(trradius - btwidth, 0);
+
+                rtnewrad = MAX(trradius - brwidth, 0);
+                rbnewrad = MAX(brradius - brwidth, 0);
+
+                brnewrad = MAX(brradius - brwidth, 0);
+                blnewrad = MAX(blradius - bbwidth, 0);
+
+                lbnewrad = MAX(blradius - bbwidth, 0);
+                ltnewrad = MAX(tlradius - blwidth, 0);
+            }
+
+            if (btwidth > 0 && xtcolor) {
+                cairo_set_source_rgb(cr, xcolor_to_cairo_rgb(xtcolor->red), xcolor_to_cairo_rgb(xtcolor->green), xcolor_to_cairo_rgb(xtcolor->blue));
+                if (btwidth < 10) {
+                    // This algorithm looks better for thinner lines and can be used for dotted etc. borders
+                    cairo_set_line_width(cr, btwidth);
+                    cairo_arc(cr, sltradius + loffset, stlradius + toffset, stlradius, (5 * 3.14) / 4, (3 * 3.14) / 2);
+                    cairo_arc(cr, width - srtradius - roffset, stlradius + toffset, stlradius, (3 * 3.14) / 2, -(3.14) / 4);
+                    cairo_stroke(cr);
+                } else {
+                    // This algorithm is better for thicker lines. The previous one leaves behind many strange artefacts on thick lines.
+                    cairo_arc(cr, tlradius, tlradius, tlradius, (5 * 3.14159) / 4, (3 * 3.14159) / 2);
+                    cairo_arc(cr, width - trradius, trradius, trradius, (3 * 3.14159) / 2, -3.14159 / 4);
+                    cairo_arc_negative(cr, width - trnewrad - btwidth, trnewrad + btwidth, trnewrad, -3.14159 / 4, (3 * 3.14159) / 2);
+                    cairo_arc_negative(cr, tlnewrad + btwidth, tlnewrad + btwidth, tlnewrad, (3 * 3.14159) / 2, (5 * 3.14159) / 4);
+                    cairo_fill_preserve(cr);
+                    cairo_fill(cr);
+                }
+            } if (brwidth > 0 && xrcolor) {
+                cairo_set_source_rgb(cr, xcolor_to_cairo_rgb(xrcolor->red), xcolor_to_cairo_rgb(xrcolor->green), xcolor_to_cairo_rgb(xrcolor->blue));
+                if (brwidth < 10) {
+                    cairo_set_line_width(cr, brwidth);
+                    cairo_arc(cr, width - srtradius - roffset, strradius + toffset, srtradius, -(3.14) / 4, 0);
+                    cairo_arc(cr, width - srbradius - roffset, height - sbrradius - boffset, srbradius, 0, (3.14) / 4);
+                    cairo_stroke(cr);
+                } else {
+                    cairo_arc(cr, width - trradius, trradius, trradius, -3.14159 / 4, 0);
+                    cairo_arc(cr, width - brradius, height - brradius, brradius, 0, 3.14159 / 4);
+                    cairo_arc_negative(cr, width - rbnewrad - brwidth, height - rbnewrad - brwidth, rbnewrad, 3.14159 / 4, 0);
+                    cairo_arc_negative(cr, width - rtnewrad - brwidth, rtnewrad + brwidth, rtnewrad, 0, -3.14159 / 4);
+                    cairo_fill_preserve(cr);
+                    cairo_fill(cr);
+                }
+            } if (bbwidth > 0 && xbcolor) {
+                cairo_set_source_rgb(cr, xcolor_to_cairo_rgb(xbcolor->red), xcolor_to_cairo_rgb(xbcolor->green), xcolor_to_cairo_rgb(xbcolor->blue));
+                if (bbwidth < 10) {
+                    cairo_set_line_width(cr, bbwidth);
+                    cairo_arc(cr, width - srbradius - roffset, height - sbrradius - boffset, sbrradius, (3.14) / 4, (3.14) / 2);
+                    cairo_arc(cr, slbradius + loffset, height - sblradius - boffset, sblradius, (3.14) / 2, (3 * 3.14) / 4);
+                    cairo_stroke(cr);
+                } else {
+                    cairo_arc(cr, width - brradius, height - brradius, brradius, 3.14159 / 4, 3.14159 / 2);
+                    cairo_arc(cr, blradius, height - blradius, blradius, 3.14159 / 2, (3 * 3.14159) / 4);
+                    cairo_arc_negative(cr, blnewrad + bbwidth, height - blnewrad - bbwidth, blnewrad, (3 * 3.14159) / 4, 3.14159 / 2);
+                    cairo_arc_negative(cr, width - brnewrad - bbwidth, height - brnewrad - bbwidth, brnewrad, 3.14159 / 2, 3.14159 / 4);
+                    cairo_fill_preserve(cr);
+                    cairo_fill(cr);
+                }
+            } if (blwidth > 0 && xlcolor) {
+                cairo_set_source_rgb(cr, xcolor_to_cairo_rgb(xlcolor->red), xcolor_to_cairo_rgb(xlcolor->green), xcolor_to_cairo_rgb(xlcolor->blue));
+                if (blwidth < 10) {
+                    cairo_set_line_width(cr, blwidth);
+                    cairo_arc(cr, slbradius + loffset, height - sblradius - boffset, slbradius, (3 * 3.14) / 4, 3.14);
+                    cairo_arc(cr, sltradius + loffset, stlradius + toffset, sltradius, 3.14, (5 * 3.14) / 4);
+                    cairo_stroke(cr);
+                } else {
+                    cairo_arc(cr, blradius, height - blradius, blradius, (3 * 3.14159) / 4, 3.14159);
+                    cairo_arc(cr, tlradius, tlradius, tlradius, 3.14159, (5 * 3.14159) / 4);
+                    cairo_arc_negative(cr, ltnewrad + blwidth, ltnewrad + blwidth, ltnewrad, (5 * 3.14159) / 4, 3.14159);
+                    cairo_arc_negative(cr, lbnewrad + blwidth, height - lbnewrad - blwidth, lbnewrad, 3.14159, (3 * 3.14159) / 4);
+                    cairo_fill_preserve(cr);
+                    cairo_fill(cr);
+                }
+            }
+        }
+
+        cairo_destroy(cr);
+        cairo_surface_destroy(surface);
+
+        #ifdef WIN32
+            TkWinReleaseDrawableDC(d, hdc, &state);
+        #endif
     }
 
     return 0;
@@ -1800,6 +1996,12 @@ drawBox (
     XColor *lc = pV->cBorderLeftColor->xcolor;
     XColor *oc = pV->cOutlineColor->xcolor;
 
+    /* Figure out the border radius */
+    int brtl = pV->radius.iTop;
+    int brtr = pV->radius.iRight;
+    int brbr = pV->radius.iBottom;
+    int brbl = pV->radius.iLeft;
+
     /* int isInline = (pV->eDisplay == CSS_CONST_INLINE); */
     if (pItem) {
         setClippingDrawable(pQuery, pItem, &drawable, &x, &y);
@@ -1814,49 +2016,76 @@ drawBox (
     }
 
     /* Solid background, if required */
-    if (0 == (flags & DRAWBOX_NOBACKGROUND) && pV->cBackgroundColor->xcolor) {
-        int boxw = pBox->w + MIN((x + pBox->x), 0);
-        int boxh = pBox->h + MIN((y + pBox->y), 0);
-        fill_rectangle(pTree->tkwin, 
-            drawable, pV->cBackgroundColor->xcolor,
-            MAX(0, x + pBox->x), MAX(0, y + pBox->y),
-            MIN(boxw, w), MIN(boxh, h)
-        );
-    }
+    if (roundingAllowed && (brtl != 0 || brtr != 0 || brbr != 0 || brbl != 0)) {
+        int btype = (0 == (flags & DRAWBOX_NOBORDER));
+         
+        if (0 == (flags & DRAWBOX_NOBACKGROUND) && pV->cBackgroundColor->xcolor) {
+            fill_round_rectangle(pTree->tkwin, 
+                drawable, pV->cBackgroundColor->xcolor,
+                x + pBox->x, y + pBox->y,
+                pBox->w, pBox->h, brtl, brtr, brbr, brbl, btype,
+                tc, lc, bc, rc, tw, lw, bw, rw
+            );
+        } else if (btype) {
+            fill_round_rectangle(pTree->tkwin, 
+                drawable, 0,
+                x + pBox->x, y + pBox->y,
+                pBox->w, pBox->h, brtl, brtr, brbr, brbl, btype,
+                tc, lc, bc, rc, tw, lw, bw, rw
+            );
+        } 
+    } else {
+        if (0 == (flags & DRAWBOX_NOBACKGROUND) && pV->cBackgroundColor->xcolor) {
+            int boxw = pBox->w + MIN((x + pBox->x), 0);
+            int boxh = pBox->h + MIN((y + pBox->y), 0);
 
-    if (0 == (flags & DRAWBOX_NOBORDER)) {
-        /* Top border */
-        if (tw > 0 && tc) {
-            fill_quad(pQuery, pTree->tkwin, drawable, tc,
-                x + pBox->x, y + pBox->y,
-                lw, tw,
-                pBox->w - lw - rw, 0,
-                rw, -1 * tw
+            fill_rectangle(pTree->tkwin, 
+                drawable, pV->cBackgroundColor->xcolor,
+                MAX(0, x + pBox->x), MAX(0, y + pBox->y),
+                MIN(boxw, w), MIN(boxh, h)
             );
-        } /* Left border, if required */
-        if (lw > 0 && lc) {
-            fill_quad(pQuery, pTree->tkwin, drawable, lc,
-                x + pBox->x, y + pBox->y,
-                lw, tw,
-                0, pBox->h - tw - bw,
-                -1 * lw, bw
-            );
-        } /* Bottom border, if required */
-        if (bw > 0 && bc) {
-            fill_quad(pQuery, pTree->tkwin, drawable, bc,
-                x + pBox->x, y + pBox->y + pBox->h,
-                lw, - 1 * bw,
-                pBox->w - lw - rw, 0,
-                rw, bw
-            );
-        } /* Right border, if required */
-        if (rw > 0 && rc) {
-            fill_quad(pQuery, pTree->tkwin, drawable, rc,
-                x + pBox->x + pBox->w, y + pBox->y,
-                -1 * rw, tw,
-                0, pBox->h - tw - bw,
-                rw, bw
-            );
+        } 
+
+        if (0 == (flags & DRAWBOX_NOBORDER)) {
+            /* Top border */
+            if (tw > 0 && tc) {
+                fill_quad(pQuery, pTree->tkwin, drawable, tc,
+                    x + pBox->x, y + pBox->y,
+                    lw, tw,
+                    pBox->w - lw - rw, 0,
+                    rw, -1 * tw
+                );
+            }
+        
+            /* Left border, if required */
+            if (lw > 0 && lc) {
+                fill_quad(pQuery, pTree->tkwin, drawable, lc,
+                    x + pBox->x, y + pBox->y,
+                    lw, tw,
+                    0, pBox->h - tw - bw,
+                    -1 * lw, bw
+                );
+            }
+        
+            /* Bottom border, if required */
+            if (bw > 0 && bc) {
+                fill_quad(pQuery, pTree->tkwin, drawable, bc,
+                    x + pBox->x, y + pBox->y + pBox->h,
+                    lw, - 1 * bw,
+                    pBox->w - lw - rw, 0,
+                    rw, bw
+                );
+            }
+        
+            /* Right border, if required */
+            if (rw > 0 && rc) {
+                fill_quad(pQuery, pTree->tkwin, drawable, rc,
+                    x + pBox->x + pBox->w, y + pBox->y,
+                    -1 * rw, tw,
+                    0, pBox->h - tw - bw,
+                    rw, bw
+                );
+            }
         }
     }
 
@@ -4310,6 +4539,14 @@ int HtmlGetPostscript(
 HtmlTree *pTree, HtmlNode *pBgRoot, int ymin, int ymax, char prepass, char nogfx, Tcl_Interp *interp, Tcl_Obj *psObj, HtmlComputedValues *pV
 ) {
     struct printingInfo sPrint = {pTree, pBgRoot, prepass, nogfx, interp, psObj};
-    return searchSortedCanvas(pTree, ymin, ymax, 0, HtmlPostscriptCb, (ClientData)&sPrint);
+    ClientData clientData = (ClientData)&sPrint;
+    if (pBgRoot && !nogfx & 1) {
+        BoxToPostscript(pTree, 0, 0, pTree->canvas.right, ymax, prepass, pBgRoot, DRAWBOX_NOBORDER, interp, pV);
+        Tcl_AppendToObj(psObj, "gsave % Background is drawn separately.\n", -1);
+        Tcl_AppendObjToObj(psObj, Tcl_GetObjResult(interp));
+        Tcl_ResetResult(interp);
+        Tcl_AppendToObj(psObj, "grestore ", -1);
+    }
+    return searchSortedCanvas(pTree, ymin, ymax, 0, HtmlPostscriptCb, clientData);
 }
 

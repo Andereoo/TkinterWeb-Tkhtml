@@ -66,7 +66,7 @@ static const char rcsid[] = "$Id: htmlprop.c,v 1.135 2007/12/05 10:11:12 danielk
  */
 
 enum PropertyValueType {
-    ENUM, COLOR, LENGTH, IMAGE, BORDERWIDTH, COUNTERLIST, CUSTOM, AUTOINTEGER
+    ENUM, COLOR, LENGTH, INNERPLENGTH, IMAGE, BORDERWIDTH, COUNTERLIST, CUSTOM, AUTOINTEGER
 };
 
 typedef struct PropertyDef PropertyDef;
@@ -156,7 +156,7 @@ static PropertyDef propdefs[] = {
   PROPDEFM(LENGTH, WIDTH,                 iWidth,            PIXELVAL_AUTO),
   PROPDEFM(LENGTH, WORD_SPACING,          iWordSpacing,      PIXELVAL_NORMAL),
   PROPDEFM(LENGTH, LETTER_SPACING,        iLetterSpacing,    PIXELVAL_NORMAL),
-
+  
   PROPDEF(COLOR, BACKGROUND_COLOR,        cBackgroundColor),
   PROPDEF(COLOR, COLOR,                   cColor),
   PROPDEF(COLOR, BORDER_TOP_COLOR,        cBorderTopColor),
@@ -174,6 +174,11 @@ static PropertyDef propdefs[] = {
   PROPDEFM(BORDERWIDTH, BORDER_RIGHT_WIDTH,  border.iRight,  2),
   PROPDEFM(BORDERWIDTH, BORDER_BOTTOM_WIDTH, border.iBottom, 2),
   PROPDEFM(BORDERWIDTH, OUTLINE_WIDTH,       iOutlineWidth,  2),
+
+  PROPDEF(INNERPLENGTH, BORDER_BOTTOM_RIGHT_RADIUS,   radius.iBottom),
+  PROPDEF(INNERPLENGTH, BORDER_BOTTOM_LEFT_RADIUS,    radius.iLeft),
+  PROPDEF(INNERPLENGTH, BORDER_TOP_RIGHT_RADIUS,      radius.iRight),
+  PROPDEF(INNERPLENGTH, BORDER_TOP_LEFT_RADIUS,       radius.iTop),
 
   PROPDEF(AUTOINTEGER, Z_INDEX,                    iZIndex),
   PROPDEF(AUTOINTEGER, _TKHTML_ORDERED_LIST_START, iOrderedListStart),
@@ -1733,6 +1738,47 @@ propertyValuesSetSize (HtmlComputedValuesCreator *p, int *pIVal, unsigned int p_
 /*
  *---------------------------------------------------------------------------
  *
+ * propertyValuesSetPSize --
+ *
+ * Results: 
+ *     0 if *pIVar is set correctly. If pProp cannot be parsed as a size,
+ *     1 is returned and *pIVar remains unmodified.
+ *
+ * Side effects:
+ *     May set *pIVar and set or clear bits in various *p masks.
+ *
+ *---------------------------------------------------------------------------
+ */
+static int 
+propertyValuesSetPSize (HtmlComputedValuesCreator *p, int *pIVal, unsigned int p_mask, CssProperty *pProp, unsigned int allow_mask)
+{
+    assert(p_mask != 0);
+
+    /* Clear the bits in the inherit and percent masks for this property */
+    p->values.mask &= ~p_mask;
+    p->em_mask &= ~p_mask;
+    p->ex_mask &= ~p_mask;    
+
+    switch (pProp->eType) {
+        /* TODO Percentages are still stored as integers - this is wrong */
+        case CSS_TYPE_PERCENT: {
+            /* For now we will just set the value to be a negative of itself */
+            /* htmldraw.c will take that as a note to determine the percentage */
+            /* Kind of hacky but it is good enough for now */
+            *pIVal = (int)(pProp->v.rVal * -1);
+            return 1;
+        }
+
+        default:
+            return propertyValuesSetLength(
+                p, pIVal, p_mask, pProp, allow_mask & SZ_NEGATIVE);
+    }
+}
+
+
+/*
+ *---------------------------------------------------------------------------
+ *
  * propertyValuesSetBorderWidth --
  *
  *     pIVal points to an integer to store the value of a 'border-width-xxx'
@@ -1865,6 +1911,7 @@ getPrototypeCreator (HtmlTree *pTree, unsigned int *pMask, int *piCopyBytes)
 
             switch (pDef->eType) {
                 case LENGTH:
+                case INNERPLENGTH:
                 case BORDERWIDTH: {
                     int *pVal = (int *)(values + pDef->iOffset);
 
@@ -2209,6 +2256,10 @@ HtmlComputedValuesSet (HtmlComputedValuesCreator *p, int eProp, CssProperty *pPr
                 int *pIVar = (int*)((unsigned char*)&p->values + pDef->iOffset);
                 return propertyValuesSetSize(p, pIVar, pDef->mask, pProp, pDef->setsizemask);
             }
+            case INNERPLENGTH: {
+                int *pIVar = (int*)((unsigned char*)&p->values + pDef->iOffset);
+                return propertyValuesSetPSize(p, pIVar, pDef->mask, pProp, pDef->setsizemask);
+            }
             case BORDERWIDTH: {
                 int *pBVar = (int*)((unsigned char*)&p->values + pDef->iOffset);
                 return propertyValuesSetBorderWidth(p, pBVar, pDef->mask, pProp);
@@ -2461,7 +2512,7 @@ HtmlComputedValuesFinish (HtmlComputedValuesCreator *p)
         {PROP_MASK_BOTTOM,              OFFSET(position.iBottom)},
         {PROP_MASK_LEFT,                OFFSET(position.iLeft)},
         {PROP_MASK_RIGHT,               OFFSET(position.iRight)},
-        {PROP_MASK_TEXT_INDENT,         OFFSET(iTextIndent)}
+        {PROP_MASK_TEXT_INDENT,         OFFSET(iTextIndent)},
     };
 #undef OFFSET
 
@@ -3188,6 +3239,7 @@ getPropertyObj(HtmlComputedValues *pValues, int eProp)
                 /* Fall through for pixel value */
             }
 
+            case INNERPLENGTH:
             case BORDERWIDTH: {
                 int iWidth = *(int *)(v + pDef->iOffset);
                 pValue = Tcl_NewIntObj(iWidth);
@@ -3356,6 +3408,7 @@ HtmlComputedValuesCompare (HtmlComputedValues *pV1, HtmlComputedValues *pV2)
             }
 
             case BORDERWIDTH:
+            case INNERPLENGTH:
             case LENGTH: {
                 int *pL1 = (int *)(v1 + pDef->iOffset);
                 int *pL2 = (int *)(v2 + pDef->iOffset);

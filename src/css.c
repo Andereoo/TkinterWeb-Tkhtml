@@ -2040,6 +2040,12 @@ propertySetAddShortcutBorderColor (
             propertySetAdd(p, CSS_PROPERTY_MARGIN_BOTTOM, apProp[2]);
             propertySetAdd(p, CSS_PROPERTY_MARGIN_LEFT, apProp[3]);
             break;
+        case CSS_SHORTCUTPROPERTY_BORDER_RADIUS:
+            propertySetAdd(p, CSS_PROPERTY_BORDER_TOP_LEFT_RADIUS, apProp[0]);
+            propertySetAdd(p, CSS_PROPERTY_BORDER_TOP_RIGHT_RADIUS, apProp[1]);
+            propertySetAdd(p, CSS_PROPERTY_BORDER_BOTTOM_RIGHT_RADIUS, apProp[2]);
+            propertySetAdd(p, CSS_PROPERTY_BORDER_BOTTOM_LEFT_RADIUS, apProp[3]);
+            break;
     }
 }
 
@@ -2613,6 +2619,7 @@ HtmlCssDeclaration (
         case CSS_SHORTCUTPROPERTY_BORDER_STYLE:
         case CSS_SHORTCUTPROPERTY_BORDER_WIDTH:
         case CSS_SHORTCUTPROPERTY_PADDING:
+        case CSS_SHORTCUTPROPERTY_BORDER_RADIUS:
         case CSS_SHORTCUTPROPERTY_MARGIN:
             propertySetAddShortcutBorderColor(*ppPropertySet, prop, pExpr);
             break;
