@@ -172,6 +172,11 @@ static void freeEventTargetData(JSRuntime*, QjsTclObject*);
 static JSClassID QjsTclClassId, QjsTclCallClassId;
 static void getExoticObj(JSRuntime*);
 
+enum { __JS_ATOM_NULL = JS_ATOM_NULL,
+#define DEF(name, str) JS_ATOM_ ## name,
+#include "quickjs-atom.h"
+#undef DEF
+};
 /* Source file hv3timeout.c contains the implementation of the 
 ** following methods of the Window (global) object:
 **
@@ -530,9 +535,7 @@ static JSValue findOrCreateObject(QjsInterp *qjs, Tcl_Obj *pTclCmd)
 		while ((pS = strstr(pS, "::")) != NULL) {  /* Loop to find the last occurrence of "::" */
 			pS = last = pS + 2;  /* Point after "::". Continue searching from here */
 		}
-		JSAtom a = JS_NewAtom(qjs->ctx, "Symbol.toStringTag");
-		JS_DefinePropertyValue(qjs->ctx, pObject->v, a, JS_NewString(qjs->ctx, last), 0);
-		JS_FreeAtom(qjs->ctx, a);
+		JS_DefinePropertyValue(qjs->ctx, pObject->v, JS_ATOM_Symbol_toStringTag, JS_NewString(qjs->ctx, last), JS_PROP_C_W_E);
     }
     /* Existing entry found */
     pObject = (JSValueEntry *)Tcl_GetHashValue(pEntry);
