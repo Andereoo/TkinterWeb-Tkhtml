@@ -2580,7 +2580,7 @@ HtmlCssDeclaration (
      * declaration (CSS2 spec says to do this - besides, what else could we
      * do?).
      */
-    //prop = HtmlCssPropertyLookup(pProp->n, pProp->z);
+    prop = HtmlCssPropertyLookup(pProp->n, pProp->z);
     if (pProp->n > 127) pProp->n = 127;
     memcpy(zBuf, pProp->z, pProp->n);
     zBuf[pProp->n] = '\0';

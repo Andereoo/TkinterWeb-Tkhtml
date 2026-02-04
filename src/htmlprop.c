@@ -258,13 +258,13 @@ static struct CustomDef {
   int (*xSet)(HtmlComputedValuesCreator *, CssProperty *);
   Tcl_Obj *(*xObj)(HtmlComputedValues *);
 } customdef[] = {
-  CUSTOMDEF(CSS_PROPERTY_VERTICAL_ALIGN, VerticalAlign),
-  CUSTOMDEF(CSS_PROPERTY_LINE_HEIGHT,    LineHeight),
-  CUSTOMDEF(CSS_PROPERTY_FONT_SIZE,      FontSize),
-  CUSTOMDEF(CSS_PROPERTY_FONT_WEIGHT,    FontWeight),
-  CUSTOMDEF(CSS_PROPERTY_FONT_STYLE,     FontStyle),
-  CUSTOMDEF(CSS_PROPERTY_FONT_FAMILY,    FontFamily),
-  CUSTOMDEF(CSS_PROPERTY_CONTENT,        Content),
+  CUSTOMDEF(CSS_PROPERTY_VERTICAL_ALIGN, VerticalAlign), // propertyValuesSetVerticalAlign
+  CUSTOMDEF(CSS_PROPERTY_LINE_HEIGHT,    LineHeight),    // propertyValuesSetLineHeight
+  CUSTOMDEF(CSS_PROPERTY_FONT_SIZE,      FontSize),      // propertyValuesSetFontSize
+  CUSTOMDEF(CSS_PROPERTY_FONT_WEIGHT,    FontWeight),    // propertyValuesSetFontWeight
+  CUSTOMDEF(CSS_PROPERTY_FONT_STYLE,     FontStyle),     // propertyValuesSetFontStyle
+  CUSTOMDEF(CSS_PROPERTY_FONT_FAMILY,    FontFamily),    // propertyValuesSetFontFamily
+  CUSTOMDEF(CSS_PROPERTY_CONTENT,        Content),       // propertyValuesSetContent
 };
 
 static int inheritlist[] = {
