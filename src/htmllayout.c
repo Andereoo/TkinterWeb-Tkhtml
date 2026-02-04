@@ -430,7 +430,6 @@ paginationOffsetInside(LayoutContext *pLayout, HtmlNode *pNode, HtmlComputedValu
 {
     int pagebreak, paginationY = pLayout->pTree->options.pagination;
     if (!paginationY || pNode == pLayout->pTree->pRoot) return y;
-	if (pV->eFloat != CSS_CONST_NONE) y += *pY;
     y += paginationPageYOrigin(0, pLayout);
     switch (pV->ePageBreakInside) {
         case CSS_CONST_AUTO: break;
