@@ -101,8 +101,8 @@ typedef struct TkPostscriptInfo {
                              * ::tk::ps_preamable [sic]. */
     Tk_Window tkwin;        /* Window to get font pixel/point transform from. */
     PsPageSize pageSize;
-    int nobackground;        /* Non-zero means CSS "background-color" property is skipped */
-    int noimages;            /* Non-zero means images are left blank */
+    int nobackground;       /* Non-zero means CSS "background-color" property is skipped */
+    int noimages;           /* Non-zero means images are left blank */
     char *pageMode;
 } TkPostscriptInfo;
 
@@ -136,11 +136,11 @@ static const Tk_ConfigSpec configSpecs[] = {
 int HtmlGetPostscript(HtmlTree *, HtmlNode *, int , int , int , int , Tcl_Interp *, Tcl_Obj *, HtmlComputedValues *);
 static int fill_quadPs(Tcl_Interp*, Tk_PostscriptInfo, Tcl_Obj*, XColor*, int, double, int, int, int, int, int, int);
 static int fill_rectanglePs(Tcl_Interp*, Tk_PostscriptInfo, Tcl_Obj*, XColor*, int, double, int, int);
-static int scaledHeight(TkPostscriptInfo *);
 static void getLowerCorners(TkPostscriptInfo *);
 static void getPageCentre(TkPostscriptInfo *);
 static int GetPostscriptPoints(Tcl_Interp *, char *, double *);
 static inline Tcl_Obj *    GetPostscriptBuffer(Tcl_Interp *);
+#define SCALEDHEIGHT(ps) ceil((ps)->pageSize.height / (ps)->scale)
 
 /*
  *--------------------------------------------------------------
@@ -170,7 +170,7 @@ int HtmlPostscript(
 {
     TkPostscriptInfo psInfo, *pPsInfo = &psInfo;
     Tk_PostscriptInfo oldInfoPtr;
-    int result;
+    int result, oldwidth;
     const char *p;
     time_t now;
     HtmlTree *pTree = (HtmlTree *)clientData;
@@ -183,7 +183,7 @@ int HtmlPostscript(
     int deltaX = 0, deltaY = 0;    /* Offset of lower-left corner of area to be
                  * marked up, measured in canvas units from the positioning point on the page (reflects
                  * anchor position). Initial values needed only to stop compiler warnings. */
-    unsigned char nographics;
+    unsigned char nographics, oldforcewidth;
     double pagestotal;
 
     /*
@@ -318,8 +318,10 @@ int HtmlPostscript(
         assert(psInfo.pageSize.width > 0 && psInfo.pageSize.height > 0);
         getPageCentre(pPsInfo);
         
-        pTree->options.pagination = scaledHeight(pPsInfo);
+        pTree->options.pagination = SCALEDHEIGHT(pPsInfo);
+		oldforcewidth = pTree->options.forcewidth;
         pTree->options.forcewidth = 1; /* If a page size has been set, make sure layout width is set to it. */
+		oldwidth = pTree->options.width;
         pTree->options.width = ceil(psInfo.pageSize.width / psInfo.scale);
         HtmlCallbackLayout(pTree, pTree->pRoot);
         HtmlCallbackRestyle(pTree, pTree->pRoot);
@@ -587,7 +589,7 @@ int HtmlPostscript(
     }
     
     unsigned int page_h = 0, pagenum, pageYmin, pageYmax;
-    if (psInfo.pageMode) page_h = scaledHeight(pPsInfo);
+    if (psInfo.pageMode) page_h = SCALEDHEIGHT(pPsInfo);
 
     /*
      * Iterate through all the items, having each relevant one draw itself.
@@ -700,7 +702,9 @@ int HtmlPostscript(
         }
         if (psInfo.pageMode != NULL) {
             ckfree(psInfo.pageMode);
-            pTree->options.forcewidth = pTree->options.pagination = 0;
+			pTree->options.width = oldwidth;
+            pTree->options.forcewidth = oldforcewidth;
+			pTree->options.pagination = 0;
             HtmlCallbackLayout(pTree, pTree->pRoot);
         }
         Tcl_DeleteHashTable(&psInfo.fontTable);
@@ -1519,9 +1523,6 @@ int WinItemToPostscript(HtmlTree *pTree, int x, int y, Tk_Window win, int prepas
         return result;
 }
 
-static int scaledHeight(TkPostscriptInfo *psInfo) {
-    return ceil(psInfo->pageSize.height / psInfo->scale);
-}
 static void getLowerCorners(TkPostscriptInfo *psInfo) {
     psInfo->x2 = psInfo->x + psInfo->width;
     psInfo->y2 = psInfo->y + psInfo->height;

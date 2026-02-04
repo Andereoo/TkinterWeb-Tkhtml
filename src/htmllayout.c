@@ -425,7 +425,7 @@ normalFlowMarginAdd (LayoutContext *pLayout, HtmlNode *pNode, NormalFlow *pNorma
     }
 }
 
-static int 
+static inline int 
 paginationOffsetInside(LayoutContext *pLayout, HtmlNode *pNode, HtmlComputedValues *pV, int *pY, int y, int h)
 {
     int pagebreak, paginationY = pLayout->pTree->options.pagination;
