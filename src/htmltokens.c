@@ -72,7 +72,7 @@ HtmlTokenMap HtmlMarkupMap[] = {
   {"p",            Html_P,            HTMLTAG_BLOCK, HtmlInlineContent, 0},
   {"param",        Html_PARAM,        0|HTMLTAG_EMPTY, 0, 0},
   {"pre",          Html_PRE,          HTMLTAG_BLOCK, 0, 0},
-  {"q",            Html_Q,            0, 0, 0},
+  {"q",            Html_Q,            HTMLTAG_INLINE, 0, 0},
   {"s",            Html_S,            HTMLTAG_INLINE, 0, 0},
   {"samp",         Html_SAMP,         HTMLTAG_INLINE, 0, 0},
   {"script",       Html_SCRIPT,       HTMLTAG_INLINE|HTMLTAG_EMPTY, 0, 0},

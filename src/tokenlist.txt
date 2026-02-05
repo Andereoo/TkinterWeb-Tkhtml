@@ -152,7 +152,7 @@ TAG option -content HtmlPcdataContent -flow inline
 TAG p -flow block -content HtmlInlineContent
 TAG param -content HtmlEmptyContent
 TAG pre -flow block
-TAG q
+TAG q -flow inline
 TAG s -flow inline
 TAG samp -flow inline
 TAG script -content HtmlEmptyContent -flow inline
