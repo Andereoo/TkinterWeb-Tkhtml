@@ -155,6 +155,7 @@ pressing enter.
   "INSTRUCTIONS"                http://tkhtml.tcl.tk 1
   "Hv3/Tkhtml3 Home page"       http://tkhtml.tcl.tk 0
   "Hv3/Tkhtml3 Mailing List"    http://groups.google.com/group/tkhtml3 0
+  "TkinterWeb GitHub page"      https://github.com/Andereoo/TkinterWeb 0
   "Hv3 @ freshmeat.net"         http://freshmeat.net/hv3 0
         } {
           if {$C} {

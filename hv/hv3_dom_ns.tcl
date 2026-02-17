@@ -333,8 +333,7 @@ namespace eval ::hv3::DOM {
     set frame [$myHv3 cget -frame]
     set parent [$frame parent_frame]
     if {$parent eq ""} {set parent $frame}
-    set see [[$parent hv3 dom] see]
-    list bridge $see
+    list bridge [[$parent hv3 dom] qjs]
   }
 
   -- A reference to the outermost window in the frameset. For ordinary
@@ -342,8 +341,7 @@ namespace eval ::hv3::DOM {
   -- to this object (same as the <I>window</I> and <I>self</I> properties).
   dom_get top { 
     set topframe [[$myHv3 cget -frame] top_frame]
-    set see [[$topframe hv3 dom] see]
-    list bridge $see
+    list bridge [[$topframe hv3 dom] qjs]
   }
 
   -- A reference to this object.
