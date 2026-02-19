@@ -1254,6 +1254,7 @@ namespace eval ::hv3::hv3 {
 
     bind $win <Configure>  [list $me goto_fragment]
     #bind [html $me].document <Visibility> [list $me VisibilityChange %s]
+	bind $win <Control-c>  [list $me copytext]
 
     eval $me configure $args
   }
@@ -2012,6 +2013,12 @@ namespace eval ::hv3::hv3 {
     upvar #0 $me O
     $O(myUri) load $uri
     $O(myBase) load [$O(myUri) get]
+  }
+
+  proc copytext {me} {
+    upvar #0 $me O
+    clipboard clear
+    clipboard append [$me selected]
   }
 
   #--------------------------------------------------------------------------
