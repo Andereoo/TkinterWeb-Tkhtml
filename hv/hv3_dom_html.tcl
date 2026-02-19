@@ -44,11 +44,12 @@ set BaseList {DocumentEvent}
     list [$myHv3 title]
   }
   dom_put -string title val {
-    set title [$myHv3 html search title]
-	if {$title ne ""} { $title destroy }
+    set title [$myHv3 html search title -index 0]
 	set head [lindex [[$myHv3 node] children] 0] ;# TkHTML creates the <head> node by default
-    $head insert [$myHv3 html fragment <title>$val</title>]
-	list [$myHv3 title_node_handler $head] ;# Update widget
+	if {$title ne ""} { $title destroy }
+	set [$myHv3 titlevar] $val
+	set title [$myHv3 html fragment <title>$val</title>]
+    $head insert $title
   }
 
   # Read-only attribute "domain".
@@ -447,8 +448,7 @@ namespace eval ::hv3::DOM {
     ### }
 
     # Insert the new descendants, created by parsing $newHtml.
-    set htmlwidget [$node html]
-    set children [$htmlwidget fragment $newHtml]
+    set children [[$node html] fragment $newHtml]
     $node insert $children
     return ""
   }

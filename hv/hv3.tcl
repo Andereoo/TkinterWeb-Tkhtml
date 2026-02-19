@@ -1752,7 +1752,7 @@ namespace eval ::hv3::hv3 {
     upvar #0 $me O
     array set attributes $attr
     if {[info exists attributes(media)]} {
-      if {0 == [regexp all|screen $attributes(media)]} return ""
+      if {0 == [regexp all|screen|print $attributes(media)]} return ""
     }
 
     set id        author.[format %.4d [incr O(myStyleCount)]]
