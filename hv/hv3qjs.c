@@ -596,6 +596,7 @@ static JSValue objToValue(JSContext *ctx, Tcl_Obj *pObj) {
 			QjsInterp *qjs = (QjsInterp*)JS_GetContextOpaque(ctx);
 			Tcl_ListObjGetElements(qjs->interp, pObj, &n, &ap);
 			if (n == 0) return JS_UNDEFINED;
+			if (n == 1) return objToValue(ctx, ap[0]);
 			if (n == 2) {
 				static const char *const aType[] = {"object", "node", "method", "bridge", "transient", NULL};
 				Tcl_GetIndexFromObj(qjs->interp, ap[0], aType, "type", TCL_EXACT, &n);
@@ -789,7 +790,7 @@ static int interpEval(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
         {NULL, 0, 0}
     };
 	const char *file; /* Value passed to -file option */
-    int noR;          /* True if -noresult */
+    char noR;         /* True if -noresult */
 	int l;            /* Length of script */
 
     if (processArgs(interp, aOptions, objc-3, &objv[2])) return TCL_ERROR;
