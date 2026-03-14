@@ -2356,6 +2356,15 @@ HtmlCssInlineParse(
     const char *z,
     CssPropertySet **ppPropertySet
 ){
+    
+    /* Trim white-space from the start of the input buffer. */
+    /* Borrowed from dequote(). */
+    if (n < 0) n = strlen(z); /* Realistically though, n is always -1 */
+    while( n>0 && isspace((unsigned char)z[0]) ){
+        z++;
+        n--;
+    }
+
     CssStyleSheet *pStyle = 0;
     assert(ppPropertySet && !(*ppPropertySet));
     cssParse(pTree, n, z, 1, 0, NULL, NULL, NULL, NULL, &pStyle);

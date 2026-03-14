@@ -12,7 +12,8 @@ from pathlib import Path
 MODE = "ask"
 
 TEST_STRING = """<body><div>
-    <p style='padding: 15px; 
+    <p style='
+        padding: 15px; 
         display: inline-block; 
         white-space: nowrap; 
         margin:0; 
