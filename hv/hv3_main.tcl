@@ -422,8 +422,8 @@ snit::type ::hv3::config {
 snit::type ::hv3::search {
 
   typevariable SearchHotKeys -array [list  \
-      {Google}    g         \
-      {Tcl Wiki}  w         \
+      {DuckDuckGo} g        \
+      {Tcl Wiki}   w        \
   ]
   
   variable mySearchEngines [list \
@@ -434,9 +434,9 @@ snit::type ::hv3::search {
       {MSN}        "http://search.msn.com/results.aspx?q=%s"               \
       {Wikipedia}  "http://en.wikipedia.org/wiki/Special:Search?search=%s" \
 	  {Wiby}       "http://wiby.me/?q=%s"                                  \
-	  {Brave}      "https://search.brave.com/search?q=%s"                  \
+	  {Ecosia}     "https://www.ecosia.org/search?method=index&q=%s"                  \
   ]
-  variable myDefaultEngine Google
+  variable myDefaultEngine DuckDuckGo
 
   constructor {} {
     bind Hv3HotKeys <Control-f>  [list gui_current Find]
