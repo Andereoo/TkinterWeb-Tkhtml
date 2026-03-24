@@ -58,7 +58,7 @@ STRIP = $(STRIP_$(BUILD))
 STARKITRT = /home/billa/work/tclkitsh-win32.upx.exe
 MKSTARKIT = $(STARKITRT) /home/billa/sdx.kit wrap
 
-##### Javascript libaries - libgc.a and libquickjs.a
+##### Javascript library - libquickjs.a
 #
 JS_SHARED_LIB = libTclqjs.dll
 

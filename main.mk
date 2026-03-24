@@ -193,7 +193,7 @@ tclqjs: tclqjs.o
 	mv $(JS_SHARED_LIB) tclqjs0.1
 	echo 'package ifneeded Tclqjs 0.1 [list load [file join $$dir $(JS_SHARED_LIB)]]' > tclqjs0.1/pkgIndex.tcl
 
-tclqjs.o: $(TOP)/hv/hv3qjs.c $(TOP)/hv/hv3format.c $(TOP)/hv/hv3events.c $(TOP)/hv/hv3timeout.c
+tclqjs.o: $(TOP)/hv/hv3qjs.c $(TOP)/hv/hv3format.c $(TOP)/hv/hv3events.c $(TOP)/hv/hv3timeout.c $(JSLIB)
 	@echo '$$(COMPILE) $(JSFLAGS) -c $(TOP)/hv/hv3qjs.c -o $@'
 	@$(COMPILE) $(JSFLAGS) -c $(TOP)/hv/hv3qjs.c -o $@
 #
