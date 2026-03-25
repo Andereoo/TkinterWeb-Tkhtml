@@ -111,12 +111,6 @@ runEvent(JSContext *ctx, JSValue target, JSValue event, JSValue zType, uint8_t i
 					JS_Call(ctx, pL->listener, target, 1, &event);
 					setBooleanFlag(ctx, event, CALLED_LISTENER, 1);
 				}
-				if (pET->pListenerList == pL && pL->isCapture > 1) {
-					pET->pListenerList = pL->pNext;
-					JS_FreeValue(ctx, pL->listener);
-					js_free(ctx, pL);
-				}
-				if (pET->pListenerList != pL) break;
 			}
 		}
     }
@@ -433,13 +427,10 @@ removeEventListenerFunc(JSContext *ctx, JSValueConst this, int argc, JSValueCons
         ListenerContainer *pL, **apL = &pET->pListenerList;
         for (pL = *apL; pL; pL = pL->pNext) {
             if (pL->isCapture == useCapture && JS_StrictEq(ctx, pL->listener, argv[1])) {
-				if (JS_StrictEq(ctx, argv[1], this)) {
-					pL->isCapture |= 2;
-				} else {
-					*apL = pL->pNext;
-					js_free(ctx, pL);
-				}
-				break;
+                *apL = pL->pNext;
+                JS_FreeValue(ctx, pL->listener);
+                js_free(ctx, pL);
+                break;
             } else {
                 apL = &pL->pNext;
             }
