@@ -612,24 +612,6 @@ static void freeEventTargetData(JSRuntime *rt, QjsTclObject *pTclObject)
 /*
  *---------------------------------------------------------------------------
  *
- * listenerToString --
- *
- * Results:
- *     Pointer to allocated Tcl object with ref-count 0.
- *
- * Side effects:
- *     None.
- *
- *---------------------------------------------------------------------------
- */
-static inline Tcl_Obj *listenerToString(JSContext *ctx, JSValue listener)
-{
-    return stringToObj(ctx, listener);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
  * eventTargetDump --
  *
  *         $qjs events TCL-COMMAND
@@ -678,7 +660,7 @@ eventDumpCmd(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
         for (pL = pType->pListenerList; pL; pL = pL->pNext) {
             const char *z = (pL->isCapture ? "capturing" : "non-capturing");
             apRow[1] = Tcl_NewStringObj(z, -1);
-            apRow[2] = listenerToString(ctx, pL->listener);
+            apRow[2] = stringToObj(ctx, pL->listener);
             Tcl_ListObjAppendElement(interp, pRet, Tcl_NewListObj(3, apRow));
         }
     }
@@ -693,13 +675,13 @@ eventDumpCmd(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
             if (JS_IsObject(val)) {
                 apRow[0] = Tcl_NewStringObj(&zProp[2], -1);
                 apRow[1] = Tcl_NewStringObj("legacy", 6);
-                apRow[2] = listenerToString(ctx, val);
+                apRow[2] = stringToObj(ctx, val);
                 Tcl_ListObjAppendElement(interp, pRet, Tcl_NewListObj(3, apRow));
             }
         }
 	}
     Tcl_SetObjResult(interp, pRet);
     Tcl_DecrRefCount(pRet);
-
+	JS_FreeValue(ctx, obj);
     return TCL_OK;
 }
