@@ -1729,7 +1729,7 @@ namespace eval ::hv3::hv3 {
         [string match *stylesheet* $rel] &&
         ![string match *alternat* $rel] &&
         $href ne "" && 
-        [regexp all|screen $media]
+        [regexp all|screen|print $media]
     } {
       set full_uri [$me resolve_uri $href]
       $me Requeststyle author $full_uri

@@ -17,8 +17,7 @@ snit::widget ::hv3::dynamiclog {
     STYLEENGINE  0
     ACTION       0
     EVENT        0
-    "ECMASCRIPT Get"  1
-    "ECMASCRIPT Put"  1
+    ECMASCRIPT   1
   }
 
   constructor {html} {
