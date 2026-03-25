@@ -168,6 +168,7 @@ static Tcl_ObjCmdProc eventDumpCmd;
 static void eventTargetInit(QjsInterp*, JSValue);
 static void eventTargetGlobalInit(QjsInterp*, JSValue);
 static void freeEventTargetData(JSRuntime*, QjsTclObject*);
+static void listenerMark(JSRuntime *rt, JSValueConst, JS_MarkFunc*);
 
 static JSClassID QjsTclClassId, QjsTclCallClassId;
 static void getExoticObj(JSRuntime*);
@@ -1271,6 +1272,7 @@ static JSClassExoticMethods tclExoticMethods = {
 static JSClassDef QjsTclClass = {
     "Tcl Object",
     .finalizer = finalizeObject,
+    .gc_mark = listenerMark,
 	.exotic = &tclExoticMethods,  // Link to exotic methods
 };
 
@@ -1309,6 +1311,7 @@ tclCallOrConstruct(JSContext *ctx, JSValueConst obj, JSValueConst this, int argc
 static JSClassDef QjsTclCallClass = {
     "Tcl Method",
     .finalizer = finalizeObject,
+    .gc_mark = listenerMark,
 	.exotic = &tclExoticMethods,  // Link to exotic methods
 	.call = tclCallOrConstruct,
 };

@@ -102,7 +102,7 @@ runEvent(JSContext *ctx, JSValue target, JSValue event, JSValue zType, uint8_t i
     }
 
 	apET = getEventList(target);
-    /* If this is a Tcl based object, run any registered DOM event handlers */
+    /* If this is a Tcl based object, run any requested registered DOM event handlers */
     if (apET) {
         for (pET = *apET; pET && !JS_StrictEq(ctx, pET->zType, zType); pET = pET->pNext);
 		if (pET) {
@@ -113,6 +113,7 @@ runEvent(JSContext *ctx, JSValue target, JSValue event, JSValue zType, uint8_t i
 				}
 				if (pET->pListenerList == pL && pL->isCapture > 1) {
 					pET->pListenerList = pL->pNext;
+					JS_FreeValue(ctx, pL->listener);
 					js_free(ctx, pL);
 				}
 				if (pET->pListenerList != pL) break;
@@ -385,7 +386,7 @@ addEventListenerFunc(JSContext *ctx, JSValueConst this, int argc, JSValueConst *
     pL->pNext = pET->pListenerList;
     pET->pListenerList = pL;
     pL->isCapture = useCapture;
-    pL->listener = argv[1];
+    pL->listener = JS_DupValue(ctx, argv[1]);
     /* DOM says return value is "void" */
     return JS_UNDEFINED;
 }
@@ -437,7 +438,6 @@ removeEventListenerFunc(JSContext *ctx, JSValueConst this, int argc, JSValueCons
 				} else {
 					*apL = pL->pNext;
 					js_free(ctx, pL);
-					pL = NULL;
 				}
 				break;
             } else {
@@ -452,11 +452,11 @@ removeEventListenerFunc(JSContext *ctx, JSValueConst this, int argc, JSValueCons
 static JSValue EventFunc(JSContext *ctx, JSValueConst this, int argc, JSValueConst *argv)
 {
 	/* Check the number of function arguments. */
-    if (argc > 2) {
+    if (argc > 2 || argc < 1) {
 		return JS_ThrowTypeError(ctx, "1-2 arguments required, but non present.");
     }
 	JSValue opt, event = JS_NewObject(ctx);
-	JS_SetPropertyStr(ctx, event, "type", argv[0]);
+	JS_SetPropertyStr(ctx, event, "type", JS_DupValue(ctx, argv[0]));
 	if (argc > 1) {
 		opt = JS_GetPropertyStr(ctx, argv[1], "bubbles");
 		if (!JS_IsUndefined(opt)) JS_SetPropertyStr(ctx, event, "bubbles", opt);
@@ -576,6 +576,17 @@ static void eventTargetGlobalInit(QjsInterp *qjs, JSValue g)
 	JS_SetPropertyStr(qjs->ctx, g, "Event", JS_NewCFunction2(qjs->ctx, EventFunc, "Event", 2, JS_CFUNC_constructor, 0));
 }
 
+static void listenerMark(JSRuntime *rt, JSValueConst obj, JS_MarkFunc *mark_func)
+{
+    QjsTclObject *p = (QjsTclObject*)JS_GetOpaque(obj, QjsTclClassId);
+	if (p == NULL) p = (QjsTclObject*)JS_GetOpaque(obj, QjsTclCallClassId);
+    for(EventType *pET = p->pTypeList; pET; pET = pET->pNext) {
+		for (ListenerContainer *pL = pET->pListenerList; pL; pL = pL->pNext) {
+			JS_MarkValue(rt, pL->listener, mark_func);
+		}
+    }
+}
+
 static void freeEventTargetData(JSRuntime *rt, QjsTclObject *pTclObject)
 {
     EventType *pET, *pETNext;
@@ -587,6 +598,7 @@ static void freeEventTargetData(JSRuntime *rt, QjsTclObject *pTclObject)
         /* Free the ListenerContainer list for this EventType */
         for (pL = pET->pListenerList; pL; pL = pLNext) {
             pLNext = pL->pNext;  /* Save the next ListenerContainer pointer before freeing */
+			JS_FreeValueRT(rt, pL->listener);
             js_free_rt(rt, pL);  /* Free the ListenerContainer structure */
         }
         /* Free the JSValue for the event type */
