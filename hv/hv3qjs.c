@@ -134,9 +134,9 @@ typedef struct QjsInterp {
 	Tcl_HashTable objects;  /* Hash table containing the objects created by the Tcl interpreter that are currently in "persistent" state. */
     /* Linked list of QjsJsObject structures that will be removed from the aJsObject[] table next time removeTransientRefs() is called.
      * Variable iNextJsObject is used to assign unique integer ids (QjsJsObject.iKey) to QjsJsObject instances as they are created. */
-	uint16_t iKeyNext;
     QjsJsObject *pJsObject;
 	JSValue global;
+	uint32_t iKeyNext;
 } QjsInterp;
 static unsigned int numQjsInterp = 0;
 static unsigned int numFreeInterp = 0;
@@ -246,7 +246,7 @@ static inline Tcl_Obj *stringToObj(JSContext *ctx, JSValue str){
 /* Utility: Convert QuickJS JSValue to a Tcl_Obj* */
 static Tcl_Obj *qjsValueToTcl(JSContext *ctx, JSValue val) {
     Tcl_Obj *result;
-	uint32_t i, len;
+	uint32_t i;
     switch (JS_VALUE_GET_TAG(val)) {
         case JS_TAG_UNDEFINED: case JS_TAG_NULL:
             result = Tcl_NewObj();  // In Tcl, the closest equivalent to null is typically an empty string
@@ -268,10 +268,10 @@ static Tcl_Obj *qjsValueToTcl(JSContext *ctx, JSValue val) {
             break;
         case JS_TAG_OBJECT: {
             if (JS_IsArray(ctx, val)) {
-				JS_ToUint32(ctx, &len, JS_GetPropertyStr(ctx, val, "length"));  // Get array length
-				result = Tcl_NewListObj(len, NULL);
-				for (i = 0; i < len; i++) {  // Iterate through each element
-					JSValue e = JS_GetPropertyUint32(ctx, val, i);
+				JS_ToUint32(ctx, &i, JS_GetPropertyStr(ctx, val, "length"));  // Get array length
+				result = Tcl_NewListObj(i, NULL);
+				for (uint32_t j = 0; j < i; j++) {  // Iterate through each element
+					JSValue e = JS_GetPropertyUint32(ctx, val, j);
 					Tcl_ListObjAppendElement(NULL, result, qjsValueToTcl(ctx, e));
 				}
 			} else {  // Errors are handled here
@@ -1212,7 +1212,10 @@ QjsTcl_Set(JSContext *ctx, JSValueConst obj, JSAtom prop, JSValueConst val, JSVa
 		JS_ThrowTypeError(ctx, "Tcl interpreter not available");
 		return -1;
 	}
-	rc = callQjsTclMethod(p->interp, p->pLog, obj, atomToObj(ctx, prop), argValueToTcl((QjsInterp*)p, val, &nObj));
+    Tcl_Obj *pVal = argValueToTcl((QjsInterp*)p, val, &nObj);
+	Tcl_IncrRefCount(pVal);
+	rc = callQjsTclMethod(p->interp, p->pLog, obj, atomToObj(ctx, prop), pVal);
+	Tcl_DecrRefCount(pVal);
     removeTransientRefs((QjsInterp*)p, nObj);
 	if (rc != TCL_OK) {
 		throwTclError(ctx, p->interp);
