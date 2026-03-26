@@ -470,8 +470,8 @@ static void finalizeObject(JSRuntime *rt, JSValue val)
 		freeEventTargetData(rt, qjsTclObj);
         js_free_rt(rt, qjsTclObj);
     }
-//	printf("-%p\n", JS_VALUE_GET_PTR(val));
 	numQjsTclObject--;
+//	printf("-%p\n", JS_VALUE_GET_PTR(val));
 }
 
 static JSValue createTransient(QjsInterp *qjs, Tcl_Obj *pTclCmd)
@@ -1178,7 +1178,7 @@ static inline Tcl_Obj *atomToObj(JSContext *ctx, JSAtom atm) {
 static JSValue 
 QjsTcl_Get(JSContext *ctx, JSValue obj, JSAtom prop, JSValueConst rec)
 {
-	for(JSValue o=JS_DupValue(ctx, rec); !JS_IsNull(o); o=JS_GetPrototype(ctx, o)){
+	for(JSValue o = JS_DupValue(ctx, rec); !JS_IsNull(o); o = JS_GetPrototype(ctx, o)){
 		JSPropertyDescriptor desc;  // First, check if the property exists normally
 		if (JS_GetOwnProperty(ctx, &desc, o, prop) > 0) {
 			JS_FreeValue(ctx, o);
@@ -1199,8 +1199,8 @@ QjsTcl_Get(JSContext *ctx, JSValue obj, JSAtom prop, JSValueConst rec)
 static int 
 QjsTcl_Set(JSContext *ctx, JSValueConst obj, JSAtom prop, JSValueConst val, JSValueConst rec, int f)
 {
-	int nObj, rc;  // First, check if the property exists normally
-	for(JSValue o=JS_DupValue(ctx, rec); !JS_IsNull(o); o=JS_GetPrototype(ctx, o)){
+	int nObj = 0, rc;  // First, check if the property exists normally
+	for(JSValue o = JS_DupValue(ctx, rec); !JS_IsNull(o); o = JS_GetPrototype(ctx, o)){
 		if (JS_GetOwnProperty(ctx, NULL, o, prop) > 0 || JS_IsFunction(ctx, val)) {
 			JS_FreeValue(ctx, o);
 			return JS_DefinePropertyValue(ctx, o, prop, JS_DupValue(ctx, val), f);
@@ -1221,7 +1221,7 @@ QjsTcl_Set(JSContext *ctx, JSValueConst obj, JSAtom prop, JSValueConst val, JSVa
 		throwTclError(ctx, p->interp);
 		return -1;
 	} if (!strcmp(Tcl_GetStringResult(p->interp), "NATIVE")) {
-		return JS_DefinePropertyValue(ctx, rec, prop, JS_DupValue(ctx, val), f);
+		return JS_DefinePropertyValue(ctx, obj, prop, JS_DupValue(ctx, val), f);
 	}
     return 1;
 }
