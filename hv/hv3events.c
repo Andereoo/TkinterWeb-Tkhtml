@@ -111,6 +111,7 @@ runEvent(JSContext *ctx, JSValue target, JSValue event, JSValue zType, uint8_t i
 					JS_Call(ctx, pL->listener, target, 1, &event);
 					setBooleanFlag(ctx, event, CALLED_LISTENER, 1);
 				}
+				if (pET->pListenerList != pL) break;
 			}
 		}
     }
@@ -656,21 +657,23 @@ eventDumpCmd(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
         }
     }
 
-	JS_GetOwnPropertyNames(ctx, &pEnum, &l, obj, JS_GPN_STRING_MASK|JS_GPN_ENUM_ONLY);
-	
+	JS_GetOwnPropertyNames(ctx, &pEnum, &l, obj, JS_GPN_STRING_MASK);
+
 	for (i = 0; i < l; i++) {
-		size_t nProp;
-		const char *zProp = JS_ToCStringLen(ctx, &nProp, prop);
+        const char *zProp = JS_AtomToCString(ctx, pEnum[i].atom);
         if (strncmp(zProp, "on", 2) == 0) {
-            JSValue val = JS_GetPropertyStr(ctx, obj, zProp);
+            JSValue val = JS_GetProperty(ctx, obj, pEnum[i].atom);
             if (JS_IsObject(val)) {
                 apRow[0] = Tcl_NewStringObj(&zProp[2], -1);
                 apRow[1] = Tcl_NewStringObj("legacy", 6);
                 apRow[2] = stringToObj(ctx, val);
                 Tcl_ListObjAppendElement(interp, pRet, Tcl_NewListObj(3, apRow));
             }
+			JS_FreeValue(ctx, val);
         }
+		JS_FreeCString(ctx, zProp);
 	}
+	JS_FreePropertyEnum(ctx, pEnum, l);
     Tcl_SetObjResult(interp, pRet);
     Tcl_DecrRefCount(pRet);
 	JS_FreeValue(ctx, obj);

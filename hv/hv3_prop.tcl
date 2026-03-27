@@ -550,9 +550,9 @@ proc ::hv3::debug::TkhtmlReport {hv3 node} {
         set text [string map {< &lt; > &gt;} [$node text]]
         set tokens [string map {< &lt; > &gt;} [$node text -tokens]]
         append doc [subst {
-            <h1>Text</h1>
+            <h2>Content</h2>
             <p>$text
-            <h1>Tokens</h1>
+            <h2>Tokens</h2>
             <p>$tokens
         }]
     } else {
