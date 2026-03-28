@@ -155,13 +155,13 @@ TAG pre -flow block
 TAG q
 TAG s -flow inline
 TAG samp -flow inline
-TAG script -content HtmlEmptyContent -flow inline
+TAG script
 TAG select -flow inline
 TAG small -flow inline
 TAG span -flow inline
 TAG strike -flow inline
 TAG strong -flow inline
-TAG style -content HtmlEmptyContent
+TAG style
 TAG sub -flow inline
 TAG sup -flow inline
 

@@ -575,7 +575,6 @@ findEndOfScript (
             return nScript;
         }
     }
-
     return -1;
 }
 
@@ -692,7 +691,6 @@ HtmlTokenize (
         n = pTree->nParsed;
         z = Tcl_GetString(pTree->pDocument);
     }
-
     while ((c = z[n]) != 0) {
         /* assert(n <= strlen(z)); */
         
@@ -715,16 +713,15 @@ HtmlTokenize (
                     int iTmp2;
                     iTmp++;
                     while (ISSPACE(z[iTmp])) iTmp++;
-                    if( !z[iTmp] ) goto incomplete;
+                    if (!z[iTmp]) goto incomplete;
                     iTmp2 = iTmp;
                     while (ISALPHA(z[iTmp2])) iTmp2++;
-                    if( !z[iTmp2] ) goto incomplete;
-                    if( 0==strnicmp(&z[iTmp], "pre", iTmp2-iTmp) ){
+                    if (!z[iTmp2]) goto incomplete;
+                    if (0==strnicmp(&z[iTmp], "pre", iTmp2-iTmp)){
                         isTrimEnd = 1;
                     }
                 }
             }
-
             if (c || isFinal) {
                 int ts = isTrimStart;
                 HtmlTextNode *pTextNode = HtmlTextNew(i, &z[n], isTrimEnd, ts);
@@ -735,7 +732,6 @@ HtmlTokenize (
             }
             isTrimStart = 0;
         }
-
         /* An HTML comment. Just skip it. Tkhtml uses the non-SGML (i.e.
          * defacto standard) version of HTML comments - they begin with
          * "<!--" and end with "-->".
@@ -808,7 +804,6 @@ HtmlTokenize (
                 argv[0]++;
                 i = 2;
             }
-
             /* Increment i until &z[n+i] is the first byte past the
              * end of the tag name. Then set arglen[0] to the length of
              * argv[0].
@@ -832,7 +827,6 @@ HtmlTokenize (
             if (z[n + i] == 0) {
                 goto incomplete;
             }
-
             /* This loop runs until &z[n+i] points to '>', "/>" or the
              * end of the document. The argv[] array is completely filled
              * by the time the loop exits.
@@ -841,12 +835,10 @@ HtmlTokenize (
                 if (argc > mxARG - 3) {
                     argc = mxARG - 3;
                 }
-
                 if (z[n+i] == '/') {
                     i++;
                     continue;
                 }
-
                 /* Set the next element of the argv[] array to point at
                  * the attribute name. Then figure out the length of the
                  * attribute name by searching for one of ">", "=", "/>", 
@@ -952,7 +944,6 @@ HtmlTokenize (
                 /* Closing tag (i.e. "</p>"). */
                 xAddClosing(pTree, eType, zAtom, nStartScript);
             } else {
-
                 char *zScript = 0;
                 int nScript = 0;
 
@@ -961,15 +952,13 @@ HtmlTokenize (
                 const char **zArgs = (const char **)(&argv[1]);
                 pAttr = HtmlAttributesNew(argc - 1, zArgs, &arglen[1], 1);
 
-
                 /* Unless a fragment is being parsed, search for a 
                  * script-handler for this element. Script handlers are
                  * never fired from within [$html fragment] commands.
                  */
-                if (!zText) {
+                if (!zText) { // This is NOT a [$html fragment] command
                     pScript = getScriptHandler(pTree, eType);
                 }
-
                 if (pScript || (pMap && pMap->flags & HTMLTAG_PCDATA)) {
                     zScript = &z[n];
                     nScript = findEndOfScript(eType, z, &n);
@@ -979,15 +968,13 @@ HtmlTokenize (
                         goto incomplete;
                     }
                 }
-
                 if (!pScript) {
-
                     /* No special handler for this markup. Just append 
                      * it to the list of all tokens. 
                      */
                     assert(nStartScript >= 0);
                     xAddElement(pTree, eType, zAtom, pAttr, nStartScript);
-                    if( pTree->eWriteState==HTML_WRITE_INHANDLERRESET ){
+                    if (pTree->eWriteState==HTML_WRITE_INHANDLERRESET) {
                         goto incomplete;
                     }
                     if (zScript) {
@@ -1003,7 +990,6 @@ HtmlTokenize (
                             xAddClosing(pTree, eType, zAtom, n);
                         }
                     }
-
                 } else {
                     /* If pScript is not NULL, then we are parsing a node that
                      * tkhtml treats as a "script". Essentially this means we
