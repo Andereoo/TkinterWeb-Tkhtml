@@ -2,7 +2,12 @@
 /build/
 /config.log
 /config.status
-/hv/pkgIndex.tcl
+/cssprop.c
+/cssprop.h
+/htmldefaultstyle.c
+/htmltokens.h
+/htmltokens.c
 /src/MODIFIED/
 /src/OBSOLETE/
 /src/stdout
+pkgIndex.tcl
