@@ -106,7 +106,7 @@ TAG caption
 TAG center -flow block
 TAG cite -flow inline
 TAG code -flow inline
-TAG col
+TAG col -content HtmlEmptyContent
 # TAG colgroup -content HtmlColgroupContent
 TAG dd -content HtmlLiContent
 TAG del -flow inline
@@ -131,7 +131,7 @@ TAG head -content HtmlHeadContent
 TAG hr -content HtmlEmptyContent -flow block
 TAG html                                
 TAG i -flow inline
-TAG iframe ;# -content HtmlEmptyContent
+TAG iframe -content HtmlEmptyContent
 TAG img -content HtmlEmptyContent -flow inline
 TAG input -content HtmlEmptyContent -flow inline
 TAG isindex -flow block -content HtmlEmptyContent
