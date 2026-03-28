@@ -92,21 +92,21 @@ TAG abbr -flow inline
 TAG acronym -flow inline
 TAG address
 TAG applet -flow inline
-TAG area -content HtmlEmptyContent
-TAG base -content HtmlEmptyContent             
+TAG area -content empty
+TAG base -content empty
 TAG basefont
 TAG b -flow inline
 TAG bdo
 TAG big -flow inline
 TAG blockquote -flow block
 TAG body       
-TAG br -content HtmlEmptyContent -flow inline
+TAG br -content empty -flow inline
 TAG button
 TAG caption 
 TAG center -flow block
 TAG cite -flow inline
 TAG code -flow inline
-TAG col -content HtmlEmptyContent
+TAG col -content empty
 # TAG colgroup -content HtmlColgroupContent
 TAG dd -content HtmlLiContent
 TAG del -flow inline
@@ -119,7 +119,7 @@ TAG em -flow inline
 TAG fieldset -flow inline
 TAG font -flow inline
 TAG form -flow block -content HtmlFormContent
-TAG frame -content HtmlEmptyContent
+TAG frame -content empty
 TAG frameset
 TAG h1 -flow block
 TAG h2 -flow block
@@ -128,21 +128,21 @@ TAG h4 -flow block
 TAG h5 -flow block
 TAG h6 -flow block
 TAG head -content HtmlHeadContent
-TAG hr -content HtmlEmptyContent -flow block
+TAG hr -content empty -flow block
 TAG html                                
 TAG i -flow inline
-TAG iframe -content HtmlEmptyContent
-TAG img -content HtmlEmptyContent -flow inline
-TAG input -content HtmlEmptyContent -flow inline
-TAG isindex -flow block -content HtmlEmptyContent
+TAG iframe -content empty
+TAG img -content empty -flow inline
+TAG input -content empty -flow inline
+TAG isindex -flow block -content empty
 TAG kbd -flow inline
 TAG label -flow inline
 TAG legend -flow inline
 TAG li -content HtmlLiContent
-TAG link -content HtmlEmptyContent  
+TAG link -content empty
 TAG map -flow inline
 TAG menu -flow block -content HtmlUlContent
-TAG meta -content HtmlEmptyContent 
+TAG meta -content empty
 TAG noframes
 TAG noscript                            
 TAG object
@@ -150,7 +150,7 @@ TAG ol -flow block -content HtmlUlContent
 TAG optgroup
 TAG option -content HtmlPcdataContent -flow inline
 TAG p -flow block -content HtmlInlineContent
-TAG param -content HtmlEmptyContent
+TAG param -content empty
 TAG pre -flow block
 TAG q
 TAG s -flow inline
@@ -209,10 +209,10 @@ TAG rp -flow inline
 TAG rt -flow inline
 TAG ruby -flow inline
 TAG section -flow block
-TAG source -content HtmlEmptyContent
+TAG source -content empty
 TAG summary -flow block
 TAG time -flow inline
-TAG track -content HtmlEmptyContent
+TAG track -content empty
 TAG video -flow inline
 
 #     The tags listed above are the complete set of HTML 4.01 tags. Some
@@ -223,16 +223,16 @@ TAG video -flow inline
 #     priority.
 #
 TAG comment
-TAG embed -content HtmlEmptyContent
+TAG embed -content empty
 TAG listing                             
 TAG marquee                             
-TAG nextid -content HtmlEmptyContent             
+TAG nextid -content empty
 TAG nobr -flow inline
 TAG noembed                              
 TAG plaintext -content HtmlInlineContent             
-TAG wbr -content HtmlEmptyContent -flow inline
+TAG wbr -content empty -flow inline
 TAG xmp 
-TAG bgsound -content HtmlEmptyContent 
+TAG bgsound -content empty
 
 ###########################################################################
 # Below this line is the engine for processing the database declared 
@@ -305,7 +305,7 @@ proc _TAG {args} {
     if {$flow!=0} {
         set flags $flow
     } 
-    if {$xClose == "HtmlEmptyContent"} {
+    if {$xClose == "empty"} {
         append flags |HTMLTAG_EMPTY
         set xClose 0
     }
