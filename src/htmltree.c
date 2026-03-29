@@ -535,7 +535,7 @@ void
 HtmlFinishNodeHandlers (HtmlTree *pTree)
 {
     HtmlNode *p;
-    for (p = pTree->state.pCurrent ; p; p = HtmlNodeParent(p)) {
+    for (p = pTree->state.pCurrent; p; p = HtmlNodeParent(p)) {
         nodeHandlerCallbacks(pTree, p);
     }
     pTree->state.pCurrent = 0;

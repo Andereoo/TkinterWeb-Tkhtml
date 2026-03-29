@@ -597,33 +597,29 @@ executeScript(
     Tcl_Obj *pCallback,
     HtmlAttributes *pAttributes,
     const char *zScript,
-    int nScript
-    )
+    int nScript)
 {
     Tcl_Obj *pAttr;
     Tcl_Obj *pEval;
-    int jj;
     int rc;
 
     /* Create the attributes list */
     pAttr = Tcl_NewObj();
     Tcl_IncrRefCount(pAttr);
-    for (jj = 0; pAttributes && jj < pAttributes->nAttr; jj++) {
+    for (int i = 0; pAttributes && i < pAttributes->nAttr; i++) {
         Tcl_Obj *pArg;
-        pArg = Tcl_NewStringObj(pAttributes->a[jj].zName, -1);
+        pArg = Tcl_NewStringObj(pAttributes->a[i].zName, -1);
         Tcl_ListObjAppendElement(0, pAttr, pArg);
-        pArg = Tcl_NewStringObj(pAttributes->a[jj].zValue, -1);
+        pArg = Tcl_NewStringObj(pAttributes->a[i].zValue, -1);
         Tcl_ListObjAppendElement(0, pAttr, pArg);
     }
-
     /* Execute the script */
     pEval = Tcl_DuplicateObj(pCallback);
     Tcl_IncrRefCount(pEval);
     Tcl_ListObjAppendElement(0, pEval, pAttr);
-    Tcl_ListObjAppendElement(0,pEval,Tcl_NewStringObj(zScript,nScript));
+    Tcl_ListObjAppendElement(0, pEval, Tcl_NewStringObj(zScript, nScript));
     rc = Tcl_EvalObjEx(pTree->interp, pEval, TCL_EVAL_GLOBAL);
     Tcl_DecrRefCount(pEval);
-
     /* Free the attributes list */
     Tcl_DecrRefCount(pAttr);
 
@@ -747,11 +743,8 @@ HtmlTokenize (
             }
             n += i + 3;
             isTrimStart = 0;
-        }
-
-        else if (
-            pTree->options.parsemode == HTML_PARSEMODE_XML && 
-            0 == strncmp(&z[n], "<![CDATA[", 9)
+        } else if (
+            pTree->options.parsemode == HTML_PARSEMODE_XML && 0 == strncmp(&z[n], "<![CDATA[", 9)
         ) {
             const char *zData = &z[n+9];
             int nData;
@@ -770,7 +763,6 @@ HtmlTokenize (
 
             isTrimStart = 0;
         }
-
         /* A markup tag (i.e "<p>" or <p color="red"> or </p>). We parse 
          * this into a vector of strings stored in the argv[] array. The
          * length of each string is stored in the corresponding element
@@ -796,7 +788,7 @@ HtmlTokenize (
 
             argc = 1;
             argv[0] = &z[n + 1];
-            assert( c=='<' );
+            assert(c=='<');
 
             /* Check if we are dealing with a closing tag. */
             if (*argv[0] == '/' && argv[0][1]) {
@@ -886,8 +878,7 @@ HtmlTokenize (
                     if (!c) goto incomplete;
                     arglen[argc] = j;
                     i += j + 1;
-                }
-                else {
+                } else {
                     argv[argc] = &z[n + i];
                     for (j = 0;
                          (c = z[n + i + j]) != 0 && !ISSPACE(c) && c != '>';
@@ -898,9 +889,7 @@ HtmlTokenize (
                     i += j;
                 }
                 argc++;
-                while (ISSPACE(z[n + i])) {
-                    i++;
-                }
+                while (ISSPACE(z[n + i])) i++;
             }
             if (!c) goto incomplete;
             assert(c == '>');
@@ -985,8 +974,7 @@ HtmlTokenize (
                     } else {
                         if (eType == Html_PRE) {
                             isTrimStart = 1;
-                        }
-                        if (isSelfClosing) {
+                        } else if (isSelfClosing) {
                             xAddClosing(pTree, eType, zAtom, n);
                         }
                     }
@@ -1065,7 +1053,6 @@ tokenizeWrapper (
     if (pTree->isParseFinished && pTree->eWriteState==HTML_WRITE_NONE) {
         HtmlFinishNodeHandlers(pTree);
     }
-
     if (pTree->eWriteState != HTML_WRITE_INHANDLERRESET) {
         pCurrent = pTree->state.pCurrent;
         HtmlCallbackRestyle(pTree, pCurrent ? pCurrent : pTree->pRoot);

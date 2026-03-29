@@ -658,7 +658,6 @@ eventDumpCmd(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
     }
 
 	JS_GetOwnPropertyNames(ctx, &pEnum, &l, obj, JS_GPN_STRING_MASK);
-
 	for (i = 0; i < l; i++) {
         const char *zProp = JS_AtomToCString(ctx, pEnum[i].atom);
         if (strncmp(zProp, "on", 2) == 0) {
