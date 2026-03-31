@@ -1098,7 +1098,7 @@ namespace eval ::hv3::hv3 {
   proc new {me args} {
     upvar #0 $me O
     set win $O(win)
-	   
+
     # The scrolled html widget.
     # set O(myHtml) [::hv3::scrolled html $win.html]
     set O(myHtml) $O(hull)
@@ -1365,7 +1365,7 @@ namespace eval ::hv3::hv3 {
     event generate $O(win) <<Location>>
   }
 
-  proc MightBeComplete {me } {
+  proc MightBeComplete {me} {
     upvar #0 $me O
     if {[llength $O(myActiveHandles)] == 0} {
       event generate $O(win) <<Complete>>
@@ -1377,9 +1377,10 @@ namespace eval ::hv3::hv3 {
         set bodynode [$O(myHtml) search body]
 	# Workaround. Currently meta reload causes empty completion.
 	# XXX: Check this again!
-	if {[llength $bodynode]} {
+		if {[llength $bodynode]} {
           $O(myDom) event load [lindex $bodynode 0]
-	}
+		}
+		$O(myDom) RunPendingScripts
       }
     }
   }
@@ -1937,9 +1938,9 @@ namespace eval ::hv3::hv3 {
     upvar #0 $me O
     set z [string map {< &lt; > &gt;} $data]
     if {$isFinal} {
-	$O(myHtml) parse -final $data
+	  $O(myHtml) parse -final $data
     } else {
-	$O(myHtml) parse $data
+	  $O(myHtml) parse $data
     }
   }
 
@@ -1947,9 +1948,9 @@ namespace eval ::hv3::hv3 {
     upvar #0 $me O
     $O(myFrameLog) loghtml $data
     if {$isFinal} {
-	$O(html) parse -final $data
+	  $O(html) parse -final $data
     } else {
-	$O(html) parse $data
+	  $O(html) parse $data
     }
     $me goto_fragment
   }

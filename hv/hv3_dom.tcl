@@ -48,6 +48,8 @@ snit::type ::hv3::dom {
   # Used to assign unique ids to each block of script evaluated. 
   # This is used by the script debugging gui.
   variable myNextCodeblockNumber 1
+  
+  variable pendingScripts {}
 
   constructor {hv3 args} {
 
@@ -91,6 +93,12 @@ snit::type ::hv3::dom {
     return "$self.[incr myNextCodeblockNumber]"
   }
   
+  method RunPendingScripts {} {
+    foreach script $pendingScripts {
+      uplevel #0 $script
+    }
+  }
+  
   # This method is called as a Tkhtml3 "script handler" for elements
   # of type <SCRIPT>. I.e. this should be registered with the html widget
   # as follows:
@@ -113,10 +121,14 @@ snit::type ::hv3::dom {
       if {[$myHv3 encoding] ne ""} {
         $handle configure -encoding [$myHv3 encoding]
       }
-	  
       set fin [mymethod ScriptCallback $attr $handle]
       $handle configure -finscript $fin
-      $myHv3 makerequest $handle
+	  if {[info exists a(defer)]} {
+	    lappend pendingScripts [list $myHv3 makerequest $handle]
+		$myHv3 html write continue
+	  } else {
+        $myHv3 makerequest $handle
+	  }
     } else {
       return [$self ScriptCallback $attr "" $script]
     }
@@ -159,7 +171,7 @@ snit::type ::hv3::dom {
     if {$rc} {puts "MSG: $msg"}
 
     $self Log $title $name $script $rc $msg
-    $myHv3 html write continue
+    catch {$myHv3 html write continue}
   }
 
   method javascript {script} {

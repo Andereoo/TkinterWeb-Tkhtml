@@ -1158,8 +1158,7 @@ int
 HtmlWriteWait (HtmlTree *pTree)
 {
     if (pTree->eWriteState != HTML_WRITE_INHANDLER) {
-        char *zErr = "Cannot call [write wait] here";
-        Tcl_SetResult(pTree->interp, zErr, TCL_STATIC);
+        Tcl_SetResult(pTree->interp, "Cannot call [write wait] here; not inside [parse] command", TCL_STATIC);
         return TCL_ERROR;
     }
 
@@ -1192,8 +1191,7 @@ HtmlWriteText(HtmlTree *pTree, Tcl_Obj *pText)
     Tcl_Obj *pTail;
 
     if (pTree->eWriteState == HTML_WRITE_NONE) {
-        char *zErr = "Cannot call [write text] here";
-        Tcl_SetResult(pTree->interp, zErr, TCL_STATIC);
+        Tcl_SetResult(pTree->interp, "Cannot call [write text] here; not inside [parse] command", TCL_STATIC);
         return TCL_ERROR;
     }
 
@@ -1231,8 +1229,7 @@ HtmlWriteContinue (HtmlTree *pTree)
 {
     int eState = pTree->eWriteState;
     if (eState != HTML_WRITE_WAIT && eState != HTML_WRITE_INHANDLERWAIT) {
-        char *zErr = "Cannot call [write continue] here";
-        Tcl_SetResult(pTree->interp, zErr, TCL_STATIC);
+        Tcl_SetResult(pTree->interp, "Cannot call [write continue] here; not inside [parse] command", TCL_STATIC);
         return TCL_ERROR;
     }
 
