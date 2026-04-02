@@ -15,6 +15,7 @@ snit::widget ::hv3::dynamiclog {
   variable myState -array {
     LAYOUTENGINE 0
     STYLEENGINE  0
+    UNSUPPORTED  0
     ACTION       0
     EVENT        0
     ECMASCRIPT   1
@@ -23,6 +24,7 @@ snit::widget ::hv3::dynamiclog {
   constructor {html} {
     set myHtml $html
     $html configure -logcmd [mymethod log]
+    $html configure -unspptdcmd [mymethod log]
 
     set myDom [[winfo parent [winfo parent $html]] dom]
     $myDom configure -logcmd [mymethod log]
