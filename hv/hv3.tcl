@@ -1380,7 +1380,6 @@ namespace eval ::hv3::hv3 {
 		if {[llength $bodynode]} {
           $O(myDom) event load [lindex $bodynode 0]
 		}
-		$O(myDom) RunPendingScripts
       }
     }
   }

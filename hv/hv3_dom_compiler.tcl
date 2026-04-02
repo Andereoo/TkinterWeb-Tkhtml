@@ -186,8 +186,8 @@ namespace eval ::hv3::dom2 {
 			] {
 				%SETSTATEARRAY%
 				switch -exact -- [lindex $args 0] {
-					Finalize { %FINALIZE% }
-					Events { %EVENTS% }
+					Finalize   { %FINALIZE% }
+					Events     { %EVENTS% }
 					Enumerator { list %LIST% }
 					%GETSET%
 				}
