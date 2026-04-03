@@ -313,6 +313,7 @@ snit::widgetadaptor ::hv3::debug::report {
   constructor {args} {
     installhull [::hv3::hv3 $win]
     $self configurelist $args
+	bind [$hull html] <Button-1> [list focus [$hull html]]
   }
 
   # This is called to load the report for node-handle $node (a Tkhtml node
