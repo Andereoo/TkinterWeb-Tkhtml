@@ -532,11 +532,11 @@ static JSValue findOrCreateObject(QjsInterp *qjs, Tcl_Obj *pTclCmd)
         /* Initialise the objects events subsystem. */
         eventTargetInit(qjs, pObject->v);
 
-		const char *last, *pS = Tcl_GetString(p->apWord[0]);  /* Default to the whole string if no "::" found */
-		while ((pS = strstr(pS, "::")) != NULL) {  /* Loop to find the last occurrence of "::" */
-			pS = last = pS + 2;  /* Point after "::". Continue searching from here */
-		}
-		JS_DefinePropertyValue(qjs->ctx, pObject->v, JS_ATOM_Symbol_toStringTag, JS_NewString(qjs->ctx, last), JS_PROP_C_W_E);
+		Tcl_Obj *pEval = Tcl_NewStringObj("namespace tail ", 15);
+		Tcl_AppendObjToObj(pEval, p->apWord[0]);
+		if (Tcl_EvalObjEx(interp, pEval, TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL) == TCL_OK)
+			JS_DefinePropertyValue(qjs->ctx, pObject->v, JS_ATOM_Symbol_toStringTag, JS_NewString(
+				qjs->ctx, Tcl_GetStringResult(interp)), JS_PROP_NORMAL);
     }
     /* Existing entry found */
     pObject = (JSValueEntry *)Tcl_GetHashValue(pEntry);
@@ -1192,7 +1192,7 @@ QjsTcl_Get(JSContext *ctx, JSValue obj, JSAtom prop, JSValueConst rec)
 	callQjsTclMethod(p->interp, p->pLog, obj, atomToObj(ctx, prop), NULL);
 	JSValue res = objToValue(ctx, Tcl_GetObjResult(p->interp));
 	// Caching of DOM methods
-	if (JS_IsFunction(ctx, res)) JS_DefinePropertyValue(ctx, obj, prop, JS_DupValue(ctx, res), 0);
+	if (JS_IsFunction(ctx, res)) JS_DefinePropertyValue(ctx, rec, prop, JS_DupValue(ctx, res), 0);
 	return res;
 }
 
