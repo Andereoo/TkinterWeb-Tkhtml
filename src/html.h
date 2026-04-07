@@ -85,9 +85,7 @@
  * to be the limiting factor.
  */
 typedef unsigned char  Html_u8;      /* 8-bit unsigned integer */
-typedef short          Html_16;      /* 16-bit signed integer */
 typedef unsigned short Html_u16;     /* 16-bit unsigned integer */
-typedef int            Html_32;      /* 32-bit signed integer */
 
 /*
  * Linux doesn't have a stricmp() function and windows doesn't have
@@ -158,7 +156,7 @@ typedef int (*HtmlContentTest)(HtmlTree *, HtmlNode *, int);
 
 struct HtmlTokenMap {
   char *zName;                    /* Name of a markup */
-  Html_16 type;                   /* Markup type code */
+  short type;                     /* Markup type code */
   Html_u8 flags;                  /* Combination of HTMLTAG values */
   HtmlContentTest xClose;         /* Function to identify close tag */
   HtmlTokenMap *pCollide;         /* Hash table collision chain */
@@ -230,6 +228,7 @@ struct HtmlNodeStack {
     HtmlElementNode *pElem;
     HtmlNodeStack *pNext;
     HtmlNodeStack *pPrev;
+
     /* These three are set by HtmlRestackNodes() after the style-engine
      * runs, and used by htmldraw.c at during drawing to determine the
      * relative z-axis position of each drawing primitive.
@@ -391,7 +390,6 @@ struct HtmlCanvas {
  * Tkhtml3 man-page. If they are not, please report a bug.
  */
 struct HtmlOptions {
-
     /* Tkhtml3 supports the following standard Tk options */
     int      width;
     int      height;
@@ -403,21 +401,20 @@ struct HtmlOptions {
     Tcl_Obj *defaultstyle;
     double   fontscale;
     Tcl_Obj *fonttable;
-    int      forcefontmetrics;
-    int      forcewidth;
     Tcl_Obj *imagecmd;
     Tcl_Obj *drawcleanupcrashcmd;
-    int      imagecache;
-    int      imagepixmapify;
-    int      mode;                      /* One of the HTML_MODE_XXX values */
-    int      shrink;                    /* Boolean */
     double   zoom;                      /* Universal scaling factor. */
-    int      parsemode;                 /* One of the HTML_PARSEMODE values */
+    Html_u8      parsemode;            /* One of the HTML_PARSEMODE values */
     unsigned int pagination;
-
     /* Debugging options. Not part of the official interface. */
-    int      enablelayout;
-    int      layoutcache;
+    Html_u8 enablelayout;
+    Html_u8 layoutcache;
+    Html_u8 forcefontmetrics;
+    Html_u8 forcewidth;
+    Html_u8 imagecache;
+    Html_u8 imagepixmapify;
+    Html_u8 mode;                      /* One of the HTML_MODE_XXX values */
+    Html_u8 shrink;                    /* Boolean */
     Tcl_Obj *logcmd;
     Tcl_Obj *timercmd;
     Tcl_Obj *unspptdcmd;
