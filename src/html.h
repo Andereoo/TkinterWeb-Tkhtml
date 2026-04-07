@@ -228,11 +228,8 @@ struct HtmlNodeCmd {
 
 struct HtmlNodeStack {
     HtmlElementNode *pElem;
-    int eType;              /* Usage defined in htmlstyle.c */
-
     HtmlNodeStack *pNext;
     HtmlNodeStack *pPrev;
-
     /* These three are set by HtmlRestackNodes() after the style-engine
      * runs, and used by htmldraw.c at during drawing to determine the
      * relative z-axis position of each drawing primitive.
@@ -240,6 +237,8 @@ struct HtmlNodeStack {
     int iInlineZ;
     int iBlockZ;
     int iStackingZ;
+
+    int eType;              /* Usage defined in htmlstyle.c */
 };
 
 /*
@@ -294,16 +293,14 @@ struct HtmlTaggedRegion {
 struct HtmlNode {
     ClientData clientData;
     HtmlNode *pParent;             /* Parent of this node */
-    int index;                     /* Node index */
-
-    Html_u8 eTag;                  /* Tag type (or 0) */
+    HtmlNodeCmd *pNodeCmd;         /* Tcl command for this node */
     const char *zTag;              /* Atom string for tag type */
 
+    int index;                     /* Node index */
     int iSnapshot;                 /* Last changed snapshot */
-    HtmlNodeCmd *pNodeCmd;         /* Tcl command for this node */
+    int iBboxX, iBboxY, iBboxX2, iBboxY2; /* Cache used for [$widget bbox] */
 
-    /* Cache used for [$widget bbox] */
-    int iBboxX, iBboxY, iBboxX2, iBboxY2;
+    Html_u8 eTag;                  /* Tag type (or 0) */
 };
 
 /* Value of HtmlNode.index for orphan and generated nodes. */
@@ -339,6 +336,7 @@ struct HtmlElementNode {
     HtmlNode node;          /* Base class. MUST BE FIRST. */
 
     HtmlAttributes *pAttributes;      /* Html attributes associated with node */
+    Html_u8 flags;                         /* HTML_DYNAMIC_XXX flags */
 
     /* Children of this element node */
     int nChild;                    /* Number of child nodes */
@@ -356,8 +354,6 @@ struct HtmlElementNode {
     HtmlNode *pAfter;                      /* Generated :after content */
 
     /* Manipulated by the [nodeHandle dynamic] command */
-    Html_u8 flags;                         /* HTML_DYNAMIC_XXX flags */
-
     HtmlNodeReplacement *pReplacement;     /* Replaced object, if any */
     HtmlLayoutCache *pLayoutCache;         /* Cached layout, if any */
     HtmlNodeScrollbars *pScrollbar;        /* Internal scrollbars, if any */
@@ -442,11 +438,7 @@ void HtmlUnspptd(HtmlTree *, CONST char *, ...);
 typedef struct HtmlCanvasSnapshot HtmlCanvasSnapshot;
 
 struct HtmlDamage {
-  int x;
-  int y;
-  int w;
-  int h;
-  int windowsrepair;
+  int x, y, w, h;
   HtmlDamage *pNext;
 };
 
@@ -456,9 +448,9 @@ struct HtmlDamage {
  * the behaviour of the idle callback scheduled to update the display.
  */
 struct HtmlCallback {
-    int flags;                  /* Comb. of HTML_XXX bitmasks defined below */
-    int inProgress;             /* Prevent recursive invocation */
-    int isForce;                /* Not an idle callback */
+    Html_u8 flags;             /* Comb. of HTML_XXX bitmasks defined below */
+    Html_u8 inProgress;        /* Prevent recursive invocation */
+    Html_u8 isForce;           /* Not an idle callback */
 
     /* Snapshot of layout before the latest round of changes. This is
      * used to reduce the area repainted during "animation" changes.
@@ -518,7 +510,6 @@ struct HtmlTreeState {
 };
 
 struct HtmlTree {
-
     /*
      * The interpreter hosting this widget instance.
      */
@@ -532,12 +523,7 @@ struct HtmlTree {
     int iScrollY;              /* Number of pixels offscreen to the top */
 
     Tk_Window docwin;          /* Document window */
-
-    /*
-     * The widget command.
-     */
     Tcl_Command cmd;           /* Widget command */
-    int isDeleted;             /* True once the widget-delete has begun */
 
     /*
      * The image server object.
@@ -587,8 +573,6 @@ struct HtmlTree {
      */
     HtmlFragmentContext *pFragment;
 
-    int isFixed;                    /* True if any "fixed" graphics */
-
     /*
      * Handler callbacks configured by the [$widget handler] command.
      *
@@ -618,6 +602,8 @@ struct HtmlTree {
     HtmlNodeStack *pStack;
     int nStack;                   /* Number of elements in linked list */
 
+    int aFontSizeTable[7];
+
     /*
      * Internal representation of a completely layed-out document.
      */
@@ -640,8 +626,6 @@ struct HtmlTree {
     Tcl_HashTable aCounterLists;
     HtmlComputedValuesCreator *pPrototypeCreator;
 
-    int aFontSizeTable[7];
-
     /*
      * Hash table for all html widget tags (similar to text widget tags -
      * nothing to do with markup tags).
@@ -655,13 +639,7 @@ struct HtmlTree {
     int isSequenceOk;    
     int iNextNode;       /* Next node index to allocate */
 
-    /* True if the HtmlElementNode.iBboxX and HtmlElementNode.iBboxY values
-     * for all elements in the tree are valid.
-     */
-    int isBboxOk;
-
     HtmlCallback cb;                /* See structure definition comments */
-    int iLastSnapshotId;            /* Last snapshot id allocated */
     Tcl_TimerToken delayToken;
 
     /* 
@@ -673,8 +651,17 @@ struct HtmlTree {
     /* Pointer to information used for generating Postscript for the canvas.
      * NULL means no Postscript is currently being generated. */
     Tk_PostscriptInfo psInfo;
-    unsigned char isPrintedMedia;
+    Html_u8 isPrintedMedia;
 
+    Html_u8 isDeleted;             /* True once the widget-delete has begun */
+    Html_u8 isFixed;                    /* True if any "fixed" graphics */
+
+    /* True if the HtmlElementNode.iBboxX and HtmlElementNode.iBboxY values
+     * for all elements in the tree are valid.
+     */
+    Html_u8 isBboxOk;
+
+    int iLastSnapshotId;            /* Last snapshot id allocated */
 #ifdef TKHTML_ENABLE_PROFILE
     /*
      * Client data from instrument command ([::tkhtml::instrument]).

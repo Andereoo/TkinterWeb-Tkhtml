@@ -124,7 +124,7 @@ struct LayoutCache {
 };
 
 struct HtmlLayoutCache {
-    unsigned char flags;     /* Mask indicating validity of aCache[] entries */
+    int flags;     /* Mask indicating validity of aCache[] entries */
     LayoutCache aCache[3];
     int iMinWidth;
     int iMaxWidth;
