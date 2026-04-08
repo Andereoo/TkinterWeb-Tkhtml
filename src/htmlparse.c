@@ -557,21 +557,20 @@ findEndOfScript (
 {
     char zEnd[64];
     int nEnd;
-    int ii;
     int nLen = (strlen(&z[*pN]) + *pN);
 
     /* Figure out the string we are looking for as an end tag */
     sprintf(zEnd, "</%s", HtmlMarkupName(eTag));
     nEnd = strlen(zEnd);
 
-    for (ii = *pN; ii < (nLen - nEnd - 1); ii++) {
+    for (int i = *pN; i < (nLen - nEnd); i++) {
         if (
-            strnicmp(&z[ii], zEnd, nEnd) == 0 &&
-            (z[ii+nEnd] == '>' || ISSPACE(z[ii+nEnd]))
+            strnicmp(&z[i], zEnd, nEnd) == 0 &&
+            (z[i+nEnd] == '>' || ISSPACE(z[i+nEnd]))
         ) {
-            int nScript = ii - (*pN);
-            ii += (nEnd + 1);
-            *pN = ii;
+            int nScript = i - (*pN);
+            i += (nEnd + 1);
+            *pN = i;
             return nScript;
         }
     }
@@ -840,11 +839,8 @@ HtmlTokenize (
 
                 j = 0;
                 while (
-                    (c = z[n + i + j]) != 0 && 
-                    !ISSPACE(c) && c != '>' && c != '=' 
-                ) {
-                    j++;
-                }
+                    (c = z[n + i + j]) != 0 && !ISSPACE(c) && c != '>' && c != '=' 
+                ) j++;
                 arglen[argc] = j;
 
                 if (!c) goto incomplete;
