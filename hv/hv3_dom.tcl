@@ -48,8 +48,8 @@ snit::type ::hv3::dom {
   # Used to assign unique ids to each block of script evaluated. 
   # This is used by the script debugging gui.
   variable myNextCodeblockNumber 1
-  
-  variable pendingScripts {}
+
+  variable timeCreated 0
 
   constructor {hv3 args} {
 
@@ -61,6 +61,8 @@ snit::type ::hv3::dom {
     set myQjs [::qjs::interp [list ::hv3::DOM::Window $self $hv3]]
 
     $self configurelist $args
+
+	set timeCreated [clock milliseconds]
 
     set frame [$myHv3 cget -frame]
     if {$frame ne ""} {
@@ -319,6 +321,8 @@ snit::type ::hv3::dom {
     }
     set msg
   }
+
+  method age {} { return [expr [clock milliseconds] - $timeCreated] }
 
   method qjs {} { return $myQjs }
 

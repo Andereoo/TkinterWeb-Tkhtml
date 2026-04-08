@@ -390,7 +390,7 @@ namespace eval ::hv3::dom {
         type            $type         \
         bubbles         1             \
         cancelable      $isCancelable \
-        timestamp       [clock milliseconds] \
+        timeStamp       [$dom age]    \
 \
         view            {}            \
         detail          {}            \
@@ -433,14 +433,14 @@ namespace eval ::hv3::dom {
       type            $type           \
       bubbles         $bubbles        \
       cancelable      $isCancelable   \
-      timestamp  [clock milliseconds] \
+      timeStamp       [$dom age] \
     ]
   }
 
   # Dispatch --
   #
-  proc Dispatch {see js_obj event_obj} {
-    foreach {isHandled isPrevented} [$see dispatch $js_obj $event_obj] {}
+  proc Dispatch {qjs js_obj event_obj} {
+    foreach {isHandled isPrevented} [$qjs dispatch $js_obj $event_obj] {}
     if {$isPrevented} {return "prevent"}
     if {$isHandled}   {return "handled"}
     return ""
