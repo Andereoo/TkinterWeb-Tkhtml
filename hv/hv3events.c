@@ -225,23 +225,19 @@ static JSValue dispatchEventFunc(JSContext *ctx, JSValueConst this, int argc, JS
         return JS_ThrowTypeError(ctx, "UNSPECIFIED_EVENT_TYPE_ERR");
     }
 
-    /* Check if the event "bubbles". */
-    int8_t isBubbler = valueToBoolean(ctx, JS_GetPropertyStr(ctx, event, "bubbles"), 0);
-
     /* If this is a bubbling event, create a list of the nodes ancestry
      * to deliver it to now. This is because any callbacks that modify
      * the document tree are not supposed to affect the delivery of
      * this event. */
-	if (isBubbler) {
+	if (valueToBoolean(ctx, JS_GetPropertyStr(ctx, event, "bubbles"), 0)) {
         JSValue node = this;
         do {
-            JSValue parentNode = getParentNode(ctx, node);
+            node = getParentNode(ctx, node);
             if (nNodes == nNodesAlloc) {
                 nNodesAlloc++;
                 apNodes = js_realloc(ctx, apNodes, sizeof(JSValue) * nNodesAlloc);
             }
-            apNodes[nNodes++] = JS_DupValue(ctx, parentNode);
-            node = parentNode;
+            apNodes[nNodes++] = JS_DupValue(ctx, node);
         } while (!JS_IsNull(node));
     } else JS_DupValue(ctx, this);  // Make sure objects that aren't nodes aren't freed, this prevents crashing
 
@@ -455,6 +451,7 @@ static JSValue EventFunc(JSContext *ctx, JSValueConst this, int argc, JSValueCon
 		opt = JS_GetPropertyStr(ctx, argv[1], "cancelable");
 		if (!JS_IsUndefined(opt)) JS_SetPropertyStr(ctx, event, "cancelable", opt);
 	}
+	JS_DefinePropertyValue(ctx, event, JS_ATOM_Symbol_toStringTag, JS_NewString(ctx, "Event"), 0);
 	return event;
 }
 

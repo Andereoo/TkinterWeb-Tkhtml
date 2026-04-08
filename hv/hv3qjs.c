@@ -98,7 +98,6 @@
 #include <tcl.h>
 #include <quickjs.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
@@ -210,9 +209,6 @@ static int allocWordArray(QjsInterp *qjs, QjsTclObject *w, int nExtra)
     return TCL_OK;
 }
 
-static inline Tcl_Interp *getInterp(JSContext *ctx) {
-	return ((ContextOpaque*)JS_GetContextOpaque(ctx))->interp;
-}
 /* Helper function to validate a JavaScript identifier */
 static int isValidJSIdentifier(const char *str) {
     if (!str || !*str && !isalpha(*str) && *str != '_' && *str != '$') return 0;
@@ -536,7 +532,7 @@ static JSValue findOrCreateObject(QjsInterp *qjs, Tcl_Obj *pTclCmd)
 		Tcl_AppendObjToObj(pEval, p->apWord[0]);
 		if (Tcl_EvalObjEx(interp, pEval, TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL) == TCL_OK)
 			JS_DefinePropertyValue(qjs->ctx, pObject->v, JS_ATOM_Symbol_toStringTag, JS_NewString(
-				qjs->ctx, Tcl_GetStringResult(interp)), JS_PROP_NORMAL);
+				qjs->ctx, Tcl_GetStringResult(interp)), 0);
     }
     /* Existing entry found */
     pObject = (JSValueEntry *)Tcl_GetHashValue(pEntry);
@@ -815,7 +811,7 @@ static JSValue // The following 4 functions are based on ones from dbohdan/tcl-d
 tclLambda(JSContext *ctx, JSValueConst this, int argc, JSValueConst *argv, int m, JSValue *o)
 {
 	int i, rc;
-	Tcl_Interp *interp = getInterp(ctx);
+	Tcl_Interp *interp = ((ContextOpaque*)JS_GetContextOpaque(ctx))->interp;
 	if (!interp) return JS_ThrowTypeError(ctx, "Tcl interpreter not available");
 
 	Tcl_Obj *pCmd = Tcl_NewStringObj("apply", 5);
@@ -1229,7 +1225,7 @@ QjsTcl_Set(JSContext *ctx, JSValueConst obj, JSAtom prop, JSValueConst val, JSVa
 static int QjsTcl_Has(JSContext *ctx, JSValueConst obj, JSAtom prop)
 {
 	JSValue val = QjsTcl_Get(ctx, obj, prop, obj);
-	int has = !JS_IsUndefined(val);
+	int8_t has = !JS_IsUndefined(val);
 	JS_FreeValue(ctx, val);
     return has;
 }
