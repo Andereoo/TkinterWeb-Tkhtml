@@ -36,7 +36,7 @@ struct EventTarget {  // Alas, you are now a relic from a bygone age
 };
 
 struct EventType {
-	JSValue zType;
+	JSAtom zType;
 	ListenerContainer *pListenerList;
 	EventType *pNext;
 };
@@ -85,7 +85,7 @@ runEvent(JSContext *ctx, JSValue target, JSValue event, JSValue zType, uint8_t i
     int rc = 1;
     EventType *pET, **apET;
 	ListenerContainer *pL;
-	
+
     assert(JS_IsObject(event));
 
     /* Assert that zType is a string and isCapture is boolean */
@@ -104,7 +104,8 @@ runEvent(JSContext *ctx, JSValue target, JSValue event, JSValue zType, uint8_t i
 	apET = getEventList(target);
     /* If this is a Tcl based object, run any requested registered DOM event handlers */
     if (apET) {
-        for (pET = *apET; pET && !JS_StrictEq(ctx, pET->zType, zType); pET = pET->pNext);
+		JSAtom a = JS_ValueToAtom(ctx, zType);
+        for (pET = *apET; pET && pET->zType != a; pET = pET->pNext);
 		if (pET) {
 			for (pL = pET->pListenerList; rc && pL; pL = pL->pNext) {
 				if (pL->isCapture == isCapture) {
@@ -114,6 +115,7 @@ runEvent(JSContext *ctx, JSValue target, JSValue event, JSValue zType, uint8_t i
 				if (pET->pListenerList != pL) break;
 			}
 		}
+		JS_FreeAtom(ctx, a);
     }
     /* If this is not the "capturing" phase, run the legacy event-handler. */
     if (!isCapture) {
@@ -222,6 +224,7 @@ static JSValue dispatchEventFunc(JSContext *ctx, JSValueConst this, int argc, JS
 	zType = JS_GetPropertyStr(ctx, event, "type");
     if (!JS_IsString(zType)) {
         /* Event without a type - matches no listeners */
+		JS_FreeValue(ctx, zType);
         return JS_ThrowTypeError(ctx, "UNSPECIFIED_EVENT_TYPE_ERR");
     }
 
@@ -350,14 +353,16 @@ addEventListenerFunc(JSContext *ctx, JSValueConst this, int argc, JSValueConst *
     if (!apET) return JS_ThrowTypeError(ctx, "Bad type for 'this'");
 
 	if (argc > 2) useCapture = JS_ToBool(ctx, argv[2]);  /* Parse the arguments */
+	JSAtom zType = JS_ValueToAtom(ctx, argv[0]);
 
-    for (pET = *apET; pET && !JS_StrictEq(ctx, pET->zType, argv[0]); pET = pET->pNext);
+    for (pET = *apET; pET && pET->zType != zType; pET = pET->pNext);
     if (!pET) {
         pET = js_mallocz(ctx, sizeof(*pET));
-        pET->zType = JS_DupValue(ctx, argv[0]);
+        pET->zType = JS_DupAtom(ctx, zType);
         pET->pNext = *apET;
         *apET = pET;
     }
+	JS_FreeAtom(ctx, zType);
 
     /* Check that this is not an attempt to insert a duplicate 
      * event-listener. From the DOM Level 2 spec:
@@ -419,7 +424,8 @@ removeEventListenerFunc(JSContext *ctx, JSValueConst this, int argc, JSValueCons
     }
     if (argc > 2) useCapture = valueToBoolean(ctx, argv[2], 0);  /* Parse the arguments */
 
-    for (pET = *apET; pET && !JS_StrictEq(ctx, pET->zType, argv[0]); pET = pET->pNext);
+	JSAtom zType = JS_ValueToAtom(ctx, argv[0]);
+    for (pET = *apET; pET && pET->zType != zType; pET = pET->pNext);
     if (pET) {
         ListenerContainer *pL, **apL = &pET->pListenerList;
         for (pL = *apL; pL; pL = pL->pNext) {
@@ -433,6 +439,7 @@ removeEventListenerFunc(JSContext *ctx, JSValueConst this, int argc, JSValueCons
             }
         }
     }
+	JS_FreeAtom(ctx, zType);
     /* DOM says return value is "void" */
     return JS_UNDEFINED;
 }
@@ -591,7 +598,7 @@ static void freeEventTargetData(JSRuntime *rt, QjsTclObject *pTclObject)
             js_free_rt(rt, pL);  /* Free the ListenerContainer structure */
         }
         /* Free the JSValue for the event type */
-        JS_FreeValueRT(rt, pET->zType);
+        JS_FreeAtomRT(rt, pET->zType);
         /* Free the EventType structure */
         js_free_rt(rt, pET);
     }
@@ -644,7 +651,7 @@ eventDumpCmd(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *CONST objv[])
 
     for (pType = *getEventList(obj); pType; pType = pType->pNext) {
         ListenerContainer *pL;
-        apRow[0] = stringToObj(ctx, pType->zType);
+        apRow[0] = atomToObj(ctx, pType->zType);
 
         for (pL = pType->pListenerList; pL; pL = pL->pNext) {
             const char *z = (pL->isCapture ? "capturing" : "non-capturing");
