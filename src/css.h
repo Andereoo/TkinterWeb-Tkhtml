@@ -40,7 +40,6 @@
 #ifndef __CSS_H__
 #define __CSS_H__
 
-#include <tcl.h>
 #include "cssprop.h"
 
 /*
