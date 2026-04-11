@@ -918,35 +918,25 @@ static int interpGlobalSet(QjsInterp *qjs, Tcl_Obj *pProp, Tcl_Obj *pVal)
 static inline Tcl_Obj *debugAlloc(JSRuntime *rt) {
     Tcl_Obj *pRet = Tcl_NewObj();
 	JSMemoryUsage s;
-    JS_ComputeMemoryUsage(rt, &s);
 
-	const char *azNames[15] = {
-		"QjsTclObject", "memory allocated", "memory used", "atoms", "strings",
-		"objects", " properties", " shapes", "bytecode functions", " bytecode",
-		" pc2line", "C functions", "arrays", " elements", "binary objects",
-	};
-	int counts[15] = {
-		numQjsTclObject, s.malloc_count, s.memory_used_count, s.atom_count, s.str_count,
-		s.obj_count, s.prop_count, s.shape_count, s.js_func_count, s.js_func_count,  /* bytecode uses func count */
-		s.js_func_pc2line_count, s.c_func_count, s.array_count, s.fast_array_elements, s.binary_object_count,
-	};
-	int sizes[15] = {
-		0, s.malloc_size, s.memory_used_size, s.atom_size, s.str_size,
-		s.obj_size, s.prop_size, s.shape_size, s.js_func_size, s.js_func_code_size,
-		s.js_func_pc2line_size, 0, 0, s.fast_array_elements*sizeof(JSValue), s.binary_object_size,
-	};
-	for (int i = 0; i < 15; i++) {
-		Tcl_Obj *pRow = Tcl_NewObj();
-		Tcl_ListObjAppendElement(NULL, pRet, Tcl_NewStringObj(azNames[i], -1));
-		Tcl_ListObjAppendElement(NULL, pRow, Tcl_NewStringObj("COUNT", 5));
-		Tcl_ListObjAppendElement(NULL, pRow, Tcl_NewIntObj(counts[i]));
-		if (sizes[i] > 0) {
-			Tcl_ListObjAppendElement(NULL, pRow, Tcl_NewStringObj("SIZE", 4));
-			Tcl_ListObjAppendElement(NULL, pRow, Tcl_NewIntObj(sizes[i]));
-			Tcl_ListObjAppendElement(NULL, pRow, Tcl_NewStringObj("PER", 3));
-			Tcl_ListObjAppendElement(NULL, pRow, Tcl_NewDoubleObj((double)sizes[i]/counts[i]));
-		}
-		Tcl_ListObjAppendElement(NULL, pRet, pRow);
+    const char *azString[27] = {
+        "QjsTclObject",
+        "malloc_size", "malloc_limit", "memory_used_size", "malloc_count", "memory_used_count",
+        "atom_count", "atom_size", "str_count", "str_size",
+        "obj_count", "obj_size", "prop_count", "prop_size", "shape_count", "shape_size",
+        "js_func_count", "js_func_size", "js_func_code_size",
+        "js_func_pc2line_count", "js_func_pc2line_size", "c_func_count",
+        "array_count", "fast_array_count", "fast_array_elements",
+        "binary_object_count", "binary_object_size",
+    };
+	int64_t aVal[27];
+    aVal[0] = numQjsTclObject;
+    JS_ComputeMemoryUsage(rt, &s);
+//	JS_DumpMemoryUsage(stdout, &s, rt);
+	memcpy(&aVal[1], (int *)&s, sizeof(s));
+    for (int i = 0; i < 27; i++){
+        Tcl_ListObjAppendElement(0, pRet, Tcl_NewStringObj(azString[i], -1));
+        Tcl_ListObjAppendElement(0, pRet, Tcl_NewIntObj(aVal[i]));
     }
 	return pRet;
 }
@@ -1208,7 +1198,7 @@ QjsTcl_Set(JSContext *ctx, JSValueConst obj, JSAtom prop, JSValueConst val, JSVa
 		JS_ThrowTypeError(ctx, "Tcl interpreter not available");
 		return -1;
 	}
-    Tcl_Obj *pVal = argValueToTcl((QjsInterp*)p, val, &nObj);
+    Tcl_Obj *pVal = stringToObj(ctx, val);//argValueToTcl((QjsInterp*)p, val, &nObj);
 	Tcl_IncrRefCount(pVal);
 	rc = callQjsTclMethod(p->interp, p->pLog, obj, atomToObj(ctx, prop), pVal);
 	Tcl_DecrRefCount(pVal);

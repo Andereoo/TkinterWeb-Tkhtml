@@ -697,9 +697,7 @@ proc gui_build {widget_array} {
 
   # Create the middle bit - the browser window
   #
-  ::hv3::tabset .notebook              \
-      -newcmd    gui_new                 \
-      -switchcmd gui_switch
+  ::hv3::tabset .notebook -newcmd gui_new -switchcmd gui_switch
 
   # And the bottom bit - the status bar
   ::hv3::label .status -anchor w -width 1
@@ -768,24 +766,19 @@ proc gui_populate_menu {eMenu menu_widget} {
       set cmd [list $::hv3::G(file_menu) populate_menu $menu_widget]
       $menu_widget configure -postcommand $cmd
     }
-
     search {
       $::hv3::G(search) populate_menu $menu_widget
     }
-
     options {
       $::hv3::G(config) populate_menu $menu_widget
     }
-
     debug {
       $::hv3::G(debug_menu) populate_menu $menu_widget
     }
-
     history {
       set cmd [list gui_current populate_history_menu $menu_widget]
       $menu_widget configure -postcommand $cmd
     }
-
     default {
       error "gui_populate_menu: No such menu: $eMenu"
     }
@@ -997,13 +990,11 @@ proc gui_set_memstatus {widget_array} {
     append status "[::count_namespaces] namespaces"
 
     array set v [::qjs::alloc]
-    array set v2 $v(memory allocated)
-	set nCont [expr {int($v2(COUNT) / 1000)}]
-    set nSize [expr {int($v2(SIZE) / 1000)}]
-	array set aDom $v(QjsTclObject)
+    set nCont [expr {int($v(malloc_size) / 1000)}]
+    set nSize [expr {int($v(memory_used_size) / 1000)}]
     append status "          "
-    append status "Memory Allocated: ${nCont}K (${nSize}K bytes used) "
-    append status "($aDom(COUNT) DOM objects)"
+    append status "Memory Allocated: ${nCont}kB (${nSize}kB used) "
+    append status "($v(QjsTclObject) DOM objects)"
     catch {
       foreach line [split [memory info] "\n"] {
         if {[string match {current packets allocated*} $line]} {
