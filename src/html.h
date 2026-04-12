@@ -391,8 +391,8 @@ struct HtmlCanvas {
  */
 struct HtmlOptions {
     /* Tkhtml3 supports the following standard Tk options */
-    int      width;
-    int      height;
+    unsigned int width;
+    unsigned int height;
     int      xscrollincrement;
     int      yscrollincrement;
     Tcl_Obj *yscrollcommand;
@@ -401,20 +401,20 @@ struct HtmlOptions {
     Tcl_Obj *defaultstyle;
     double   fontscale;
     Tcl_Obj *fonttable;
+    Html_u8  forcefontmetrics;
+    Html_u8  forcewidth;
     Tcl_Obj *imagecmd;
     Tcl_Obj *drawcleanupcrashcmd;
+    Html_u8  imagecache;
+    Html_u8  imagepixmapify;
+    Html_u8  mode;                      /* One of the HTML_MODE_XXX values */
+    Html_u8  shrink;                    /* Boolean */
     double   zoom;                      /* Universal scaling factor. */
-    Html_u8      parsemode;            /* One of the HTML_PARSEMODE values */
+    Html_u8  parsemode;                 /* One of the HTML_PARSEMODE values */
     unsigned int pagination;
     /* Debugging options. Not part of the official interface. */
-    Html_u8 enablelayout;
-    Html_u8 layoutcache;
-    Html_u8 forcefontmetrics;
-    Html_u8 forcewidth;
-    Html_u8 imagecache;
-    Html_u8 imagepixmapify;
-    Html_u8 mode;                      /* One of the HTML_MODE_XXX values */
-    Html_u8 shrink;                    /* Boolean */
+    Html_u8  enablelayout;
+    Html_u8  layoutcache;
     Tcl_Obj *logcmd;
     Tcl_Obj *timercmd;
     Tcl_Obj *unspptdcmd;
@@ -545,10 +545,10 @@ struct HtmlTree {
     int nCharParsed;                /* TODO: Characters parsed */
 
     int iWriteInsert;               /* Byte offset in pDocument for [write] */
-    int eWriteState;                /* One of the HTML_WRITE_XXX values */
+    Html_u8 eWriteState;            /* One of the HTML_WRITE_XXX values */
 
-    int isIgnoreNewline;            /* True after an opening tag */
-    int isParseFinished;            /* True if the html parse is finished */
+    Html_u8 isIgnoreNewline;        /* True after an opening tag */
+    Html_u8 isParseFinished;        /* True if the html parse is finished */
 
     HtmlNode *pRoot;                /* The root-node of the document. */
 

@@ -1196,7 +1196,7 @@ HtmlWriteText(HtmlTree *pTree, Tcl_Obj *pText)
 
     Tcl_IncrRefCount(pHead);
     Tcl_AppendObjToObj(pHead, pText);
-    Tcl_GetStringFromObj(pHead, &pTree->iWriteInsert);
+    Tcl_GetStringFromObj(pHead, (int*)(&pTree->iWriteInsert));
     Tcl_AppendObjToObj(pHead, pTail);
 
     Tcl_DecrRefCount(pDocument);
