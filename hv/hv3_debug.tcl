@@ -503,7 +503,7 @@ namespace eval ::hv3 {
       if {"" eq [[$top hv3] log get html]} {
         $myCodeViewer insert end [join {
             {Source logging was not enabled when this document was loaded.}
-	    {To browse the document source code, select a different option}
+            {To browse the document source code, select a different option}
             {from the "Debug->Application Source Logging" menu and reload}
             {the document.}
         }]

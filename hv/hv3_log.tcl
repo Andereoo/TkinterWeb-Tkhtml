@@ -73,7 +73,8 @@ snit::widget ::hv3::dynamiclog {
 
   destructor {
     $myHtml configure -logcmd ""
-    if {$myDom ne ""} {$myDom configure -logcmd ""}
+    $myHtml configure -unspptdcmd ""
+    if {$myDom ne ""} {catch {$myDom configure -logcmd ""}}
   }
 }
 

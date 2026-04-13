@@ -318,7 +318,7 @@ pressing enter.
 
     set titlenode [$html search title]
     if {$titlenode ne ""} {
-      set child [lindex [$titlenode children] 0]
+      set child [lindex [[lindex $titlenode 0] children] 0]
       if {$child ne ""} { set zTitle [$child text] }
     }
 
