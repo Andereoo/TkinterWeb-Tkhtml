@@ -149,6 +149,10 @@ hv3_img.kit: hv3_img.vfs
 hv3.kit: hv3.vfs
 	$(MKSTARKIT) hv3.kit
 
+clean:
+	rm -f *.o *.so *.dll htmldefaultstyle.c cssprop.c cssprop.h htmltokens.c htmltokens.h
+	rm -rf tclqjs0.1
+
 website: 
 	mkdir -p www
 	$(TCLSH) $(TOP)/webpage/mkwebpage.tcl > www/index.html
