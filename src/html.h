@@ -62,7 +62,6 @@
 #include <tk.h>
 
 #include <string.h>
-#define NDEBUG
 #include <assert.h>
 #include <stdlib.h>
 
