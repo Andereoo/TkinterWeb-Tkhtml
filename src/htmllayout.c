@@ -2229,9 +2229,7 @@ wrapContent (LayoutContext *pLayout, BoxContext *pBox, BoxContext *pContent, Htm
             sAbsolute.width -= pV->border.iRight;
         }
         sAbsolute.iContainingW = sAbsolute.width;
-        drawAbsolute(pLayout, &sAbsolute, &pBox->vc,
-            iLeftBorder + margin.margin_left, iTopBorder
-        );
+        drawAbsolute(pLayout, &sAbsolute, &pBox->vc, iLeftBorder + margin.margin_left, iTopBorder);
         DRAW_CANVAS(&pBox->vc, &sAbsolute.vc, 
             iRelLeft + margin.margin_left + iLeftBorder, 
             iRelTop + iTopBorder, pNode
@@ -2908,11 +2906,9 @@ normalFlowLayoutInlineBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode 
     BoxContext sBox;           /* After wrapContent() */
 
     int iWidth;                /* Calculated value of 'width' */
-    int iContainingW;
     HtmlComputedValues *pV = HtmlNodeComputedValues(pNode);
 
-    int w;                     /* Width of wrapped inline-block */
-    int h;                     /* Height of wrapped inline-block */
+    int w, h;                  /* Width and Height of wrapped inline-block */
     int dummy;
     int iLineBox;
 
@@ -2929,16 +2925,12 @@ normalFlowLayoutInlineBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode 
     } else {
         iWidth = PIXELVAL(pV, WIDTH, pBox->iContainingW);
     }
-    iContainingW = iWidth;
-    if (iContainingW == PIXELVAL_AUTO) {
-        blockMinMaxWidth(pLayout, pNode, &iContainingW, 0);
+    sContent.iContainingW = iWidth;
+    if (sContent.iContainingW == PIXELVAL_AUTO) {
+        blockMinMaxWidth(pLayout, pNode, &sContent.iContainingW, 0);
     }
-
-    sContent.iContainingW = iContainingW;
     HtmlLayoutNodeContent(pLayout, &sContent, pNode);
-    if (iWidth != PIXELVAL_AUTO) {
-        sContent.width = iWidth;
-    }
+    if (iWidth != PIXELVAL_AUTO) sContent.width = iWidth;
     wrapContent(pLayout, &sBox, &sContent, pNode);
 
     /* Include the vertical margins in the box. */
@@ -2964,7 +2956,6 @@ normalFlowLayoutAbsolute (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
     if (pLayout->minmaxTest == 0) {
         int iLeft = 0;
         int iDummy = 0;
-
         int y = *pY + normalFlowMarginQuery(pNormal);
 
         NodeListLink *pNew = (NodeListLink *)HtmlClearAlloc(0, sizeof(NodeListLink));
@@ -2984,7 +2975,6 @@ normalFlowLayoutAbsolute (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pN
          */
         HtmlFloatListMargins(pNormal->pFloat, y, y, &iLeft, &iDummy);
         pNew->pMarker = HtmlDrawMarker(&pBox->vc, iLeft, y, 0);
-
         pLayout->pAbsolute = pNew;
     }
     return 0;
@@ -3843,7 +3833,6 @@ HtmlLayout (HtmlTree *pTree)
 
     /* Delete any existing document layout. */
     HtmlDrawCleanup(pTree, &pTree->canvas);
-    memset(&pTree->canvas, 0, sizeof(HtmlCanvas));
 
     /* Set up the layout context object. */
     memset(&sLayout, 0, sizeof(LayoutContext));
