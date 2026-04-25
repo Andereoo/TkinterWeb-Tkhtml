@@ -845,26 +845,28 @@ static int interpFunction(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
 
 static int interpCall(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
 {
-	int i, n;     // Number of arguments
-	Tcl_Obj **p;  // Individual arguments as Tcl objects
-	
-	if (Tcl_ListObjGetElements(qjs->interp, objv[3], &n, &p) != TCL_OK) { // Get arguments
-		return TCL_ERROR;
-	}
+	int rc, i, n = objc-3;  // Number of arguments
 	JSValue args[n];
-	for (i=0; i < n; i++) args[i] = objToValue(qjs->ctx, p[i]);
+
+	// Get arguments
+	for (i = 0; i < n; i++) args[i] = objToValue(qjs->ctx, objv[i+3]);
 	
 	JSValue glb = JS_GetGlobalObject(qjs->ctx);
 	JSValue function = JS_GetPropertyStr(qjs->ctx, glb, Tcl_GetString(objv[2]));
-	JS_FreeValue(qjs->ctx, glb);
+	JSValue result = JS_Call(qjs->ctx, function, glb, n, args);
 
-	JSValue result = JS_Call(qjs->ctx, function, function, n, args);
 	for (i=0; i < n; i++) JS_FreeValue(qjs->ctx, args[i]);
 	JS_FreeValue(qjs->ctx, function);
-	Tcl_SetObjResult(qjs->interp, qjsValueToTcl(qjs->ctx, result));
-	JS_FreeValue(qjs->ctx, result);
+	JS_FreeValue(qjs->ctx, glb);
 
-	return TCL_OK;
+	if (JS_IsException(result)) {
+        rc = handleJavascriptError(qjs, result);
+	} else {
+        Tcl_SetObjResult(qjs->interp, qjsValueToTcl(qjs->ctx, JS_DupValue(qjs->ctx, result)));
+		rc = TCL_OK;
+    }
+	JS_FreeValue(qjs->ctx, result);
+    return rc;
 }
 
 static int interpProc(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
@@ -1015,7 +1017,7 @@ static int interpCmd(
         {"tostring", INTERP_TOSTRING, 1, 1, "JAVASCRIPT-VALUE"},
         {"function", INTERP_FUNC,     3, 3, "NAME ARGUMENTS BODY"},
         {"proc",     INTERP_PROC,     3, 3, "NAME ARGUMENTS BODY"},
-        {"call",     INTERP_CALL,     2, 2, "NAME ARGUMENTS"},
+        {"call",     INTERP_CALL,     2, -1, "NAME ARGUMENTS"},
         {"node",     INTERP_NODE,     1, 1, "TCL-COMMAND"},
         {"global",   INTERP_GLOBAL,   0, 2, "?PROPERTY? ?JAVASCRIPT-VALUE?"},
         {"dispatch", INTERP_DISPATCH, 2, 2, "TARGET-COMMAND EVENT-COMMAND"},
