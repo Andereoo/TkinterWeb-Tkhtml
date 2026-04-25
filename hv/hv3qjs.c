@@ -593,7 +593,7 @@ static JSValue objToValue(JSContext *ctx, Tcl_Obj *pObj) {
 			QjsInterp *qjs = (QjsInterp*)JS_GetContextOpaque(ctx);
 			Tcl_ListObjGetElements(qjs->interp, pObj, &n, &ap);
 			if (n == 0) return JS_UNDEFINED;
-			if (n == 1) return objToValue(ctx, ap[0]);
+			if (n == 1) return JS_NewString(ctx, Tcl_GetString(ap[0]));
 			if (n == 2) {
 				static const char *const aType[] = {"object", "node", "method", "bridge", "transient", NULL};
 				Tcl_GetIndexFromObj(qjs->interp, ap[0], aType, "type", TCL_EXACT, &n);
@@ -607,7 +607,7 @@ static JSValue objToValue(JSContext *ctx, Tcl_Obj *pObj) {
 			}
 		}
 		const char *s = Tcl_GetStringFromObj(pObj, &n);
-		if (!n || n == 9 && !strncmp(s, "undefined", 9)) return JS_UNDEFINED;
+		if (n == 9 && !strncmp(s, "undefined", 9) || !n) return JS_UNDEFINED;
 		if (n == 4 && !strncmp(s, "null", 4)) return JS_NULL;
         return JS_NewStringLen(ctx, s, n);
     }
@@ -1166,6 +1166,7 @@ static inline Tcl_Obj *atomToObj(JSContext *ctx, JSAtom atm) {
 static JSValue 
 QjsTcl_Get(JSContext *ctx, JSValue obj, JSAtom prop, JSValueConst rec)
 {
+	int n;
 	for(JSValue o = JS_DupValue(ctx, rec); !JS_IsNull(o); o = JS_GetPrototype(ctx, o)){
 		JSPropertyDescriptor desc;  // First, check if the property exists normally
 		if (JS_GetOwnProperty(ctx, &desc, o, prop) > 0) {
@@ -1178,7 +1179,12 @@ QjsTcl_Get(JSContext *ctx, JSValue obj, JSAtom prop, JSValueConst rec)
 	if (!p) return JS_ThrowTypeError(ctx, "Tcl interpreter not available");
 	
 	callQjsTclMethod(p->interp, p->pLog, obj, atomToObj(ctx, prop), NULL);
-	JSValue res = objToValue(ctx, Tcl_GetObjResult(p->interp));
+	Tcl_Obj *pScriptRes = Tcl_GetObjResult(p->interp);
+	Tcl_IncrRefCount(pScriptRes);
+	if (Tcl_ListObjLength(p->interp, pScriptRes, &n)==TCL_OK && n<1)
+		return JS_NewStringLen(ctx, "", n);
+	JSValue res = objToValue(ctx, pScriptRes);
+	Tcl_DecrRefCount(pScriptRes);
 	// Caching of DOM methods
 	if (JS_IsFunction(ctx, res)) JS_DefinePropertyValue(ctx, rec, prop, JS_DupValue(ctx, res), 0);
 	return res;
@@ -1200,7 +1206,7 @@ QjsTcl_Set(JSContext *ctx, JSValueConst obj, JSAtom prop, JSValueConst val, JSVa
 		JS_ThrowTypeError(ctx, "Tcl interpreter not available");
 		return -1;
 	}
-    Tcl_Obj *pVal = stringToObj(ctx, val);//argValueToTcl((QjsInterp*)p, val, &nObj);
+    Tcl_Obj *pVal = argValueToTcl((QjsInterp*)p, val, &nObj);
 	Tcl_IncrRefCount(pVal);
 	rc = callQjsTclMethod(p->interp, p->pLog, obj, atomToObj(ctx, prop), pVal);
 	Tcl_DecrRefCount(pVal);
