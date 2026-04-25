@@ -704,7 +704,7 @@ HtmlDrawCleanup (HtmlTree *pTree, HtmlCanvas *pCanvas)
             freeCanvasItem(pTree, pPrev);
         }
         pPrev = pItem;
-        pItem = (pItem == pCanvas->pLast ? 0 : pItem->pNext);
+        pItem = pItem == pCanvas->pLast ? 0 : pItem->pNext;
 
         if (save) {
             assert(pPrev->type == CANVAS_ORIGIN && !pPrev->c.origin.pSkip);

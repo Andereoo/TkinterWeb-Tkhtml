@@ -97,7 +97,6 @@ struct InlineMetrics {
 struct InlineBorder {
   MarginProperties margin;
   BoxProperties box;
-
   InlineMetrics metrics;      /* Vertical metrics for inline box */
 
   /* For structures with InlineBorder.eLineboxAlign==LINEBOX_ALIGN_PARENT,
@@ -110,21 +109,18 @@ struct InlineBorder {
    * this case iVerticalAlign is not meaningful.
    */
   int iVerticalAlign;
-
   int iTop;
   int iBottom;
-  int eLineboxAlign;          /* One of the LINEBOX_ALIGN_XXX values below */
-
   int iStartBox;              /* Leftmost inline-box */
   int iStartPixel;            /* Leftmost pixel of left margin */
-  HtmlNode *pNode;            /* Document node that generated this border */
 
   /* The following boolean is true if this InlineBorder structure is
    * only being used to align an inline replaced object. In this case,
    * do not draw any border or underline graphics.
    */
-  int isReplaced;
-
+  char isReplaced;
+  char eLineboxAlign;         /* One of the LINEBOX_ALIGN_XXX values below */
+  HtmlNode *pNode;            /* Document node that generated this border */
   InlineBorder *pNext;        /* Pointer to parent inline border, if any */
 
   /* Pointer to parent inline border, if any */
@@ -139,7 +135,9 @@ struct InlineBorder {
 struct InlineBox {
   HtmlCanvas canvas;          /* Canvas containing box content. */
   int nSpace;                 /* Pixels of space between this and next box. */
-  int eType;                  /* One of the INLINE_XXX values below */
+
+  Html_u8 eWhitespace;        /* Applicable value of the 'white-space' property */
+  Html_u8 eType;              /* One of the INLINE_XXX values below */
 
   InlineBorder *pBorderStart; /* List of borders that start with this box */
   HtmlNode *pNode;            /* Associated tree node */
@@ -147,9 +145,6 @@ struct InlineBox {
   int nLeftPixels;            /* Total left width of borders that start here */
   int nRightPixels;           /* Total right width of borders that start here */
   int nContentPixels;         /* Width of content. */
-
-  /* Applicable value of the 'white-space' property */
-  int eWhitespace;
 };
 
 /* Values for InlineBox.eType */
@@ -1699,10 +1694,6 @@ HtmlInlineContextAddBox (InlineContext *pContext, HtmlNode *pNode, HtmlCanvas *p
     CHECK_INTEGER_PLAUSIBILITY(iOffset);
     CHECK_INTEGER_PLAUSIBILITY(iHeight);
     CHECK_INTEGER_PLAUSIBILITY(iWidth);
-
-    if (iWidth == 0) {
-        HtmlDrawCleanup(pContext->pTree, pCanvas);
-    }
 
     START_LOG(pNode);
         oprintf(pLog, "iWidth=%d iHeight=%d ", iWidth, iHeight);

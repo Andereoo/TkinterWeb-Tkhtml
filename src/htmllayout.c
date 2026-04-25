@@ -2616,7 +2616,6 @@ normalFlowLayoutBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
          */
         sContent.width = sContent.iContainingW;
     }
-
     /* Account for the 'margin-top' property of this node. */
     normalFlowMarginAdd(pLayout, pNode, pNormal, margin.margin_top);
 
@@ -2674,7 +2673,6 @@ normalFlowLayoutBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
         HtmlFloatListNormalize(pNormal->pFloat, 0, -1 * iMargin);
         y += iMargin;
     }
-
     /* Adjust for 'height', 'min-height' and 'max-height' properties */
     sContent.height = yBorderOffset + getHeight(pNode, sContent.height - yBorderOffset, iContHeight);
     sContent.width = getWidth(iWidth, sContent.width);
@@ -2687,7 +2685,6 @@ normalFlowLayoutBlock (LayoutContext *pLayout, BoxContext *pBox, HtmlNode *pNode
         HtmlLog(pTree, "LAYOUTENGINE", zFmt, zNode, sContent.width, 
         sContent.height - yBorderOffset, yBorderOffset, NULL);
     }
-
     /* Re-normalize the float-list. */
     HtmlFloatListNormalize(pNormal->pFloat, x, y);
 
@@ -2792,7 +2789,7 @@ normalFlowLayoutInlineReplaced (LayoutContext *pLayout, BoxContext *pBox, HtmlNo
 {
     BoxContext sBox;
     HtmlCanvas canvas;
-    int h, iOffset = 0;
+    int h, iOffset;
 
     MarginProperties margin;
     BoxProperties box;
@@ -2815,9 +2812,7 @@ normalFlowLayoutInlineReplaced (LayoutContext *pLayout, BoxContext *pBox, HtmlNo
      * is it's baseline. See the description of "baseline" in CSS2.1 section
      * 10.8 ('vertical-align' property).
      */
-    if (pReplace) {
-        iOffset = box.iBottom + pReplace->iOffset;
-    }
+    iOffset = pReplace ? box.iBottom + pReplace->iOffset : 0;
     memset(&canvas, 0, sizeof(HtmlCanvas));
     DRAW_CANVAS(&canvas, &sBox.vc, 0, margin.margin_top, pNode);
     HtmlInlineContextAddBox(pContext, pNode, &canvas, sBox.width, h, iOffset);
