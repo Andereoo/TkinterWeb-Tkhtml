@@ -150,9 +150,9 @@ namespace eval ::hv3::request {
     # When this option is set, [http::geturl -binary] is used.
     # Then [$self append] will call [encoding convertfrom].
     #
-    # See also [encoding] and [suggestedEncoding] methods.
+    # See also [encoding] and [suggestedEncoding] methods [the latter seems to have been removed].
     #
-    set O(-encoding) ""
+    set O(-encoding) utf-8
   
     # True if the -encoding option has been set by the transport layer. 
     # If this is true, then any encoding specified via a <meta> element

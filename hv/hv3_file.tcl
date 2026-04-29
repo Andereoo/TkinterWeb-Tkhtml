@@ -191,11 +191,8 @@ proc request_file {downloadHandle} {
     
     set data ""
     if {[file readable $filename]} {
-    
         if {[file isdirectory $filename]} {
-
             set data [directoryIndex $filename]
-
         } else {
             # Read the file from the file system. The [open] or [read] command
             # might throw an exception. No problem, the hv3 widget will catch
@@ -211,16 +208,14 @@ proc request_file {downloadHandle} {
 
 	    # Always uses binary encoding.
 	    # $download is responsible to convert it.
-	    #
-	    fconfigure $fd -encoding binary
+            fconfigure $fd -encoding binary
 
-            if {![string match text* [$downloadHandle cget -mimetype]]} {
-              fconfigure $fd -translation binary
-	    }
+            if {[string match text* [$downloadHandle cget -mimetype]]} {
+                fconfigure $fd -translation binary
+            }
             set data [read $fd]
             close $fd
         }
-        
     } else {
     
         # Return error document
@@ -233,7 +228,6 @@ proc request_file {downloadHandle} {
         }
         #$downloadHandle fail "Unreadable path: $filename"
     }
-
     $downloadHandle finish $data
 }
 

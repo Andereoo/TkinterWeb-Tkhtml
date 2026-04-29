@@ -242,7 +242,7 @@ static inline Tcl_Obj *stringToObj(JSContext *ctx, JSValue str){
 /* Utility: Convert QuickJS JSValue to a Tcl_Obj* */
 static Tcl_Obj *qjsValueToTcl(JSContext *ctx, JSValue val) {
     Tcl_Obj *result;
-	uint32_t i;
+	int i;
     switch (JS_VALUE_GET_TAG(val)) {
         case JS_TAG_UNDEFINED: case JS_TAG_NULL:
             result = Tcl_NewObj();  // In Tcl, the closest equivalent to null is typically an empty string
