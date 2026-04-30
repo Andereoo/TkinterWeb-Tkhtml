@@ -261,6 +261,11 @@ static Tcl_Obj *qjsValueToTcl(JSContext *ctx, JSValue val) {
         case JS_TAG_STRING: case JS_TAG_STRING_ROPE:
             result = stringToObj(ctx, val);
             break;
+        case JS_TAG_SHORT_BIG_INT:
+			Tcl_WideInt w;
+			JS_ToBigInt64(ctx, &w, val);
+            result = Tcl_NewWideIntObj(w);
+            break;
         case JS_TAG_OBJECT: {
             if (JS_IsArray(ctx, val)) {
 				JS_ToUint32(ctx, &i, JS_GetPropertyStr(ctx, val, "length"));  // Get array length
@@ -578,12 +583,12 @@ static JSValue objToValue(JSContext *ctx, Tcl_Obj *pObj) {
 	Tcl_WideInt w;
     double d;
     int n;
-    if (Tcl_GetWideIntFromObj(NULL, pObj, &w) == TCL_OK) {
-        return JS_NewInt64(ctx, w);
-    } if (Tcl_GetDoubleFromObj(NULL, pObj, &d) == TCL_OK) {
-        return JS_NewFloat64(ctx, d);
-    } if (Tcl_GetIntFromObj(NULL, pObj, &n) == TCL_OK) {
+    if (Tcl_GetIntFromObj(NULL, pObj, &n) == TCL_OK) {
         return JS_NewInt32(ctx, n);
+    } if (Tcl_GetWideIntFromObj(NULL, pObj, &w) == TCL_OK) {
+        return JS_NewBigInt64(ctx, w);
+	} if (Tcl_GetDoubleFromObj(NULL, pObj, &d) == TCL_OK) {
+        return JS_NewFloat64(ctx, d);
     } if (Tcl_GetBooleanFromObj(NULL, pObj, &n) == TCL_OK) {
         return JS_NewBool(ctx, n);
     } else {  // Fallback: treat as string
