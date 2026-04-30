@@ -127,8 +127,7 @@ typedef struct ContextOpaque {
 
 /* Structure representing an interpreter instance */
 typedef struct QjsInterp {
-	ContextOpaque;
-    JSRuntime *rt;
+    ContextOpaque;
     JSContext *ctx;
 	Tcl_HashTable objects;  /* Hash table containing the objects created by the Tcl interpreter that are currently in "persistent" state. */
     /* Linked list of QjsJsObject structures that will be removed from the aJsObject[] table next time removeTransientRefs() is called.
@@ -715,9 +714,9 @@ static void delInterpCmd(ClientData cd) {
 		Tcl_DeleteHashTable(&qjs->objects);
 
 		interpTimeoutCleanup(qjs);
-		
+
+		JSRuntime *rt = JS_GetRuntime(qjs->ctx);
         JS_FreeContext(qjs->ctx);
-		JSRuntime *rt = qjs->rt;
         js_free_rt(rt, qjs);
 		
         if (numQjsInterp-numFreeInterp < 2) JS_FreeRuntime(rt);
@@ -967,7 +966,7 @@ static int interpDebug(QjsInterp *qjs, int objc, Tcl_Obj *const objv[]) {
     if (processArgs(qjs->interp, aOptions, 1, &objv[2])) return TCL_ERROR;
     Tcl_Obj *pRet = Tcl_NewObj();
     if (aOptions[1].pVal) { // alloc subcommand
-        pRet = debugAlloc(qjs->rt);
+        pRet = debugAlloc(JS_GetRuntime(qjs->ctx));
     } else if (aOptions[0].pVal) { // objects subcommand
 		Tcl_HashSearch search;
 		Tcl_HashEntry* pEntry;
@@ -1133,7 +1132,6 @@ static int tclQjsInterp(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *co
 		getExoticObj(runtime);
 	}
     qjs = js_mallocz_rt(runtime, sizeof(QjsInterp));
-    qjs->rt = runtime;
     qjs->ctx = JS_NewContext(runtime);
     qjs->interp = interp;
 	
