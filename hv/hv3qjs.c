@@ -849,7 +849,7 @@ static int interpFunction(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
 
 static int interpCall(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
 {
-	int rc, i, n = objc-3;  // Number of arguments
+	int rc, i, n=objc-3;  // Number of arguments
 	JSValue args[n];
 
 	// Get arguments
@@ -859,17 +859,17 @@ static int interpCall(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
 	JSValue function = JS_GetPropertyStr(qjs->ctx, glb, Tcl_GetString(objv[2]));
 	JSValue result = JS_Call(qjs->ctx, function, glb, n, args);
 
-	for (i=0; i < n; i++) JS_FreeValue(qjs->ctx, args[i]);
+	for (i = 0; i < n; i++) JS_FreeValue(qjs->ctx, args[i]);
 	JS_FreeValue(qjs->ctx, function);
 	JS_FreeValue(qjs->ctx, glb);
 
 	if (JS_IsException(result)) {
         rc = handleJavascriptError(qjs, result);
+		JS_FreeValue(qjs->ctx, result);
 	} else {
-        Tcl_SetObjResult(qjs->interp, qjsValueToTcl(qjs->ctx, JS_DupValue(qjs->ctx, result)));
+        Tcl_SetObjResult(qjs->interp, qjsValueToTcl(qjs->ctx, result));
 		rc = TCL_OK;
     }
-	JS_FreeValue(qjs->ctx, result);
     return rc;
 }
 
