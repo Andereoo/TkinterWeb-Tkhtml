@@ -293,7 +293,7 @@ static Tcl_Obj *qjsValueToTcl(JSContext *ctx, JSValue val) {
 
 static inline Tcl_Obj *
 argValueToTcl(QjsInterp *qjs, JSValueConst val, int *pN) {
-	if (JS_IsBool(val) || JS_IsString(val)) return stringToObj(qjs->ctx, val);
+	if (JS_IsBool(val)) return stringToObj(qjs->ctx, val);
 	if (JS_IsObject(val)) {
 		JSClassID id;
         Tcl_Obj *aTclValues[2];
@@ -597,9 +597,9 @@ static JSValue objToValue(JSContext *ctx, Tcl_Obj *pObj) {
 			QjsInterp *qjs = (QjsInterp*)JS_GetContextOpaque(ctx);
 			Tcl_ListObjGetElements(qjs->interp, pObj, &n, &ap);
 			if (n == 0) return JS_UNDEFINED;
-			if (n == 1) return JS_NewString(ctx, Tcl_GetString(ap[0]));
+			if (n == 1) return objToValue(ctx, ap[0]);
 			if (n == 2) {
-				static const char *const aType[] = {"object", "node", "method", "bridge", "transient", NULL};
+				static const char *const aType[] = {"object", "node", "method", "bridge", "transient", "string", NULL};
 				Tcl_GetIndexFromObj(qjs->interp, ap[0], aType, "type", TCL_EXACT, &n);
 				switch (n) {
 					case 0: return findOrCreateObject(qjs, ap[1]); // Object
@@ -607,6 +607,7 @@ static JSValue objToValue(JSContext *ctx, Tcl_Obj *pObj) {
 					case 2: return createTransient(qjs, ap[1]);  // Method
 					case 3: return createBridge(qjs, ap[1]);    // Another context's global object
 					case 4: return newQjsTclObject(qjs, 0, ap[1], NULL);
+					case 5: return JS_NewString(ctx, Tcl_GetString(ap[1]));
 				}
 			}
 		}
@@ -1069,6 +1070,10 @@ static int interpCmd(
             break;
         }
         case INTERP_TOSTRING: {  /* $interp tostring VALUE */
+			if (Tcl_GetString(objv[2])[0] == '\0') {
+				Tcl_SetObjResult(interp, objv[2]);
+				break;
+			}
             JSValue val = objToValue(qjs->ctx, objv[2]);
             Tcl_SetObjResult(interp, stringToObj(qjs->ctx, val));
 			JS_FreeValue(qjs->ctx, val);
@@ -1169,7 +1174,6 @@ static inline Tcl_Obj *atomToObj(JSContext *ctx, JSAtom atm) {
 static JSValue 
 QjsTcl_Get(JSContext *ctx, JSValue obj, JSAtom prop, JSValueConst rec)
 {
-	int n;
 	for(JSValue o = JS_DupValue(ctx, rec); !JS_IsNull(o); o = JS_GetPrototype(ctx, o)){
 		JSPropertyDescriptor desc;  // First, check if the property exists normally
 		if (JS_GetOwnProperty(ctx, &desc, o, prop) > 0) {
@@ -1184,8 +1188,6 @@ QjsTcl_Get(JSContext *ctx, JSValue obj, JSAtom prop, JSValueConst rec)
 	callQjsTclMethod(p->interp, p->pLog, obj, atomToObj(ctx, prop), NULL);
 	Tcl_Obj *pScriptRes = Tcl_GetObjResult(p->interp);
 	Tcl_IncrRefCount(pScriptRes);
-	if (Tcl_ListObjLength(p->interp, pScriptRes, &n)==TCL_OK && n<1)
-		return JS_NewStringLen(ctx, "", n);
 	JSValue res = objToValue(ctx, pScriptRes);
 	Tcl_DecrRefCount(pScriptRes);
 	// Caching of DOM methods

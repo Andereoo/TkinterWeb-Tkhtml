@@ -40,7 +40,7 @@ namespace eval hv3 { set {version($Id: hv3_dom_ns.tcl,v 1.42 2008/02/15 18:23:37
   dom_parameter dummy
 
   -- Fairly obviously, this is an Hv3 specific property.
-  dom_get hv3_version    { list [::hv3::hv3_version] }
+  dom_get hv3_version    { list string [::hv3::hv3_version] }
 
   foreach {property string} {
     appCodeName    "Mozilla"
