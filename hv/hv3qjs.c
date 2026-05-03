@@ -1172,46 +1172,36 @@ static inline Tcl_Obj *atomToObj(JSContext *ctx, JSAtom atm) {
 	return p;
 }
 
-static JSValue 
-QjsTcl_Get(JSContext *ctx, JSValue obj, JSAtom prop, JSValueConst rec)
+static int 
+QjsTcl_Get(JSContext *ctx, JSPropertyDescriptor *desc, JSValueConst obj, JSAtom prop)
 {
-	for(JSValue o = JS_DupValue(ctx, rec); !JS_IsNull(o); o = JS_GetPrototype(ctx, o)){
-		JSPropertyDescriptor desc;  // First, check if the property exists normally
-		if (JS_GetOwnProperty(ctx, &desc, o, prop) > 0) {
-			JS_FreeValue(ctx, o);
-			return desc.value;
-		}
-		JS_FreeValue(ctx, o);
-	}
 	ContextOpaque *p = JS_GetContextOpaque(ctx);
-	if (!p) return JS_ThrowTypeError(ctx, "Tcl interpreter not available");
 	
-	callQjsTclMethod(p->interp, p->pLog, obj, atomToObj(ctx, prop), NULL);
+	int rc = callQjsTclMethod(p->interp, p->pLog, obj, atomToObj(ctx, prop), NULL);
+	if (rc != TCL_OK) {
+		throwTclError(ctx, p->interp);
+		return -1;
+	}
 	Tcl_Obj *pScriptRes = Tcl_GetObjResult(p->interp);
-	Tcl_IncrRefCount(pScriptRes);
-	JSValue res = objToValue(ctx, pScriptRes);
-	Tcl_DecrRefCount(pScriptRes);
-	// Caching of DOM methods
-	if (JS_IsFunction(ctx, res)) JS_DefinePropertyValue(ctx, rec, prop, JS_DupValue(ctx, res), 0);
-	return res;
+	if (Tcl_ListObjLength(p->interp, pScriptRes, &rc)==TCL_OK && rc<1) return 0;
+	if (desc) {
+		Tcl_IncrRefCount(pScriptRes);
+		desc->value = objToValue(ctx, pScriptRes);
+		Tcl_DecrRefCount(pScriptRes);
+		desc->flags = JS_PROP_ENUMERABLE | JS_PROP_WRITABLE;
+		// Caching of DOM methods
+		if (JS_IsFunction(ctx, desc->value)) JS_DefinePropertyValue(ctx, obj, prop, JS_DupValue(ctx, desc->value), desc->flags);
+	}
+	return 1;
 }
 
 static int 
-QjsTcl_Set(JSContext *ctx, JSValueConst obj, JSAtom prop, JSValueConst val, JSValueConst rec, int f)
+QjsTcl_Set(JSContext *ctx, JSValueConst obj, JSAtom prop, JSValueConst val, JSValue g, JSValue s, int f)
 {
 	int nObj = 0, rc;  // First, check if the property exists normally
-	for(JSValue o = JS_DupValue(ctx, rec); !JS_IsNull(o); o = JS_GetPrototype(ctx, o)){
-		if (JS_GetOwnProperty(ctx, NULL, o, prop) > 0 || JS_IsFunction(ctx, val)) {
-			JS_FreeValue(ctx, o);
-			return JS_DefinePropertyValue(ctx, o, prop, JS_DupValue(ctx, val), f);
-		}
-		JS_FreeValue(ctx, o);
-	}
+	if (JS_IsFunction(ctx, val) || prop<=JS_ATOM_Symbol_asyncIterator) goto def;
 	ContextOpaque *p = JS_GetContextOpaque(ctx);
-	if (!p) {
-		JS_ThrowTypeError(ctx, "Tcl interpreter not available");
-		return -1;
-	}
+
     Tcl_Obj *pVal = argValueToTcl((QjsInterp*)p, val, &nObj);
 	Tcl_IncrRefCount(pVal);
 	rc = callQjsTclMethod(p->interp, p->pLog, obj, atomToObj(ctx, prop), pVal);
@@ -1221,17 +1211,9 @@ QjsTcl_Set(JSContext *ctx, JSValueConst obj, JSAtom prop, JSValueConst val, JSVa
 		throwTclError(ctx, p->interp);
 		return -1;
 	} if (!strcmp(Tcl_GetStringResult(p->interp), "NATIVE")) {
-		return JS_DefinePropertyValue(ctx, obj, prop, JS_DupValue(ctx, val), f);
+	  def: return JS_DefineProperty(ctx, obj, prop, val, g, s, f|JS_PROP_NO_EXOTIC);
 	}
     return 1;
-}
-
-static int QjsTcl_Has(JSContext *ctx, JSValueConst obj, JSAtom prop)
-{
-	JSValue val = QjsTcl_Get(ctx, obj, prop, obj);
-	int8_t has = !JS_IsUndefined(val);
-	JS_FreeValue(ctx, val);
-    return has;
 }
 
 static int 
@@ -1267,9 +1249,8 @@ QjsTcl_Enumerator(JSContext *ctx, JSPropertyEnum **pTab, uint32_t *pLen, JSValue
 
 // Create the exotic methods structure
 static JSClassExoticMethods tclExoticMethods = {
-    .get_property = QjsTcl_Get,
-    .set_property = QjsTcl_Set,
-	.has_property = QjsTcl_Has,
+    .get_own_property = QjsTcl_Get,
+    .define_own_property = QjsTcl_Set,
 	.get_own_property_names = QjsTcl_Enumerator,
 };
 static JSClassDef QjsTclClass = {
