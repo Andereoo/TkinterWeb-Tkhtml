@@ -858,11 +858,12 @@ static int interpCall(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
 	
 	JSValue glb = JS_GetGlobalObject(qjs->ctx);
 	JSValue function = JS_GetPropertyStr(qjs->ctx, glb, Tcl_GetString(objv[2]));
-	JSValue result = JS_Call(qjs->ctx, function, glb, n, args);
+	JS_FreeValue(qjs->ctx, glb);
+
+	JSValue result = JS_Call(qjs->ctx, function, function, n, args);
 
 	for (i = 0; i < n; i++) JS_FreeValue(qjs->ctx, args[i]);
 	JS_FreeValue(qjs->ctx, function);
-	JS_FreeValue(qjs->ctx, glb);
 
 	if (JS_IsException(result)) {
         rc = handleJavascriptError(qjs, result);
@@ -1022,7 +1023,7 @@ static int interpCmd(
         {"tostring", INTERP_TOSTRING, 1, 1, "JAVASCRIPT-VALUE"},
         {"function", INTERP_FUNC,     3, 3, "NAME ARGUMENTS BODY"},
         {"proc",     INTERP_PROC,     3, 3, "NAME ARGUMENTS BODY"},
-        {"call",     INTERP_CALL,     2, -1, "NAME ARGUMENTS"},
+        {"call",     INTERP_CALL,     1, -1, "NAME ?ARGUMENTS?"},
         {"node",     INTERP_NODE,     1, 1, "TCL-COMMAND"},
         {"global",   INTERP_GLOBAL,   0, 2, "?PROPERTY? ?JAVASCRIPT-VALUE?"},
         {"dispatch", INTERP_DISPATCH, 2, 2, "TARGET-COMMAND EVENT-COMMAND"},
