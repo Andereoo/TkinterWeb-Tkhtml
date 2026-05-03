@@ -134,7 +134,7 @@ typedef struct QjsInterp {
      * Variable iNextJsObject is used to assign unique integer ids (QjsJsObject.iKey) to QjsJsObject instances as they are created. */
     QjsJsObject *pJsObject;
 	JSValue global;
-	uint32_t iKeyNext;
+	uint32_t iNextJsObject;
 } QjsInterp;
 static unsigned int numQjsInterp = 0;
 static unsigned int numFreeInterp = 0;
@@ -156,7 +156,7 @@ typedef struct {JSValue v;} JSValueEntry;  // Structure for hash table entries
 
 /* Entries in the QjsInterp.pJsObject[] linked list are instances of the following structure. */
 struct QjsJsObject {
-    int iKey;
+    uint32_t iKey;
     JSValue object;
     QjsJsObject *pNext;  /* Next entry in the QjsInterp.pJsObject list */
 };
@@ -307,7 +307,7 @@ argValueToTcl(QjsInterp *qjs, JSValueConst val, int *pN) {
 		} else {
 			/* Create the new QjsJsObject structure. */
 			QjsJsObject *pJsObject = js_malloc(qjs->ctx, sizeof(QjsJsObject));
-			pJsObject->iKey = qjs->iKeyNext++;
+			pJsObject->iKey = qjs->iNextJsObject++;
 			pJsObject->object = val;
 
 			pJsObject->pNext = qjs->pJsObject;
@@ -323,11 +323,11 @@ argValueToTcl(QjsInterp *qjs, JSValueConst val, int *pN) {
 
 static void removeTransientRefs(QjsInterp *qjs, int n)
 {
-    while (n-- && qjs->pJsObject) {
+    while (n--) {
 		QjsJsObject *pJsObject = qjs->pJsObject;
         qjs->pJsObject = qjs->pJsObject->pNext;
 		js_free(qjs->ctx, pJsObject);
-    }
+    } if (qjs->pJsObject == NULL) qjs->iNextJsObject = 0;
 }
 
 static int evalObjv(Tcl_Interp *interp, int nWord, Tcl_Obj **apWord){
