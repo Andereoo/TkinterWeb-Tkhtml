@@ -878,12 +878,9 @@ static int interpCall(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
 static int procCall(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 {
 	Tcl_CmdInfo info;
-	Tcl_Obj *objv2[objc+2];
-	for (int i=0; i<2; i++) objv2[i] = Tcl_NewObj();
-	memmove(&objv2[2], objv, sizeof(Tcl_Obj*) * objc);
 	Tcl_GetCommandInfo(interp, cd, &info);
 	if (Tcl_GetCommandFromObj(interp, cd)) {
-		return interpCall((QjsInterp *)info.objClientData, objc+2, objv2);
+		return interpCall((QjsInterp *)info.objClientData, objc+2, objv);
 	}
 	Tcl_DeleteCommand(interp, Tcl_GetString(objv[0]));
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("QuickJS context %s has been destroyed", Tcl_GetString(cd)));
@@ -920,7 +917,6 @@ static int interpProc(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
 
 	if (JS_IsException(result)) return handleJavascriptError(qjs, result);
 	JS_FreeValue(qjs->ctx, result);
-
 	Tcl_CreateObjCommand(qjs->interp, funcName, procCall, objv[0], NULL);
 	return TCL_OK;
 }
