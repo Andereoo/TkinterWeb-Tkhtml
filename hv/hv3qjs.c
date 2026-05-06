@@ -122,7 +122,11 @@ typedef struct ContextOpaque {
     Tcl_Interp *interp;
 	Tcl_Obj *pLog;
     uint32_t iNextTimeout;  /* Start of a linked list of QjsTimeout structures. See included file hv3timeout.c for details. */
+	uint32_t iNextJsObject;
     QjsTimeout *pTimeout;  /* Used by the timer sub-system (hv3timeout.c). */
+    /* Linked list of QjsJsObject structures that will be removed from the aJsObject[] table next time removeTransientRefs() is called.
+     * Variable iNextJsObject is used to assign unique integer ids (QjsJsObject.iKey) to QjsJsObject instances as they are created. */
+    QjsJsObject *pJsObject;
 } ContextOpaque;
 
 /* Structure representing an interpreter instance */
@@ -130,11 +134,7 @@ typedef struct QjsInterp {
     ContextOpaque;
     JSContext *ctx;
 	Tcl_HashTable objects;  /* Hash table containing the objects created by the Tcl interpreter that are currently in "persistent" state. */
-    /* Linked list of QjsJsObject structures that will be removed from the aJsObject[] table next time removeTransientRefs() is called.
-     * Variable iNextJsObject is used to assign unique integer ids (QjsJsObject.iKey) to QjsJsObject instances as they are created. */
-    QjsJsObject *pJsObject;
 	JSValue global;
-	uint32_t iNextJsObject;
 } QjsInterp;
 static unsigned int numQjsInterp = 0;
 static unsigned int numFreeInterp = 0;
@@ -875,6 +875,20 @@ static int interpCall(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
     return rc;
 }
 
+static int procCall(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
+{
+	Tcl_CmdInfo info;
+	Tcl_Obj *objv2[objc+2];
+	for (int i=0; i<2; i++) objv2[i] = Tcl_NewObj();
+	memmove(&objv2[2], objv, sizeof(Tcl_Obj*) * objc);
+	Tcl_GetCommandInfo(interp, cd, &info);
+	if (Tcl_GetCommandFromObj(interp, cd)) {
+		return interpCall((QjsInterp *)info.objClientData, objc+2, objv2);
+	}
+	Tcl_DeleteCommand(interp, Tcl_GetString(objv[0]));
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("QuickJS context %s has been destroyed", Tcl_GetString(cd)));
+	return TCL_ERROR;
+}
 static int interpProc(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
 {
 	int l, i, argc;
@@ -906,6 +920,8 @@ static int interpProc(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
 
 	if (JS_IsException(result)) return handleJavascriptError(qjs, result);
 	JS_FreeValue(qjs->ctx, result);
+
+	Tcl_CreateObjCommand(qjs->interp, funcName, procCall, objv[0], NULL);
 	return TCL_OK;
 }
 
