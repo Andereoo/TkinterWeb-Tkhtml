@@ -532,11 +532,8 @@ static JSValue findOrCreateObject(QjsInterp *qjs, Tcl_Obj *pTclCmd)
         /* Initialise the objects events subsystem. */
         eventTargetInit(qjs, pObject->v);
 
-		Tcl_Obj *pEval = Tcl_NewStringObj("namespace tail ", 15);
-		Tcl_AppendObjToObj(pEval, p->apWord[0]);
-		if (Tcl_EvalObjEx(interp, pEval, TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL) == TCL_OK)
-			JS_DefinePropertyValue(qjs->ctx, pObject->v, JS_ATOM_Symbol_toStringTag, JS_NewString(
-				qjs->ctx, Tcl_GetStringResult(interp)), 0);
+		JS_SetProperty(qjs->ctx, pObject->v, JS_ATOM_Symbol_toStringTag, JS_NewString(
+			qjs->ctx, Tcl_GetCommandName(interp, Tcl_GetCommandFromObj(interp, p->apWord[0]))));
     }
     /* Existing entry found */
     pObject = (JSValueEntry *)Tcl_GetHashValue(pEntry);

@@ -237,7 +237,7 @@ static JSValue dispatchEventFunc(JSContext *ctx, JSValueConst this, int argc, JS
         do {
             node = getParentNode(ctx, node);
             if (nNodes == nNodesAlloc) {
-                nNodesAlloc++;
+                nNodesAlloc = 1 + 2 * nNodes; // Use an exponential growth algorithm to minimize reallocations
                 apNodes = js_realloc(ctx, apNodes, sizeof(JSValue) * nNodesAlloc);
             }
             apNodes[nNodes++] = JS_DupValue(ctx, node);
