@@ -179,6 +179,7 @@ namespace eval ::hv3::dom2 {
 		set proccode [list \
 			proc ::hv3::DOM::$type_name $arglist [string map [list \
 				%GETSET%        $GetSet         \
+				%DEFAULTVALUE%  $compiler2::default_value \
 				%FINALIZE% $compiler2::finalize \
 				%EVENTS%   $compiler2::events   \
 				%LIST%          $List           \
@@ -186,6 +187,7 @@ namespace eval ::hv3::dom2 {
 			] {
 				%SETSTATEARRAY%
 				switch -exact -- [lindex $args 0] {
+					DefaultValue { %DEFAULTVALUE%  }
 					Finalize   { %FINALIZE%  }
 					Events     { %EVENTS%    }
 					Enumerator { list %LIST% }

@@ -401,6 +401,7 @@ static int callQjsTclMethod(
     return rc;
 }
 
+static JSValue QjsTcl_Default(JSContext*, JSValueConst, int, JSValueConst*);
 /*
  *---------------------------------------------------------------------------
  *
@@ -437,6 +438,8 @@ static JSValue newQjsTclObject(QjsInterp *qjs, int8_t isCall, Tcl_Obj *pTclCmd, 
 		Tcl_DecrRefCount(qjsTclObj->pObj);
         goto error;
 	}
+	JS_SetProperty(qjs->ctx, obj, JS_ATOM_Symbol_toPrimitive, 
+		JS_NewCFunction(qjs->ctx, QjsTcl_Default, "[Symbol.toPrimitive]", 1));
     numQjsTclObject++;
 	if (p != NULL) *p = qjsTclObj;
     return obj;
@@ -1225,6 +1228,18 @@ QjsTcl_Set(JSContext *ctx, JSValueConst obj, JSAtom prop, JSValueConst val, JSVa
 	  def: return JS_DefineProperty(ctx, obj, prop, val, g, s, f|JS_PROP_NO_EXOTIC);
 	}
     return 1;
+}
+
+static JSValue QjsTcl_Default(JSContext *ctx, JSValueConst this, int argc, JSValueConst *argv)
+{
+    QjsTclObject *pObject = JS_GetOpaque(this, JS_GetClassID(this));
+    ContextOpaque *p = JS_GetContextOpaque(ctx);
+    Tcl_Interp *interp = p->interp;
+
+    if (callQjsTclMethod(interp, p->pLog, this, Tcl_NewStringObj("DefaultValue", 12), NULL) == TCL_OK) {
+        return objToValue(ctx, Tcl_GetObjResult(interp));
+    }
+	return JS_Invoke(ctx, this, JS_ATOM_toString, 0, NULL);
 }
 
 static int 
