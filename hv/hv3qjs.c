@@ -402,6 +402,7 @@ static int callQjsTclMethod(
 }
 
 static JSValue QjsTcl_Default(JSContext*, JSValueConst, int, JSValueConst*);
+static const JSCFunctionListEntry tcl_func[] = {JS_CFUNC_DEF("[Symbol.toPrimitive]", 1, QjsTcl_Default)};
 /*
  *---------------------------------------------------------------------------
  *
@@ -438,8 +439,7 @@ static JSValue newQjsTclObject(QjsInterp *qjs, int8_t isCall, Tcl_Obj *pTclCmd, 
 		Tcl_DecrRefCount(qjsTclObj->pObj);
         goto error;
 	}
-	JS_SetProperty(qjs->ctx, obj, JS_ATOM_Symbol_toPrimitive, 
-		JS_NewCFunction(qjs->ctx, QjsTcl_Default, "[Symbol.toPrimitive]", 1));
+    JS_SetPropertyFunctionList(qjs->ctx, obj, tcl_func, 1);
     numQjsTclObject++;
 	if (p != NULL) *p = qjsTclObj;
     return obj;
