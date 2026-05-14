@@ -583,7 +583,28 @@ static JSValue objToValue(JSContext *ctx, Tcl_Obj *pObj) {
 	Tcl_WideInt w;
     double d;
     int n;
-    if (Tcl_GetIntFromObj(NULL, pObj, &n) == TCL_OK) {
+//	if (pObj->typePtr) printf("%s %s\n", Tcl_GetString(pObj), pObj->typePtr->name);
+    if (pObj->typePtr == Tcl_GetObjType("string")) {
+		return JS_NewString(ctx, Tcl_GetString(pObj));
+	} if (pObj->typePtr == Tcl_GetObjType("list")) {
+		Tcl_Obj **ap;
+		QjsInterp *qjs = (QjsInterp*)JS_GetContextOpaque(ctx);
+		Tcl_ListObjGetElements(qjs->interp, pObj, &n, &ap);
+		if (n == 0) return JS_NewStringLen(ctx, "", 0);
+		if (n == 1) return objToValue(ctx, ap[0]);
+		if (n == 2) {
+			static const char *const aType[] = {"object", "node", "method", "bridge", "transient", "string", NULL};
+			Tcl_GetIndexFromObj(qjs->interp, ap[0], aType, "type", TCL_EXACT, &n);
+			switch (n) {
+				case 0: return findOrCreateObject(qjs, ap[1]); // Object
+				case 1: return createNode(qjs, ap[1]); 	      // Node
+				case 2: return createTransient(qjs, ap[1]);  // Method
+				case 3: return createBridge(qjs, ap[1]);    // Another context's global object
+				case 4: return newQjsTclObject(qjs, 0, ap[1], NULL);
+				case 5: return objToValue(ctx, ap[1]);
+			}
+		}
+	} if (Tcl_GetIntFromObj(NULL, pObj, &n) == TCL_OK) {
         return JS_NewInt32(ctx, n);
     } if (Tcl_GetWideIntFromObj(NULL, pObj, &w) == TCL_OK) {
         return JS_NewBigInt64(ctx, w);
@@ -592,25 +613,6 @@ static JSValue objToValue(JSContext *ctx, Tcl_Obj *pObj) {
     } if (Tcl_GetBooleanFromObj(NULL, pObj, &n) == TCL_OK) {
         return JS_NewBool(ctx, n);
     } else {  // Fallback: treat as string
-		if (pObj->typePtr == Tcl_GetObjType("list")) {
-			Tcl_Obj **ap;
-			QjsInterp *qjs = (QjsInterp*)JS_GetContextOpaque(ctx);
-			Tcl_ListObjGetElements(qjs->interp, pObj, &n, &ap);
-			if (n == 0) return JS_UNDEFINED;
-			if (n == 1) return objToValue(ctx, ap[0]);
-			if (n == 2) {
-				static const char *const aType[] = {"object", "node", "method", "bridge", "transient", "string", NULL};
-				Tcl_GetIndexFromObj(qjs->interp, ap[0], aType, "type", TCL_EXACT, &n);
-				switch (n) {
-					case 0: return findOrCreateObject(qjs, ap[1]); // Object
-					case 1: return createNode(qjs, ap[1]); 	      // Node
-					case 2: return createTransient(qjs, ap[1]);  // Method
-					case 3: return createBridge(qjs, ap[1]);    // Another context's global object
-					case 4: return newQjsTclObject(qjs, 0, ap[1], NULL);
-					case 5: return JS_NewString(ctx, Tcl_GetString(ap[1]));
-				}
-			}
-		}
 		const char *s = Tcl_GetStringFromObj(pObj, &n);
 		if (n == 9 && !strncmp(s, "undefined", 9) || !n) return JS_UNDEFINED;
 		if (n == 4 && !strncmp(s, "null", 4)) return JS_NULL;
