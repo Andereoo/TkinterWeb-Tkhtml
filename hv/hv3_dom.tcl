@@ -53,8 +53,7 @@ snit::type ::hv3::dom {
 
   constructor {hv3 args} {
 
-    # Call [::hv3::enable_javascript] to make sure the hv3_dom_XXX.tcl
-    # files have been loaded.
+    # Call [::hv3::enable_javascript] to make sure the hv3_dom_XXX.tcl files have been loaded.
     ::hv3::enable_javascript
 
     set myHv3 $hv3
@@ -168,7 +167,7 @@ snit::type ::hv3::dom {
 
     set name [$self NewFilename]
     set rc [catch {$myQjs eval -noresult -file $name $script} msg]
-    if {$rc} {puts "MSG: $msg"}
+    if {$rc} {puts stderr "MSG: $msg"}
 
     $self Log $title $name $script $rc $msg
 	# Make sure this is not a defer script; document.write doesn't work in those

@@ -217,7 +217,6 @@ proc request_file {downloadHandle} {
             close $fd
         }
     } else {
-    
         # Return error document
         if {[file exists $filename]} {
             set data "<H3>Reading denied</H3> You're not allowed to read $filename"
