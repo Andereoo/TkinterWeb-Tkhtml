@@ -422,8 +422,6 @@ static const JSCFunctionListEntry tcl_func[] = {JS_CFUNC_DEF("[Symbol.toPrimitiv
 static JSValue newQjsTclObject(QjsInterp *qjs, int8_t isCall, Tcl_Obj *pTclCmd, QjsTclObject **p)
 {
     QjsTclObject *qjsTclObj;
-	const char **a;
-	int n;
 
     JSValue obj = JS_NewObjectClass(qjs->ctx, isCall ? QjsTclCallClassId : QjsTclClassId);
 //	printf("%p %s #%d\n", JS_VALUE_GET_PTR(obj), Tcl_GetString(pTclCmd), numQjsTclObject);

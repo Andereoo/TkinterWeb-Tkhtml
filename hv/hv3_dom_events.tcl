@@ -352,16 +352,16 @@ set ::hv3::dom::MouseEventType(mouseout)  1
 #     Mapping is from the event-type to the value of the "bubbles" and
 #     "cancelable" property of the DOM Event object.
 #
-set ::hv3::dom::HtmlEventType(load)     [list 0 0]
-set ::hv3::dom::HtmlEventType(submit)   [list 0 1]
-set ::hv3::dom::HtmlEventType(change)   [list 1 1]
+set ::hv3::dom::HtmlEventType(load)     {off off}
+set ::hv3::dom::HtmlEventType(submit)   {off on}
+set ::hv3::dom::HtmlEventType(change)   {on on}
 
-set ::hv3::dom::HtmlEventType(keyup)    [list 1 0]
-set ::hv3::dom::HtmlEventType(keydown)  [list 1 0]
-set ::hv3::dom::HtmlEventType(keypress) [list 1 0]
+set ::hv3::dom::HtmlEventType(keyup)    {on off}
+set ::hv3::dom::HtmlEventType(keydown)  {on off}
+set ::hv3::dom::HtmlEventType(keypress) {on off}
 
-set ::hv3::dom::HtmlEventType(focus)    [list 0 0]
-set ::hv3::dom::HtmlEventType(blur)     [list 0 0]
+set ::hv3::dom::HtmlEventType(focus)    {off off}
+set ::hv3::dom::HtmlEventType(blur)     {off off}
 
 namespace eval ::hv3::dom {
 
@@ -388,7 +388,7 @@ namespace eval ::hv3::dom {
         AT_TARGET       2             \
         BUBBLING_PHASE  3             \
         type            $type         \
-        bubbles         1             \
+        bubbles         true          \
         cancelable      $isCancelable \
         timeStamp       [$dom age]    \
 \
