@@ -1726,10 +1726,7 @@ namespace eval ::hv3::hv3 {
     set href [string trim [$node attr -default "" href]]
     set media [string tolower [$node attr -default all media]]
     if {
-        [string match *stylesheet* $rel] &&
-        ![string match *alternat* $rel] &&
-        $href ne "" && 
-        [regexp all|screen|print $media]
+      [string match *stylesheet* $rel] && ![string match *alternat* $rel] && $href ne "" && [regexp all|screen|print $media]
     } {
       set full_uri [$me resolve_uri $href]
       $me Requeststyle author $full_uri
@@ -2347,6 +2344,30 @@ namespace eval ::hv3::hv3 {
   proc node {me args} { 
     upvar #0 $me O
     eval $O(myHtml) node $args
+  }
+
+  proc postscript {me args} {
+    upvar #0 $me O
+
+	if {[lsearch -nocase -exact $args -page] != -1} {
+	  # Sizes and dimensions of paper pages; measured in PostScript points (1/72 of an inch).
+	  array set pagesizes {
+        A0 2384x3370 A1 1684x2384 A2 1191x1684 A3 842x1191 A4 595x842 A5 420x595 A6 297x420 A7 210x297 A8 148x210 A9 105x148
+        B0 2920x4127 B1 2064x2920 B2 1460x2064 B3 1032x1460 B4 729x1032 B5 516x729 B6 363x516 B7 258x363 B8 181x258 B9 127x181
+        Letter 612x792 Legal 612x1008 Ledger 1224x792 Tabloid 792x1224 Executive 522x756 Folio 595x935
+        {Comm #10 envelope} 297x684 {C5 envelope} 461x648 {DL envelope} 312x624
+      }
+
+	  array set aArgs $args
+
+	  set pageSizeName [string totitle $aArgs(-page) 1]
+	  if {$pageSizeName eq ""} { return [array get pagesizes] }
+
+	  array unset aArgs "-page"
+	  set aArgs(-pagesize) $pagesizes($pageSizeName)
+	  set args [array get aArgs]
+	}
+    eval $O(myHtml) postscript $args
   }
 
   set DelegateOption(-isvisitedcmd) myHyperlinkManager

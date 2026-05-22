@@ -210,7 +210,7 @@ proc request_file {downloadHandle} {
 	    # $download is responsible to convert it.
             fconfigure $fd -encoding binary
 
-            if {[string match text* [$downloadHandle cget -mimetype]]} {
+            if {![string match text* [$downloadHandle cget -mimetype]]} {
                 fconfigure $fd -translation binary
             }
             set data [read $fd]

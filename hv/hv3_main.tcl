@@ -516,6 +516,7 @@ snit::type ::hv3::file_menu {
       "Open Location" [list gui_openlocation $::hv3::G(location_entry)] l  \
       "-----"         ""                                                "" \
       "Bookmark This Page" [list ::hv3::gui_bookmark]                   b  \
+      "Print This Page" [list ::hv3::printing::print_page]              p  \
       "-----"         ""                                                "" \
       "Downloads..."  [list ::hv3::the_download_manager show]           "" \
       "Bookmarks..."  [list gui_current goto home://bookmarks/]         "" \
@@ -560,6 +561,79 @@ proc ::hv3::gui_bookmark {} {
   ::hv3::bookmarks::new_bookmark [gui_current hv3]
 }
 
+namespace eval ::hv3::printing {
+  variable background 1
+  variable images 1
+  variable selected A4
+  variable color c
+  variable hv3 ""
+
+  proc print_page {} {
+    variable selected
+    variable hv3
+
+    toplevel .new
+    set hv3 [gui_current hv3]
+    wm title .new Print
+
+    ::hv3::label .new.label -text "Convert webpage HTML to PostScript:" -anchor s
+    ::hv3::label .new.l_pagesize -anchor w
+
+    array set pages [$hv3 postscript -page ""]
+    trace add variable selected write [list ::hv3::printing::update_label]
+
+    tk_optionMenu .new.select ::hv3::printing::selected {*}[lsort [array names pages]]
+    update_label
+	
+	checkbutton .new.background -text "Backgrounds" -variable ::hv3::printing::background
+	checkbutton .new.images -text "Images" -variable ::hv3::printing::images
+	
+	::hv3::label .new.color_l -text "Colur:" -anchor w ;# Deliberate misspelling
+	grid [radiobutton .new.r1 -text C -variable ::hv3::printing::color -value c] -row 4 -column 1
+	grid [radiobutton .new.r2 -text G -variable ::hv3::printing::color -value g] -row 4 -column 2
+	grid [radiobutton .new.r3 -text M -variable ::hv3::printing::color -value m] -row 4 -column 3
+
+    ::hv3::button .new.save -text "Output" -command [list ::hv3::printing::save]
+
+    grid .new.label      -row 0 -column 0 -columnspan 4 -sticky ewn -padx 10 -pady {10 5}
+    grid .new.select     -row 1 -column 3 -sticky e -padx 10 -pady 5
+    grid .new.l_pagesize -row 2 -column 0 -columnspan 4 -sticky ew  -padx 10 -pady 5
+    grid .new.background -row 3 -column 0 -sticky ws  -padx {10 5} -pady 5
+    grid .new.images     -row 3 -column 1 -sticky ws  -padx 5 -pady 5
+	grid .new.color_l    -row 4 -sticky w -padx {10 5} -pady 5
+    grid .new.save       -column 0 -columnspan 4 -sticky ews -padx 10 -pady {5 10}
+
+    grid columnconfigure .new {1 2 3} -weight 1
+    grid rowconfigure .new {3 4} -weight 1
+
+    ::hv3::bookmarks::launch_dialog .new
+    tkwait window .new
+  }
+  proc update_label {args} {
+    variable selected
+    array set pages [${::hv3::printing::hv3} postscript -page ""]
+    if {[info exists pages($selected)]} {
+      .new.l_pagesize configure -text "Page size is $pages($selected) PostScript points"
+    }
+  }
+  proc save {} {
+    variable background
+    variable images
+    variable selected
+    variable color
+    variable hv3
+
+    set f [tk_getSaveFile \
+      -initialfile [$hv3 title].ps \
+      -defaultextension .ps \
+      -filetypes {{{PostScript Files} {.ps}} {{All Files} {*}}}
+    ]
+    if {$f ne ""} {
+      $hv3 postscript -page $selected -file $f -nobg [expr !$background] -noimages [expr !$images] -colormode $color
+      destroy .new
+    }
+  }
+}
 snit::type ::hv3::debug_menu {
 
   variable MENU
