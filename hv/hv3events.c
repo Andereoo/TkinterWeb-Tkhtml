@@ -94,7 +94,7 @@ runEvent(JSContext *ctx, JSValue target, JSValue event, JSValue zType, uint8_t i
         return 0;
     }
     /* Set event.currentTarget = target */
-    JS_SetPropertyStr(ctx, event, "currentTarget", JS_DupValue(ctx, target));
+    JS_SetPropertyStr(ctx, event, "currentTarget", target);
 
     /* Check if stopPropagation() has been called */
     if (getBooleanFlag(ctx, event, STOP_PROPAGATION)) {
@@ -151,18 +151,20 @@ static JSValue stopPropagationFunc(JSContext *ctx, JSValueConst this, int c, JSV
 
 static JSValue getParentNode(JSContext *ctx, JSValue o)
 {
-	JSClassID id;
-	QjsTclObject *p = JS_GetAnyOpaque(o, &id);
-    if (id == QjsTclClassId || id == QjsTclCallClassId) {
-        NodeHack *pNode = p->nodehandle;
+    if (JS_GetClassID(o) == QjsTclClassId) {
+        NodeHack *pNode = ((QjsTclObject*)JS_GetOpaque(o, QjsTclClassId))->nodehandle;
         if (pNode && pNode->pParent && pNode->pParent->pNodeObj){
-            return JS_DupValue(ctx, *pNode->pParent->pNodeObj);
+            return *pNode->pParent->pNodeObj;
+        }
+        if (pNode && pNode->pParent == NULL && pNode->iNode < 0) {
+            return JS_NULL;
         }
         if (pNode && pNode->pParent == NULL) {
-            return JS_DupValue(ctx, *pNode->pNodeObj);
+            /* Return document... */
         }
     }
-    return JS_NULL;
+    JSValue val = JS_GetPropertyStr(ctx, o, "parentNode");
+    return val;
 }
 
 /*
@@ -214,7 +216,7 @@ static JSValue dispatchEventFunc(JSContext *ctx, JSValueConst this, int argc, JS
 	CFUNCTION(ctx, event, "stopPropagation", stopPropagationFunc, 0);
 	CFUNCTION(ctx, event, "preventDefault", preventDefaultFunc, 0);
 
-	JS_SetPropertyStr(ctx, event, "target", this); // Equivalent to SEE_OBJECT_PUTA
+	JS_SetPropertyStr(ctx, event, "target", JS_DupValue(ctx, this)); // Equivalent to SEE_OBJECT_PUTA
 
     setBooleanFlag(ctx, event, STOP_PROPAGATION, 0);
     setBooleanFlag(ctx, event, PREVENT_DEFAULT, 0);
@@ -237,12 +239,12 @@ static JSValue dispatchEventFunc(JSContext *ctx, JSValueConst this, int argc, JS
         do {
             node = getParentNode(ctx, node);
             if (nNodes == nNodesAlloc) {
-                nNodesAlloc = 1 + 2 * nNodes; // Use an exponential growth algorithm to minimize reallocations
+                nNodesAlloc = 2 * (1 + nNodes); // Use an exponential growth algorithm to minimize reallocations
                 apNodes = js_realloc(ctx, apNodes, sizeof(JSValue) * nNodesAlloc);
             }
             apNodes[nNodes++] = JS_DupValue(ctx, node);
-        } while (!JS_IsNull(node));
-    } else JS_DupValue(ctx, this);  // Make sure objects that aren't nodes aren't freed, this prevents crashing
+        } while (JS_IsObject(node));
+    }
 
     /* Deliver the "capturing" phase of the event. */
     JS_SetPropertyStr(ctx, event, "eventPhase", JS_NewInt32(ctx, 1));
@@ -259,8 +261,6 @@ static JSValue dispatchEventFunc(JSContext *ctx, JSValueConst this, int argc, JS
     for (int i = 0; isRun && i < nNodes; i++) {
         isRun = runEvent(ctx, apNodes[i], event, zType, 0);
     }
-
-	while (nNodes--) JS_FreeValue(ctx, apNodes[nNodes]);
 
 	JS_FreeValue(ctx, zType);
 	if (apNodes && nNodesAlloc) js_free(ctx, apNodes);
@@ -308,7 +308,6 @@ eventDispatchCmd(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *const obj
         Tcl_ListObjAppendElement(interp, pRet, Tcl_NewBooleanObj(isPrevent));
         Tcl_SetObjResult(interp, pRet);
     }
-	JS_FreeValue(qjs->ctx, target);
 	JS_FreeValue(qjs->ctx, event);
 	JS_FreeValue(qjs->ctx, ret);
     return rc;

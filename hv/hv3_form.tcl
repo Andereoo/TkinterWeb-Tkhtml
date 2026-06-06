@@ -1666,15 +1666,12 @@ snit::type ::hv3::formmanager {
     }
 
     switch -- ${tag}.${type} {
-
       select. {
         set control [::hv3::forms::select $zWinPath $node $myHv3]
       }
-
       textarea. {
         set control [::hv3::forms::textarea $zWinPath $node $myHv3]
       }
-
       input.image {
         set control [::hv3::clickcontrol %AUTO% $node]
         set myClickControls($node) $control
@@ -1723,7 +1720,6 @@ snit::type ::hv3::formmanager {
         set hv3 [winfo parent [winfo parent $myHtml]]
         set control [::hv3::forms::fileselect $zWinPath $node $hv3]
       }
-
       default {
         # This includes <INPUT type="password">, <INPUT type="text"> and
         # any unrecognized value for the type attribute.

@@ -1077,7 +1077,7 @@ static int interpCmd(
             break;
         }
         case INTERP_NODE: { // qjs node JAVASCRIPT-OBJECT
-            createNode(qjs, objv[2]);
+            JS_FreeValue(qjs->ctx, createNode(qjs, objv[2]));
             break;
         }
         case INTERP_GLOBAL: { // qjs global PROPERTY JAVASCRIPT-VALUE
