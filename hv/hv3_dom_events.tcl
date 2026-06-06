@@ -339,12 +339,12 @@ set ::hv3::dom::code::DOCUMENTEVENT {
 #     Mapping is from the event-type to the value of the "cancelable"
 #     property of the DOM MouseEvent object.
 #
-set ::hv3::dom::MouseEventType(click)     1
-set ::hv3::dom::MouseEventType(mousedown) 1
-set ::hv3::dom::MouseEventType(mouseup)   1
-set ::hv3::dom::MouseEventType(mouseover) 1
-set ::hv3::dom::MouseEventType(mousemove) 0
-set ::hv3::dom::MouseEventType(mouseout)  1
+set ::hv3::dom::MouseEventType(click)     yes
+set ::hv3::dom::MouseEventType(mousedown) yes
+set ::hv3::dom::MouseEventType(mouseup)   yes
+set ::hv3::dom::MouseEventType(mouseover) yes
+set ::hv3::dom::MouseEventType(mousemove) no
+set ::hv3::dom::MouseEventType(mouseout)  yes
 
 
 # Recognised HTML event types.
@@ -352,16 +352,16 @@ set ::hv3::dom::MouseEventType(mouseout)  1
 #     Mapping is from the event-type to the value of the "bubbles" and
 #     "cancelable" property of the DOM Event object.
 #
-set ::hv3::dom::HtmlEventType(load)     {off off}
-set ::hv3::dom::HtmlEventType(submit)   {off on}
-set ::hv3::dom::HtmlEventType(change)   {on on}
+set ::hv3::dom::HtmlEventType(load)     {no no}
+set ::hv3::dom::HtmlEventType(submit)   {no yes}
+set ::hv3::dom::HtmlEventType(change)   {yes yes}
 
-set ::hv3::dom::HtmlEventType(keyup)    {on off}
-set ::hv3::dom::HtmlEventType(keydown)  {on off}
-set ::hv3::dom::HtmlEventType(keypress) {on off}
+set ::hv3::dom::HtmlEventType(keyup)    {yes no}
+set ::hv3::dom::HtmlEventType(keydown)  {yes no}
+set ::hv3::dom::HtmlEventType(keypress) {yes no}
 
-set ::hv3::dom::HtmlEventType(focus)    {off off}
-set ::hv3::dom::HtmlEventType(blur)     {off off}
+set ::hv3::dom::HtmlEventType(focus)    {no no}
+set ::hv3::dom::HtmlEventType(blur)     {no no}
 
 namespace eval ::hv3::dom {
 
