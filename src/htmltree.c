@@ -2748,18 +2748,14 @@ node_attr_usage:
 Tcl_Obj *
 HtmlNodeCommand(HtmlTree *pTree, HtmlNode *pNode)
 {
-    static int nodeNumber = 0;
+    static unsigned int nodeNumber = 0;
     HtmlNodeCmd *pNodeCmd = pNode->pNodeCmd;
 
     if (pNode->index == HTML_NODE_GENERATED) return 0;
     if (!pNodeCmd) {
-        char zBuf[100];
-        Tcl_Obj *pCmd;
-        sprintf(zBuf, "::tkhtml::node%d", nodeNumber++);
-
-        pCmd = Tcl_NewStringObj(zBuf, -1);
+        Tcl_Obj *pCmd = Tcl_ObjPrintf("::tkhtml::node%d", nodeNumber++);
         Tcl_IncrRefCount(pCmd);
-        Tcl_CreateObjCommand(pTree->interp, zBuf, nodeCommand, pNode, 0);
+        Tcl_CreateObjCommand(pTree->interp, Tcl_GetString(pCmd), nodeCommand, pNode, NULL);
         pNodeCmd = HtmlNew(HtmlNodeCmd);
         pNodeCmd->pCommand = pCmd;
         pNodeCmd->pTree = pTree;
