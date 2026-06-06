@@ -171,6 +171,27 @@ static void listenerMark(JSRuntime *rt, JSValueConst, JS_MarkFunc*);
 static JSClassID QjsTclClassId, QjsTclCallClassId;
 static void getExoticObj(JSRuntime*);
 
+#ifdef DEBUG_REFCOUNT
+static JSValue debug_dup_value(JSContext *ctx, JSValue val, const char *file, int line) {
+	JSClassID id;
+	QjsTclObject *p = JS_GetAnyOpaque(val, &id);
+	if (id == QjsTclClassId || id == QjsTclCallClassId) {
+		fprintf(stderr, "DUP  %s:%d - %d %p %s\n", file, line, ((JSRefCountHeader*)JS_VALUE_GET_PTR(val))->ref_count+1, JS_VALUE_GET_PTR(val), Tcl_GetString(p->pObj));
+	}
+    return JS_DupValue(ctx, val);
+}
+static void debug_free_value(JSContext *ctx, JSValue val, const char *file, int line) {
+	JSClassID id;
+	QjsTclObject *p = JS_GetAnyOpaque(val, &id);
+	if (id == QjsTclClassId || id == QjsTclCallClassId) {
+		fprintf(stderr, "FREE %s:%d - %d %p %s\n", file, line, ((JSRefCountHeader*)JS_VALUE_GET_PTR(val))->ref_count-1, JS_VALUE_GET_PTR(val), Tcl_GetString(p->pObj));
+	}
+    JS_FreeValue(ctx, val);
+}
+#define JS_DupValue(ctx, val) debug_dup_value(ctx, val, __FILE__, __LINE__)
+#define JS_FreeValue(ctx, val) debug_free_value(ctx, val, __FILE__, __LINE__)
+#endif
+
 enum { __JS_ATOM_NULL = JS_ATOM_NULL,
 #define DEF(name, str) JS_ATOM_ ## name,
 #include "quickjs-atom.h"
