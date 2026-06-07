@@ -135,6 +135,7 @@ typedef struct QjsInterp {
     JSContext *ctx;
 	Tcl_HashTable objects;  /* Hash table containing the objects created by the Tcl interpreter that are currently in "persistent" state. */
 	JSValue global;
+    ClientData pInstrumentData;
 } QjsInterp;
 static unsigned int numQjsInterp = 0;
 static unsigned int numFreeInterp = 0;
@@ -279,7 +280,7 @@ static Tcl_Obj *qjsValueToTcl(JSContext *ctx, JSValue val) {
 			JS_ToFloat64(ctx, &d, val);
 			result = Tcl_NewDoubleObj(d);
 			break;
-        case JS_TAG_STRING: case JS_TAG_STRING_ROPE:
+        case JS_TAG_STRING: case JS_TAG_STRING_ROPE: case JS_TAG_BIG_INT:
             result = stringToObj(ctx, val);
             break;
         case JS_TAG_SHORT_BIG_INT:
@@ -620,7 +621,7 @@ static JSValue objToValue(JSContext *ctx, Tcl_Obj *pObj) {
 				case 2: return createTransient(qjs, ap[1]);  // Method
 				case 3: return createBridge(qjs, ap[1]);    // Another context's global object
 				case 4: return newQjsTclObject(qjs, 0, ap[1], NULL);
-				case 5: return objToValue(ctx, ap[1]);
+				case 5: return JS_NewString(ctx, Tcl_GetString(ap[1]));
 			}
 		}
 	} if (Tcl_GetIntFromObj(NULL, pObj, &n) == TCL_OK) {
@@ -1196,6 +1197,14 @@ static int tclQjsInterp(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *co
     snprintf(zCmd, sizeof(zCmd), "::qjs::interp_%d", numQjsInterp++);
     Tcl_CreateObjCommand(interp, zCmd, interpCmd, qjs, delInterpCmd);
     Tcl_SetResult(interp, zCmd, TCL_VOLATILE);
+
+#ifndef NDEBUG
+    Tcl_CmdInfo cmdinfo;
+    if (Tcl_GetCommandInfo(interp, "::tkhtml::instrument", &cmdinfo)) {
+        qjs->pInstrumentData = cmdinfo.objClientData;
+    }
+#endif
+
     return TCL_OK;
 }
 
