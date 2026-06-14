@@ -299,7 +299,7 @@ eventDispatchCmd(ClientData cd, Tcl_Interp *interp, int objc, Tcl_Obj *const obj
     ret = dispatchEventFunc(qjs->ctx, target, 1, &event);
 
     if (JS_IsException(ret)) {
-        rc = handleJavascriptError(qjs, ret);
+        rc = handleJavascriptError(qjs);
     } else {
         int isHandled = getBooleanFlag(qjs->ctx, event, CALLED_LISTENER);
         int isPrevent = getBooleanFlag(qjs->ctx, event, PREVENT_DEFAULT);

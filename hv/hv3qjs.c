@@ -677,30 +677,52 @@ static JSValue createNative(QjsInterp *qjs, Tcl_Obj *pTclList)
  *
  *---------------------------------------------------------------------------
  */
-static int handleJavascriptError(QjsInterp *qjs, JSValue val) {
+static int handleJavascriptError(QjsInterp *qjs) {
+    Tcl_Interp *interp = qjs->interp;
+    JSContext *ctx = qjs->ctx;
+    JSValue error, exc;
    /* The Tcl error message is a well formed Tcl list. The elements
     * of which are as follows:
     *
     *   * The literal string "JS_ERROR"
     *   * The string form of the JavaScript object thrown.
-    *   * The value of $errorInfo (if this is a Tcl error, otherwise 
-    *     an empty string).
+    *   * The value of $errorInfo (if this is a Tcl error, otherwise an empty string).
     *   * Followed by an even number of elements - alternating filenames
     *     and line numbers that make up the stack trace (first pair
     *     is at the bottom of the stack - where the exception was thrown
     *     from).
     */
     Tcl_Obj *pError = Tcl_NewObj();
-    Tcl_ListObjAppendElement(0, pError, Tcl_NewStringObj("JS_ERROR", 8));
-    /* If there is a Tcl error, append it. Otherwise append an empty string. */
-    if (JS_IsException(val)) {
-        JSValue exc = JS_GetException(qjs->ctx);
-		Tcl_ListObjAppendElement(0, pError, stringToObj(qjs->ctx, exc));
-		JS_FreeValue(qjs->ctx, exc);
+    Tcl_ListObjAppendElement(NULL, pError, Tcl_NewStringObj("JS_ERROR", 8));
+
+    /* String form of exception object thrown */
+    exc = JS_GetException(ctx);
+    error = JS_ToString(ctx, exc);
+    if (JS_IsString(error)) {
+        Tcl_Obj *pErrorString = stringToObj(ctx, error);
+        Tcl_ListObjAppendElement(NULL, pError, pErrorString);
     } else {
-        Tcl_ListObjAppendElement(0, pError, Tcl_NewObj());
+        Tcl_ListObjAppendElement(NULL, pError, Tcl_NewStringObj("N/A", 3));
     }
-    Tcl_SetObjResult(qjs->interp, pError);
+	JS_FreeValue(ctx, error);
+
+    if (JS_IsError(ctx, exc)) {
+        JSValue filename = JS_GetPropertyStr(ctx, exc, "fileName");
+        JSValue lineno = JS_GetPropertyStr(ctx, exc, "lineNumber");
+        JSValue colno = JS_GetPropertyStr(ctx, exc, "columnNumber");
+        Tcl_ListObjAppendElement(NULL, pError, qjsValueToTcl(ctx, filename));
+        Tcl_ListObjAppendElement(NULL, pError, qjsValueToTcl(ctx, lineno));
+        Tcl_ListObjAppendElement(NULL, pError, qjsValueToTcl(ctx, colno));
+
+		JSValue stack = JS_GetPropertyStr(ctx, exc, "stack");
+		if (!JS_IsUndefined(stack)) {
+			Tcl_ListObjAppendElement(NULL, pError, stringToObj(ctx, stack));
+		}
+		JS_FreeValue(ctx, stack);
+    }
+	JS_FreeValue(ctx, exc);
+
+    Tcl_SetObjResult(interp, pError);
     return TCL_ERROR;
 }
 
@@ -826,7 +848,7 @@ static int interpEval(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
     JSValue result = JS_Eval(qjs->ctx, code, l, file, JS_EVAL_TYPE_GLOBAL);
 
     if (JS_IsException(result)) {
-        rc = handleJavascriptError(qjs, result);
+        rc = handleJavascriptError(qjs);
 	} else if (!noR) {
         Tcl_SetObjResult(interp, qjsValueToTcl(qjs->ctx, JS_DupValue(qjs->ctx, result)));
     }
@@ -888,7 +910,7 @@ static int interpCall(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
 	JS_FreeValue(qjs->ctx, function);
 
 	if (JS_IsException(result)) {
-        rc = handleJavascriptError(qjs, result);
+        rc = handleJavascriptError(qjs);
 		JS_FreeValue(qjs->ctx, result);
 	} else {
         Tcl_SetObjResult(qjs->interp, qjsValueToTcl(qjs->ctx, result));
@@ -939,7 +961,7 @@ static int interpProc(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
 	code = Tcl_GetStringFromObj(pCode, &l); /* Javascript to evaluate */
 	JSValue result = JS_Eval(qjs->ctx, code, l, "<proc>", JS_EVAL_TYPE_GLOBAL);
 
-	if (JS_IsException(result)) return handleJavascriptError(qjs, result);
+	if (JS_IsException(result)) return handleJavascriptError(qjs);
 	JS_FreeValue(qjs->ctx, result);
 	Tcl_CreateObjCommand(qjs->interp, funcName, procCall, objv[0], NULL);
 	return TCL_OK;
