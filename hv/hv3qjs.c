@@ -600,13 +600,17 @@ static JSValue createBridge(QjsInterp *qjs, Tcl_Obj *pTclCmd)
 /* Utility: Convert Tcl_Obj* to QuickJS JSValue */
 static JSValue objToValue(JSContext *ctx, Tcl_Obj *pObj) {
     // This is a stub: may want to parse Tcl lists to JS objects, etc.
-	Tcl_WideInt w;
     double d;
     int n;
 //	if (pObj->typePtr) printf("%s %s\n", Tcl_GetString(pObj), pObj->typePtr->name);
-    if (pObj->typePtr == Tcl_GetObjType("string")) {
-		return JS_NewString(ctx, Tcl_GetString(pObj));
-	} if (pObj->typePtr == Tcl_GetObjType("list")) {
+	if (pObj->typePtr == Tcl_GetObjType("string")) return JS_NewString(ctx, Tcl_GetString(pObj));
+    if (Tcl_GetDoubleFromObj(NULL, pObj, &d) == TCL_OK) {
+        return JS_NewFloat64(ctx, d);
+    } if (Tcl_GetIntFromObj(NULL, pObj, &n) == TCL_OK) {
+        return JS_NewInt32(ctx, n);
+    } if (Tcl_GetBooleanFromObj(NULL, pObj, &n) == TCL_OK) {
+        return JS_NewBool(ctx, n);
+    } if (pObj->typePtr == Tcl_GetObjType("list")) {
 		Tcl_Obj **ap;
 		QjsInterp *qjs = (QjsInterp*)JS_GetContextOpaque(ctx);
 		Tcl_ListObjGetElements(qjs->interp, pObj, &n, &ap);
@@ -624,20 +628,11 @@ static JSValue objToValue(JSContext *ctx, Tcl_Obj *pObj) {
 				case 5: return JS_NewString(ctx, Tcl_GetString(ap[1]));
 			}
 		}
-	} if (Tcl_GetIntFromObj(NULL, pObj, &n) == TCL_OK) {
-        return JS_NewInt32(ctx, n);
-    } if (Tcl_GetWideIntFromObj(NULL, pObj, &w) == TCL_OK) {
-        return JS_NewBigInt64(ctx, w);
-	} if (Tcl_GetDoubleFromObj(NULL, pObj, &d) == TCL_OK) {
-        return JS_NewFloat64(ctx, d);
-    } if (Tcl_GetBooleanFromObj(NULL, pObj, &n) == TCL_OK) {
-        return JS_NewBool(ctx, n);
-    } else {  // Fallback: treat as string
-		const char *s = Tcl_GetStringFromObj(pObj, &n);
-		if (n == 9 && !strncmp(s, "undefined", 9) || !n) return JS_UNDEFINED;
-		if (n == 4 && !strncmp(s, "null", 4)) return JS_NULL;
-        return JS_NewStringLen(ctx, s, n);
-    }
+	}  // Fallback: treat as string
+	const char *s = Tcl_GetStringFromObj(pObj, &n);
+	if (n == 9 && !strncmp(s, "undefined", 9) || !n) return JS_UNDEFINED;
+	if (n == 4 && !strncmp(s, "null", 4)) return JS_NULL;
+    return JS_NewStringLen(ctx, s, n);
 }
 
 JSValue throwTclError(JSContext *ctx, Tcl_Interp* interp) {
