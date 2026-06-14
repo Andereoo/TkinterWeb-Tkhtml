@@ -301,7 +301,7 @@ static Tcl_Obj *qjsValueToTcl(JSContext *ctx, JSValue val) {
 				if (id == QjsTclClassId || id == QjsTclCallClassId) {
 					result = ((QjsTclObject*)JS_GetOpaque(val, id))->pObj;
 				} else {
-					result = stringToObj(ctx, val);
+					result = Tcl_NewStringObj("OBJECT", 6);
 				}
 			}
             break;

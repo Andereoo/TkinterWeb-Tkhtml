@@ -164,7 +164,7 @@ static JSValue getParentNode(JSContext *ctx, JSValue o)
         }
     }
     JSValue val = JS_GetPropertyStr(ctx, o, "parentNode");
-    return val;
+    return JS_IsUndefined(val) ? JS_NULL : val;
 }
 
 /*
@@ -239,11 +239,11 @@ static JSValue dispatchEventFunc(JSContext *ctx, JSValueConst this, int argc, JS
         do {
             node = getParentNode(ctx, node);
             if (nNodes == nNodesAlloc) {
-                nNodesAlloc = 2 * (1 + nNodes); // Use an exponential growth algorithm to minimize reallocations
+                nNodesAlloc = 2 * (1 + nNodesAlloc); // Use an exponential growth algorithm to minimize reallocations
                 apNodes = js_realloc(ctx, apNodes, sizeof(JSValue) * nNodesAlloc);
             }
             apNodes[nNodes++] = JS_DupValue(ctx, node);
-        } while (JS_IsObject(node));
+        } while (!JS_IsNull(node));
     }
 
     /* Deliver the "capturing" phase of the event. */
