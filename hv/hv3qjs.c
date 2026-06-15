@@ -372,7 +372,7 @@ static int evalObjv(Tcl_Interp *interp, int nWord, Tcl_Obj **apWord){
  *     This is a helper function used to call the following methods of
  *     the supplied QjsTclObject (argument p):
  *
- *         Get Put CanPut HasProperty Delete DefaultValue Enumerator
+ *         Get Put Enumerator
  *
  *     The other methods (Call and Construct) are invoked via
  *     tclCallOrConstruct().
@@ -426,8 +426,6 @@ static int callQjsTclMethod(
     return rc;
 }
 
-static JSValue QjsTcl_Default(JSContext*, JSValueConst, int, JSValueConst*);
-static const JSCFunctionListEntry tcl_func[] = {JS_CFUNC_DEF("[Symbol.toPrimitive]", 1, QjsTcl_Default)};
 /*
  *---------------------------------------------------------------------------
  *
@@ -462,7 +460,6 @@ static JSValue newQjsTclObject(QjsInterp *qjs, int8_t isCall, Tcl_Obj *pTclCmd, 
 		Tcl_DecrRefCount(qjsTclObj->pObj);
         goto error;
 	}
-    JS_SetPropertyFunctionList(qjs->ctx, obj, tcl_func, 1);
     numQjsTclObject++;
 	if (p != NULL) *p = qjsTclObj;
     return obj;
@@ -608,8 +605,9 @@ static JSValue objToValue(JSContext *ctx, Tcl_Obj *pObj) {
 //	if (pObj->typePtr) printf("%s %s\n", Tcl_GetString(pObj), pObj->typePtr->name);
 	if (pObj->typePtr == Tcl_GetObjType("string")) {
 		return JS_NewString(ctx, Tcl_GetString(pObj));
-	} if ((pObj->typePtr == Tcl_GetObjType("booleanString") || pObj->typePtr == Tcl_GetObjType("boolean"))
-		&& Tcl_GetBooleanFromObj(NULL, pObj, &n) == TCL_OK) {
+	}
+	if (pObj->typePtr == Tcl_GetObjType("booleanString") ^ pObj->typePtr == Tcl_GetObjType("boolean") // Backwards compatibility
+		 && Tcl_GetBooleanFromObj(NULL, pObj, &n) == TCL_OK) {
 		return JS_NewBool(ctx, n);
 	}
     if (Tcl_GetDoubleFromObj(NULL, pObj, &d) == TCL_OK) {
@@ -1283,18 +1281,6 @@ QjsTcl_Set(JSContext *ctx, JSValueConst obj, JSAtom prop, JSValueConst val, JSVa
 	  def: return JS_DefineProperty(ctx, obj, prop, val, g, s, f|JS_PROP_NO_EXOTIC);
 	}
     return 1;
-}
-
-static JSValue QjsTcl_Default(JSContext *ctx, JSValueConst this, int argc, JSValueConst *argv)
-{
-    QjsTclObject *pObject = JS_GetOpaque(this, JS_GetClassID(this));
-    ContextOpaque *p = JS_GetContextOpaque(ctx);
-    Tcl_Interp *interp = p->interp;
-
-    if (callQjsTclMethod(interp, p->pLog, this, Tcl_NewStringObj("DefaultValue", 12), NULL) == TCL_OK) {
-        return objToValue(ctx, Tcl_GetObjResult(interp));
-    }
-	return JS_Invoke(ctx, this, JS_ATOM_toString, 0, NULL);
 }
 
 static int 

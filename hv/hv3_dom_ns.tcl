@@ -140,7 +140,6 @@ namespace eval hv3 { set {version($Id: hv3_dom_ns.tcl,v 1.42 2008/02/15 18:23:37
   XX
 
   dom_parameter myHv3
-  dom_default_value { list [$myHv3 uri get] }
 
   #---------------------------------------------------------------------
   # Properties:
@@ -225,7 +224,7 @@ namespace eval hv3 { set {version($Id: hv3_dom_ns.tcl,v 1.42 2008/02/15 18:23:37
   }
 
   -- Returns the same value as reading the <I>href</I> property.
-  dom_call toString {THIS} { ::hv3::DOM::Location $myDom $myHv3 DefaultValue }
+  dom_call toString {THIS} { return [$myHv3 uri get] }
 }
 namespace eval ::hv3::DOM {
   proc Location_assign {hv3 loc} {
