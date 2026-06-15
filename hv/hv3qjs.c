@@ -315,7 +315,10 @@ static Tcl_Obj *qjsValueToTcl(JSContext *ctx, JSValue val) {
 
 static inline Tcl_Obj *
 argValueToTcl(QjsInterp *qjs, JSValueConst val, int *pN) {
-	if (JS_IsBool(val)) return stringToObj(qjs->ctx, val);
+/*	if (JS_IsBool(val)) {
+		Tcl_Obj *p = stringToObj(qjs->ctx, val);
+		if (TCL_OK==Tcl_ConvertToType(qjs->interp, p, Tcl_GetObjType("boolean"))) return p;
+	}*/
 	if (JS_IsObject(val)) {
 		JSClassID id;
         Tcl_Obj *aTclValues[2];
@@ -603,7 +606,12 @@ static JSValue objToValue(JSContext *ctx, Tcl_Obj *pObj) {
     double d;
     int n;
 //	if (pObj->typePtr) printf("%s %s\n", Tcl_GetString(pObj), pObj->typePtr->name);
-	if (pObj->typePtr == Tcl_GetObjType("string")) return JS_NewString(ctx, Tcl_GetString(pObj));
+	if (pObj->typePtr == Tcl_GetObjType("string")) {
+		return JS_NewString(ctx, Tcl_GetString(pObj));
+	} if ((pObj->typePtr == Tcl_GetObjType("booleanString") || pObj->typePtr == Tcl_GetObjType("boolean"))
+		&& Tcl_GetBooleanFromObj(NULL, pObj, &n) == TCL_OK) {
+		return JS_NewBool(ctx, n);
+	}
     if (Tcl_GetDoubleFromObj(NULL, pObj, &d) == TCL_OK) {
         return JS_NewFloat64(ctx, d);
     } if (Tcl_GetIntFromObj(NULL, pObj, &n) == TCL_OK) {
