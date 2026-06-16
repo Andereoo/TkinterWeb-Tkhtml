@@ -136,6 +136,7 @@ typedef struct QjsInterp {
 	Tcl_HashTable objects;  /* Hash table containing the objects created by the Tcl interpreter that are currently in "persistent" state. */
 	JSValue global;
     ClientData pInstrumentData;
+    Tcl_Obj *pTclError;
 } QjsInterp;
 static unsigned int numQjsInterp = 0;
 static unsigned int numFreeInterp = 0;
@@ -641,11 +642,31 @@ static JSValue objToValue(JSContext *ctx, Tcl_Obj *pObj) {
     return JS_NewStringLen(ctx, s, n);
 }
 
-JSValue throwTclError(JSContext *ctx, Tcl_Interp* interp) {
-    JSValue err = JS_NewError(ctx);
-    JSValue str = JS_NewString(ctx, Tcl_GetStringResult(interp));
-    JS_SetPropertyStr(ctx, err, "message", str);
-    return JS_Throw(ctx, err);
+static JSValue throwTclError(JSContext *ctx, int rc)
+{
+    if (rc != TCL_OK) {
+        QjsInterp *qjs = JS_GetContextOpaque(ctx);
+
+        Tcl_Interp *interp = qjs->interp;
+        Tcl_Obj *pErr;
+
+        Tcl_Obj *pSaved = Tcl_GetObjResult(interp);
+
+        Tcl_Obj *pErrorInfo = Tcl_NewStringObj("errorInfo", 9);
+        Tcl_IncrRefCount(pErrorInfo);
+        pErr = Tcl_ObjGetVar2(interp, pErrorInfo, NULL, TCL_GLOBAL_ONLY);
+        pErr = Tcl_DuplicateObj(pErr);
+        Tcl_IncrRefCount(pErr);
+        if (qjs->pTclError) {
+            Tcl_DecrRefCount(qjs->pTclError);
+        }
+        qjs->pTclError = pErr;
+        Tcl_DecrRefCount(pErrorInfo);
+
+        Tcl_SetObjResult(interp, pSaved);
+        return JS_ThrowTypeError(ctx, Tcl_GetString(pSaved));
+    }
+    return JS_UNDEFINED;
 }
 
 static JSValue createNative(QjsInterp *qjs, Tcl_Obj *pTclList)
@@ -654,7 +675,7 @@ static JSValue createNative(QjsInterp *qjs, Tcl_Obj *pTclList)
     Tcl_Obj **ap;
 
     rc = Tcl_ListObjGetElements(qjs->interp, pTclList, &n, &ap);
-    if (rc != TCL_OK) return throwTclError(qjs->ctx, qjs->interp);
+    if (rc != TCL_OK) return throwTclError(qjs->ctx, rc);
 
     JSValue ret = JS_NewObject(qjs->ctx);
     for (i = 0; i < n-1; i += 2){
@@ -706,6 +727,15 @@ static int handleJavascriptError(QjsInterp *qjs) {
         Tcl_ListObjAppendElement(NULL, pError, Tcl_NewStringObj("N/A", 3));
     }
 	JS_FreeValue(ctx, error);
+
+    /* If there is a Tcl error, append it. Otherwise append an empty string. */
+    if (qjs->pTclError) {
+        Tcl_ListObjAppendElement(NULL, pError, qjs->pTclError);
+        Tcl_DecrRefCount(qjs->pTclError);
+        qjs->pTclError = NULL;
+    } else {
+        Tcl_ListObjAppendElement(NULL, pError, Tcl_NewStringObj("", 0));
+    }
 
     if (JS_IsError(ctx, exc)) {
         JSValue filename = JS_GetPropertyStr(ctx, exc, "fileName");
@@ -873,7 +903,7 @@ tclLambda(JSContext *ctx, JSValueConst this, int argc, JSValueConst *argv, int m
 		if(rc!=TCL_OK) JS_ThrowTypeError(ctx, "could not append arguments");
     }
 	rc = Tcl_EvalObjEx(interp, pCmd, 0);
-	if (rc != TCL_OK) return throwTclError(ctx, interp);
+	if (rc != TCL_OK) return throwTclError(ctx, rc);
 	return objToValue(ctx, Tcl_GetObjResult(interp));
 }
 
@@ -1246,7 +1276,7 @@ QjsTcl_Get(JSContext *ctx, JSPropertyDescriptor *desc, JSValueConst obj, JSAtom 
 	
 	int rc = callQjsTclMethod(p->interp, p->pLog, obj, atomToObj(ctx, prop), NULL);
 	if (rc != TCL_OK) {
-		throwTclError(ctx, p->interp);
+		throwTclError(ctx, rc);
 		return -1;
 	}
 	Tcl_Obj *pScriptRes = Tcl_GetObjResult(p->interp);
@@ -1275,7 +1305,7 @@ QjsTcl_Set(JSContext *ctx, JSValueConst obj, JSAtom prop, JSValueConst val, JSVa
 	Tcl_DecrRefCount(pVal);
     removeTransientRefs((QjsInterp*)p, nObj);
 	if (rc != TCL_OK) {
-		throwTclError(ctx, p->interp);
+		throwTclError(ctx, rc);
 		return -1;
 	} if (!strcmp(Tcl_GetStringResult(p->interp), "NATIVE")) {
 	  def: return JS_DefineProperty(ctx, obj, prop, val, g, s, f|JS_PROP_NO_EXOTIC);
@@ -1310,7 +1340,7 @@ QjsTcl_Enumerator(JSContext *ctx, JSPropertyEnum **pTab, uint32_t *pLen, JSValue
     return 0;
 	error:
 		js_free(ctx, pEnum);
-		throwTclError(ctx, interp);
+		throwTclError(ctx, rc);
 		return -1;
 }
 
@@ -1350,12 +1380,12 @@ tclCallOrConstruct(JSContext *ctx, JSValueConst obj, JSValueConst this, int argc
         p->apWord[nWI] = argValueToTcl(qjs, argv[i], &nObj);
         Tcl_IncrRefCount(p->apWord[nWI]);
     }
-	rc = evalObjv(qjs->interp, p->nWord+argc+1, p->apWord);
+    rc = evalObjv(qjs->interp, p->nWord+argc+1, p->apWord);
 	for (i = 0; i < argc; i++) {
         Tcl_DecrRefCount(p->apWord[p->nWord + i]);
     }
     removeTransientRefs(qjs, nObj);
-	if (rc != TCL_OK) return throwTclError(ctx, qjs->interp);
+	if (rc != TCL_OK) return throwTclError(ctx, rc);
 	return objToValue(ctx, Tcl_GetObjResult(qjs->interp));
 }
 
