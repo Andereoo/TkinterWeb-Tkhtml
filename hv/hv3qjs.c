@@ -480,18 +480,17 @@ static void finalizeObject(JSRuntime *rt, JSValue val)
             Tcl_AppendResult(interp, "WARNING Qjstcl: Finalize script failed for ");
 			Tcl_AppendObjToObj(Tcl_GetObjResult(interp), qjsTclObj->pObj);
         }
-        for (int i = 0; i < qjsTclObj->nWord; i++) {  // Decrement reference count for each Tcl object
-            Tcl_DecrRefCount(qjsTclObj->apWord[i]);
-        }
-        // Free the array and qjsTclObj
-        js_free_rt(rt, qjsTclObj->apWord);
-		assert(qjsTclObj->pObj->refCount >= 1);
+	    assert(qjsTclObj->pObj->refCount >= 1);
+		Tcl_DecrRefCount(qjsTclObj->pObj);
+
 		if (qjsTclObj->pEntry) {
 			JSValueEntry *pV = (JSValueEntry*)Tcl_GetHashValue(qjsTclObj->pEntry);
 			Tcl_DeleteHashEntry(qjsTclObj->pEntry);
 			ckfree(pV);
 		}
 		freeEventTargetData(rt, qjsTclObj);
+        // Free the array and qjsTclObj
+        js_free_rt(rt, qjsTclObj->apWord);
         js_free_rt(rt, qjsTclObj);
     }
 	numQjsTclObject--;
@@ -744,6 +743,7 @@ static int handleJavascriptError(QjsInterp *qjs) {
         Tcl_ListObjAppendElement(NULL, pError, qjsValueToTcl(ctx, filename));
         Tcl_ListObjAppendElement(NULL, pError, qjsValueToTcl(ctx, lineno));
         Tcl_ListObjAppendElement(NULL, pError, qjsValueToTcl(ctx, colno));
+        Tcl_ListObjAppendElement(NULL, pError, Tcl_NewObj());
 
 		JSValue stack = JS_GetPropertyStr(ctx, exc, "stack");
 		if (!JS_IsUndefined(stack)) {
