@@ -476,9 +476,8 @@ namespace eval ::hv3::hv3::mousemanager {
     set domrc ""
     if {$O(-dom) ne ""} {
       for {set n $N} {$n ne ""} {set n [$n parent]} {
-        if {[info exists ${me}.activenodes($N)]} {
+        if {[info exists ${me}.activenodes($n)]} {
           set domrc [$O(-dom) mouseevent click $n $x $y]
-          break
         }
       }
     }

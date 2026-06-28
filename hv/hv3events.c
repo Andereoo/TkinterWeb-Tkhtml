@@ -480,8 +480,7 @@ static JSValue EventFunc(JSContext *ctx, JSValueConst this, int argc, JSValueCon
  *
  *         onclick {alert("click!"} ondblclick {alert("dblclick!")}
  *  
- *     The "onclick" and "ondblclick" properties of QjsTclObject.pNative
- *
+ *     The "onclick" and "ondblclick" properties of QjsTclObject
  *     are set to the following objects, respectively:
  *
  *         function (event) { alert("click!") }
@@ -511,7 +510,6 @@ static void eventTargetInit(QjsInterp *qjs, JSValue o)
         return;
     }
     for (i = 0; i < nWord-1; i += 2){
-        Tcl_Obj *pJ;
         /* Construct a string like this:
          *
          *   this.$zAttr = function (event) { $zScript }
@@ -519,7 +517,7 @@ static void eventTargetInit(QjsInterp *qjs, JSValue o)
          * We then evaluate the script with the "this" object set to the
          * object we are trying to attach the legacy event handler to.
          */
-        pJ = Tcl_NewStringObj("this.", 5);
+        Tcl_Obj *pJ = Tcl_NewStringObj("this.", 5);
         Tcl_IncrRefCount(pJ);
         Tcl_AppendObjToObj(pJ, apWord[i]);
         Tcl_AppendToObj(pJ, " = function (event) {", 21);

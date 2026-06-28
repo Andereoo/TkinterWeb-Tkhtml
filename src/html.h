@@ -546,7 +546,6 @@ struct HtmlTree {
     int iWriteInsert;               /* Byte offset in pDocument for [write] */
     Html_u8 eWriteState;            /* One of the HTML_WRITE_XXX values */
 
-    Html_u8 isIgnoreNewline;        /* True after an opening tag */
     Html_u8 isParseFinished;        /* True if the html parse is finished */
 
     HtmlNode *pRoot;                /* The root-node of the document. */
