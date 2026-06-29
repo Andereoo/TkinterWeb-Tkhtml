@@ -61,7 +61,7 @@ snit::type ::hv3::dom {
 
     $self configurelist $args
 
-	set timeCreated [clock milliseconds]
+	set timeCreated [expr [clock microsecond] / 1000.0]
 
     set frame [$myHv3 cget -frame]
     if {$frame ne ""} {
@@ -321,7 +321,7 @@ snit::type ::hv3::dom {
     set msg
   }
 
-  method age {} { return [expr [clock milliseconds] - $timeCreated] }
+  method age {} { return [expr [clock microsecond] / 1000.0 - $timeCreated] }
 
   method qjs {} { return $myQjs }
 
