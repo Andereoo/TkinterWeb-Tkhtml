@@ -443,22 +443,37 @@ removeEventListenerFunc(JSContext *ctx, JSValueConst this, int argc, JSValueCons
     return JS_UNDEFINED;
 }
 
-static JSValue EventFunc(JSContext *ctx, JSValueConst this, int argc, JSValueConst *argv)
+static JSValue EventFunc(JSContext *ctx, JSValueConst new_target, int argc, JSValueConst *argv)
 {
-	/* Check the number of function arguments. */
-    if (argc > 2 || argc < 1) {
-		return JS_ThrowTypeError(ctx, "1-2 arguments required, but non present.");
+    if (argc > 2 || argc < 1) { /* Check the number of function arguments. */
+		return JS_ThrowTypeError(ctx, "1-2 arguments required, but not present.");
     }
-	JSValue opt, event = JS_NewObject(ctx);
-	JS_SetPropertyStr(ctx, event, "type", JS_DupValue(ctx, argv[0]));
-	if (argc > 1) {
-		opt = JS_GetPropertyStr(ctx, argv[1], "bubbles");
-		if (!JS_IsUndefined(opt)) JS_SetPropertyStr(ctx, event, "bubbles", opt);
-		opt = JS_GetPropertyStr(ctx, argv[1], "cancelable");
-		if (!JS_IsUndefined(opt)) JS_SetPropertyStr(ctx, event, "cancelable", opt);
-	}
-	JS_DefinePropertyValue(ctx, event, JS_ATOM_Symbol_toStringTag, JS_NewString(ctx, "Event"), 0);
-	return event;
+    if (!JS_IsString(argv[0])) {
+        return JS_ThrowTypeError(ctx, "Event type must be a string");
+    }
+    JSValue event = JS_NewObject(ctx);
+    JS_SetPropertyStr(ctx, event, "type", JS_DupValue(ctx, argv[0]));
+    JS_SetPropertyStr(ctx, event, "isTrusted", JS_NewBool(ctx, 0));
+    JS_SetPropertyStr(ctx, event, "timeStamp", JS_NewFloat64(ctx, 0));
+    JS_SetPropertyStr(ctx, event, "defaultPrevented", JS_NewBool(ctx, 0));
+    JS_SetPropertyStr(ctx, event, "eventPhase", JS_NewInt32(ctx, 0));
+    JS_SetPropertyStr(ctx, event, "bubbles", JS_NewBool(ctx, 0));
+    JS_SetPropertyStr(ctx, event, "cancelable", JS_NewBool(ctx, 0));
+    JS_SetPropertyStr(ctx, event, "composed", JS_NewBool(ctx, 0));
+    JS_SetPropertyStr(ctx, event, "target", JS_NULL);
+    JS_SetPropertyStr(ctx, event, "currentTarget", JS_NULL);
+
+    if (argc > 1) {
+        JSValue opt;
+        opt = JS_GetPropertyStr(ctx, argv[1], "bubbles");
+        if (!JS_IsUndefined(opt)) JS_SetPropertyStr(ctx, event, "bubbles", opt);
+        opt = JS_GetPropertyStr(ctx, argv[1], "cancelable");
+        if (!JS_IsUndefined(opt)) JS_SetPropertyStr(ctx, event, "cancelable", opt);
+        opt = JS_GetPropertyStr(ctx, argv[1], "composed");
+        if (!JS_IsUndefined(opt)) JS_SetPropertyStr(ctx, event, "composed", opt);
+    }
+    JS_DefinePropertyValue(ctx, event, JS_ATOM_Symbol_toStringTag, JS_NewString(ctx, "Event"), 0);
+    return event;
 }
 
 /*
