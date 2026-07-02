@@ -600,11 +600,13 @@ static JSValue objToValue(JSContext *ctx, Tcl_Obj *pObj) {
     double d;
     int n;
 //	if (pObj->typePtr) printf("%s %s\n", Tcl_GetString(pObj), pObj->typePtr->name);
-	if (pObj->typePtr == Tcl_GetObjType("string")) {
-		return JS_NewString(ctx, Tcl_GetString(pObj));
-	} if (pObj->typePtr == Tcl_GetObjType("booleanString") ^ pObj->typePtr == Tcl_GetObjType("boolean") // Backwards compatibility
-		 && Tcl_GetBooleanFromObj(NULL, pObj, &n) == TCL_OK) {
-		return JS_NewBool(ctx, n);
+	if (pObj->typePtr != NULL) {
+		if (pObj->typePtr == Tcl_GetObjType("string")) {
+			return JS_NewString(ctx, Tcl_GetString(pObj));
+		} if (pObj->typePtr == Tcl_GetObjType("booleanString") ^ pObj->typePtr == Tcl_GetObjType("boolean") // Backwards compatibility
+			 && Tcl_GetBooleanFromObj(NULL, pObj, &n) == TCL_OK) {
+			return JS_NewBool(ctx, n);
+		}
 	}
     if (Tcl_GetDoubleFromObj(NULL, pObj, &d) == TCL_OK) {
         return JS_NewFloat64(ctx, d);
