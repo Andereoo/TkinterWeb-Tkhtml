@@ -74,9 +74,7 @@ namespace eval ::hv3 {
       set myCodeViewer [$myCodeViewer widget]
 
       set b [frame ${win}.b]
-      ::hv3::button ${b}.viewindex         \
-          -text "Application Index"        \
-          -command [list $self Display index ""]
+      ::hv3::button ${b}.viewindex -text "Application Index" -command [list $self Display index ""]
       set myLabel [::hv3::label ${b}.label -anchor w]
       pack ${b}.viewindex -side left
 
@@ -186,7 +184,6 @@ namespace eval ::hv3 {
             $myOutputWindow insert end "    $result\n"
           }
         }
-
         Javascript {
           set isEnabled [gui_current cget -enablejavascript]
           $myOutputWindow insert end "> $cmd\n" javascript
@@ -203,7 +200,6 @@ namespace eval ::hv3 {
             }
           }
         }
-
         Search {
           set ignore_case 0
           if {$cmd eq [string tolower $cmd]} {
@@ -260,7 +256,6 @@ namespace eval ::hv3 {
           }
         }
       }
-
       $myOutputWindow yview end
       $myOutputWindow configure -state disabled
     }
@@ -503,7 +498,7 @@ namespace eval ::hv3 {
       if {"" eq [[$top hv3] log get html]} {
         $myCodeViewer insert end [join {
             {Source logging was not enabled when this document was loaded.}
-	    {To browse the document source code, select a different option}
+            {To browse the document source code, select a different option}
             {from the "Debug->Application Source Logging" menu and reload}
             {the document.}
         }]

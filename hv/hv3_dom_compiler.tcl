@@ -81,7 +81,6 @@ namespace eval ::hv3::dom2 {
 
   proc stateless {type_name args} {
     set compiler2::parameter dummy
-    set compiler2::default_value error
     set compiler2::finalize ""
     set compiler2::events ""
     array unset compiler2::get_array
@@ -177,23 +176,22 @@ namespace eval ::hv3::dom2 {
 
 		set arglist [list myDom $compiler2::parameter args]
 		set proccode [list \
-			proc ::hv3::DOM::$type_name $arglist [string map [list \
-				%GETSET%        $GetSet         \
-				%FINALIZE% $compiler2::finalize \
-				%EVENTS%   $compiler2::events   \
-				%LIST%          $List           \
-				%SETSTATEARRAY% $SetStateArray  \
-			] {
-				%SETSTATEARRAY%
-				switch -exact -- [lindex $args 0] {
-					Finalize { %FINALIZE% }
-					Events { %EVENTS% }
-					Enumerator { list %LIST% }
-					%GETSET%
-				}
+		  proc ::hv3::DOM::$type_name $arglist [string map [list \
+		  	%GETSET%        $GetSet         \
+			%FINALIZE% $compiler2::finalize \
+			%EVENTS%   $compiler2::events   \
+			%LIST%          $List           \
+			%SETSTATEARRAY% $SetStateArray  \
+		  ] {
+			%SETSTATEARRAY%
+			switch -exact -- [lindex $args 0] {
+				Finalize   { %FINALIZE%  }
+				Events     { %EVENTS%    }
+				Enumerator { list %LIST% }
+				%GETSET%
 			}
-		]]
-  
+		  }
+	    ]]
 		evalcode $proccode
     }
   }
@@ -201,7 +199,6 @@ namespace eval ::hv3::dom2 {
   namespace eval compiler2 {
 
     variable parameter
-    variable default_value
     variable finalize
     variable events
 
@@ -212,10 +209,6 @@ namespace eval ::hv3::dom2 {
     proc dom_parameter {zParam} {
 		variable parameter
 		set parameter $zParam
-    }
-    proc dom_default_value {zDefault} {
-		variable default_value
-		set default_value $zDefault
     }
     proc dom_finalize {zScript} {
 		variable finalize
@@ -300,7 +293,6 @@ namespace eval ::hv3::dom2 {
     variable xx_array
 
     proc dom_parameter     {args} {}
-    proc dom_default_value {args} {}
     proc dom_finalize      {args} {}
     proc dom_call_todo    {zProc} {}
     proc dom_todo         {zAttr} {}

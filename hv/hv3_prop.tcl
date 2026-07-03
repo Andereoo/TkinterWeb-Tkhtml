@@ -313,6 +313,7 @@ snit::widgetadaptor ::hv3::debug::report {
   constructor {args} {
     installhull [::hv3::hv3 $win]
     $self configurelist $args
+	bind [$hull html] <Button-1> [list focus [$hull html]]
   }
 
   # This is called to load the report for node-handle $node (a Tkhtml node
@@ -550,9 +551,9 @@ proc ::hv3::debug::TkhtmlReport {hv3 node} {
         set text [string map {< &lt; > &gt;} [$node text]]
         set tokens [string map {< &lt; > &gt;} [$node text -tokens]]
         append doc [subst {
-            <h1>Text</h1>
+            <h2>Content</h2>
             <p>$text
-            <h1>Tokens</h1>
+            <h2>Tokens</h2>
             <p>$tokens
         }]
     } else {

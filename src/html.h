@@ -62,7 +62,6 @@
 #include <tk.h>
 
 #include <string.h>
-#define NDEBUG
 #include <assert.h>
 #include <stdlib.h>
 
@@ -85,9 +84,7 @@
  * to be the limiting factor.
  */
 typedef unsigned char  Html_u8;      /* 8-bit unsigned integer */
-typedef short          Html_16;      /* 16-bit signed integer */
 typedef unsigned short Html_u16;     /* 16-bit unsigned integer */
-typedef int            Html_32;      /* 32-bit signed integer */
 
 /*
  * Linux doesn't have a stricmp() function and windows doesn't have
@@ -158,7 +155,7 @@ typedef int (*HtmlContentTest)(HtmlTree *, HtmlNode *, int);
 
 struct HtmlTokenMap {
   char *zName;                    /* Name of a markup */
-  Html_16 type;                   /* Markup type code */
+  short type;                     /* Markup type code */
   Html_u8 flags;                  /* Combination of HTMLTAG values */
   HtmlContentTest xClose;         /* Function to identify close tag */
   HtmlTokenMap *pCollide;         /* Hash table collision chain */
@@ -228,8 +225,6 @@ struct HtmlNodeCmd {
 
 struct HtmlNodeStack {
     HtmlElementNode *pElem;
-    int eType;              /* Usage defined in htmlstyle.c */
-
     HtmlNodeStack *pNext;
     HtmlNodeStack *pPrev;
 
@@ -240,6 +235,8 @@ struct HtmlNodeStack {
     int iInlineZ;
     int iBlockZ;
     int iStackingZ;
+
+    int eType;              /* Usage defined in htmlstyle.c */
 };
 
 /*
@@ -294,16 +291,14 @@ struct HtmlTaggedRegion {
 struct HtmlNode {
     ClientData clientData;
     HtmlNode *pParent;             /* Parent of this node */
-    int index;                     /* Node index */
-
-    Html_u8 eTag;                  /* Tag type (or 0) */
+    HtmlNodeCmd *pNodeCmd;         /* Tcl command for this node */
     const char *zTag;              /* Atom string for tag type */
 
+    int index;                     /* Node index */
     int iSnapshot;                 /* Last changed snapshot */
-    HtmlNodeCmd *pNodeCmd;         /* Tcl command for this node */
+    int iBboxX, iBboxY, iBboxX2, iBboxY2; /* Cache used for [$widget bbox] */
 
-    /* Cache used for [$widget bbox] */
-    int iBboxX, iBboxY, iBboxX2, iBboxY2;
+    Html_u8 eTag;                  /* Tag type (or 0) */
 };
 
 /* Value of HtmlNode.index for orphan and generated nodes. */
@@ -339,6 +334,7 @@ struct HtmlElementNode {
     HtmlNode node;          /* Base class. MUST BE FIRST. */
 
     HtmlAttributes *pAttributes;      /* Html attributes associated with node */
+    Html_u8 flags;                         /* HTML_DYNAMIC_XXX flags */
 
     /* Children of this element node */
     int nChild;                    /* Number of child nodes */
@@ -356,8 +352,6 @@ struct HtmlElementNode {
     HtmlNode *pAfter;                      /* Generated :after content */
 
     /* Manipulated by the [nodeHandle dynamic] command */
-    Html_u8 flags;                         /* HTML_DYNAMIC_XXX flags */
-
     HtmlNodeReplacement *pReplacement;     /* Replaced object, if any */
     HtmlLayoutCache *pLayoutCache;         /* Cached layout, if any */
     HtmlNodeScrollbars *pScrollbar;        /* Internal scrollbars, if any */
@@ -395,10 +389,9 @@ struct HtmlCanvas {
  * Tkhtml3 man-page. If they are not, please report a bug.
  */
 struct HtmlOptions {
-
     /* Tkhtml3 supports the following standard Tk options */
-    int      width;
-    int      height;
+    unsigned int width;
+    unsigned int height;
     int      xscrollincrement;
     int      yscrollincrement;
     Tcl_Obj *yscrollcommand;
@@ -407,21 +400,20 @@ struct HtmlOptions {
     Tcl_Obj *defaultstyle;
     double   fontscale;
     Tcl_Obj *fonttable;
-    int      forcefontmetrics;
-    int      forcewidth;
+    Html_u8  forcefontmetrics;
+    Html_u8  forcewidth;
     Tcl_Obj *imagecmd;
     Tcl_Obj *drawcleanupcrashcmd;
-    int      imagecache;
-    int      imagepixmapify;
-    int      mode;                      /* One of the HTML_MODE_XXX values */
-    int      shrink;                    /* Boolean */
+    Html_u8  imagecache;
+    Html_u8  imagepixmapify;
+    Html_u8  mode;                      /* One of the HTML_MODE_XXX values */
+    Html_u8  shrink;                    /* Boolean */
     double   zoom;                      /* Universal scaling factor. */
-    int      parsemode;                 /* One of the HTML_PARSEMODE values */
+    Html_u8  parsemode;                 /* One of the HTML_PARSEMODE values */
     unsigned int pagination;
-
     /* Debugging options. Not part of the official interface. */
-    int      enablelayout;
-    int      layoutcache;
+    Html_u8  enablelayout;
+    Html_u8  layoutcache;
     Tcl_Obj *logcmd;
     Tcl_Obj *timercmd;
     Tcl_Obj *unspptdcmd;
@@ -442,11 +434,7 @@ void HtmlUnspptd(HtmlTree *, CONST char *, ...);
 typedef struct HtmlCanvasSnapshot HtmlCanvasSnapshot;
 
 struct HtmlDamage {
-  int x;
-  int y;
-  int w;
-  int h;
-  int windowsrepair;
+  int x, y, w, h;
   HtmlDamage *pNext;
 };
 
@@ -456,9 +444,9 @@ struct HtmlDamage {
  * the behaviour of the idle callback scheduled to update the display.
  */
 struct HtmlCallback {
-    int flags;                  /* Comb. of HTML_XXX bitmasks defined below */
-    int inProgress;             /* Prevent recursive invocation */
-    int isForce;                /* Not an idle callback */
+    Html_u8 flags;             /* Comb. of HTML_XXX bitmasks defined below */
+    Html_u8 inProgress;        /* Prevent recursive invocation */
+    Html_u8 isForce;           /* Not an idle callback */
 
     /* Snapshot of layout before the latest round of changes. This is
      * used to reduce the area repainted during "animation" changes.
@@ -518,7 +506,6 @@ struct HtmlTreeState {
 };
 
 struct HtmlTree {
-
     /*
      * The interpreter hosting this widget instance.
      */
@@ -532,12 +519,7 @@ struct HtmlTree {
     int iScrollY;              /* Number of pixels offscreen to the top */
 
     Tk_Window docwin;          /* Document window */
-
-    /*
-     * The widget command.
-     */
     Tcl_Command cmd;           /* Widget command */
-    int isDeleted;             /* True once the widget-delete has begun */
 
     /*
      * The image server object.
@@ -562,10 +544,10 @@ struct HtmlTree {
     int nCharParsed;                /* TODO: Characters parsed */
 
     int iWriteInsert;               /* Byte offset in pDocument for [write] */
-    int eWriteState;                /* One of the HTML_WRITE_XXX values */
+    Html_u8 eWriteState;            /* One of the HTML_WRITE_XXX values */
 
-    int isIgnoreNewline;            /* True after an opening tag */
-    int isParseFinished;            /* True if the html parse is finished */
+    Html_u8 isIgnoreNewline;        /* True after an opening tag */
+    Html_u8 isParseFinished;        /* True if the html parse is finished */
 
     HtmlNode *pRoot;                /* The root-node of the document. */
 
@@ -586,8 +568,6 @@ struct HtmlTree {
      * the [$html fragment] command. See htmltree.c for details.
      */
     HtmlFragmentContext *pFragment;
-
-    int isFixed;                    /* True if any "fixed" graphics */
 
     /*
      * Handler callbacks configured by the [$widget handler] command.
@@ -618,6 +598,8 @@ struct HtmlTree {
     HtmlNodeStack *pStack;
     int nStack;                   /* Number of elements in linked list */
 
+    int aFontSizeTable[7];
+
     /*
      * Internal representation of a completely layed-out document.
      */
@@ -640,8 +622,6 @@ struct HtmlTree {
     Tcl_HashTable aCounterLists;
     HtmlComputedValuesCreator *pPrototypeCreator;
 
-    int aFontSizeTable[7];
-
     /*
      * Hash table for all html widget tags (similar to text widget tags -
      * nothing to do with markup tags).
@@ -655,13 +635,7 @@ struct HtmlTree {
     int isSequenceOk;    
     int iNextNode;       /* Next node index to allocate */
 
-    /* True if the HtmlElementNode.iBboxX and HtmlElementNode.iBboxY values
-     * for all elements in the tree are valid.
-     */
-    int isBboxOk;
-
     HtmlCallback cb;                /* See structure definition comments */
-    int iLastSnapshotId;            /* Last snapshot id allocated */
     Tcl_TimerToken delayToken;
 
     /* 
@@ -673,8 +647,17 @@ struct HtmlTree {
     /* Pointer to information used for generating Postscript for the canvas.
      * NULL means no Postscript is currently being generated. */
     Tk_PostscriptInfo psInfo;
-    unsigned char isPrintedMedia;
+    Html_u8 isPrintedMedia;
 
+    Html_u8 isDeleted;             /* True once the widget-delete has begun */
+    Html_u8 isFixed;                    /* True if any "fixed" graphics */
+
+    /* True if the HtmlElementNode.iBboxX and HtmlElementNode.iBboxY values
+     * for all elements in the tree are valid.
+     */
+    Html_u8 isBboxOk;
+
+    int iLastSnapshotId;            /* Last snapshot id allocated */
 #ifdef TKHTML_ENABLE_PROFILE
     /*
      * Client data from instrument command ([::tkhtml::instrument]).

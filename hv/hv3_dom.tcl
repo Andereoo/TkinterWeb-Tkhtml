@@ -49,16 +49,19 @@ snit::type ::hv3::dom {
   # This is used by the script debugging gui.
   variable myNextCodeblockNumber 1
 
+  variable timeCreated 0
+
   constructor {hv3 args} {
 
-    # Call [::hv3::enable_javascript] to make sure the hv3_dom_XXX.tcl
-    # files have been loaded.
+    # Call [::hv3::enable_javascript] to make sure the hv3_dom_XXX.tcl files have been loaded.
     ::hv3::enable_javascript
 
     set myHv3 $hv3
     set myQjs [::qjs::interp [list ::hv3::DOM::Window $self $hv3]]
 
     $self configurelist $args
+
+	set timeCreated [clock milliseconds]
 
     set frame [$myHv3 cget -frame]
     if {$frame ne ""} {
@@ -91,6 +94,11 @@ snit::type ::hv3::dom {
     return "$self.[incr myNextCodeblockNumber]"
   }
   
+  method AfterIdle {args} {
+	$myHv3 html write continue
+    after idle [list $self ScriptCallback {*}$args]
+  }
+  
   # This method is called as a Tkhtml3 "script handler" for elements
   # of type <SCRIPT>. I.e. this should be registered with the html widget
   # as follows:
@@ -113,8 +121,11 @@ snit::type ::hv3::dom {
       if {[$myHv3 encoding] ne ""} {
         $handle configure -encoding [$myHv3 encoding]
       }
-	  
-      set fin [mymethod ScriptCallback $attr $handle]
+	  if {[info exists a(defer)]} {
+	    set fin [mymethod AfterIdle $attr $handle]
+	  } else {
+	    set fin [mymethod ScriptCallback $attr $handle]
+	  }
       $handle configure -finscript $fin
       $myHv3 makerequest $handle
     } else {
@@ -156,10 +167,11 @@ snit::type ::hv3::dom {
 
     set name [$self NewFilename]
     set rc [catch {$myQjs eval -noresult -file $name $script} msg]
-    if {$rc} {puts "MSG: $msg"}
+    if {$rc} {puts stderr "MSG: $msg"}
 
     $self Log $title $name $script $rc $msg
-    $myHv3 html write continue
+	# Make sure this is not a defer script; document.write doesn't work in those
+    if {[expr [lsearch $attr defer] % 2] != 0} {$myHv3 html write continue}
   }
 
   method javascript {script} {
@@ -308,6 +320,8 @@ snit::type ::hv3::dom {
     }
     set msg
   }
+
+  method age {} { return [expr [clock milliseconds] - $timeCreated] }
 
   method qjs {} { return $myQjs }
 

@@ -21,7 +21,9 @@ namespace eval ::hv3::profile {
         rename proc real_proc
         real_proc proc {name arglist body} {
           uplevel [list real_proc $name $arglist $body]
-          uplevel [list ::tkhtml::instrument command $name]
+          if {[info commands ::tkhtml::instrument] ne ""} {
+            uplevel [list ::tkhtml::instrument command $name]
+          }
         }
       }
     }

@@ -97,7 +97,6 @@ struct InlineMetrics {
 struct InlineBorder {
   MarginProperties margin;
   BoxProperties box;
-
   InlineMetrics metrics;      /* Vertical metrics for inline box */
 
   /* For structures with InlineBorder.eLineboxAlign==LINEBOX_ALIGN_PARENT,
@@ -110,21 +109,18 @@ struct InlineBorder {
    * this case iVerticalAlign is not meaningful.
    */
   int iVerticalAlign;
-
   int iTop;
   int iBottom;
-  int eLineboxAlign;          /* One of the LINEBOX_ALIGN_XXX values below */
-
   int iStartBox;              /* Leftmost inline-box */
   int iStartPixel;            /* Leftmost pixel of left margin */
-  HtmlNode *pNode;            /* Document node that generated this border */
 
   /* The following boolean is true if this InlineBorder structure is
    * only being used to align an inline replaced object. In this case,
    * do not draw any border or underline graphics.
    */
-  int isReplaced;
-
+  char isReplaced;
+  char eLineboxAlign;         /* One of the LINEBOX_ALIGN_XXX values below */
+  HtmlNode *pNode;            /* Document node that generated this border */
   InlineBorder *pNext;        /* Pointer to parent inline border, if any */
 
   /* Pointer to parent inline border, if any */
@@ -139,7 +135,9 @@ struct InlineBorder {
 struct InlineBox {
   HtmlCanvas canvas;          /* Canvas containing box content. */
   int nSpace;                 /* Pixels of space between this and next box. */
-  int eType;                  /* One of the INLINE_XXX values below */
+
+  Html_u8 eWhitespace;        /* Applicable value of the 'white-space' property */
+  Html_u8 eType;              /* One of the INLINE_XXX values below */
 
   InlineBorder *pBorderStart; /* List of borders that start with this box */
   HtmlNode *pNode;            /* Associated tree node */
@@ -147,9 +145,6 @@ struct InlineBox {
   int nLeftPixels;            /* Total left width of borders that start here */
   int nRightPixels;           /* Total right width of borders that start here */
   int nContentPixels;         /* Width of content. */
-
-  /* Applicable value of the 'white-space' property */
-  int eWhitespace;
 };
 
 /* Values for InlineBox.eType */
@@ -332,7 +327,6 @@ inlineContextAddInlineCanvas (
         );
         p->nInlineAlloc = nAlloc;
     }
-
     pBox = &p->aInline[p->nInline - 1];
     memset(pBox, 0, sizeof(InlineBox));
     pBox->pBorderStart = p->pBoxBorders;
@@ -340,7 +334,6 @@ inlineContextAddInlineCanvas (
         pBox->nLeftPixels += pBorder->box.iLeft + pBorder->margin.margin_left;
     }
     p->pBoxBorders = 0;
-    /* pBox->eReplaced = eReplaced; */
     pBox->eType = eType;
     pBox->pNode = pNode;
     return &pBox->canvas;
@@ -418,16 +411,13 @@ HtmlInlineContextPushBorder (InlineContext *pContext, InlineBorder *pBorder)
             int iVert = 0;
 
             switch (pComputed->eVerticalAlign) {
-
                 case 0:  /* Pixel value in HtmlComputedValues.iVerticalAlign */
                     iVert = pPM->iBaseline - pM->iBaseline;
                     iVert -= pComputed->iVerticalAlign;
                     break;
-
                 case CSS_CONST_BASELINE:
                     iVert = pPM->iBaseline - pM->iBaseline;
                     break;
-
                 case CSS_CONST_SUB: {
                     HtmlNode *pNodeParent = HtmlNodeParent(pNode);
                     if (pNodeParent) {
@@ -437,14 +427,12 @@ HtmlInlineContextPushBorder (InlineContext *pContext, InlineBorder *pBorder)
                     iVert += (pPM->iBaseline - pM->iBaseline);
                     break;
                 }
-
                 case CSS_CONST_SUPER: {
                     HtmlFont *pF = pComputed->fFont;
                     iVert = (pPM->iBaseline - pM->iBaseline);
                     iVert -= pF->ex_pixels;
                     break;
                 }
-
                 case CSS_CONST_TEXT_TOP:
                     iVert = pPM->iFontTop;
                     break;
@@ -458,7 +446,6 @@ HtmlInlineContextPushBorder (InlineContext *pContext, InlineBorder *pBorder)
                     }
                     break;
                 }
-
                 case CSS_CONST_TEXT_BOTTOM:
                     iVert = pPM->iFontBottom - pM->iLogical;
                     break;
@@ -471,7 +458,6 @@ HtmlInlineContextPushBorder (InlineContext *pContext, InlineBorder *pBorder)
                     pBorder->eLineboxAlign = LINEBOX_ALIGN_BOTTOM;
                     break;
             }
-
             pBorder->iVerticalAlign = iVert; 
             START_LOG(pBorder->pNode);
                 oprintf(pLog, "Vertical offset is %d pixels\n", iVert);
@@ -505,7 +491,6 @@ HtmlInlineContextPushBorder (InlineContext *pContext, InlineBorder *pBorder)
             }
         }
     }
-
     return 0;
 }
 
@@ -542,8 +527,8 @@ HtmlInlineContextPopBorder (InlineContext *p, InlineBorder *pBorder)
          *
          *     <a href="www.google.com"></a>
          *
-     * For this case just remove an entry from
-     * InlineContext.pBoxBorders. The border will never be drawn.
+         * For this case just remove an entry from
+         * InlineContext.pBoxBorders. The border will never be drawn.
          */
         InlineBorder *pBorder = p->pBoxBorders;
         p->pBoxBorders = pBorder->pNext;
@@ -561,7 +546,7 @@ HtmlInlineContextPopBorder (InlineContext *p, InlineBorder *pBorder)
             HtmlFree(pBorder);
         }
     }
-    
+
     /* A border has just been closed. If there was no white-space just before
      * the close of the border, or if the 'white-space' property is set
      * to "pre", add an empty inline-text block to the context. This is
@@ -729,8 +714,7 @@ inlineContextDrawBorder (
     int nRepX
 )
 {
-    int iTop;
-    int iHeight;
+    int iTop, iHeight;
     int y_o;                  /* Y-coord for overline */
     int y_t;                  /* Y-coord for linethough */
     int y_u;                  /* Y-coord for underline */
@@ -774,7 +758,6 @@ inlineContextDrawBorder (
             HtmlDrawBox(pCanvas, x1, iTop, x2-x1, iHeight, pNode, flags, mmt,0);
         }
     }
-
     x1 += (dlb ? pBorder->box.iLeft : 0);
     x2 -= (drb ? pBorder->box.iRight : 0);
 
@@ -793,8 +776,7 @@ inlineContextDrawBorder (
      */
     if (nRepX > 0) {
         int xa = x1;
-        int i;
-        for (i = 0; i < nRepX; i++) {
+        for(int i = 0; i < nRepX; i++) {
             int xs = aRepX[i*2];         /* Start of replaced box $i */
             int xe = aRepX[i*2+1];       /* End of replaced box $i */
             if (xe <= xs) continue;
@@ -803,9 +785,7 @@ inlineContextDrawBorder (
                 int xb = MIN(xs, x2);
                 HtmlDrawLine(pCanvas, xa, xb-xa, y_o, y_t, y_u, pNode, mmt);
             }
-            if (xe > xa) {
-                xa = xe;
-            }
+            if (xe > xa) xa = xe;
         }
         if (xa < x2) {
             HtmlDrawLine(pCanvas, xa, x2-xa, y_o, y_t, y_u, pNode, mmt);
@@ -825,18 +805,14 @@ calculateLineBoxHeight (
 )
 {
     InlineBorder *p;
-    int iTop;
-    int iBottom;
+    int iTop = 0;
+    int iBottom = 0;
     int ii;
     int doLineHeightQuirk = 0;
-
-    iTop = 0;
-    iBottom = 0;
 
     if (!hasText && pContext->pTree->options.mode != HTML_MODE_STANDARDS) {
         doLineHeightQuirk = 1;
     }
-
     for (ii = -1; ii < nBox; ii++) {
         if (ii >= 0) {
             /* Inline boxes that start on this line. */
@@ -846,12 +822,10 @@ calculateLineBoxHeight (
             p = pContext->pBorders;
         }
         for ( ; p; p = p->pNext) {
-
             if (p->eLineboxAlign != LINEBOX_ALIGN_PARENT) {
                 p->iTop = 0;
                 p->iBottom = 0;
             }
-
             if (!doLineHeightQuirk) {
                 InlineBorder *p2;
                 int iVerticalOffset = 0;
@@ -860,7 +834,6 @@ calculateLineBoxHeight (
                     iVerticalOffset += p2->iVerticalAlign;
                     if (p2->eLineboxAlign != LINEBOX_ALIGN_PARENT) break;
                 }
-
                 iBottomOffset = iVerticalOffset + p->metrics.iLogical;
                 if (p2) {
                     p2->iTop = MIN(p2->iTop, iVerticalOffset);
@@ -874,7 +847,6 @@ calculateLineBoxHeight (
             }
         }
     }
-
     for (ii = -1; ii < nBox; ii++) {
         if (ii >= 0) {
             /* Inline boxes that start on this line. */
@@ -884,7 +856,6 @@ calculateLineBoxHeight (
             p = pContext->pBorders;
         }
         for ( ; p; p = p->pNext) {
-            
             if (p->eLineboxAlign != LINEBOX_ALIGN_PARENT) {
                 int iHeight = p->iBottom - p->iTop;
                 if (p->eLineboxAlign == LINEBOX_ALIGN_TOP) {
@@ -896,7 +867,6 @@ calculateLineBoxHeight (
             }
         }
     }
-
     for (ii = -1; ii < nBox; ii++) {
         if (ii >= 0) {
             /* Inline boxes that start on this line. */
@@ -983,17 +953,14 @@ calculateLineBoxWidth (
         if (pPrevBox) {
             iBoxW += pPrevBox->nSpace;
         }
-
         if ((iWidth + iBoxW > iReqWidth) && (!isForceBox || nBox > 0)) { 
             /* pBox will not fit on the line box. Break out of this loop. */
             break;
         }
         iWidth += iBoxW;
-
         if (eType == INLINE_TEXT) {
             hasText = 1;
         }
-
         if (
             pBox->eWhitespace == CSS_CONST_NORMAL || 
             !pNextBox || 
@@ -1002,7 +969,6 @@ calculateLineBoxWidth (
             nBox = ii + 1;
         }
     }
-
     if (!isForceLine && (nBox == p->nInline)) {
     /* There are not enough inline-boxes to fill the line-box and the
          * 'force-line' flag is not set. In this case return 0 and set
@@ -1036,9 +1002,7 @@ calculateLineBoxWidth (
     *pnBox = nBox;
     *pHasText = hasText;
 
-#if 0
     assert(nBox > 0 || iWidth > 0 || p->nInline == 0 || !isForceLine);
-#endif
     return ((nBox == 0) ? 0 : 1);
 }
 
@@ -1102,8 +1066,7 @@ HtmlInlineContextGetLineBox (
     HtmlCanvas *pCanvas,      /* OUT: Canvas to render line box to */
     int *pVSpace,             /* OUT: Total height of generated linebox */
     int *pAscent             /* OUT: Ascent of line box */
-)
-{
+) {
     InlineContext * const pContext = p;  /* For the benefit of the LOG macros */
     int i;                   /* Iterator variable for aInline */
     int j;
@@ -1137,7 +1100,6 @@ HtmlInlineContextGetLineBox (
 
     /* The amount of horizontal space available in which to stack boxes */
     const int iReqWidth = MAX(*pWidth - p->iTextIndent, 0);
-
     HtmlCanvas content;      /* Canvas for content (as opposed to borders) */
     HtmlCanvas borders;      /* Canvas for borders */
     memset(&content, 0, sizeof(HtmlCanvas));
@@ -1154,7 +1116,7 @@ HtmlInlineContextGetLineBox (
      *       LINEBOX_FORCEBOX flag is not set. In this case iLineWidth
      *       is set to the width required by the first inline token.
      */
-    if (!calculateLineBoxWidth(p,flags,iReqWidth,&iLineWidth,&nBox,&hasText)) {
+    if (!calculateLineBoxWidth(p, flags, iReqWidth, &iLineWidth, &nBox, &hasText)){
         *pWidth = iLineWidth;
         return 0;
     }
@@ -1173,17 +1135,14 @@ HtmlInlineContextGetLineBox (
      * justification is implemented.
      */
     switch(p->iTextAlign) {
-
         case CSS_CONST__TKHTML_CENTER:
         case CSS_CONST_CENTER:
             iLeft = (iReqWidth - iLineWidth) / 2;
             break;
-
         case CSS_CONST__TKHTML_RIGHT:
         case CSS_CONST_RIGHT:
             iLeft = (iReqWidth - iLineWidth);
             break;
-
         case CSS_CONST_JUSTIFY:
             if (nBox > 1 && iReqWidth > iLineWidth && nBox < p->nInline) {
                 nExtra = (double)(iReqWidth - iLineWidth) / (double)(nBox-1);
@@ -1216,8 +1175,7 @@ HtmlInlineContextGetLineBox (
         int extra_pixels = 0;   /* Number of extra pixels for justification */
         InlineBox *pBox = &p->aInline[i];
         int boxwidth = pBox->nContentPixels;
-        int x1;
-        int x2;
+        int x1, x2;
         int nBorderDraw = 0;
 
         /* If the 'text-align' property is set to "justify", then we add a
@@ -1234,7 +1192,6 @@ HtmlInlineContextGetLineBox (
                 extra_pixels = iReqWidth - iLineWidth;
             }
         }
-
         if ( !pContext->isSizeOnly && 
             pBox != &p->aInline[0] && 
             pBox->pNode && 
@@ -1254,8 +1211,7 @@ HtmlInlineContextGetLineBox (
             if (
                 pBox[-1].eType == INLINE_TEXT &&
                 pBox->pNode == pBox[-1].pNode &&
-                nExtra <= 0.0 && 
-                pFont->space_pixels == pBox[-1].nSpace
+                nExtra <= 0.0 && pFont->space_pixels == pBox[-1].nSpace
             ) {
                 int iWidth = pBox->canvas.right;
                 int nChar = HtmlDrawTextLength(&pBox->canvas) + 1;
@@ -1269,18 +1225,14 @@ HtmlInlineContextGetLineBox (
              * selected regions (a.k.a. text tags) are drawn contigiously.
              */
             else {
-                InlineBox *pPrev;
-
-                pPrev = &pBox[-1]; 
-                while( pPrev && pPrev->eType == INLINE_SPACER ){
+                InlineBox *pPrev = &pBox[-1]; 
+                while(pPrev && pPrev->eType == INLINE_SPACER ){
                     pPrev = (pPrev == p->aInline)?0:(&pPrev[-1]);
                 }
- 
-                if( pPrev && 
+                if (pPrev && 
                     pPrev->eType == INLINE_TEXT &&
                     pPrev->pNode && 
-                    pBox->nLeftPixels == 0 &&
-                    pPrev->nRightPixels == 0
+                    pBox->nLeftPixels == 0 && pPrev->nRightPixels == 0
                 ) {
                     int iExtra = 0;
                     if (nExtra > 0.0) {
@@ -1356,8 +1308,7 @@ HtmlInlineContextGetLineBox (
             nBorderDraw = pBox->nBorderEnd;
         }
         for(j = 0; j < nBorderDraw; j++) {
-            int k;
-            int rb;
+            int k, rb;
             HtmlCanvas tmpcanvas;
             int iVerticalOffset = 0;
             InlineBorder *pTmp;
@@ -1379,7 +1330,6 @@ HtmlInlineContextGetLineBox (
             for (pTmp = pBorder; pTmp; pTmp = pTmp->pParent) {
                 iVerticalOffset += pTmp->iVerticalAlign;
             }
-
             if (pBorder->iStartBox >= 0) {
                 x1 = pBorder->iStartPixel;
             } else {
@@ -1390,14 +1340,12 @@ HtmlInlineContextGetLineBox (
                 x2 += pBorder->margin.margin_right;
                 x2 += pBorder->box.iRight;
             }
-
             memset(&tmpcanvas, 0, sizeof(HtmlCanvas));
             DRAW_CANVAS(&tmpcanvas, &borders, 0, 0, 0);
             memset(&borders, 0, sizeof(HtmlCanvas));
             inlineContextDrawBorder(pLayout, &borders, pBorder, x1, x2, iVerticalOffset, rb, aReplacedX, nReplacedX);
             DRAW_CANVAS(&borders, &tmpcanvas, 0, 0, 0);
         }
-
         for(j = 0; j < pBox->nBorderEnd; j++) {
             pBorder = p->pBorders;
             if (!pBorder) {
@@ -1410,16 +1358,10 @@ HtmlInlineContextGetLineBox (
                 HtmlFree(pBorder);
             }
         }
-
         if (
-            pBox->eType != INLINE_SPACER || 
-            pBox->eWhitespace == CSS_CONST_PRE
-        ) {
-            ignoreSpace = 0;
-        }
-        if (!ignoreSpace) {
-            x += pBox->nSpace;
-        }
+            pBox->eType != INLINE_SPACER || pBox->eWhitespace == CSS_CONST_PRE
+        ) ignoreSpace = 0;
+        if (!ignoreSpace) x += pBox->nSpace;
     }
 
     /* If any borders are still in the InlineContext.pBorders list, then
@@ -1440,9 +1382,7 @@ HtmlInlineContextGetLineBox (
     p->nInline -= nBox;
     memmove(p->aInline, &p->aInline[nBox], p->nInline * sizeof(InlineBox));
 
-    if (aReplacedX) {
-        HtmlFree(aReplacedX);
-    }
+    if (aReplacedX) HtmlFree(aReplacedX);
     p->iTextIndent = 0;
 
     START_LOG(pContext->pNode);
@@ -1514,18 +1454,15 @@ HtmlInlineContextCleanup (InlineContext *pContext)
         HtmlFree(pBorder);
         pBorder = pTmp;
     }
-
     pBorder = pContext->pBorders;
     while (pBorder) {
         InlineBorder *pTmp = pBorder->pNext;
         HtmlFree(pBorder);
         pBorder = pTmp;
     }
-
     if (pContext->aInline) {
         HtmlFree(pContext->aInline);
     }
-
     HtmlFree(pContext);
 }
 
@@ -1753,16 +1690,10 @@ HtmlInlineContextAddBox (InlineContext *pContext, HtmlNode *pNode, HtmlCanvas *p
     HtmlCanvas *pInline;
     InlineBorder *pBorder;
     InlineBox *pBox;
-    HtmlComputedValues *pComputed = HtmlNodeComputedValues(pNode);
 
     CHECK_INTEGER_PLAUSIBILITY(iOffset);
     CHECK_INTEGER_PLAUSIBILITY(iHeight);
     CHECK_INTEGER_PLAUSIBILITY(iWidth);
-
-    if (iWidth == 0) {
-        HtmlDrawCleanup(pContext->pTree, pCanvas);
-        return;
-    }
 
     START_LOG(pNode);
         oprintf(pLog, "iWidth=%d iHeight=%d ", iWidth, iHeight);
@@ -1781,7 +1712,7 @@ HtmlInlineContextAddBox (InlineContext *pContext, HtmlNode *pNode, HtmlCanvas *p
     pInline = inlineContextAddInlineCanvas(pContext, INLINE_REPLACED, pNode);
     pBox = &pContext->aInline[pContext->nInline-1];
     pBox->nContentPixels = iWidth;
-    pBox->eWhitespace = pComputed->eWhitespace;
+    pBox->eWhitespace = HtmlNodeComputedValues(pNode)->eWhitespace;
     assert(pBox->pBorderStart);
     DRAW_CANVAS(pInline, pCanvas, 0, 0, pNode);
     HtmlInlineContextPopBorder(pContext, pBorder);

@@ -646,7 +646,7 @@ set ::hv3::dom::code::ELEMENT {
 
 namespace eval ::hv3::DOM {
   proc Element_getAttributeString {node name def} {
-    list [$node attribute -default $def $name]
+    list string [$node attribute -default $def $name]
   }
 
   proc Element_putAttributeString {node name val} {
@@ -797,7 +797,7 @@ namespace eval ::hv3::DOM {
 
   # The "data" property is a get/set on the contents of this text node.
   #
-  dom_get data { list [$myNode text -pre] }
+  dom_get data { list string [$myNode text -pre] }
   dom_put -string data newText { $myNode text set $newText }
 
   # Read-only "length" property.
@@ -842,7 +842,7 @@ namespace eval ::hv3::DOM {
 
   # nodeValue is read/write for a Text node.
   #
-  dom_get nodeValue {list [$myNode text -pre] }
+  dom_get nodeValue {list string [$myNode text -pre] }
   dom_put -string nodeValue newText { $myNode text set $newText }
 
   # End of Node interface overrides.

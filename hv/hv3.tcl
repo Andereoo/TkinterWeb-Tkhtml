@@ -1098,7 +1098,7 @@ namespace eval ::hv3::hv3 {
   proc new {me args} {
     upvar #0 $me O
     set win $O(win)
-	   
+
     # The scrolled html widget.
     # set O(myHtml) [::hv3::scrolled html $win.html]
     set O(myHtml) $O(hull)
@@ -1254,6 +1254,7 @@ namespace eval ::hv3::hv3 {
 
     bind $win <Configure>  [list $me goto_fragment]
     #bind [html $me].document <Visibility> [list $me VisibilityChange %s]
+	bind $win <Control-c>  [list $me copytext]
 
     eval $me configure $args
   }
@@ -1364,7 +1365,7 @@ namespace eval ::hv3::hv3 {
     event generate $O(win) <<Location>>
   }
 
-  proc MightBeComplete {me } {
+  proc MightBeComplete {me} {
     upvar #0 $me O
     if {[llength $O(myActiveHandles)] == 0} {
       event generate $O(win) <<Complete>>
@@ -1376,9 +1377,9 @@ namespace eval ::hv3::hv3 {
         set bodynode [$O(myHtml) search body]
 	# Workaround. Currently meta reload causes empty completion.
 	# XXX: Check this again!
-	if {[llength $bodynode]} {
+		if {[llength $bodynode]} {
           $O(myDom) event load [lindex $bodynode 0]
-	}
+		}
       }
     }
   }
@@ -1725,10 +1726,7 @@ namespace eval ::hv3::hv3 {
     set href [string trim [$node attr -default "" href]]
     set media [string tolower [$node attr -default all media]]
     if {
-        [string match *stylesheet* $rel] &&
-        ![string match *alternat* $rel] &&
-        $href ne "" && 
-        [regexp all|screen $media]
+      [string match *stylesheet* $rel] && ![string match *alternat* $rel] && $href ne "" && [regexp all|screen|print $media]
     } {
       set full_uri [$me resolve_uri $href]
       $me Requeststyle author $full_uri
@@ -1752,7 +1750,7 @@ namespace eval ::hv3::hv3 {
     upvar #0 $me O
     array set attributes $attr
     if {[info exists attributes(media)]} {
-      if {0 == [regexp all|screen $attributes(media)]} return ""
+      if {0 == [regexp all|screen|print $attributes(media)]} return ""
     }
 
     set id        author.[format %.4d [incr O(myStyleCount)]]
@@ -1936,9 +1934,9 @@ namespace eval ::hv3::hv3 {
     upvar #0 $me O
     set z [string map {< &lt; > &gt;} $data]
     if {$isFinal} {
-	$O(myHtml) parse -final $data
+	  $O(myHtml) parse -final $data
     } else {
-	$O(myHtml) parse $data
+	  $O(myHtml) parse $data
     }
   }
 
@@ -1946,9 +1944,9 @@ namespace eval ::hv3::hv3 {
     upvar #0 $me O
     $O(myFrameLog) loghtml $data
     if {$isFinal} {
-	$O(html) parse -final $data
+	  $O(html) parse -final $data
     } else {
-	$O(html) parse $data
+	  $O(html) parse $data
     }
     $me goto_fragment
   }
@@ -2012,6 +2010,12 @@ namespace eval ::hv3::hv3 {
     upvar #0 $me O
     $O(myUri) load $uri
     $O(myBase) load [$O(myUri) get]
+  }
+
+  proc copytext {me} {
+    upvar #0 $me O
+    clipboard clear
+    clipboard append [$me selected]
   }
 
   #--------------------------------------------------------------------------
@@ -2340,6 +2344,30 @@ namespace eval ::hv3::hv3 {
   proc node {me args} { 
     upvar #0 $me O
     eval $O(myHtml) node $args
+  }
+
+  proc postscript {me args} {
+    upvar #0 $me O
+
+	if {[lsearch -nocase -exact $args -page] != -1} {
+	  # Sizes and dimensions of paper pages; measured in PostScript points (1/72 of an inch).
+	  array set pagesizes {
+        A0 2384x3370 A1 1684x2384 A2 1191x1684 A3 842x1191 A4 595x842 A5 420x595 A6 297x420 A7 210x297 A8 148x210 A9 105x148
+        B0 2920x4127 B1 2064x2920 B2 1460x2064 B3 1032x1460 B4 729x1032 B5 516x729 B6 363x516 B7 258x363 B8 181x258 B9 127x181
+        Letter 612x792 Legal 612x1008 Ledger 1224x792 Tabloid 792x1224 Executive 522x756 Folio 595x935
+        {Comm #10 envelope} 297x684 {C5 envelope} 461x648 {DL envelope} 312x624
+      }
+
+	  array set aArgs $args
+
+	  set pageSizeName [string totitle $aArgs(-page) 1]
+	  if {$pageSizeName eq ""} { return [array get pagesizes] }
+
+	  array unset aArgs "-page"
+	  set aArgs(-pagesize) $pagesizes($pageSizeName)
+	  set args [array get aArgs]
+	}
+    eval $O(myHtml) postscript $args
   }
 
   set DelegateOption(-isvisitedcmd) myHyperlinkManager

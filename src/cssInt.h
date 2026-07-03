@@ -149,7 +149,7 @@ struct CssPropertySet {
 };
 
 struct CssProperties {
-    int nRule;
+    u32 nRule;
     CssRule **apRule;
 };
 
@@ -188,8 +188,8 @@ struct CssRule {
 struct CssPriority {
     u8 important;            /* True if !IMPORTANT flag is set */
     u8 origin;               /* One of CSS_ORIGIN_AGENT, _AUTHOR or _USER */ 
-    Tcl_Obj *pIdTail;        /* Tail of the stylesheet id */
     int iPriority;
+    Tcl_Obj *pIdTail;        /* Tail of the stylesheet id */
     CssPriority *pNext;      /* Linked list pointer */
 };
 
