@@ -645,9 +645,8 @@ static JSValue throwTclError(JSContext *ctx, int rc)
         QjsInterp *qjs = JS_GetContextOpaque(ctx);
 
         Tcl_Interp *interp = qjs->interp;
-        Tcl_Obj *pErr;
-
-        Tcl_Obj *pSaved = Tcl_GetObjResult(interp);
+        Tcl_Obj *pErr, *pSaved = Tcl_GetObjResult(interp);
+		JSValue err = JS_NewError(ctx);
 
         Tcl_Obj *pErrorInfo = Tcl_NewStringObj("errorInfo", 9);
         Tcl_IncrRefCount(pErrorInfo);
@@ -659,7 +658,9 @@ static JSValue throwTclError(JSContext *ctx, int rc)
         Tcl_DecrRefCount(pErrorInfo);
 
         Tcl_SetObjResult(interp, pSaved);
-        return JS_ThrowTypeError(ctx, Tcl_GetString(pSaved));
+		JS_DefinePropertyValue(ctx, err, JS_ATOM_message, 
+			JS_NewString(ctx, Tcl_GetString(pSaved)), JS_PROP_WRITABLE|JS_PROP_CONFIGURABLE);
+        return JS_Throw(ctx, err);
     }
     return JS_UNDEFINED;
 }
@@ -1334,7 +1335,7 @@ QjsTcl_Enumerator(JSContext *ctx, JSPropertyEnum **pTab, uint32_t *pLen, JSValue
 
     return 0;
 	error:
-		JS_FreePropertyEnum(ctx, pEnum);
+		JS_FreePropertyEnum(ctx, pEnum, *pLen);
 		throwTclError(ctx, rc);
 		return -1;
 }
