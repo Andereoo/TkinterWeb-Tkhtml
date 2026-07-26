@@ -654,9 +654,7 @@ static JSValue throwTclError(JSContext *ctx, int rc)
         pErr = Tcl_ObjGetVar2(interp, pErrorInfo, NULL, TCL_GLOBAL_ONLY);
         pErr = Tcl_DuplicateObj(pErr);
         Tcl_IncrRefCount(pErr);
-        if (qjs->pTclError) {
-            Tcl_DecrRefCount(qjs->pTclError);
-        }
+        if (qjs->pTclError) Tcl_DecrRefCount(qjs->pTclError);
         qjs->pTclError = pErr;
         Tcl_DecrRefCount(pErrorInfo);
 
@@ -1324,20 +1322,19 @@ QjsTcl_Enumerator(JSContext *ctx, JSPropertyEnum **pTab, uint32_t *pLen, JSValue
     rc = callQjsTclMethod(interp, ctxOp->pLog, obj, Tcl_NewStringObj("Enumerator", 10), NULL);
     if (rc != TCL_OK) goto error;
 
-    rc = Tcl_ListObjGetElements(interp, Tcl_GetObjResult(interp), &nRet, &apRet);
+    rc = Tcl_ListObjGetElements(interp, Tcl_GetObjResult(interp), pLen, &apRet);
     if (rc != TCL_OK) goto error;
 
-    pEnum = js_malloc(ctx, sizeof(pEnum[0]) * nRet);
+    if (*pLen > 0) pEnum = js_malloc(ctx, sizeof(pEnum[0]) * *pLen);
 
-    for (int i = 0; i < nRet; i++) {
+    for (int i = 0; i < *pLen; i++) {
         pEnum[i].atom = JS_NewAtom(ctx, Tcl_GetString(apRet[i]));
     }
 	*pTab = pEnum;
-	*pLen = nRet;
 
     return 0;
 	error:
-		js_free(ctx, pEnum);
+		JS_FreePropertyEnum(ctx, pEnum);
 		throwTclError(ctx, rc);
 		return -1;
 }
