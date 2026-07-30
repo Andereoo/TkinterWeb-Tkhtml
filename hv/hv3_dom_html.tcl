@@ -41,14 +41,15 @@ set BaseList {DocumentEvent}
   %DOCUMENTEVENT%
 
   dom_get title {
-    list [$myHv3 title]
+    list string [$myHv3 title]
   }
   dom_put -string title val {
-    set title [$myHv3 html search title]
-	if {$title ne ""} { $title destroy }
+    set title [$myHv3 html search title -index 0]
 	set head [lindex [[$myHv3 node] children] 0] ;# TkHTML creates the <head> node by default
-    $head insert [$myHv3 html fragment <title>$val</title>]
-	list [$myHv3 title_node_handler $head] ;# Update widget
+	if {$title ne ""} { $title destroy }
+	set [$myHv3 titlevar] $val
+	set title [$myHv3 html fragment <title>$val</title>]
+    $head insert $title
   }
 
   # Read-only attribute "domain".
@@ -57,7 +58,7 @@ set BaseList {DocumentEvent}
     if {$str eq ""} {
       list null
     } else {
-      list $str
+      list string $str
     }
   }
 
@@ -424,11 +425,11 @@ namespace eval ::hv3::DOM {
 
   proc HTMLElement_getInnerHTML {node} {
     set str [WidgetNode_ChildrenToHtml $node]
-    list $str
+    list string $str
   }
   
   proc HTMLElement_getTextContent {node} {
-    list [WidgetNode_ToText $node]
+    list string [WidgetNode_ToText $node]
   }
 
   proc HTMLElement_putInnerHTML {dom node newHtml} {
@@ -447,8 +448,7 @@ namespace eval ::hv3::DOM {
     ### }
 
     # Insert the new descendants, created by parsing $newHtml.
-    set htmlwidget [$node html]
-    set children [$htmlwidget fragment $newHtml]
+    set children [[$node html] fragment $newHtml]
     $node insert $children
     return ""
   }
@@ -537,7 +537,7 @@ namespace eval ::hv3::DOM {
   #
   dom_get defaultChecked { 
     set c [$myNode attr -default 0 checked]
-    list $c
+    list string $c
   }
   dom_put -string defaultChecked C { 
     set F [$myNode replace]
@@ -551,7 +551,7 @@ namespace eval ::hv3::DOM {
   #
   dom_get checked { 
     set F [$myNode replace]
-    list [$F dom_checked]
+    list string [$F dom_checked]
   }
   dom_put -string checked C { 
     set F [$myNode replace]
@@ -573,9 +573,9 @@ namespace eval ::hv3::DOM {
     set T [string tolower [$myNode attr -default text type]]
     if {[lsearch $SPECIAL $T]>=0} {
       set F [$myNode replace]
-      list [$F dom_value]
+      list string [$F dom_value]
     } else {
-      list [$myNode attr -default "" value]
+      list string [$myNode attr -default "" value]
     }
   }
   dom_put -string value V { 
@@ -857,7 +857,7 @@ namespace eval ::hv3::DOM {
   }
 
   dom_get text {
-    list [HTMLOptionElement_getText $myNode]
+    list string [HTMLOptionElement_getText $myNode]
   }
   dom_put -string text zText {
     set z [string map {< &lt; > &gt;} $zText]
@@ -868,7 +868,7 @@ namespace eval ::hv3::DOM {
   # TODO: After writing this attribute, have to update data 
   # structures in the hv3_forms module.
   dom_get label {
-    list [HTMLOptionElement_getLabelOrValue $myNode label]
+    list string [HTMLOptionElement_getLabelOrValue $myNode label]
   }
   dom_put -string label v {
     $myNode attr label $v
@@ -894,7 +894,7 @@ namespace eval ::hv3::DOM {
   }
 
   dom_get value {
-    list [HTMLOptionElement_getLabelOrValue $myNode value]
+    list string [HTMLOptionElement_getLabelOrValue $myNode value]
   }
   dom_put -string value v {
     # TODO: After writing this attribute, have to update data structures in

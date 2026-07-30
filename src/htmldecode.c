@@ -685,9 +685,8 @@ uriObjCmd(
         Tcl_WrongNumArgs(interp, 1, objv, "SUB-COMMAND ...");
         return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObjStruct(interp, objv[1], aSub, 
-            sizeof(struct UriCommand), "option", 0, &iChoice) 
-    ){
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], aSub, sizeof(struct UriCommand), "option", 0, &iChoice))
+    {
         return TCL_ERROR;
     }
     if (objc != 2+aSub[iChoice].nArg) {
@@ -704,7 +703,6 @@ uriObjCmd(
             HtmlFree(zRes);
             break;
         }
-
         case URI_LOAD: {
             Tcl_CmdInfo info;
             Uri *pNew;

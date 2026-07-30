@@ -40,7 +40,7 @@ namespace eval hv3 { set {version($Id: hv3_dom_ns.tcl,v 1.42 2008/02/15 18:23:37
   dom_parameter dummy
 
   -- Fairly obviously, this is an Hv3 specific property.
-  dom_get hv3_version    { list [::hv3::hv3_version] }
+  dom_get hv3_version    { list string [::hv3::hv3_version] }
 
   foreach {property string} {
     appCodeName    "Mozilla"
@@ -140,7 +140,6 @@ namespace eval hv3 { set {version($Id: hv3_dom_ns.tcl,v 1.42 2008/02/15 18:23:37
   XX
 
   dom_parameter myHv3
-  dom_default_value { list [$myHv3 uri get] }
 
   #---------------------------------------------------------------------
   # Properties:
@@ -225,7 +224,7 @@ namespace eval hv3 { set {version($Id: hv3_dom_ns.tcl,v 1.42 2008/02/15 18:23:37
   }
 
   -- Returns the same value as reading the <I>href</I> property.
-  dom_call toString {THIS} { ::hv3::DOM::Location $myDom $myHv3 DefaultValue }
+  dom_call toString {THIS} { return [$myHv3 uri get] }
 }
 namespace eval ::hv3::DOM {
   proc Location_assign {hv3 loc} {
@@ -333,8 +332,7 @@ namespace eval ::hv3::DOM {
     set frame [$myHv3 cget -frame]
     set parent [$frame parent_frame]
     if {$parent eq ""} {set parent $frame}
-    set see [[$parent hv3 dom] see]
-    list bridge $see
+    list bridge [[$parent hv3 dom] qjs]
   }
 
   -- A reference to the outermost window in the frameset. For ordinary
@@ -342,8 +340,7 @@ namespace eval ::hv3::DOM {
   -- to this object (same as the <I>window</I> and <I>self</I> properties).
   dom_get top { 
     set topframe [[$myHv3 cget -frame] top_frame]
-    set see [[$topframe hv3 dom] see]
-    list bridge $see
+    list bridge [[$topframe hv3 dom] qjs]
   }
 
   -- A reference to this object.

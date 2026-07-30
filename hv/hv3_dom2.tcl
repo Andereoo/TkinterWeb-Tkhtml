@@ -201,7 +201,7 @@ snit::type ::hv3::dom::HTMLDocument {
   # perhaps)?
   #
   js_get cookie {
-    list [::hv3::the_cookie_manager Cookie [$myHv3 uri get]]
+    list string [::hv3::the_cookie_manager Cookie [$myHv3 uri get]]
   }
   js_put cookie value {
     set str [[$self qjs] tostring $value]
@@ -339,7 +339,7 @@ namespace eval ::hv3::dom {
     # Get and set the innerHTML property. The implmenetation of this
     # is in hv3_dom2.tcl.
     #
-    js_get innerHTML { list [::hv3::dom::get_inner_html $myNode] }
+    js_get innerHTML { list string [::hv3::dom::get_inner_html $myNode] }
     js_put innerHTML {value} { 
       set code [[$self qjs] tostring $value ]
       ::hv3::dom::set_inner_html $myHv3 $myNode $code

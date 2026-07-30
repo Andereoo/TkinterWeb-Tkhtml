@@ -74,9 +74,7 @@ namespace eval ::hv3 {
       set myCodeViewer [$myCodeViewer widget]
 
       set b [frame ${win}.b]
-      ::hv3::button ${b}.viewindex         \
-          -text "Application Index"        \
-          -command [list $self Display index ""]
+      ::hv3::button ${b}.viewindex -text "Application Index" -command [list $self Display index ""]
       set myLabel [::hv3::label ${b}.label -anchor w]
       pack ${b}.viewindex -side left
 
@@ -186,7 +184,6 @@ namespace eval ::hv3 {
             $myOutputWindow insert end "    $result\n"
           }
         }
-
         Javascript {
           set isEnabled [gui_current cget -enablejavascript]
           $myOutputWindow insert end "> $cmd\n" javascript
@@ -203,7 +200,6 @@ namespace eval ::hv3 {
             }
           }
         }
-
         Search {
           set ignore_case 0
           if {$cmd eq [string tolower $cmd]} {
@@ -260,7 +256,6 @@ namespace eval ::hv3 {
           }
         }
       }
-
       $myOutputWindow yview end
       $myOutputWindow configure -state disabled
     }
@@ -404,15 +399,14 @@ namespace eval ::hv3 {
               $myOutputWindow insert end "[lindex $r 2]\n"
           }
 
-          foreach {zFile iLine zType zName} [lrange $r 3 end] {
+		  set frames [regexp -all -inline {\s*at\s(\S+)\s+\((\S+):(\d+):(\d+)\)} [lindex $r 6]]
+          foreach {_ zName zFile iLine iCol} $frames {
             set target [getlogscript $zFile]
             if {$target ne ""} {
               $myOutputWindow insert end "    "
               set cmd [list $self DisplayJavascriptError $idx $target $iLine]
-              $self OutputWindowLink "Line $iLine, [$target cget -heading]" $cmd
-              if {$zType ne "" || $zName ne ""} {
-                $myOutputWindow insert end "  ($zType $zName)"
-              }
+              $self OutputWindowLink "Line $iLine, column $iCol, [$target cget -heading]" $cmd
+              $myOutputWindow insert end "  $zName"
               $myOutputWindow insert end "\n"
             } 
           }
@@ -503,7 +497,7 @@ namespace eval ::hv3 {
       if {"" eq [[$top hv3] log get html]} {
         $myCodeViewer insert end [join {
             {Source logging was not enabled when this document was loaded.}
-	    {To browse the document source code, select a different option}
+            {To browse the document source code, select a different option}
             {from the "Debug->Application Source Logging" menu and reload}
             {the document.}
         }]

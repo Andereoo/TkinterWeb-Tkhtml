@@ -241,7 +241,7 @@ snit::widget ::hv3::googlewidget {
 
   option -getcmd  -default ""
   option -config  -default ""
-  option -initial -default Google
+  option -initial -default DuckDuckGo
 
   delegate option -borderwidth to hull
   delegate option -relief      to hull

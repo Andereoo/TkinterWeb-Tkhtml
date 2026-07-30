@@ -386,7 +386,7 @@ static int layoutNodeCb(HtmlCanvasItem *, int, int, Overflow *, ClientData);
  * is consistent. It's turned off for debugging builds because it 
  * runs a lot and is very expensive.
  */
-#if 0 && !defined(NDEBUG)
+#ifdef NDEBUG
 static void 
 CHECK_CANVAS (HtmlCanvas *pCanvas)
 {
@@ -553,8 +553,6 @@ sorterReset (CanvasItemSorter *pSorter)
     HtmlFree(pSorter->aLevel);
 }
 
-
-
 static HtmlCanvasItem *
 allocateCanvasItem (void)
 {
@@ -675,13 +673,11 @@ HtmlDrawCleanup (HtmlTree *pTree, HtmlCanvas *pCanvas)
     HtmlCanvasItem *pItem;
     HtmlCanvasItem *pPrev = 0;
     CHECK_CANVAS(pCanvas);
-
     assert(pTree || !pCanvas->pFirst);
 
     pItem = pCanvas->pFirst;
     while (pItem) {
-        Tcl_Obj *pObj = 0;
-        int save = 0;
+        Html_u8 save = 0;
         switch (pItem->type) {
             case CANVAS_ORIGIN:
                 assert(pItem->c.origin.nRef >= 1 || !pItem->c.origin.pSkip);
@@ -696,7 +692,6 @@ HtmlDrawCleanup (HtmlTree *pTree, HtmlCanvas *pCanvas)
                 }
                 break;
             case CANVAS_MARKER:
-                assert(pItem->c.marker.flags);
                 if (!pItem->c.marker.flags) {
                     Tcl_Obj *pCrashCmd = pTree->options.drawcleanupcrashcmd;
                     if (pCrashCmd) {
@@ -715,15 +710,12 @@ HtmlDrawCleanup (HtmlTree *pTree, HtmlCanvas *pCanvas)
             default:
                 assert(!"Canvas corruption");
         }
-        if (pObj) {
-            Tcl_DecrRefCount(pObj);
-        }
         if (pPrev) {
             pPrev->pNext = 0;
             freeCanvasItem(pTree, pPrev);
         }
         pPrev = pItem;
-        pItem = (pItem == pCanvas->pLast ? 0 : pItem->pNext);
+        pItem = pItem == pCanvas->pLast ? 0 : pItem->pNext;
 
         if (save) {
             assert(pPrev->type == CANVAS_ORIGIN && !pPrev->c.origin.pSkip);
@@ -731,10 +723,7 @@ HtmlDrawCleanup (HtmlTree *pTree, HtmlCanvas *pCanvas)
             pPrev = 0;
         }
     }
-
-    if (pPrev) {
-        freeCanvasItem(pTree, pPrev);
-    }
+    if (pPrev) freeCanvasItem(pTree, pPrev);
     memset(pCanvas, 0, sizeof(HtmlCanvas));
 }
 
@@ -873,7 +862,7 @@ HtmlDrawOverflow (HtmlCanvas *pCanvas, HtmlNode *pNode, int w, int h)
 {
     HtmlCanvasItem *pLast = pCanvas->pLast;
     HtmlCanvasItem *pItem;
-CHECK_CANVAS(pCanvas);
+	CHECK_CANVAS(pCanvas);
 
     while (pLast && pLast->type==CANVAS_MARKER) {
         HtmlCanvasItem *pEnd = pLast;
@@ -884,7 +873,6 @@ CHECK_CANVAS(pCanvas);
             while (pLast->pNext != pEnd) pLast = pLast->pNext;
         }
     }
-
     if (!pLast) return;
     assert(pCanvas->pFirst);
 
@@ -903,7 +891,7 @@ CHECK_CANVAS(pCanvas);
     pCanvas->top = 0;
     pCanvas->bottom = h;
     pCanvas->right = w;
-CHECK_CANVAS(pCanvas);
+	CHECK_CANVAS(pCanvas);
 }
 
 void 
@@ -1091,7 +1079,6 @@ HtmlDrawBox (HtmlCanvas *pCanvas, int x, int y, int w, int h, HtmlNode *pNode, i
             pItem->c.box.pComputed = pComputed;
             HtmlComputedValuesReference(pComputed);
         }
-
         pItem->c.box.x = x;
         pItem->c.box.y = y;
 
@@ -1109,7 +1096,6 @@ HtmlDrawBox (HtmlCanvas *pCanvas, int x, int y, int w, int h, HtmlNode *pNode, i
         pCanvas->bottom = MAX(pCanvas->bottom, y + h);
         pCanvas->top = MIN(pCanvas->top, y);
     }
-
     return 0;
 }
 

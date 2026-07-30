@@ -1410,12 +1410,9 @@ configureCmd(
             HtmlCallbackRestyle(pTree, pTree->pRoot);
             HtmlWalkTree(pTree, pTree->pRoot, worldChangedCb, 0);
             HtmlCallbackDamage(pTree, 0, 0, Tk_Width(win), Tk_Height(win));
-
 #ifndef NDEBUG
-            if (1) {
-                Tcl_HashSearch search;
-                assert(0 == Tcl_FirstHashEntry(&pTree->aValues, &search));
-            }
+            Tcl_HashSearch search;
+            assert(0 == Tcl_FirstHashEntry(&pTree->aValues, &search));
 #endif
         }
         if (mask & F_MASK) {

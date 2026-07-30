@@ -1,7 +1,7 @@
 
 ##### BUILD can be DEBUG or RELEASE.
 #
-BUILD = DEBUG
+BUILD = RELEASE
 
 HV3_POLIPO = C:\Users\billa\Downloads\hv3_polipo.exe
 
@@ -24,7 +24,7 @@ BCC = x86_64-w64-mingw32-gcc
 CC = gcc
 
 CFLAGS_RELEASE = -O2 -DNDEBUG 
-CFLAGS_DEBUG   = -g
+CFLAGS_DEBUG   = -g -DTKHTML_ENABLE_PROFILE
 CFLAGS = $(CFLAGS_$(BUILD))
 CFLAGS += -DUSE_TCL_STUBS=1 -DUSE_TK_STUBS=1
 
@@ -58,7 +58,7 @@ STRIP = $(STRIP_$(BUILD))
 STARKITRT = /home/billa/work/tclkitsh-win32.upx.exe
 MKSTARKIT = $(STARKITRT) /home/billa/sdx.kit wrap
 
-##### Javascript libaries - libgc.a and libquickjs.a
+##### Javascript library - libquickjs.a
 #
 JS_SHARED_LIB = libTclqjs.dll
 

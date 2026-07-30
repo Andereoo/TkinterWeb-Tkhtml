@@ -15,15 +15,16 @@ snit::widget ::hv3::dynamiclog {
   variable myState -array {
     LAYOUTENGINE 0
     STYLEENGINE  0
+    UNSUPPORTED  0
     ACTION       0
     EVENT        0
-    "ECMASCRIPT Get"  1
-    "ECMASCRIPT Put"  1
+    ECMASCRIPT   1
   }
 
   constructor {html} {
     set myHtml $html
     $html configure -logcmd [mymethod log]
+    $html configure -unspptdcmd [mymethod log]
 
     set myDom [[winfo parent [winfo parent $html]] dom]
     $myDom configure -logcmd [mymethod log]
@@ -72,7 +73,8 @@ snit::widget ::hv3::dynamiclog {
 
   destructor {
     $myHtml configure -logcmd ""
-    if {$myDom ne ""} {$myDom configure -logcmd ""}
+    $myHtml configure -unspptdcmd ""
+    if {$myDom ne ""} {catch {$myDom configure -logcmd ""}}
   }
 }
 

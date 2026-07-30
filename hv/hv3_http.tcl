@@ -120,29 +120,35 @@ namespace eval ::hv3::protocol {
     upvar $me O
 
 	if {[catch {
-		# Extract the URI scheme to figure out what kind of URI we are
-		# dealing with. Currently supported are "file" and "http" (courtesy 
-		# Tcl built-in http package).
-		set uri_obj [::tkhtml::uri [$downloadHandle cget -uri]]
-		set uri_scheme [$uri_obj scheme]
-		$uri_obj destroy
+	  # Extract the URI scheme to figure out what kind of URI we are
+	  # dealing with. Currently supported are "file" and "http" (courtesy 
+	  # Tcl built-in http package).
+	  set uri_obj [::tkhtml::uri [$downloadHandle cget -uri]]
+	  set uri_scheme [$uri_obj scheme]
+	  $uri_obj destroy
 
-		# Fold the scheme to lower-case. Should ::tkhtml::uri have already done this?
-		set uri_scheme [string tolower $uri_scheme]
+	  # Fold the scheme to lower-case. Should ::tkhtml::uri have already done this?
+	  set uri_scheme [string tolower $uri_scheme]
 
-		# Execute the scheme-handler, or raise an error if no scheme-handler
-		# can be found.
-		if {[info exists O(scheme.$uri_scheme)]} {
-		  eval [concat $O(scheme.$uri_scheme) $downloadHandle]
-		} else {
-		  error "Unknown URI scheme: \"$uri_scheme\""
-		}
+	  # Execute the scheme-handler, or raise an error if no scheme-handler can be found.
+	  if {[info exists O(scheme.$uri_scheme)]} {
+	    eval [concat $O(scheme.$uri_scheme) $downloadHandle]
+	  } else {
+		error "Unknown URI scheme: \"$uri_scheme\""
+	  }
 	} err opts]} {
-        # Log detailed error info
-        set errInfo [dict get $opts -errorinfo]
-        puts stderr "Error, Stack trace:\n$errInfo"
-        # Optionally rethrow to let HV3 handle it
-        return -code error $err
+	  # Log detailed error info
+	  set errInfo [dict get $opts -errorinfo]
+	  puts stderr "Error, Stack trace:\n$errInfo"
+	  catch {
+	    $downloadHandle configure \
+          -mimetype text/html \
+          -header "HTTP/1.1 503 Service Unavailable\r\nContent-Type: text/plain" \
+          -expectedsize [string length $err]
+            
+          $downloadHandle append "HV3 network error: $err\n"
+          $downloadHandle finish
+      }
     }
   }
 
@@ -275,7 +281,14 @@ namespace eval ::hv3::protocol {
       set opts [lrange $args 0 end-2]
       set host [lindex $args end-1]
       set port [lindex $args end]
-      ::tls::socket -servername $host {*}$opts $host $port
+      if {[catch {
+        ::tls::socket -servername $host {*}$opts $host $port
+      } sock err]} {
+        # Return a dummy channel that will immediately fail in http::geturl
+        # (http package expects a socket or error)
+        return -code error $err
+    }
+    return $sock
   }
 
   # Handle a data: URI.

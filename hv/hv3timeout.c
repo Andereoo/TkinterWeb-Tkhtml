@@ -33,8 +33,8 @@ static void delTimeout(QjsTimeout *p) {
 	*p->apThis = p->pNext;
     if (p->pNext) p->pNext->apThis = p->apThis;
     JS_FreeValue(p->ctx, p->func);
-	for (int i=0; i < p->nArg; i++) JS_FreeValue(p->ctx, p->apArg[i]);
-	if (p->nArg > 0) js_free(p->ctx, p->apArg);
+	while (p->nArg--) JS_FreeValue(p->ctx, p->apArg[p->nArg]);
+	if (p->apArg) js_free(p->ctx, p->apArg);
 	js_free(p->ctx, p);
 }
 

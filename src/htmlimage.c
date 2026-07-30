@@ -107,7 +107,6 @@ struct HtmlImage2 {
     HtmlImageServer *pImageServer;   /* Image server that caches this image */
     const char *zUrl;                /* Hash table key */
 
-    int isValid;                     /* True if HtmlImage.image is valid */
     int width;                       /* Width of HtmlImage2.image */
     int height;                      /* Height of HtmlImage2.image */
     Tk_Image image;                  /* Scaled (or unscaled) image */
@@ -118,15 +117,14 @@ struct HtmlImage2 {
     Pixmap pixmap;                   /* Pixmap of image */
     Pixmap tilepixmap;               /* Tile pixmap of image */
     Tcl_Obj *pCompressed;            /* Compressed image data */
-
-    int nIgnoreChange;
-
     Tcl_Obj *pTileName;              /* Name of Tk tile image */
     Tk_Image tile;                   /* Tiled image, or zero */
 
-    int eAlpha;                      /* An ALPHA_CHANNEL_XXX value */
+    int nIgnoreChange;
 
     int nRef;                        /* Number of references to this struct */
+    Html_u8 isValid;                 /* True if HtmlImage.image is valid */
+    Html_u8 eAlpha;                  /* An ALPHA_CHANNEL_XXX value */
     Tcl_Obj *pImageName;             /* Image name, if this is unscaled */
     Tcl_Obj *pDelete;                /* Delete script, if this is unscaled */
     HtmlImage2 *pUnscaled;           /* Unscaled image, if this is scaled */

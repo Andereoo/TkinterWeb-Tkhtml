@@ -150,9 +150,9 @@ namespace eval ::hv3::request {
     # When this option is set, [http::geturl -binary] is used.
     # Then [$self append] will call [encoding convertfrom].
     #
-    # See also [encoding] and [suggestedEncoding] methods.
+    # See also [encoding] and [suggestedEncoding] methods [the latter seems to have been removed].
     #
-    set O(-encoding) ""
+    set O(-encoding) utf-8
   
     # True if the -encoding option has been set by the transport layer. 
     # If this is true, then any encoding specified via a <meta> element
@@ -309,17 +309,18 @@ namespace eval ::hv3::request {
     ::append O(myRaw) $raw
 
     if {$O(-incrscript) != ""} {
-      # There is an -incrscript callback configured. If enough data is 
-      # available, invoke it.
+      # There is an -incrscript callback configured. If enough data is available, invoke it.
 
       set nLast 0
       foreach zWhite [list " " "\n" "\t"] {
         set n [string last $zWhite $O(myRaw)]
-        if {$n>$nLast} {set nLast $n ; break}
+        if {$n > $nLast} {
+		  set nLast $n
+		  break
+		}
       }
       set nAvailable [expr {$nLast-$O(myRawPos)}]
       if {$nAvailable > $O(chunksize)} {
-
         set zDecoded [string range $O(myRaw) $O(myRawPos) $nLast]
         if {$O(myIsText)} {
           set zDecoded [::encoding convertfrom [encoding $me] $zDecoded]
@@ -354,7 +355,7 @@ namespace eval ::hv3::request {
     ::append O(myRaw) $raw
 
     set zDecoded [string range $O(myRaw) $O(myRawPos) end]
-    if {$O(myIsText)} {
+    if {$O(myIsText) && $raw ne ""} {
       set zDecoded [::encoding convertfrom [encoding $me] $zDecoded]
     }
 

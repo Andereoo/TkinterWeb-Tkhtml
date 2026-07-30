@@ -557,25 +557,23 @@ findEndOfScript (
 {
     char zEnd[64];
     int nEnd;
-    int ii;
     int nLen = (strlen(&z[*pN]) + *pN);
 
     /* Figure out the string we are looking for as an end tag */
     sprintf(zEnd, "</%s", HtmlMarkupName(eTag));
     nEnd = strlen(zEnd);
 
-    for (ii = *pN; ii < (nLen - nEnd - 1); ii++) {
+    for (int i = *pN; i < (nLen - nEnd); i++) {
         if (
-            strnicmp(&z[ii], zEnd, nEnd) == 0 &&
-            (z[ii+nEnd] == '>' || ISSPACE(z[ii+nEnd]))
+            strnicmp(&z[i], zEnd, nEnd) == 0 &&
+            (z[i+nEnd] == '>' || ISSPACE(z[i+nEnd]))
         ) {
-            int nScript = ii - (*pN);
-            ii += (nEnd + 1);
-            *pN = ii;
+            int nScript = i - (*pN);
+            i += (nEnd + 1);
+            *pN = i;
             return nScript;
         }
     }
-
     return -1;
 }
 
@@ -598,33 +596,29 @@ executeScript(
     Tcl_Obj *pCallback,
     HtmlAttributes *pAttributes,
     const char *zScript,
-    int nScript
-    )
+    int nScript)
 {
     Tcl_Obj *pAttr;
     Tcl_Obj *pEval;
-    int jj;
     int rc;
 
     /* Create the attributes list */
     pAttr = Tcl_NewObj();
     Tcl_IncrRefCount(pAttr);
-    for (jj = 0; pAttributes && jj < pAttributes->nAttr; jj++) {
+    for (int i = 0; pAttributes && i < pAttributes->nAttr; i++) {
         Tcl_Obj *pArg;
-        pArg = Tcl_NewStringObj(pAttributes->a[jj].zName, -1);
+        pArg = Tcl_NewStringObj(pAttributes->a[i].zName, -1);
         Tcl_ListObjAppendElement(0, pAttr, pArg);
-        pArg = Tcl_NewStringObj(pAttributes->a[jj].zValue, -1);
+        pArg = Tcl_NewStringObj(pAttributes->a[i].zValue, -1);
         Tcl_ListObjAppendElement(0, pAttr, pArg);
     }
-
     /* Execute the script */
     pEval = Tcl_DuplicateObj(pCallback);
     Tcl_IncrRefCount(pEval);
     Tcl_ListObjAppendElement(0, pEval, pAttr);
-    Tcl_ListObjAppendElement(0,pEval,Tcl_NewStringObj(zScript,nScript));
+    Tcl_ListObjAppendElement(0, pEval, Tcl_NewStringObj(zScript, nScript));
     rc = Tcl_EvalObjEx(pTree->interp, pEval, TCL_EVAL_GLOBAL);
     Tcl_DecrRefCount(pEval);
-
     /* Free the attributes list */
     Tcl_DecrRefCount(pAttr);
 
@@ -692,7 +686,6 @@ HtmlTokenize (
         n = pTree->nParsed;
         z = Tcl_GetString(pTree->pDocument);
     }
-
     while ((c = z[n]) != 0) {
         /* assert(n <= strlen(z)); */
         
@@ -715,16 +708,15 @@ HtmlTokenize (
                     int iTmp2;
                     iTmp++;
                     while (ISSPACE(z[iTmp])) iTmp++;
-                    if( !z[iTmp] ) goto incomplete;
+                    if (!z[iTmp]) goto incomplete;
                     iTmp2 = iTmp;
                     while (ISALPHA(z[iTmp2])) iTmp2++;
-                    if( !z[iTmp2] ) goto incomplete;
-                    if( 0==strnicmp(&z[iTmp], "pre", iTmp2-iTmp) ){
+                    if (!z[iTmp2]) goto incomplete;
+                    if (0==strnicmp(&z[iTmp], "pre", iTmp2-iTmp)){
                         isTrimEnd = 1;
                     }
                 }
             }
-
             if (c || isFinal) {
                 int ts = isTrimStart;
                 HtmlTextNode *pTextNode = HtmlTextNew(i, &z[n], isTrimEnd, ts);
@@ -735,7 +727,6 @@ HtmlTokenize (
             }
             isTrimStart = 0;
         }
-
         /* An HTML comment. Just skip it. Tkhtml uses the non-SGML (i.e.
          * defacto standard) version of HTML comments - they begin with
          * "<!--" and end with "-->".
@@ -751,11 +742,8 @@ HtmlTokenize (
             }
             n += i + 3;
             isTrimStart = 0;
-        }
-
-        else if (
-            pTree->options.parsemode == HTML_PARSEMODE_XML && 
-            0 == strncmp(&z[n], "<![CDATA[", 9)
+        } else if (
+            pTree->options.parsemode == HTML_PARSEMODE_XML && 0 == strncmp(&z[n], "<![CDATA[", 9)
         ) {
             const char *zData = &z[n+9];
             int nData;
@@ -774,7 +762,6 @@ HtmlTokenize (
 
             isTrimStart = 0;
         }
-
         /* A markup tag (i.e "<p>" or <p color="red"> or </p>). We parse 
          * this into a vector of strings stored in the argv[] array. The
          * length of each string is stored in the corresponding element
@@ -800,7 +787,7 @@ HtmlTokenize (
 
             argc = 1;
             argv[0] = &z[n + 1];
-            assert( c=='<' );
+            assert(c=='<');
 
             /* Check if we are dealing with a closing tag. */
             if (*argv[0] == '/' && argv[0][1]) {
@@ -808,7 +795,6 @@ HtmlTokenize (
                 argv[0]++;
                 i = 2;
             }
-
             /* Increment i until &z[n+i] is the first byte past the
              * end of the tag name. Then set arglen[0] to the length of
              * argv[0].
@@ -832,7 +818,6 @@ HtmlTokenize (
             if (z[n + i] == 0) {
                 goto incomplete;
             }
-
             /* This loop runs until &z[n+i] points to '>', "/>" or the
              * end of the document. The argv[] array is completely filled
              * by the time the loop exits.
@@ -841,12 +826,10 @@ HtmlTokenize (
                 if (argc > mxARG - 3) {
                     argc = mxARG - 3;
                 }
-
                 if (z[n+i] == '/') {
                     i++;
                     continue;
                 }
-
                 /* Set the next element of the argv[] array to point at
                  * the attribute name. Then figure out the length of the
                  * attribute name by searching for one of ">", "=", "/>", 
@@ -856,11 +839,8 @@ HtmlTokenize (
 
                 j = 0;
                 while (
-                    (c = z[n + i + j]) != 0 && 
-                    !ISSPACE(c) && c != '>' && c != '=' 
-                ) {
-                    j++;
-                }
+                    (c = z[n + i + j]) != 0 && !ISSPACE(c) && c != '>' && c != '=' 
+                ) j++;
                 arglen[argc] = j;
 
                 if (!c) goto incomplete;
@@ -894,8 +874,7 @@ HtmlTokenize (
                     if (!c) goto incomplete;
                     arglen[argc] = j;
                     i += j + 1;
-                }
-                else {
+                } else {
                     argv[argc] = &z[n + i];
                     for (j = 0;
                          (c = z[n + i + j]) != 0 && !ISSPACE(c) && c != '>';
@@ -906,9 +885,7 @@ HtmlTokenize (
                     i += j;
                 }
                 argc++;
-                while (ISSPACE(z[n + i])) {
-                    i++;
-                }
+                while (ISSPACE(z[n + i])) i++;
             }
             if (!c) goto incomplete;
             assert(c == '>');
@@ -952,7 +929,6 @@ HtmlTokenize (
                 /* Closing tag (i.e. "</p>"). */
                 xAddClosing(pTree, eType, zAtom, nStartScript);
             } else {
-
                 char *zScript = 0;
                 int nScript = 0;
 
@@ -961,15 +937,13 @@ HtmlTokenize (
                 const char **zArgs = (const char **)(&argv[1]);
                 pAttr = HtmlAttributesNew(argc - 1, zArgs, &arglen[1], 1);
 
-
                 /* Unless a fragment is being parsed, search for a 
                  * script-handler for this element. Script handlers are
                  * never fired from within [$html fragment] commands.
                  */
-                if (!zText) {
+                if (!zText) { // This is NOT a [$html fragment] command
                     pScript = getScriptHandler(pTree, eType);
                 }
-
                 if (pScript || (pMap && pMap->flags & HTMLTAG_PCDATA)) {
                     zScript = &z[n];
                     nScript = findEndOfScript(eType, z, &n);
@@ -979,15 +953,13 @@ HtmlTokenize (
                         goto incomplete;
                     }
                 }
-
                 if (!pScript) {
-
                     /* No special handler for this markup. Just append 
                      * it to the list of all tokens. 
                      */
                     assert(nStartScript >= 0);
                     xAddElement(pTree, eType, zAtom, pAttr, nStartScript);
-                    if( pTree->eWriteState==HTML_WRITE_INHANDLERRESET ){
+                    if (pTree->eWriteState==HTML_WRITE_INHANDLERRESET) {
                         goto incomplete;
                     }
                     if (zScript) {
@@ -998,12 +970,10 @@ HtmlTokenize (
                     } else {
                         if (eType == Html_PRE) {
                             isTrimStart = 1;
-                        }
-                        if (isSelfClosing) {
+                        } else if (isSelfClosing) {
                             xAddClosing(pTree, eType, zAtom, n);
                         }
                     }
-
                 } else {
                     /* If pScript is not NULL, then we are parsing a node that
                      * tkhtml treats as a "script". Essentially this means we
@@ -1079,7 +1049,6 @@ tokenizeWrapper (
     if (pTree->isParseFinished && pTree->eWriteState==HTML_WRITE_NONE) {
         HtmlFinishNodeHandlers(pTree);
     }
-
     if (pTree->eWriteState != HTML_WRITE_INHANDLERRESET) {
         pCurrent = pTree->state.pCurrent;
         HtmlCallbackRestyle(pTree, pCurrent ? pCurrent : pTree->pRoot);
@@ -1185,8 +1154,7 @@ int
 HtmlWriteWait (HtmlTree *pTree)
 {
     if (pTree->eWriteState != HTML_WRITE_INHANDLER) {
-        char *zErr = "Cannot call [write wait] here";
-        Tcl_SetResult(pTree->interp, zErr, TCL_STATIC);
+        Tcl_SetResult(pTree->interp, "Cannot call [write wait] here; not inside [parse] command", TCL_STATIC);
         return TCL_ERROR;
     }
 
@@ -1219,8 +1187,7 @@ HtmlWriteText(HtmlTree *pTree, Tcl_Obj *pText)
     Tcl_Obj *pTail;
 
     if (pTree->eWriteState == HTML_WRITE_NONE) {
-        char *zErr = "Cannot call [write text] here";
-        Tcl_SetResult(pTree->interp, zErr, TCL_STATIC);
+        Tcl_SetResult(pTree->interp, "Cannot call [write text] here; not inside [parse] command", TCL_STATIC);
         return TCL_ERROR;
     }
 
@@ -1229,7 +1196,7 @@ HtmlWriteText(HtmlTree *pTree, Tcl_Obj *pText)
 
     Tcl_IncrRefCount(pHead);
     Tcl_AppendObjToObj(pHead, pText);
-    Tcl_GetStringFromObj(pHead, &pTree->iWriteInsert);
+    Tcl_GetStringFromObj(pHead, (int*)(&pTree->iWriteInsert));
     Tcl_AppendObjToObj(pHead, pTail);
 
     Tcl_DecrRefCount(pDocument);
@@ -1258,8 +1225,7 @@ HtmlWriteContinue (HtmlTree *pTree)
 {
     int eState = pTree->eWriteState;
     if (eState != HTML_WRITE_WAIT && eState != HTML_WRITE_INHANDLERWAIT) {
-        char *zErr = "Cannot call [write continue] here";
-        Tcl_SetResult(pTree->interp, zErr, TCL_STATIC);
+        Tcl_SetResult(pTree->interp, "Cannot call [write continue] here; not inside [parse] command", TCL_STATIC);
         return TCL_ERROR;
     }
 
