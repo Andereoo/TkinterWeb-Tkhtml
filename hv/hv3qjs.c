@@ -740,7 +740,6 @@ static int handleJavascriptError(QjsInterp *qjs) {
         Tcl_ListObjAppendElement(NULL, pError, qjsValueToTcl(ctx, filename));
         Tcl_ListObjAppendElement(NULL, pError, qjsValueToTcl(ctx, lineno));
         Tcl_ListObjAppendElement(NULL, pError, qjsValueToTcl(ctx, colno));
-        Tcl_ListObjAppendElement(NULL, pError, Tcl_NewObj());
 
 		JSValue stack = JS_GetPropertyStr(ctx, exc, "stack");
 		if (!JS_IsUndefined(stack)) {
@@ -872,7 +871,7 @@ static int interpEval(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
     const char *code = Tcl_GetStringFromObj(objv[objc-1], &l); /* Javascript to evaluate */
     noR = aOptions[1].pVal != 0;
 
-	file = aOptions[0].pVal ? Tcl_GetString(aOptions[0].pVal) : "<eval>";
+	file = aOptions[0].pVal ? Tcl_GetString(aOptions[0].pVal) : "<command-eval>";
     JSValue result = JS_Eval(qjs->ctx, code, l, file, JS_EVAL_TYPE_GLOBAL);
 
     if (JS_IsException(result)) {

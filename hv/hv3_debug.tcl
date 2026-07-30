@@ -399,15 +399,14 @@ namespace eval ::hv3 {
               $myOutputWindow insert end "[lindex $r 2]\n"
           }
 
-          foreach {zFile iLine zType zName} [lrange $r 3 end] {
+		  set frames [regexp -all -inline {\s*at\s(\S+)\s+\((\S+):(\d+):(\d+)\)} [lindex $r 6]]
+          foreach {_ zName zFile iLine iCol} $frames {
             set target [getlogscript $zFile]
             if {$target ne ""} {
               $myOutputWindow insert end "    "
               set cmd [list $self DisplayJavascriptError $idx $target $iLine]
-              $self OutputWindowLink "Line $iLine, [$target cget -heading]" $cmd
-              if {$zType ne "" || $zName ne ""} {
-                $myOutputWindow insert end "  ($zType $zName)"
-              }
+              $self OutputWindowLink "Line $iLine, column $iCol, [$target cget -heading]" $cmd
+              $myOutputWindow insert end "  $zName"
               $myOutputWindow insert end "\n"
             } 
           }
