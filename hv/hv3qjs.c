@@ -647,23 +647,22 @@ static JSValue throwTclError(JSContext *ctx, int rc)
         QjsInterp *qjs = JS_GetContextOpaque(ctx);
 
         Tcl_Interp *interp = qjs->interp;
-        Tcl_Obj *pErr;
-
-        Tcl_Obj *pSaved = Tcl_GetObjResult(interp);
+        Tcl_Obj *pErr, *pSaved = Tcl_GetObjResult(interp);
+		JSValue err = JS_NewError(ctx);
 
         Tcl_Obj *pErrorInfo = Tcl_NewStringObj("errorInfo", 9);
         Tcl_IncrRefCount(pErrorInfo);
         pErr = Tcl_ObjGetVar2(interp, pErrorInfo, NULL, TCL_GLOBAL_ONLY);
         pErr = Tcl_DuplicateObj(pErr);
         Tcl_IncrRefCount(pErr);
-        if (qjs->pTclError) {
-            Tcl_DecrRefCount(qjs->pTclError);
-        }
+        if (qjs->pTclError) Tcl_DecrRefCount(qjs->pTclError);
         qjs->pTclError = pErr;
         Tcl_DecrRefCount(pErrorInfo);
 
         Tcl_SetObjResult(interp, pSaved);
-        return JS_ThrowTypeError(ctx, Tcl_GetString(pSaved));
+		JS_DefinePropertyValue(ctx, err, JS_ATOM_message, 
+			JS_NewString(ctx, Tcl_GetString(pSaved)), JS_PROP_WRITABLE|JS_PROP_CONFIGURABLE);
+        return JS_Throw(ctx, err);
     }
     return JS_UNDEFINED;
 }
@@ -743,7 +742,6 @@ static int handleJavascriptError(QjsInterp *qjs) {
         Tcl_ListObjAppendElement(NULL, pError, qjsValueToTcl(ctx, filename));
         Tcl_ListObjAppendElement(NULL, pError, qjsValueToTcl(ctx, lineno));
         Tcl_ListObjAppendElement(NULL, pError, qjsValueToTcl(ctx, colno));
-        Tcl_ListObjAppendElement(NULL, pError, Tcl_NewObj());
 
 		JSValue stack = JS_GetPropertyStr(ctx, exc, "stack");
 		if (!JS_IsUndefined(stack)) {
@@ -875,7 +873,7 @@ static int interpEval(QjsInterp *qjs, int objc, Tcl_Obj *const objv[])
     const char *code = Tcl_GetStringFromObj(objv[objc-1], &l); /* Javascript to evaluate */
     noR = aOptions[1].pVal != 0;
 
-	file = aOptions[0].pVal ? Tcl_GetString(aOptions[0].pVal) : "<eval>";
+	file = aOptions[0].pVal ? Tcl_GetString(aOptions[0].pVal) : "<command-eval>";
     JSValue result = JS_Eval(qjs->ctx, code, l, file, JS_EVAL_TYPE_GLOBAL);
 
     if (JS_IsException(result)) {
@@ -1326,20 +1324,19 @@ QjsTcl_Enumerator(JSContext *ctx, JSPropertyEnum **pTab, uint32_t *pLen, JSValue
     rc = callQjsTclMethod(interp, ctxOp->pLog, obj, Tcl_NewStringObj("Enumerator", 10), NULL);
     if (rc != TCL_OK) goto error;
 
-    rc = Tcl_ListObjGetElements(interp, Tcl_GetObjResult(interp), &nRet, &apRet);
+    rc = Tcl_ListObjGetElements(interp, Tcl_GetObjResult(interp), pLen, &apRet);
     if (rc != TCL_OK) goto error;
 
-    pEnum = js_malloc(ctx, sizeof(pEnum[0]) * nRet);
+    if (*pLen > 0) pEnum = js_malloc(ctx, sizeof(pEnum[0]) * *pLen);
 
-    for (int i = 0; i < nRet; i++) {
+    for (int i = 0; i < *pLen; i++) {
         pEnum[i].atom = JS_NewAtom(ctx, Tcl_GetString(apRet[i]));
     }
 	*pTab = pEnum;
-	*pLen = nRet;
 
     return 0;
 	error:
-		js_free(ctx, pEnum);
+		JS_FreePropertyEnum(ctx, pEnum, *pLen);
 		throwTclError(ctx, rc);
 		return -1;
 }
