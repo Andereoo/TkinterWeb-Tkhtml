@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: rn1
-      run: sudo apt install python3-tkinter
+      run: sudo apt install python3-tk
     - name: rn2
       run: pip install tkinterweb
     - name: compile
