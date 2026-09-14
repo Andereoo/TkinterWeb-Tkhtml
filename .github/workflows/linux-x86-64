@@ -1,0 +1,28 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-24.04
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: rn1
+      run: pip install tkinterweb
+    - name: rn2
+      run: python -m tkinterweb.__init__ Demo
+    - name: compile
+      run: python ./compile.py -n -t
+    - name: Make
+      run: make
+    - name: Archive code coverage results
+      uses: actions/upload-artifact@v4
+      with:
+        name: code-coverage-report
+        path: .
