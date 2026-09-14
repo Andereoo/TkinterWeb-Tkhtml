@@ -14,11 +14,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: rn1
-      run: pip install tkinterweb
+      run: sudo apt install python3-tkinter
     - name: rn2
-      run: python -m tkinterweb.__init__ Demo
+      run: pip install tkinterweb
     - name: compile
-      run: python ./compile.py -n -t
+      run: python ./compile.py -n -t -v
     - name: Make
       run: make
     - name: Archive code coverage results
