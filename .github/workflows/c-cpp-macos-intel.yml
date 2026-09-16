@@ -13,8 +13,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    #- name: rn1
-    #  run: pip install tkinterweb
+    - name: rn1
+      run: brew install tcl-tk
     #- name: rn2
     #  run: python -m tkinterweb.__init__ Demo
     - name: compile
