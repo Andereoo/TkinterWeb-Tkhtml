@@ -334,7 +334,10 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
         tclConfig_path = manual_choose_path(valid_tclConfig_paths)
         print("Select a Tk configuration file to use. ", end="")
         tkConfig_path = manual_choose_path(valid_tkConfig_paths)
-
+    
+    if ignore_paths:
+        print("Configure script will be attempted without providing tcl/tk paths. This might not work.")
+    else:
         tclConfig_folder = os.path.dirname(tclConfig_path)
         try:
             tcl_path = valid_tclConfig_paths[tclConfig_path][1]
@@ -356,8 +359,6 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
             override = input("Press N to abort or any other key to continue: ")
             if override.upper() == "N":
                 sys.exit()
-    elif ignore_paths:
-        print("Configure script will be attempted without providing tcl/tk paths. This might not work.")
 
     print("\nUpdating CSS property support...")
     with open(CSSPROP_PATH, "r") as h:
