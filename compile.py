@@ -208,7 +208,7 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
                     tkConfig_paths += glob.glob(path+os.sep+'**/*tkConfig.sh', recursive=True)
 
         print(f"Found {len(tclConfig_paths)} Tcl configuration file{'' if len(tclConfig_paths) == 1 else 's'} and {len(tkConfig_paths)} Tk configuration file{'' if len(tkConfig_paths) == 1 else 's'}")
-
+        print(tclConfig_paths, tkConfig_paths)
         def check_config_files(config_paths, config_type, header_file):
             valid_paths = {}
             for file in config_paths:

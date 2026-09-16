@@ -18,7 +18,7 @@ jobs:
     #- name: rn2
     #  run: python -m tkinterweb.__init__ Demo
     - name: compile
-      run: python ./compile.py -n -t
+      run: python ./compile.py -n -t -v
     #- name: check
     #  run: ls /System/Volumes/Data/usr/local/Cellar/tcl-tk@8/8.6.16/include/tcl-tk/ && ls /System/Volumes/Data/usr/local/Cellar/tcl-tk@8/8.6.16/include/tcl-tk/ && ls /usr/local/Cellar/tcl-tk@8/8.6.16/lib/ && ls /usr/local/Cellar/tcl-tk@8/8.6.16/lib/
     #- name: Prepare files
