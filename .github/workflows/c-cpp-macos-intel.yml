@@ -13,10 +13,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: rn1
-      run: pip install tkinterweb
-    - name: rn2
-      run: python -m tkinterweb.__init__ Demo
+    #- name: rn1
+    #  run: pip install tkinterweb
+    #- name: rn2
+    #  run: python -m tkinterweb.__init__ Demo
     - name: compile
       run: python ./compile.py -n -t
     #- name: check
@@ -28,8 +28,6 @@ jobs:
     #    mv *.c src && mv *.h src
     #- name: Configure
     #  run: ./configure CC="gcc" --with-tclinclude=/System/Volumes/Data/usr/local/Cellar/tcl-tk@8/8.6.16/include/tcl-tk/ --with-tkinclude=/System/Volumes/Data/usr/local/Cellar/tcl-tk@8/8.6.16/include/tcl-tk/ --with-tcl=/usr/local/Cellar/tcl-tk@8/8.6.16/lib/ --with-tk=/usr/local/Cellar/tcl-tk@8/8.6.16/lib/
-    - name: Make
-      run: make
     - name: Archive code coverage results
       uses: actions/upload-artifact@v4
       with:

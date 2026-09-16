@@ -212,24 +212,27 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
         def check_config_files(config_paths, config_type, header_file):
             valid_paths = {}
             for file in config_paths:
-                with open(file, "r") as handle:
-                    content = handle.read()
-                    version = re.findall(config_type+r"_VERSION='(.*?)'", content, flags=re.MULTILINE)
-                    include_spec = re.findall(config_type+r"_INCLUDE_SPEC='(.*?)'", content, flags=re.MULTILINE)
-                    if version and include_spec:
-                        if not include_spec[0]:
-                            continue
-                        include_spec = include_spec[0].replace("-I", "")
-                        if not os.path.isdir(include_spec) and os.name == "nt": # msys2
-                            try:
-                                old_include_spec = include_spec
-                                include_spec = subprocess.run(['cygpath', '-w', include_spec], stdout=subprocess.PIPE, check=True).stdout.decode(sys.stdout.encoding).replace("\n", "")
-                                print(f"Mapping {old_include_spec} to {include_spec}")
-                            except subprocess.CalledProcessError:
-                                print(f"Warning: the directory {include_spec} listed in {file} does not exist")
-                        include_file = glob.glob(include_spec+os.sep+'**/'+header_file, recursive=True)
-                        if include_file:
-                            valid_paths[file] = [version[0], os.path.dirname(include_file[0])]
+                try:
+                    with open(file, "r") as handle:
+                        content = handle.read()
+                        version = re.findall(config_type+r"_VERSION='(.*?)'", content, flags=re.MULTILINE)
+                        include_spec = re.findall(config_type+r"_INCLUDE_SPEC='(.*?)'", content, flags=re.MULTILINE)
+                        if version and include_spec:
+                            if not include_spec[0]:
+                                continue
+                            include_spec = include_spec[0].replace("-I", "")
+                            if not os.path.isdir(include_spec) and os.name == "nt": # msys2
+                                try:
+                                    old_include_spec = include_spec
+                                    include_spec = subprocess.run(['cygpath', '-w', include_spec], stdout=subprocess.PIPE, check=True).stdout.decode(sys.stdout.encoding).replace("\n", "")
+                                    print(f"Mapping {old_include_spec} to {include_spec}")
+                                except subprocess.CalledProcessError:
+                                    print(f"Warning: the directory {include_spec} listed in {file} does not exist")
+                            include_file = glob.glob(include_spec+os.sep+'**/'+header_file, recursive=True)
+                            if include_file:
+                                valid_paths[file] = [version[0], os.path.dirname(include_file[0])]
+                except FileNotFoundError:
+                    continue
             return valid_paths
 
         print("\nReading files...")
@@ -281,16 +284,16 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
 
         search()
 
-    abort = False
+    ignore_paths = False
     if len(valid_tclConfig_paths) == 0 and len(valid_tkConfig_paths) == 0:
-        override = input("Error: no valid Tcl/Tk configuration files found. Press N to override or any other key to abort: ")
-        abort = True
+        override = input("Error: no valid Tcl/Tk configuration files found. Press N to override or any other key to try another way: ")
+        ignore_paths = True
     elif len(valid_tclConfig_paths) == 0:
-        override = input("Error: no valid Tcl configuration files found. Press N to override or any other key to abort: ")
-        abort = True
+        override = input("Error: no valid Tcl configuration files found. Press N to override or any other key to try another way: ")
+        ignore_paths = True
     elif len(valid_tkConfig_paths) == 0:
-        override = input("Error: no valid Tk configuration files found. Press N to override or any other key to abort: ")
-        abort = True
+        override = input("Error: no valid Tk configuration files found. Press N to override or any other key to try another way: ")
+        ignore_paths = True
     else:
         print("\nChoosing a file...")
         tclConfig_path = choose_path(valid_tclConfig_paths)
@@ -331,30 +334,30 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
         tclConfig_path = manual_choose_path(valid_tclConfig_paths)
         print("Select a Tk configuration file to use. ", end="")
         tkConfig_path = manual_choose_path(valid_tkConfig_paths)
-    elif abort:
-        sys.exit()
 
-    tclConfig_folder = os.path.dirname(tclConfig_path)
-    try:
-        tcl_path = valid_tclConfig_paths[tclConfig_path][1]
-    except (TypeError, IndexError):
-        tcl_path = tclConfig_path
-    tkConfig_folder = os.path.dirname(tkConfig_path)
-    try:
-        tk_path = valid_tkConfig_paths[tkConfig_path][1]
-    except (TypeError, IndexError):
-        tk_path = tkConfig_path
+        tclConfig_folder = os.path.dirname(tclConfig_path)
+        try:
+            tcl_path = valid_tclConfig_paths[tclConfig_path][1]
+        except (TypeError, IndexError):
+            tcl_path = tclConfig_path
+        tkConfig_folder = os.path.dirname(tkConfig_path)
+        try:
+            tk_path = valid_tkConfig_paths[tkConfig_path][1]
+        except (TypeError, IndexError):
+            tk_path = tkConfig_path
 
-    if any(" " in path for path in [tclConfig_folder, tkConfig_folder, tcl_path, tk_path]):
-        print("Warning: the following Tcl/Tk sources are in a directory that contains spaces:")
-        for path in [tclConfig_folder, tkConfig_folder, tcl_path, tk_path]:
-            if " " in path:
-                print(f"  - {path}")
-        print("You will likely encounter errors when trying to compile.")
-        print("On Windows, this can happen when MSYS is installed to C:/Program Files/msys/ instead of C:/msys/")
-        override = input("Press N to abort or any other key to continue: ")
-        if override.upper() == "N":
-            sys.exit()
+        if any(" " in path for path in [tclConfig_folder, tkConfig_folder, tcl_path, tk_path]):
+            print("Warning: the following Tcl/Tk sources are in a directory that contains spaces:")
+            for path in [tclConfig_folder, tkConfig_folder, tcl_path, tk_path]:
+                if " " in path:
+                    print(f"  - {path}")
+            print("You will likely encounter errors when trying to compile.")
+            print("On Windows, this can happen when MSYS is installed to C:/Program Files/msys/ instead of C:/msys/")
+            override = input("Press N to abort or any other key to continue: ")
+            if override.upper() == "N":
+                sys.exit()
+    elif ignore_paths:
+        print("Configure script will be attempted without providing tcl/tk paths. This might not work.")
 
     print("\nUpdating CSS property support...")
     with open(CSSPROP_PATH, "r") as h:
@@ -372,7 +375,9 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
     os.chdir(BUILD_PATH)
 
     def compile_tkhtml():
-        flags = f"--with-tcl={tclConfig_folder} --with-tk={tkConfig_folder} --with-tclinclude={tcl_path} --with-tkinclude={tk_path}"
+        flags = ""
+        if not ignore_paths:
+            f"--with-tcl={tclConfig_folder} --with-tk={tkConfig_folder} --with-tclinclude={tcl_path} --with-tkinclude={tk_path}"
         if SYSTEM == "Windows":
             flags += " --with-system=windows"
             if sys.maxsize > 2**32:
