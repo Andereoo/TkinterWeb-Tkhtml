@@ -1,0 +1,24 @@
+name: C/C++ CI Macos Intel Without Cairo Graphics
+
+on:
+  push:
+    branches: [ "3.1-TclTk9" ]
+  pull_request:
+    branches: [ "3.1-TclTk9" ]
+
+jobs:
+  build:
+
+    runs-on: macos-15-intel
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install
+      run: brew install tcl-tk
+    - name: Compile
+      run: python ./compile.py -n -t -c
+    - name: Upload
+      uses: actions/upload-artifact@v4
+      with:
+        name: code-coverage-report
+        path: .
