@@ -16,7 +16,7 @@ jobs:
     - name: Install
       run: brew install tcl-tk
     - name: Compile
-      run: python ./compile.py -n -t -c
+      run: python ./compile.py -n -t -c -w tclsh
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
