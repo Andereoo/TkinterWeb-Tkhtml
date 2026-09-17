@@ -378,11 +378,13 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
     def compile_tkhtml():
         flags = ""
         if not ignore_paths:
-            f"--with-tcl={tclConfig_folder} --with-tk={tkConfig_folder} --with-tclinclude={tcl_path} --with-tkinclude={tk_path}"
+            flags += f"--with-tcl={tclConfig_folder} --with-tk={tkConfig_folder} --with-tclinclude={tcl_path} --with-tkinclude={tk_path}"
         if SYSTEM == "Windows":
             flags += " --with-system=windows"
             if sys.maxsize > 2**32:
                 flags += " --with-shlib-ld='gcc -static-libgcc -pipe -shared'"
+        elif SYSTEM == "Darwin":
+            flags += " --with-system=darwin"
 
         if disable_cairo:
             flags += " --disable-cairo"
