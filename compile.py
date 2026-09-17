@@ -135,7 +135,7 @@ def make():
     if os.name == "nt":
         run_command(["make", "binaries"])
     else:
-        print(run_command(["make"], capture_output=True))
+        run_command(["make"])
 
 print("Welcome to TkinterWeb's TkHtml3.1 compile script. For this to succeed you will need tcl-dev, tk-dev, gcc, and make installed on your system.")
 
@@ -399,7 +399,7 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
             print(f"Running configure script with the flags {flags}")
 
         try:
-            print(run_command(["bash", "../configure"] + flags.split(), capture_output=True))
+            result = run_command(["bash", "../configure"] + flags.split())
             print("\nCompiling...")
             make()
         except subprocess.CalledProcessError as error:

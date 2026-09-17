@@ -16,6 +16,8 @@ jobs:
     - name: Install
       run: brew install tcl-tk
     - name: Compile
+      env:
+        PYTHONUNBUFFERED: "1" 
       run: python ./compile.py -n -t -v
     - name: Upload
       uses: actions/upload-artifact@v4
