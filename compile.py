@@ -84,21 +84,7 @@ def print_error(*args):
 
 def run_command(cmd, cmd_input=None, capture_output=False):
     if verbose or capture_output: 
-        #return subprocess.run(cmd, input=cmd_input, capture_output=capture_output, universal_newlines=True, check=True)
-        import tempfile
-
-        with tempfile.TemporaryFile() as stdout_file, tempfile.TemporaryFile() as stderr_file:
-            result = subprocess.run(
-                cmd,
-                stdout=stdout_file, 
-                stderr=stderr_file,
-                text=True
-            )
-            
-            # Rewind and read the output if needed
-            stdout_file.seek(0)
-            print(stdout_file.read().decode('utf-8'))
-            print(stderr_file.read().decode('utf-8'))
+        return subprocess.run(cmd, input=cmd_input, capture_output=capture_output, universal_newlines=True, check=True)
     else:
         return subprocess.run(cmd, input=cmd_input, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, universal_newlines=True, check=True)
 
@@ -413,7 +399,19 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
             print(f"Running configure script with the flags {flags}")
 
         try:
-            result = run_command(["bash", "../configure"] + flags.split())
+            import tempfile
+
+            with tempfile.TemporaryFile() as stdout_file, tempfile.TemporaryFile() as stderr_file:
+                result = subprocess.run(
+                    ["bash", "../configure"] + flags.split(), 
+                    stdout=stdout_file, 
+                    stderr=stderr_file,
+                    text=True
+                )
+                
+                # Rewind and read the output if needed
+                stdout_file.seek(0)
+                print( stdout_file.read().decode('utf-8'))
             print("\nCompiling...")
             make()
         except subprocess.CalledProcessError as error:
