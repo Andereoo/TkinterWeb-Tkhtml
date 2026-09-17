@@ -383,8 +383,6 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
             flags += " --with-system=windows"
             if sys.maxsize > 2**32:
                 flags += " --with-shlib-ld='gcc -static-libgcc -pipe -shared'"
-        elif SYSTEM == "Darwin":
-            flags += " --with-system=darwin"
 
         if disable_cairo:
             flags += " --disable-cairo"
@@ -399,19 +397,7 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
             print(f"Running configure script with the flags {flags}")
 
         try:
-            import tempfile
-
-            with tempfile.TemporaryFile() as stdout_file, tempfile.TemporaryFile() as stderr_file:
-                result = subprocess.run(
-                    ["bash", "../configure"] + flags.split(), 
-                    stdout=stdout_file, 
-                    stderr=stderr_file,
-                    text=True
-                )
-                
-                # Rewind and read the output if needed
-                stdout_file.seek(0)
-                print( stdout_file.read().decode('utf-8'))
+            run_command(["bash", "../configure"] + flags.split())
             print("\nCompiling...")
             make()
         except subprocess.CalledProcessError as error:
