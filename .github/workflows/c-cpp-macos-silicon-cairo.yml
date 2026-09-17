@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install
-      run: brew install tcl-tk
+      run: brew install tcl-tk cairo
     - name: Compile
       env:
         PYTHONUNBUFFERED: "1" 

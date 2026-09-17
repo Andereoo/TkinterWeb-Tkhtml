@@ -35,9 +35,9 @@ static const char rcsid[] = "$Id: htmldraw.c,v 1.208 2008/02/14 08:43:49 danielk
 #include "html.h"
 #include <assert.h>
 #include <X11/Xutil.h>
-#include <cairo/cairo.h>
 
 #ifdef CAIRO_ENABLED
+    #include <cairo/cairo.h>
     #if defined(WIN32)
         #include <cairo/cairo-win32.h>
         #include <tkWinInt.h>
