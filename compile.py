@@ -83,7 +83,6 @@ def print_error(*args):
     print(args)
 
 def run_command(cmd, cmd_input=None, capture_output=False):
-    print(verbose, capture_output)
     if verbose or capture_output: 
         return subprocess.run(cmd, input=cmd_input, capture_output=capture_output, universal_newlines=True, check=True)
     else:
@@ -136,7 +135,7 @@ def make():
     if os.name == "nt":
         run_command(["make", "binaries"])
     else:
-        run_command(["make"])
+        print(run_command(["make"]), capture_output=True)
 
 print("Welcome to TkinterWeb's TkHtml3.1 compile script. For this to succeed you will need tcl-dev, tk-dev, gcc, and make installed on your system.")
 
@@ -400,7 +399,7 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
             print(f"Running configure script with the flags {flags}")
 
         try:
-            result = run_command(["bash", "../configure"] + flags.split())
+            print(run_command(["bash", "../configure"] + flags.split()), capture_output=True)
             print("\nCompiling...")
             make()
         except subprocess.CalledProcessError as error:
