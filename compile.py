@@ -393,7 +393,7 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
         override = input("Press N to add more flags or any other key to continue: ")
 
         if override.upper() == "N":
-            print(, flush=True)
+            print()
             run_command(["bash", "../configure", '--help'])
             flags += " " + input("Please enter desired flags seperated by a space: ") #I.e. CC="gcc" --pipe --shared CC="gcc -static-libgcc"  SHLIB_LD = gcc -static-libgcc -pipe -shared
             print(f"Running configure script with the flags {flags}", flush=True)
