@@ -168,7 +168,7 @@ if os.path.exists(BUILD_PATH) and mode == "build":
             print("Fatal error encountered")
             if error.stderr:
                 print(error.stderr, file=sys.stderr)
-            raise Exception
+            raise error
             #if noprompt: exit()
             #override = input("Press N to abort or any other key to try again: ")
             #if override.upper() == "N":
@@ -270,7 +270,7 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
             print("Fatal error encountered")
             if error.stderr:
                 print(error.stderr, file=sys.stderr)
-            raise Exception
+            raise error
 
         if with_tclsh:
             paths = out.stdout.split()
