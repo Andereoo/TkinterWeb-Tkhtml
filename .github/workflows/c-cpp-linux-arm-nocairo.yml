@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install
-      run: apt install tcl9.0-dev tk9.0-dev
+      run: sudo apt-get install -y tcl9.0-dev tk9.0-dev
     - name: Compile
       run: python ./compile.py -n -t -c -w tclsh9.0
     - name: Upload
