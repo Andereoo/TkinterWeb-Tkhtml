@@ -43,9 +43,6 @@ paths = root.exprstring('$auto_path').split()
 version = str(tkinter.TkVersion)
 paths = list(set(paths))
 paths.sort(key=len)
-if "/usr/lib" in paths:
-    paths.remove("/usr/lib")
-print(paths, flush=True)
 
 tclConfig_paths = []
 tkConfig_paths = []
@@ -204,6 +201,8 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
         global tclConfig_paths, tkConfig_paths, valid_tclConfig_paths, valid_tkConfig_paths
 
         for path in paths: 
+            if path == "/usr/lib":
+                continue
             print(path, flush=True)
             if os.path.exists(path):
                 may_continue = True
