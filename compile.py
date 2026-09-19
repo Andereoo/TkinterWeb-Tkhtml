@@ -40,6 +40,7 @@ tkhtml_file = None
 
 root = tkinter.Tcl()
 paths = root.exprstring('$auto_path').split()
+print(paths)
 version = str(tkinter.TkVersion)
 paths = list(set(paths))
 paths.sort(key=len)
@@ -196,10 +197,12 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
         print("Done!", flush=True)
 
     print("\nSearching for Tcl/Tk configuration files...", flush=True)
-
+    print(paths)
+    if with_tclsh:
+        print(run_command([with_tclsh, GET_PATHS_PATH], capture_output=True))
     def search():
         global tclConfig_paths, tkConfig_paths, valid_tclConfig_paths, valid_tkConfig_paths
-
+        
         for path in paths: 
             print(path, flush=True)
             if os.path.exists(path):
