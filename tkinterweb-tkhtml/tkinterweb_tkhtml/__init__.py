@@ -1,5 +1,5 @@
 """
-TkinterWeb-Tkhtml v2.1
+TkinterWeb-Tkhtml v2.2
 This package provides pre-built binaries of a modified version of the Tkhtml3 widget from https://github.com/Andereoo/TkinterWeb-Tkhtml, 
 which enables the display of styled HTML and CSS code in Tkinter applications.
 
@@ -8,14 +8,14 @@ If you are not using the compile script's --install option, to add a new Tkhtml 
   - For a standard release: libTkhtml[major_version.minor_version].[dll/dylib/so] (eg. libTkhtml3.0.dll)
   - For an experimental release: libTkhtml[major_version.minor_version]exp.[dll/dylib/so] (eg. libTkhtml3.1exp.dll)
 - For Tcl/Tk 9:
-  - For a standard release: libTkhtml[major_version.minor_version]-TclTk9.[dll/dylib/so] (eg. libTkhtml3.0-TclTk9.dll)
-  - For an experimental release: libTkhtml[major_version.minor_version]exp-TclTk9.[dll/dylib/so] (eg. libTkhtml3.1exp-TclTk9.dll)
+  - For a standard release: libTkhtml[major_version.minor_version]TclTk9.[dll/dylib/so] (eg. libTkhtml3.0TclTk9.dll)
+  - For an experimental release: libTkhtml[major_version.minor_version]expTclTk9.[dll/dylib/so] (eg. libTkhtml3.1expTclTk9.dll)
 
 This package can be used to load the Tkhtml widget into Tkinter applications.
 but is mainly intended to be used through TkinterWeb, which provides a full Python interface. 
 See https://github.com/Andereoo/TkinterWeb.
 
-Copyright (c) 2025 Andrew Clarke
+Copyright (c) 2026 Andrew Clarke
 """
 
 import os
@@ -24,9 +24,9 @@ from tkinter import TclVersion
 
 __title__ = 'TkinterWeb-Tkhtml'
 __author__ = "Andrew Clarke"
-__copyright__ = "Copyright (c) 2025 Andrew Clarke"
+__copyright__ = "Copyright (c) 2026 Andrew Clarke"
 __license__ = "MIT"
-__version__ = '2.1.1'
+__version__ = '2.2.0'
 
 
 # --- Begin universal sdist ---------------------------------------------------
@@ -62,19 +62,21 @@ else:
 
 try:
     from tkinterweb_tkhtml_extras import TKHTML_EXTRAS_ROOT_DIR
+    from tkinterweb_tkhtml_extras import __version__ as TKHTML_EXTRAS_VERSION
     if TKHTML_EXTRAS_ROOT_DIR == None:
         ALL_TKHTML_BINARIES =  [[TKHTML_ROOT_DIR, file] for file in os.listdir(TKHTML_ROOT_DIR) if "libTkhtml" in file]
     else:
         ALL_TKHTML_BINARIES =  [[TKHTML_ROOT_DIR, file] for file in os.listdir(TKHTML_ROOT_DIR) if "libTkhtml" in file] + \
                             [[TKHTML_EXTRAS_ROOT_DIR, file] for file in os.listdir(TKHTML_EXTRAS_ROOT_DIR) if "libTkhtml" in file]
 except (ImportError, ModuleNotFoundError,):
+    TKHTML_EXTRAS_VERSION = None
     TKHTML_EXTRAS_ROOT_DIR = None
     ALL_TKHTML_BINARIES =  [[TKHTML_ROOT_DIR, file] for file in os.listdir(TKHTML_ROOT_DIR) if "libTkhtml" in file]
 
 if TclVersion >= 9:
     TKHTML_BINARIES =  [[loc, file] for loc, file in ALL_TKHTML_BINARIES if "TclTk9" in file]
     HELP_MESSAGE_EXP = f"Download https://github.com/Andereoo/TkinterWeb-Tkhtml/tree/experimental and run 'python compile.py' to compile Tkhtml. \
-Copy the binary into {TKHTML_ROOT_DIR}, adding 'exp-TclTk9' after the filename (eg. 'libTkhtml3.1exp-TclTk9.dll')"
+Copy the binary into {TKHTML_ROOT_DIR}, adding 'expTclTk9' after the filename (eg. 'libTkhtml3.1expTclTk9.dll')"
 else:
     TKHTML_BINARIES =  [[loc, file] for loc, file in ALL_TKHTML_BINARIES if "TclTk9" not in file]
     HELP_MESSAGE_EXP = f"Download https://github.com/Andereoo/TkinterWeb-Tkhtml/tree/experimental and run 'python compile.py' to compile Tkhtml. \
@@ -82,6 +84,7 @@ Copy the binary into {TKHTML_ROOT_DIR}, adding 'exp' after the filename (eg. 'li
 
 HELP_MESSAGE = f"Download https://github.com/Andereoo/TkinterWeb-Tkhtml and run 'python compile.py --install' to compile and install Tkhtml. If you think this is a bug, consider filing a bug report."
 
+### TODO: distinguish between standard and Cairo-powered builds so that they can be turned on and off. This will also allow me to keep the binary's version more accurate.
 
 def get_tkhtml_file(version=None, index=-1, experimental=False):
     "Get the location of the platform's Tkhtml binary"
