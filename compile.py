@@ -75,12 +75,12 @@ if silent:
     
 if noprompt:
     def input(string):
-        #print(string)
+        #print(string, flush=True)
         return ""
 
 
 def print_error(*args):
-    print(args)
+    print(args, flush=True)
 
 def run_command(cmd, cmd_input=None, capture_output=False):
     if verbose or capture_output: 
@@ -90,7 +90,7 @@ def run_command(cmd, cmd_input=None, capture_output=False):
 
 def test():
     global tkhtml_version, tkhtml_file
-    print("\nTesting result...")
+    print("\nTesting result...", flush=True)
     if with_tclsh:
         script = f"""
         set auto_path [linsert $auto_path 0 {BUILD_PATH}]
@@ -128,7 +128,7 @@ def test():
             widget.pack(expand=True, fill="both")
             root.mainloop()
     
-    print("Success!")
+    print("Success!", flush=True)
         
 
 def make():
@@ -137,7 +137,7 @@ def make():
     else:
         run_command(["make"])
 
-print("Welcome to TkinterWeb's TkHtml3.1 compile script. For this to succeed you will need tcl-dev, tk-dev, gcc, and make installed on your system.")
+print("Welcome to TkinterWeb's TkHtml3.1 compile script. For this to succeed you will need tcl-dev, tk-dev, gcc, and make installed on your system.", flush=True)
 
 if not disable_cairo:
     print("""\nCairo graphics support is enabled, adding support for the CSS border-radius property. 
@@ -162,12 +162,12 @@ if os.path.exists(BUILD_PATH) and mode == "build":
     os.chdir(BUILD_PATH)
     def compile_tkhtml():
         try:
-            print("\nCompiling...")
+            print("\nCompiling...", flush=True)
             make()
         except subprocess.CalledProcessError as error:
-            print("Fatal error encountered")
+            print("Fatal error encountered", flush=True)
             if error.stderr:
-                print(error.stderr, file=sys.stderr)
+                print(error.stderr, file=sys.stderr, flush=True)
             raise error
             #if noprompt: exit()
             #override = input("Press N to abort or any other key to try again: ")
@@ -179,13 +179,13 @@ if os.path.exists(BUILD_PATH) and mode == "build":
 
 
 elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure":
-    print("\nCreating build directory...")
+    print("\nCreating build directory...", flush=True)
     if os.path.exists(BUILD_PATH):
         if len(os.listdir(BUILD_PATH)) == 0:
-            print('Build directory already exists and is empty. Skipping.')
+            print('Build directory already exists and is empty. Skipping.', flush=True)
         else:
             suffix = " and will be erased" if noprompt else ". Erase contents?"
-            print(f'Build directory already exists{suffix}')
+            print(f'Build directory already exists{suffix}', flush=True)
             override = input(f"Press N to skip or any other key to empty {BUILD_PATH}: ")
             if override.upper() != "N":
                 files = glob.glob(BUILD_PATH+os.sep+'*')
@@ -193,9 +193,9 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
                     os.remove(file)
     else:
         Path(BUILD_PATH).mkdir(parents=True, exist_ok=True)
-        print("Done!")
+        print("Done!", flush=True)
 
-    print("\nSearching for Tcl/Tk configuration files...")
+    print("\nSearching for Tcl/Tk configuration files...", flush=True)
 
     def search():
         global tclConfig_paths, tkConfig_paths, valid_tclConfig_paths, valid_tkConfig_paths
@@ -207,7 +207,7 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
                     tclConfig_paths += glob.glob(path+os.sep+'**/*tclConfig.sh', recursive=True)
                     tkConfig_paths += glob.glob(path+os.sep+'**/*tkConfig.sh', recursive=True)
 
-        print(f"Found {len(tclConfig_paths)} Tcl configuration file{'' if len(tclConfig_paths) == 1 else 's'} and {len(tkConfig_paths)} Tk configuration file{'' if len(tkConfig_paths) == 1 else 's'}")
+        print(f"Found {len(tclConfig_paths)} Tcl configuration file{'' if len(tclConfig_paths) == 1 else 's'} and {len(tkConfig_paths)} Tk configuration file{'' if len(tkConfig_paths) == 1 else 's'}", flush=True)
 
         def check_config_files(config_paths, config_type, header_file):
             valid_paths = {}
@@ -225,22 +225,22 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
                                 try:
                                     old_include_spec = include_spec
                                     include_spec = subprocess.run(['cygpath', '-w', include_spec], stdout=subprocess.PIPE, check=True).stdout.decode(sys.stdout.encoding).replace("\n", "")
-                                    print(f"Mapping {old_include_spec} to {include_spec}")
+                                    print(f"Mapping {old_include_spec} to {include_spec}", flush=True)
                                 except subprocess.CalledProcessError:
-                                    print(f"Warning: the directory {include_spec} listed in {file} does not exist")
+                                    print(f"Warning: the directory {include_spec} listed in {file} does not exist", flush=True)
                             include_file = glob.glob(include_spec+os.sep+'**/'+header_file, recursive=True)
                             if include_file:
                                 valid_paths[file] = [version[0], os.path.dirname(include_file[0])]
                 except FileNotFoundError:
-                    print(f"Error: file {file} could not be found.")
+                    print(f"Error: file {file} could not be found.", flush=True)
             return valid_paths
 
-        print("\nReading files...")
+        print("\nReading files...", flush=True)
 
         valid_tclConfig_paths = check_config_files(tclConfig_paths, "TCL", "tcl.h")
         valid_tkConfig_paths = check_config_files(tkConfig_paths, "TK", "tk.h")
 
-        print(f"Found {len(valid_tclConfig_paths)} valid Tcl configuration file{'' if len(valid_tclConfig_paths) == 1 else 's'} and {len(valid_tkConfig_paths)} valid Tk configuration file{'' if len(valid_tkConfig_paths) == 1 else 's'}")
+        print(f"Found {len(valid_tclConfig_paths)} valid Tcl configuration file{'' if len(valid_tclConfig_paths) == 1 else 's'} and {len(valid_tkConfig_paths)} valid Tk configuration file{'' if len(valid_tkConfig_paths) == 1 else 's'}", flush=True)
 
     if with_tclsh:
         valid_tclConfig_paths = []
@@ -261,15 +261,15 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
     if len(valid_tclConfig_paths) == 0 or len(valid_tkConfig_paths) == 0:
         try:
             if with_tclsh:
-                print(f"Using {with_tclsh}")
+                print(f"Using {with_tclsh}", flush=True)
                 out = run_command([with_tclsh, GET_PATHS_PATH], capture_output=True)
             else:
-                print("\nError: no valid Tcl/Tk configuration files were found. Trying tclsh...")
+                print("\nError: no valid Tcl/Tk configuration files were found. Trying tclsh...", flush=True)
                 out = run_command(["tclsh", GET_PATHS_PATH], capture_output=True)
         except subprocess.CalledProcessError as error:
-            print("Fatal error encountered")
+            print("Fatal error encountered", flush=True)
             if error.stderr:
-                print(error.stderr, file=sys.stderr)
+                print(error.stderr, file=sys.stderr, flush=True)
             raise error
 
         if with_tclsh:
@@ -295,10 +295,10 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
         override = input("Error: no valid Tk configuration files found. Press N to override or any other key to try another way: ")
         ignore_paths = True
     else:
-        print("\nChoosing a file...")
+        print("\nChoosing a file...", flush=True)
         tclConfig_path = choose_path(valid_tclConfig_paths)
         tkConfig_path = choose_path(valid_tkConfig_paths)
-        print(f"Using {tclConfig_path} and {tkConfig_path}")
+        print(f"Using {tclConfig_path} and {tkConfig_path}", flush=True)
 
         override = input("Press N to override or any other key to continue: ")
 
@@ -316,27 +316,27 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
             option = input(f"Choose{text}: ")
             try:
                 chosen_path = list(options)[int(option)]
-                print(f"Using {chosen_path}")
+                print(f"Using {chosen_path}", flush=True)
                 return chosen_path
             except (ValueError, IndexError):
-                print("Invalid selection")
+                print("Invalid selection", flush=True)
                 return manual_choose_path(options)
         else:
             option = input("Please enter the file path: ")
             if os.path.exists(option):
                 return option
             else:
-                print("File does not exist")
+                print("File does not exist", flush=True)
                 return manual_choose_path(options)
             
     if override.upper() == "N":
-        print("Select a Tcl configuration file to use. ", end="")
+        print("Select a Tcl configuration file to use. ", end="", flush=True)
         tclConfig_path = manual_choose_path(valid_tclConfig_paths)
-        print("Select a Tk configuration file to use. ", end="")
+        print("Select a Tk configuration file to use. ", end="", flush=True)
         tkConfig_path = manual_choose_path(valid_tkConfig_paths)
     
     if ignore_paths:
-        print("Configure script will be attempted without providing tcl/tk paths. This might not work.")
+        print("Configure script will be attempted without providing tcl/tk paths. This might not work.", flush=True)
     else:
         tclConfig_folder = os.path.dirname(tclConfig_path)
         try:
@@ -350,21 +350,21 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
             tk_path = tkConfig_path
 
         if any(" " in path for path in [tclConfig_folder, tkConfig_folder, tcl_path, tk_path]):
-            print("Warning: the following Tcl/Tk sources are in a directory that contains spaces:")
+            print("Warning: the following Tcl/Tk sources are in a directory that contains spaces:", flush=True)
             for path in [tclConfig_folder, tkConfig_folder, tcl_path, tk_path]:
                 if " " in path:
-                    print(f"  - {path}")
-            print("You will likely encounter errors when trying to compile.")
-            print("On Windows, this can happen when MSYS is installed to C:/Program Files/msys/ instead of C:/msys/")
+                    print(f"  - {path}", flush=True)
+            print("You will likely encounter errors when trying to compile.", flush=True)
+            print("On Windows, this can happen when MSYS is installed to C:/Program Files/msys/ instead of C:/msys/", flush=True)
             override = input("Press N to abort or any other key to continue: ")
             if override.upper() == "N":
                 sys.exit()
 
-    print("\nUpdating CSS property support...")
+    print("\nUpdating CSS property support...", flush=True)
     with open(CSSPROP_PATH, "r") as h:
         root.eval(f"cd {{{SRC_PATH}}}\n{h.read()}")
 
-    # print("\nUpdating configure script...")
+    # print("\nUpdating configure script...", flush=True)
     # override = input(f"Press U to update or any other key to skip: ")
     # if override.upper() == "U":
     #     os.chdir(BASE_PATH)
@@ -389,28 +389,28 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
         if disable_cairo:
             flags += " --disable-cairo"
 
-        print(f"Running configure script with the flags {flags}")
+        print(f"Running configure script with the flags {flags}", flush=True)
         override = input("Press N to add more flags or any other key to continue: ")
 
         if override.upper() == "N":
-            print()
+            print(, flush=True)
             run_command(["bash", "../configure", '--help'])
             flags += " " + input("Please enter desired flags seperated by a space: ") #I.e. CC="gcc" --pipe --shared CC="gcc -static-libgcc"  SHLIB_LD = gcc -static-libgcc -pipe -shared
-            print(f"Running configure script with the flags {flags}")
+            print(f"Running configure script with the flags {flags}", flush=True)
 
         try:
             run_command(["bash", "../configure"] + flags.split())
-            print("\nCompiling...")
+            print("\nCompiling...", flush=True)
             make()
         except subprocess.CalledProcessError as error:
-            print("Fatal error encountered. Try changing the configure script flags.")
+            print("Fatal error encountered. Try changing the configure script flags.", flush=True)
             if error.stderr:
-                print(error.stderr, file=sys.stderr)
+                print(error.stderr, file=sys.stderr, flush=True)
             raise Exception
             #if noprompt: sys.exit()
             #compile_tkhtml()
 
-    print("\nCreating Makefile...")
+    print("\nCreating Makefile...", flush=True)
     compile_tkhtml()
 
 test()
@@ -418,7 +418,7 @@ test()
 if install:
     import tkinterweb_tkhtml
     
-    print("\nInstalling...")
+    print("\nInstalling...", flush=True)
 
     binary = f"libTkhtml{tkhtml_version}"
     if tkinter.TclVersion >= 9:
@@ -430,21 +430,21 @@ if install:
     source = os.path.join(BUILD_PATH, tkhtml_file)
     destination = os.path.join(tkinterweb_tkhtml.TKHTML_ROOT_DIR, binary)
 
-    print(f"Copying {binary} to {tkinterweb_tkhtml.TKHTML_ROOT_DIR}")
+    print(f"Copying {binary} to {tkinterweb_tkhtml.TKHTML_ROOT_DIR}", flush=True)
 
     if os.path.exists(destination):
-        print("Warning: destination file already exists")
+        print("Warning: destination file already exists", flush=True)
         override = input("Press N to abort or any other key to continue: ")
         if override.upper() == "N":
-            print("No action done")
+            print("No action done", flush=True)
         else:
             shutil.copy2(source, destination) 
-            print("Successfully overwritten")
+            print("Successfully overwritten", flush=True)
     else:
         shutil.copy2(source, destination)
-        print("Successfully copied")
+        print("Successfully copied", flush=True)
 
     with_tclsh = None
     test()
 else:
-    print(f"\nThe output of this operation is located in {BUILD_PATH}")
+    print(f"\nThe output of this operation is located in {BUILD_PATH}", flush=True)
