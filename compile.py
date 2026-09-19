@@ -203,7 +203,6 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
         for path in paths: 
             #if path == "/usr/lib":
             #    continue
-            print(path, flush=True)
             if os.path.exists(path):
                 may_continue = True
                 if may_continue:
