@@ -29,7 +29,7 @@ SETUP_PATH = os.path.join(ROOT_PATH, "setup.py")
 MANIFEST_PATH = os.path.join(ROOT_PATH, "MANIFEST.in")
 TKHTML_SUBFOLDER_NAME = ""
 
-VERSION = "1.0.0"
+VERSION = "1.4.0"
 
 manifest_in_contents = "recursive-include tkinterweb_tkhtml_extras/tkhtml *"
 setup_py_contents_generic = """import pathlib
