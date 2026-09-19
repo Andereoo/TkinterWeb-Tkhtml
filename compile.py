@@ -201,8 +201,8 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
         global tclConfig_paths, tkConfig_paths, valid_tclConfig_paths, valid_tkConfig_paths
 
         for path in paths: 
-            if path == "/usr/lib":
-                continue
+            #if path == "/usr/lib":
+            #    continue
             print(path, flush=True)
             if os.path.exists(path):
                 may_continue = True
@@ -409,7 +409,7 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
             print("Fatal error encountered. Try changing the configure script flags.", flush=True)
             if error.stderr:
                 print(error.stderr, file=sys.stderr, flush=True)
-            raise Exception
+            raise error
             #if noprompt: sys.exit()
             #compile_tkhtml()
 
