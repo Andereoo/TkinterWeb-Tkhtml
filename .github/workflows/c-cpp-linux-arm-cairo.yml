@@ -16,7 +16,7 @@ jobs:
     - name: Install
       run: sudo apt update && sudo apt-get install -y tcl9.0-dev tk9.0-dev python3-tk
     - name: Compile
-      run: python ./compile.py -n -t -w tclsh9.0
+      run: python ./compile.py -n -t -v -w tclsh9.0
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
