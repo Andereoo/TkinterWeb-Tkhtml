@@ -125,7 +125,7 @@ def get_tkhtml_file(version=None, index=-1, experimental=False):
             experimental = True
         else:
             experimental = False
-        version = file.replace("libTkhtml", "").replace("exp", "")
+        version = file.replace("libTkhtml", "").replace("exp", "").replace("TclTk9", "")
         version = version[:version.rfind(".")]
         return os.path.join(loc, file), version, experimental
 
