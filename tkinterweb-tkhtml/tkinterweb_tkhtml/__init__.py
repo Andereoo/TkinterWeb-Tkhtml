@@ -26,7 +26,7 @@ __title__ = 'TkinterWeb-Tkhtml'
 __author__ = "Andrew Clarke"
 __copyright__ = "Copyright (c) 2026 Andrew Clarke"
 __license__ = "MIT"
-__version__ = '2.2.0'
+__version__ = '2.2.2'
 
 
 # --- Begin universal sdist ---------------------------------------------------
