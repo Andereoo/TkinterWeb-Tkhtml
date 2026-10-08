@@ -4,7 +4,7 @@
 ### Copyright (c) 2025 Andrew Clarke
 
 import tkinter
-import os, glob, subprocess, re, sys, argparse, shutil, platform
+import os, glob, subprocess, re, sys, argparse, shutil, platform, shlex
 from pathlib import Path
 
 ### May be "ask", "configure", "test", "build"
@@ -401,7 +401,7 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
             print(f"Running configure script with the flags {flags}", flush=True)
 
         try:
-            run_command(["bash", "../configure"] + flags.split())
+            run_command(["bash", "../configure"] + shlex.split(flags))
             print("\nCompiling...", flush=True)
             make()
         except subprocess.CalledProcessError as error:
