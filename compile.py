@@ -207,15 +207,16 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
 
         for path in paths: 
             if os.path.exists(path):
-                if path == "/usr/lib":
-                    tclConfig_paths += glob.glob(path+os.sep+'*tclConfig.sh')
-                    tkConfig_paths += glob.glob(path+os.sep+'*tkConfig.sh')
-                else:
-                    may_continue = True
-                    if may_continue:
-                        tclConfig_paths += glob.glob(path+os.sep+'**/*tclConfig.sh', recursive=True)
-                        tkConfig_paths += glob.glob(path+os.sep+'**/*tkConfig.sh', recursive=True)
-        print(tclConfig_paths, tkConfig_paths)
+                may_continue = True
+                if may_continue:
+                    tclConfig_paths += glob.glob(path+os.sep+'*/*tclConfig.sh')
+                    tclConfig_paths += glob.glob(path+os.sep+'*/*/*tclConfig.sh')
+                    tclConfig_paths += glob.glob(path+os.sep+'*/*/*/*tclConfig.sh')
+                    tclConfig_paths += glob.glob(path+os.sep+'*/*/*/*/*tclConfig.sh')
+                    tkConfig_paths += glob.glob(path+os.sep+'*/*tkConfig.sh')
+                    tkConfig_paths += glob.glob(path+os.sep+'*/*/*tkConfig.sh')
+                    tkConfig_paths += glob.glob(path+os.sep+'*/*/*/*tkConfig.sh')
+                    tkConfig_paths += glob.glob(path+os.sep+'*/*/*/*/*tkConfig.sh')
 
         print(f"Found {len(tclConfig_paths)} Tcl configuration file{'' if len(tclConfig_paths) == 1 else 's'} and {len(tkConfig_paths)} Tk configuration file{'' if len(tkConfig_paths) == 1 else 's'}", flush=True)
 
