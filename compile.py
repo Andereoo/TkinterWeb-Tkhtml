@@ -209,14 +209,14 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
             if os.path.exists(path):
                 may_continue = True
                 if may_continue:
+                    tclConfig_paths += glob.glob(path+os.sep+'*tclConfig.sh')
                     tclConfig_paths += glob.glob(path+os.sep+'*/*tclConfig.sh')
                     tclConfig_paths += glob.glob(path+os.sep+'*/*/*tclConfig.sh')
                     tclConfig_paths += glob.glob(path+os.sep+'*/*/*/*tclConfig.sh')
-                    tclConfig_paths += glob.glob(path+os.sep+'*/*/*/*/*tclConfig.sh')
+                    tkConfig_paths += glob.glob(path+os.sep+'*tkConfig.sh')
                     tkConfig_paths += glob.glob(path+os.sep+'*/*tkConfig.sh')
                     tkConfig_paths += glob.glob(path+os.sep+'*/*/*tkConfig.sh')
                     tkConfig_paths += glob.glob(path+os.sep+'*/*/*/*tkConfig.sh')
-                    tkConfig_paths += glob.glob(path+os.sep+'*/*/*/*/*tkConfig.sh')
 
         print(f"Found {len(tclConfig_paths)} Tcl configuration file{'' if len(tclConfig_paths) == 1 else 's'} and {len(tkConfig_paths)} Tk configuration file{'' if len(tkConfig_paths) == 1 else 's'}", flush=True)
 
