@@ -48,8 +48,8 @@ tclConfig_paths = []
 tkConfig_paths = []
 
 print(root.exprstring('$tcl_library'))
-root.call('package', 'require', 'Tk')
-print(root.exprstring('$tk_library'))
+#root.call('package', 'require', 'Tk')
+#print(root.exprstring('$tk_library'))
 
 parser = argparse.ArgumentParser(description="Compile Tkhtml")
 parser.add_argument("mode", type=str, nargs="?", default=MODE, choices=["ask", "configure", "test", "build"], help="the default mode")
