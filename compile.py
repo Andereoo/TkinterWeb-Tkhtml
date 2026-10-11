@@ -48,6 +48,7 @@ tclConfig_paths = []
 tkConfig_paths = []
 
 print(root.exprstring('$tcl_library'))
+os.environ["DISPLAY"] = ":0"
 root2 = tkinter.Tk()
 print(root2.exprstring('$tk_library'))
 
