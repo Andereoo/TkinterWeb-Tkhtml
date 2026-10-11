@@ -47,8 +47,8 @@ paths.sort(key=len)
 tclConfig_paths = []
 tkConfig_paths = []
 
-print(root.exprstring('$tcl_library'))
-print(paths)
+#print(root.exprstring('$tcl_library'))
+#print(paths)
 
 parser = argparse.ArgumentParser(description="Compile Tkhtml")
 parser.add_argument("mode", type=str, nargs="?", default=MODE, choices=["ask", "configure", "test", "build"], help="the default mode")
@@ -90,8 +90,8 @@ def run_command(cmd, cmd_input=None, capture_output=False):
     else:
         return subprocess.run(cmd, input=cmd_input, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, universal_newlines=True, check=True)
 
-print(run_command([with_tclsh if with_tclsh else 'tclsh', os.path.join(BASE_PATH, 'get_tcl_path.tcl')], capture_output=True))
-print(run_command([with_tclsh if with_tclsh else 'tclsh', GET_PATHS_PATH], capture_output=True))
+#print(run_command([with_tclsh if with_tclsh else 'tclsh', os.path.join(BASE_PATH, 'get_tcl_path.tcl')], capture_output=True))
+#print(run_command([with_tclsh if with_tclsh else 'tclsh', GET_PATHS_PATH], capture_output=True))
 
 def test():
     global tkhtml_version, tkhtml_file
@@ -206,9 +206,11 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
         global tclConfig_paths, tkConfig_paths, valid_tclConfig_paths, valid_tkConfig_paths
 
         for path in paths: 
-            if path == "/usr/lib":
-                continue
             if os.path.exists(path):
+                if path == "/usr/lib":
+                    tclConfig_paths += glob.glob(path+os.sep+'*tclConfig.sh')
+                    tkConfig_paths += glob.glob(path+os.sep+'*tkConfig.sh')
+                    continue
                 may_continue = True
                 if may_continue:
                     tclConfig_paths += glob.glob(path+os.sep+'**/*tclConfig.sh', recursive=True)
