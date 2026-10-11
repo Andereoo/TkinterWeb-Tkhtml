@@ -1,1 +1,0 @@
-puts $tcl_library

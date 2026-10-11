@@ -1,4 +1,4 @@
-name: C/C++ CI Linux ARM With Cairo Graphics
+name: C/C++ CI Linux ARM Without Cairo Graphics - Tcl8
 
 on:
   push:
@@ -14,9 +14,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install
-      run: sudo apt update && sudo apt-get install -y tcl9.0-dev tk9.0-dev
+      run: sudo apt update && sudo apt-get install -y tcl8.6-dev tk8.6-dev python3-tk
     - name: Compile
-      run: ./configure
+      run: python ./compile.py -n -t -c -v
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
