@@ -48,8 +48,8 @@ tclConfig_paths = []
 tkConfig_paths = []
 
 print(root.exprstring('$tcl_library'))
-#root.call('package', 'require', 'Tk')
-#print(root.exprstring('$tk_library'))
+root2 = tkinter.Tk()
+print(root2.exprstring('$tk_library'))
 
 parser = argparse.ArgumentParser(description="Compile Tkhtml")
 parser.add_argument("mode", type=str, nargs="?", default=MODE, choices=["ask", "configure", "test", "build"], help="the default mode")
@@ -92,7 +92,7 @@ def run_command(cmd, cmd_input=None, capture_output=False):
         return subprocess.run(cmd, input=cmd_input, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, universal_newlines=True, check=True)
 
 print(run_command([with_tclsh if with_tclsh else 'tclsh', os.path.join(BASE_PATH, 'get_tcl_path.tcl')], capture_output=True))
-print(run_command([with_tclsh if with_tclsh else 'tclsh', os.path.join(BASE_PATH, 'get_tk_path.tcl')], capture_output=True))
+print(run_command(['DISPLAY="" ' + with_tclsh if with_tclsh else 'tclsh', os.path.join(BASE_PATH, 'get_tk_path.tcl')], capture_output=True))
 
 def test():
     global tkhtml_version, tkhtml_file
