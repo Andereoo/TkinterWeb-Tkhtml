@@ -47,6 +47,8 @@ paths.sort(key=len)
 tclConfig_paths = []
 tkConfig_paths = []
 
+print(root.exprstring('$tcl_library'))
+print(root.exprstring('$tk_library'))
 
 parser = argparse.ArgumentParser(description="Compile Tkhtml")
 parser.add_argument("mode", type=str, nargs="?", default=MODE, choices=["ask", "configure", "test", "build"], help="the default mode")
@@ -87,6 +89,9 @@ def run_command(cmd, cmd_input=None, capture_output=False):
         return subprocess.run(cmd, input=cmd_input, capture_output=capture_output, universal_newlines=True, check=True)
     else:
         return subprocess.run(cmd, input=cmd_input, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, universal_newlines=True, check=True)
+
+print(run_command([with_tclsh, os.path.join(BASE_PATH, 'get_tcl_path.tcl')], capture_output=True))
+print(run_command([with_tclsh, os.path.join(BASE_PATH, 'get_tk_path.tcl')], capture_output=True))
 
 def test():
     global tkhtml_version, tkhtml_file
@@ -201,8 +206,8 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
         global tclConfig_paths, tkConfig_paths, valid_tclConfig_paths, valid_tkConfig_paths
 
         for path in paths: 
-            #if path == "/usr/lib":
-            #    continue
+            if path == "/usr/lib":
+                continue
             if os.path.exists(path):
                 may_continue = True
                 if may_continue:
