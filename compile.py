@@ -56,8 +56,7 @@ parser.add_argument('-s', '--silent', action='store_true', help='hide all output
 parser.add_argument('-i', '--install', action='store_true', help='install to the tkinterweb-tkhtml package')
 parser.add_argument('-c', '--disable-cairo', action='store_true', help='disable Cairo graphics support')
 parser.add_argument('-w', '--with-tclsh', help='the path to the tclsh interpreter to use when looking for Tcl/Tk releases')
-parser.add_argument("extra", nargs=argparse.REMAINDER, help="Flags to pass to the configure script")
-args = parser.parse_args()
+args, configure_flags = parser.parse_known_args()
 
 mode = args.mode
 noprompt = args.noprompt
@@ -67,7 +66,6 @@ silent = args.silent
 install = args.install
 disable_cairo = args.disable_cairo
 with_tclsh = args.with_tclsh
-configure_flags = args.extra
 
 # Not very 'Pythonic', but works like a charm
 if silent:
