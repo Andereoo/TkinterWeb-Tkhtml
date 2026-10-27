@@ -132,10 +132,10 @@ def test():
         
         print("Success!", flush=True)
     except IndexError:
-        print("Unable to test...Tk could not be loaded", flush=True)
+        print("Unable to test. Tk cannot load.", flush=True)
     except tkinter.TclError as error:
         if "no display name and no $DISPLAY environment variable" in error:
-            print("Unable to test...Tk could not be loaded", flush=True)
+            print("Unable to test. Tk cannot load.", flush=True)
         else:
             raise error
             
