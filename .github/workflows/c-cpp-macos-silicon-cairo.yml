@@ -15,8 +15,6 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install
       run: brew install tcl-tk 
-    - name: cairo
-      run: ls /opt/homebrew/Cellar/cairo/1.18.4/include/cairo
     - name: Compile
       env:
         PYTHONUNBUFFERED: "1" 
