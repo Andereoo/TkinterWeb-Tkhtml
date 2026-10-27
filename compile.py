@@ -4,7 +4,7 @@
 ### Copyright (c) 2025 Andrew Clarke
 
 import tkinter
-import os, glob, subprocess, re, sys, argparse, shutil, platform
+import os, glob, subprocess, re, sys, argparse, shutil, platform, shlex
 from pathlib import Path
 
 ### May be "ask", "configure", "test", "build"
@@ -57,6 +57,7 @@ parser.add_argument('-s', '--silent', action='store_true', help='hide all output
 parser.add_argument('-i', '--install', action='store_true', help='install to the tkinterweb-tkhtml package')
 parser.add_argument('-c', '--disable-cairo', action='store_true', help='disable Cairo graphics support')
 parser.add_argument('-w', '--with-tclsh', help='the path to the tclsh interpreter to use when looking for Tcl/Tk releases')
+parser.add_argument("extra", nargs=argparse.REMAINDER, help="Flags to pass to the configure script")
 args = parser.parse_args()
 
 mode = args.mode
@@ -67,6 +68,7 @@ silent = args.silent
 install = args.install
 disable_cairo = args.disable_cairo
 with_tclsh = args.with_tclsh
+configure_flags = args.extra
 
 # Not very 'Pythonic', but works like a charm
 if silent:
@@ -391,7 +393,7 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
         if disable_cairo:
             flags += " --disable-cairo"
 
-        print(f"Running configure script with the flags {flags}", flush=True)
+        print(f"Running configure script with the flags {flags} {" ".join(configure_flags)}", flush=True)
         override = input("Press N to add more flags or any other key to continue: ")
 
         if override.upper() == "N":
@@ -401,7 +403,7 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
             print(f"Running configure script with the flags {flags}", flush=True)
 
         try:
-            run_command(["bash", "../configure"] + flags.split())
+            run_command(["bash", "../configure"] + shlex.split(flags) + configure_flags)
             print("\nCompiling...", flush=True)
             make()
         except subprocess.CalledProcessError as error:
