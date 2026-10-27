@@ -16,7 +16,9 @@ jobs:
     - name: Install
       run: sudo apt update && sudo apt-get install -y tcl8.6-dev tk8.6-dev python3-tk
     - name: Compile
-      run: python ./compile.py configure -n -t -c -v CC="-Wno-error=incompatible-pointer-types"
+      env: 
+        CFLAGS: "-O2 -Wno-error=incompatible-pointer-types"
+      run: python ./compile.py -n -t -c -v
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
