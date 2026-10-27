@@ -92,45 +92,53 @@ def run_command(cmd, cmd_input=None, capture_output=False):
 def test():
     global tkhtml_version, tkhtml_file
     print("\nTesting result...", flush=True)
-    if with_tclsh:
-        script = f"""
-        set auto_path [linsert $auto_path 0 {BUILD_PATH}]
-        puts [package require Tkhtml]
-        puts [info loaded]
-        html .h
-        pack .h
-        .h parse "{TEST_STRING}"
-        """
-        if notest:
-            script += "\ndestroy ."
-        out = run_command([with_tclsh], script, True).stdout.strip().splitlines()
-        tkhtml_version = out[0].strip()
+    try:
+        if with_tclsh:
+            script = f"""
+            set auto_path [linsert $auto_path 0 {BUILD_PATH}]
+            puts [package require Tkhtml]
+            puts [info loaded]
+            html .h
+            pack .h
+            .h parse "{TEST_STRING}"
+            """
+            if notest:
+                script += "\ndestroy ."
+            out = run_command([with_tclsh], script, True).stdout.strip().splitlines()
+            tkhtml_version = out[0].strip()
 
-        for i in " ".join(out[1:]).replace("{", "").split("}"):
-            o = i.split()
-            if o[1] == "Tkhtml":
-                tkhtml_file = o[0]
-                break
+            for i in " ".join(out[1:]).replace("{", "").split("}"):
+                o = i.split()
+                if o[1] == "Tkhtml":
+                    tkhtml_file = o[0]
+                    break
 
-    else:
-        root = tkinter.Tk()
-        root.tk.eval("set auto_path [linsert $auto_path 0 {"+BUILD_PATH+"}]")
-        tkhtml_version = root.tk.eval("package require Tkhtml")
-        widget = tkinter.Widget(root, "html")
-        widget.tk.call(widget._w, "parse", TEST_STRING)
-        for i in root.tk.call("info", "loaded"):
-            if i[1] == "Tkhtml":
-                tkhtml_file = i[0]
-                break
-        
-        if notest:
-            root.destroy()
         else:
-            widget.pack(expand=True, fill="both")
-            root.mainloop()
-    
-    print("Success!", flush=True)
+            root = tkinter.Tk()
+            root.tk.eval("set auto_path [linsert $auto_path 0 {"+BUILD_PATH+"}]")
+            tkhtml_version = root.tk.eval("package require Tkhtml")
+            widget = tkinter.Widget(root, "html")
+            widget.tk.call(widget._w, "parse", TEST_STRING)
+            for i in root.tk.call("info", "loaded"):
+                if i[1] == "Tkhtml":
+                    tkhtml_file = i[0]
+                    break
+            
+            if notest:
+                root.destroy()
+            else:
+                widget.pack(expand=True, fill="both")
+                root.mainloop()
         
+        print("Success!", flush=True)
+    except IndexError:
+        print("Unable to test...Tk could not be loaded", flush=True)
+    except tkinter.TclError as error:
+        if "no display name and no $DISPLAY environment variable" in error:
+            print("Unable to test...Tk could not be loaded", flush=True)
+        else:
+            raise error
+            
 
 def make():
     if os.name == "nt":
