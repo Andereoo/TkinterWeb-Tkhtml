@@ -47,7 +47,6 @@ paths.sort(key=len)
 tclConfig_paths = []
 tkConfig_paths = []
 
-
 parser = argparse.ArgumentParser(description="Compile Tkhtml")
 parser.add_argument("mode", type=str, nargs="?", default=MODE, choices=["ask", "configure", "test", "build"], help="the default mode")
 parser.add_argument('-n', '--noprompt', action='store_true', help='disable prompting for user input')
@@ -203,13 +202,13 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
         global tclConfig_paths, tkConfig_paths, valid_tclConfig_paths, valid_tkConfig_paths
 
         for path in paths: 
-            #if path == "/usr/lib":
-            #    continue
             if os.path.exists(path):
-                may_continue = True
-                if may_continue:
-                    tclConfig_paths += glob.glob(path+os.sep+'**/*tclConfig.sh', recursive=True)
-                    tkConfig_paths += glob.glob(path+os.sep+'**/*tkConfig.sh', recursive=True)
+                tclConfig_paths += glob.glob(path+os.sep+'*tclConfig.sh')
+                tclConfig_paths += glob.glob(path+os.sep+'*/*tclConfig.sh')
+                tclConfig_paths += glob.glob(path+os.sep+'*/*/*tclConfig.sh')
+                tkConfig_paths += glob.glob(path+os.sep+'*tkConfig.sh')
+                tkConfig_paths += glob.glob(path+os.sep+'*/*tkConfig.sh')
+                tkConfig_paths += glob.glob(path+os.sep+'*/*/*tkConfig.sh')
 
         print(f"Found {len(tclConfig_paths)} Tcl configuration file{'' if len(tclConfig_paths) == 1 else 's'} and {len(tkConfig_paths)} Tk configuration file{'' if len(tkConfig_paths) == 1 else 's'}", flush=True)
 
