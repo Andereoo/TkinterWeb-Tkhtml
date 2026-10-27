@@ -9594,7 +9594,7 @@ if test "x$enable_errors" = "xno"; then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Ignoring all errors. Beware." >&5
 printf "%s\n" "$as_me: Ignoring all errors. Beware." >&6;}
 
-    PKG_CFLAGS="$PKG_CFLAGS -Wno-error -Wno-incompatible-pointer-types"
+    PKG_CFLAGS="$PKG_CFLAGS -Wno-error -Wno-incompatible-pointer-types -Wno-unused-variable -Wno-unused-const-variable -Wno-unused-const-variable -std=gnu17"
 
 
 fi
