@@ -14,15 +14,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install
-      run: brew install tcl-tk cairo
-    - name: C1
-      run: export CAIRO_PREFIX="$(brew --prefix cairo)"
-    - name: C2
-      run: export CPPFLAGS="-I${CAIRO_PREFIX}/include ${CPPFLAGS}"
-    - name: C3
-      run: export LDFLAGS="-L${CAIRO_PREFIX}/lib ${LDFLAGS}"
-    - name: C4
-      run: export PKG_CONFIG_PATH="${CAIRO_PREFIX}/lib/pkgconfig:$(brew --prefix)/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+      run: brew install tcl-tk 
+    - name: cairo
+      run: brew reinstall cairo
     - name: Compile
       env:
         PYTHONUNBUFFERED: "1" 
