@@ -275,7 +275,7 @@ AC_ARG_ENABLE([errors],
         
 if test "x$enable_errors" = "xno"; then
   AC_MSG_NOTICE([Ignoring all errors. Beware.])
-  TEA_ADD_CFLAGS([-Wno-error])
+  TEA_ADD_CFLAGS([-Wno-error -Wno-incompatible-pointer-types])
 fi
 
 AC_ARG_WITH([shlib-ld],
