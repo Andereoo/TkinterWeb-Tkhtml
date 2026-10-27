@@ -12,7 +12,7 @@ __title__ = 'TkinterWeb-Tkhtml-Extras'
 __author__ = "Andrew Clarke"
 __copyright__ = "Copyright (c) 2025 Andrew Clarke"
 __license__ = "MIT"
-__version__ = '1.4.0'
+__version__ = '1.5.0'
 
 
 # --- Begin universal sdist ---------------------------------------------------
