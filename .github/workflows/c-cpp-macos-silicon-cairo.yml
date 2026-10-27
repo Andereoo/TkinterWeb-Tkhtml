@@ -20,7 +20,7 @@ jobs:
     - name: Compile
       env:
         PYTHONUNBUFFERED: "1" 
-      run: python ./compile.py -n -t -v CPPFLAGS="-I/opt/homebrew/Cellar/cairo/1.18.4/include/cairo" 
+      run: python ./compile.py configure -n -t -v CPPFLAGS="-I/opt/homebrew/Cellar/cairo/1.18.4/include/cairo" 
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
