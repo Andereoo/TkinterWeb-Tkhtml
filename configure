@@ -786,6 +786,7 @@ enable_load
 enable_symbols
 enable_cairo
 with_system
+enable_errors
 with_shlib_ld
 '
       ac_precious_vars='build_alias
@@ -1429,6 +1430,8 @@ Optional Features:
                           (default: enabled)
   --enable-symbols        build with debugging symbols (default: off)
   --disable-cairo         disable Cairo graphics support
+
+  --disable-errors         ignore all compilation errors
 
 
 Optional Packages:
@@ -9578,12 +9581,23 @@ printf "%s\n" "$as_me: Detected Unix system" >&6;}
     ;;
 esac
 
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: Ignoring incompatible pointer types" >&5
-printf "%s\n" "$as_me: Ignoring incompatible pointer types" >&6;}
+# Check whether --enable-errors was given.
+if test ${enable_errors+y}
+then :
+  enableval=$enable_errors; enable_errors=$enableval
+else $as_nop
+  enable_errors=yes
+fi
 
-    PKG_CFLAGS="$PKG_CFLAGS -Wno-incompatible-pointer-types"
+
+if test "x$enable_errors" = "xno"; then
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: Ignoring all errors. Beware." >&5
+printf "%s\n" "$as_me: Ignoring all errors. Beware." >&6;}
+
+    PKG_CFLAGS="$PKG_CFLAGS -Wno-error"
 
 
+fi
 
 
 # Check whether --with-shlib-ld was given.

@@ -392,6 +392,8 @@ elif (not os.path.exists(BUILD_PATH) and mode == "build") or mode == "configure"
         if disable_cairo:
             flags += " --disable-cairo"
 
+        flags += " --disable-errors"
+
         print(f"Running configure script with the flags {flags} {" ".join(configure_flags)}", flush=True)
         override = input("Press N to add more flags or any other key to continue: ")
 
